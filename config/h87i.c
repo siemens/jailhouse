@@ -23,6 +23,7 @@ struct {
 	__u64 ALIGN cpus[1];
 	struct jailhouse_memory ALIGN mem_regions[8];
 	__u8 ALIGN pio_bitmap[0x2000];
+	struct jailhouse_pci_device pci_devices[13];
 } ALIGN config = {
 	.header = {
 		.hypervisor_memory = {
@@ -41,7 +42,7 @@ struct {
 			.num_irq_lines = 0,
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 
-			.num_pci_devices = 0,
+			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
 		},
 	},
 
@@ -128,5 +129,86 @@ struct {
 		[ 0x3b0/8 ...  0x3df/8] = 0, /* VGA */
 		[ 0x3e0/8 ...  0xcf7/8] = -1,
 		[ 0xcf8/8 ... 0xffff/8] = 0, /* HACK: full PCI */
+	},
+
+	.pci_devices = {
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0x00,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0x08,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0x10,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0x18,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xa0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xb0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xc8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xd0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xd8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xe0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xf8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfa,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfb,
+		},
 	},
 };

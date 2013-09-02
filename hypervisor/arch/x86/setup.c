@@ -10,14 +10,15 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
-#include <jailhouse/control.h>
-#include <asm/vmx.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
+#include <asm/vmx.h>
+#include <asm/vtd.h>
 
 #define TSS_BUSY_FLAG		(1UL << (9 + 32))
 
@@ -174,6 +175,16 @@ error_out:
 int arch_init_late(struct cell *linux_cell,
 		   struct jailhouse_cell_desc *config)
 {
+	int err;
+
+	err = vtd_init();
+	if (err)
+		return err;
+
+	err = vtd_cell_init(linux_cell, config);
+	if (err)
+		return err;
+
 	return 0;
 }
 

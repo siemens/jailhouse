@@ -50,23 +50,15 @@ struct jailhouse_irq_line {
 	__u32 irqchip;
 };
 
-
-struct jailhouse_pci_bridge {
-	// TODO
-	__u32 num_device;
-};
-
 #define JAILHOUSE_PCI_TYPE_DEVICE	0x01
 #define JAILHOUSE_PCI_TYPE_BRIDGE	0x02
 
 struct jailhouse_pci_device {
-	// TODO
 	__u32 type;
 	__u16 domain;
 	__u8 bus;
 	__u8 devfn;
 } __attribute__((packed));
-
 
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;

@@ -20,6 +20,7 @@
 #include <asm/apic.h>
 #include <asm/fault.h>
 #include <asm/vmx.h>
+#include <asm/vtd.h>
 
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BITMAP_0000_READ ] = {
@@ -926,8 +927,10 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		switch (guest_regs->rax) {
 		case JAILHOUSE_HC_DISABLE:
 			guest_regs->rax = shutdown(cpu_data);
-			if (guest_regs->rax == 0)
+			if (guest_regs->rax == 0) {
+				vtd_shutdown();
 				vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
+			}
 			break;
 		case JAILHOUSE_HC_CELL_CREATE:
 			guest_regs->rax = cell_create(cpu_data,
