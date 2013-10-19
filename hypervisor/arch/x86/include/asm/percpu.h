@@ -19,7 +19,7 @@
 #define NUM_ENTRY_REGS			6
 
 /* Keep in sync with struct per_cpu! */
-#define PERCPU_SIZE_SHIFT		14
+#define PERCPU_SIZE_SHIFT		15
 #define PERCPU_STACK_END		PAGE_SIZE
 #define PERCPU_LINUX_SP			PERCPU_STACK_END
 #define PERCPU_CPU_ID			(PERCPU_LINUX_SP + 8)
@@ -63,6 +63,10 @@ struct per_cpu {
 	bool initialized;
 	enum { VMXOFF = 0, VMXON, VMCS_READY } vmx_state;
 
+	u64 nested_vmcs_addr;
+	struct vmcs *mapped_nested_vmcs;
+	bool nested;
+
 	volatile bool stop_cpu;
 	volatile bool wait_for_sipi;
 	volatile bool cpu_stopped;
@@ -73,6 +77,9 @@ struct per_cpu {
 
 	struct vmcs vmxon_region __attribute__((aligned(PAGE_SIZE)));
 	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));
+	struct vmcs nested_vmcs __attribute__((aligned(PAGE_SIZE)));
+
+	u8 __padding[PAGE_SIZE * 3];
 } __attribute__((aligned(PAGE_SIZE)));
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)

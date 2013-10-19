@@ -15,6 +15,13 @@
 
 #include <asm/types.h>
 
+#define X86_EFLAGS_CF					0x00000001
+#define X86_EFLAGS_PF					0x00000004
+#define X86_EFLAGS_AF					0x00000010
+#define X86_EFLAGS_ZF					0x00000040
+#define X86_EFLAGS_SF					0x00000080
+#define X86_EFLAGS_OF					0x00000800
+
 #define X86_FEATURE_VMX					(1 << 5)
 
 #define X86_CR0_PE					0x00000001
@@ -31,6 +38,7 @@
 #define MSR_IA32_SYSENTER_CS				0x00000174
 #define MSR_IA32_SYSENTER_ESP				0x00000175
 #define MSR_IA32_SYSENTER_EIP				0x00000176
+#define MSR_IA32_CR_PAT					0x00000277
 #define MSR_IA32_VMX_BASIC				0x00000480
 #define MSR_IA32_VMX_PINBASED_CTLS			0x00000481
 #define MSR_IA32_VMX_PROCBASED_CTLS			0x00000482
@@ -53,12 +61,15 @@
 #define MSR_EFER					0xc0000080
 #define MSR_FS_BASE					0xc0000100
 #define MSR_GS_BASE					0xc0000101
+#define MSR_VM_HSAVE_PA					0xc0010117
 
 #define FEATURE_CONTROL_LOCKED				(1 << 0)
 #define FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX	(1 << 2)
 
+#define EFER_SCE					0x00000001
 #define EFER_LME					0x00000100
 #define EFER_LMA					0x00000400
+#define EFER_NX						0x00000800
 
 #define GDT_DESC_NULL					0
 #define GDT_DESC_CODE					1
@@ -70,6 +81,13 @@
 #define X86_INST_LEN_RDMSR				2
 #define X86_INST_LEN_WRMSR				2
 #define X86_INST_LEN_VMCALL				3
+#define X86_INST_LEN_VMXON_RAX				4
+#define X86_INST_LEN_VMXOFF				3
+#define X86_INST_LEN_INVEPT				5
+#define X86_INST_LEN_VMCLEAR_RAX			4
+#define X86_INST_LEN_VMPTRLD_RAX			3
+#define X86_INST_LEN_VMWRITE_REG_RDX			3
+#define X86_INST_LEN_VMREAD_RAX_RDX			3
 #define X86_INST_LEN_MOV_TO_CR				3
 
 #define X86_OP_REGR_PREFIX				0x44
@@ -77,6 +95,7 @@
 #define X86_OP_MOV_FROM_MEM				0x8b
 
 #define NMI_VECTOR					2
+#define GP_VECTOR					13
 
 #ifndef __ASSEMBLY__
 
