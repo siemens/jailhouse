@@ -100,12 +100,11 @@ static bool vmxon(void)
 	return ok;
 }
 
-static bool vmcs_clear(void)
+bool vmcs_clear(struct vmcs *vmcs)
 {
-	unsigned long vmcs_addr;
+	unsigned long vmcs_addr = paging_hvirt2phys(vmcs);
 	u8 ok;
 
-	vmcs_addr = paging_hvirt2phys(&per_cpu(this_cpu_id())->vmcs);
 	asm volatile(
 		"vmclear (%1)\n\t"
 		"seta %0"
@@ -115,12 +114,11 @@ static bool vmcs_clear(void)
 	return ok;
 }
 
-static bool vmcs_load(void)
+bool vmcs_load(struct vmcs *vmcs)
 {
-	unsigned long vmcs_addr;
+	unsigned long vmcs_addr = paging_hvirt2phys(vmcs);
 	u8 ok;
 
-	vmcs_addr = paging_hvirt2phys(&per_cpu(this_cpu_id())->vmcs);
 	asm volatile(
 		"vmptrld (%1)\n\t"
 		"seta %0"
@@ -130,25 +128,7 @@ static bool vmcs_load(void)
 	return ok;
 }
 
-static inline unsigned long vmcs_read64(unsigned long field)
-{
-	unsigned long value;
-
-	asm volatile("vmread %1,%0" : "=r" (value) : "r" (field) : "cc");
-	return value;
-}
-
-static inline u16 vmcs_read16(unsigned long field)
-{
-	return vmcs_read64(field);
-}
-
-static inline u32 vmcs_read32(unsigned long field)
-{
-	return vmcs_read64(field);
-}
-
-static bool vmcs_write64(unsigned long field, unsigned long val)
+bool vmcs_write64(unsigned long field, unsigned long val)
 {
 	u8 ok;
 
@@ -163,16 +143,6 @@ static bool vmcs_write64(unsigned long field, unsigned long val)
 		       field, vmcs_read32(VM_INSTRUCTION_ERROR),
 		       __builtin_return_address(0));
 	return ok;
-}
-
-static bool vmcs_write16(unsigned long field, u16 value)
-{
-	return vmcs_write64(field, value);
-}
-
-static bool vmcs_write32(unsigned long field, u32 value)
-{
-	return vmcs_write64(field, value);
 }
 
 static bool vmx_define_cr_restrictions(unsigned int cr_idx,
@@ -433,9 +403,6 @@ static bool vmx_set_guest_cr(unsigned int cr_idx, unsigned long val)
 {
 	bool ok = true;
 
-	if (cr_idx)
-		val |= X86_CR4_VMXE; /* keeps the hypervisor visible */
-
 	ok &= vmcs_write64(cr_idx ? GUEST_CR4 : GUEST_CR0,
 			   (val & cr_maybe1[cr_idx]) | cr_required1[cr_idx]);
 	ok &= vmcs_write64(cr_idx ? CR4_READ_SHADOW : CR0_READ_SHADOW, val);
@@ -484,11 +451,11 @@ static bool vmx_set_guest_segment(const struct segment *seg,
 	return ok;
 }
 
-static bool vmcs_setup(void)
+bool vmcs_host_setup(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct desc_table_reg dtr;
-	unsigned long val;
+
 	bool ok = true;
 
 	ok &= vmcs_write64(HOST_CR0, read_cr0());
@@ -513,11 +480,16 @@ static bool vmcs_setup(void)
 	ok &= vmcs_write64(HOST_IDTR_BASE, dtr.base);
 
 	ok &= vmcs_write64(HOST_IA32_PAT, read_msr(MSR_IA32_PAT));
-	ok &= vmcs_write64(HOST_IA32_EFER, EFER_LMA | EFER_LME);
+	ok &= vmcs_write64(HOST_IA32_PERF_GLOBAL_CTRL, 0);
+	ok &= vmcs_write64(HOST_IA32_EFER,
+			   EFER_SCE | EFER_LMA | EFER_LME | EFER_NXE);
 
-	ok &= vmcs_write32(HOST_IA32_SYSENTER_CS, 0);
-	ok &= vmcs_write64(HOST_IA32_SYSENTER_EIP, 0);
-	ok &= vmcs_write64(HOST_IA32_SYSENTER_ESP, 0);
+	ok &= vmcs_write32(HOST_IA32_SYSENTER_CS,
+			   read_msr(MSR_IA32_SYSENTER_CS));
+	ok &= vmcs_write64(HOST_IA32_SYSENTER_EIP,
+			   read_msr(MSR_IA32_SYSENTER_EIP));
+	ok &= vmcs_write64(HOST_IA32_SYSENTER_ESP,
+			   read_msr(MSR_IA32_SYSENTER_ESP));
 
 	ok &= vmcs_write64(HOST_RSP, (unsigned long)cpu_data->stack +
 			   sizeof(cpu_data->stack));
@@ -525,8 +497,19 @@ static bool vmcs_setup(void)
 	/* Set function executed when trapping to the hypervisor */
 	ok &= vmcs_write64(HOST_RIP, (unsigned long)vmx_vmexit);
 
+	return ok;
+}
+
+static bool vmcs_setup(void)
+{
+	struct per_cpu *cpu_data = this_cpu_data();
+	unsigned long val;
+	bool ok = true;
+
+	ok &= vmcs_host_setup();
+
 	ok &= vmx_set_guest_cr(CR0_IDX, cpu_data->linux_cr0);
-	ok &= vmx_set_guest_cr(CR4_IDX, cpu_data->linux_cr4);
+	ok &= vmx_set_guest_cr(CR4_IDX, cpu_data->linux_cr4 & ~X86_CR4_VMXE);
 
 	ok &= vmcs_write64(GUEST_CR3, cpu_data->linux_cr3);
 
@@ -613,8 +596,6 @@ static bool vmcs_setup(void)
 		VM_ENTRY_LOAD_IA32_EFER;
 	ok &= vmcs_write32(VM_ENTRY_CONTROLS, val);
 
-	ok &= vmcs_write64(CR4_GUEST_HOST_MASK, 0);
-
 	ok &= vmcs_write32(CR3_TARGET_COUNT, 0);
 
 	return ok;
@@ -684,12 +665,13 @@ int vcpu_init(struct per_cpu *cpu_data)
 
 	cpu_data->vmx_state = VMXON;
 
-	if (!vmcs_clear() || !vmcs_load() || !vmcs_setup())
+	if (!vmcs_clear(&cpu_data->vmcs) || !vmcs_load(&cpu_data->vmcs) ||
+	    !vmcs_setup())
 		return trace_error(-EIO);
 
 	cpu_data->vmx_state = VMCS_READY;
 
-	return 0;
+	return nvmx_cpu_init(cpu_data);
 }
 
 void vcpu_exit(struct per_cpu *cpu_data)
@@ -702,7 +684,8 @@ void vcpu_exit(struct per_cpu *cpu_data)
 	 * the VMCS (a compiler barrier would be sufficient, in fact). */
 	memory_barrier();
 
-	vmcs_clear();
+	vmcs_clear(&cpu_data->vmcs);
+	nvmx_cpu_exit(cpu_data);
 	asm volatile("vmxoff" : : : "cc");
 	cpu_data->linux_cr4 &= ~X86_CR4_VMXE;
 }
@@ -894,6 +877,7 @@ static void vmx_preemption_timer_set_enable(bool enable)
 {
 	u32 pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
 
+	// TODO: address nested vmcs if required
 	if (enable)
 		pin_based_ctrl |= PIN_BASED_VMX_PREEMPTION_TIMER;
 	else
@@ -1161,8 +1145,15 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	u32 *stats = cpu_data->public.stats;
+	enum nvmx_return nvmx_result;
 
 	stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+
+	nvmx_result = nvmx_handle_exit(reason, cpu_data);
+	if (nvmx_result == NVMX_HANDLED)
+		return;
+	else if (nvmx_result == NVMX_FAILED)
+		goto dump_and_park;
 
 	switch (reason) {
 	case EXIT_REASON_EXCEPTION_NMI:
@@ -1225,6 +1216,8 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		dump_vm_exit_details(reason);
 		break;
 	}
+
+dump_and_park:
 	dump_guest_regs(&cpu_data->guest_regs);
 	panic_park();
 }

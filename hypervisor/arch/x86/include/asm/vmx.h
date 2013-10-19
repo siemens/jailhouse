@@ -325,8 +325,83 @@ enum vmx_state { VMXOFF = 0, VMXON, VMCS_READY };
 #define APIC_ACCESS_TYPE_LINEAR_READ		0x00000000
 #define APIC_ACCESS_TYPE_LINEAR_WRITE		0x00001000
 
+#define VMREAD_VMWRITE_REG1_MASK		(0xf << 3)
+#define VMREAD_VMWRITE_REG1_RAX			(0 << 3)
+#define VMREAD_VMWRITE_REG1_RDX			(2 << 3)
+#define VMREAD_VMWRITE_REG1_RSP			(4 << 3)
+#define VMREAD_VMWRITE_REG2_VALID		(1 << 10)
+#define VMREAD_VMWRITE_REG2_MASK		(0xf << 28)
+#define VMREAD_VMWRITE_REG2_RAX			(0 << 28)
+#define VMREAD_VMWRITE_REG2_RDX			(2 << 28)
+
+#define VMCS_HIGH_FIELD				0x00000001
+#define VMCS_INDEX_MASK				0x000003fe
+#define VMCS_INDEX_SHIFT			1
+#define VMCS_TYPE_MASK				0x00000c00
+#define VMCS_TYPE_SHIFT				10
+#define VMCS_TYPE_BITS				2
+#define VMCS_TYPE_EXIT_INFO			0x00000400
+#define VMCS_TYPE_HOST_STATE			0x00000c00
+#define VMCS_WIDTH_MASK				0x00006000
+#define VMCS_WIDTH_SHIFT			13
+
+#define INTR_INFO_DELIVER_CODE			0x00000800
+#define INTR_INFO_VALID				0x80000000
+
+#define INTR_TYPE_HARD_EXCEPTION		0x00000300
+
+enum nvmx_return {
+	NVMX_UNHANDLED,
+	NVMX_HANDLED,
+	NVMX_FAILED,
+};
+
 void vmx_entry_failure(void);
 
 void vmx_vmexit(void);
+
+void vmx_schedule_vmexit(struct per_cpu *cpu_data);
+
+/* VMX internal interface */
+
+static inline unsigned long vmcs_read64(unsigned long field)
+{
+	unsigned long value;
+
+	asm volatile("vmread %1,%0" : "=r" (value) : "r" (field) : "cc");
+	return value;
+}
+
+static inline u16 vmcs_read16(unsigned long field)
+{
+	return vmcs_read64(field);
+}
+
+static inline u32 vmcs_read32(unsigned long field)
+{
+	return vmcs_read64(field);
+}
+
+bool vmcs_write64(unsigned long field, unsigned long val);
+
+static inline bool vmcs_write16(unsigned long field, u16 value)
+{
+	return vmcs_write64(field, value);
+}
+
+static inline bool vmcs_write32(unsigned long field, u32 value)
+{
+	return vmcs_write64(field, value);
+}
+
+bool vmcs_clear(struct vmcs *vmcs);
+bool vmcs_load(struct vmcs *vmcs);
+
+bool vmcs_host_setup(void);
+
+int nvmx_cpu_init(struct per_cpu *cpu_data);
+void nvmx_cpu_exit(struct per_cpu *cpu_data);
+
+enum nvmx_return nvmx_handle_exit(u32 reason, struct per_cpu *cpu_data);
 
 #endif /* !_JAILHOUSE_ASM_VMX_H */

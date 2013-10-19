@@ -97,6 +97,10 @@
 	/** Number of iterations to clear pending APIC IRQs. */		\
 	unsigned int num_clear_apic_irqs;				\
 									\
+	u64 nested_vmcs_addr;						\
+	struct vmcs *mapped_nested_vmcs;				\
+	bool nested;							\
+									\
 	union {								\
 		struct {						\
 			/** VMXON region, required by VMX. */		\
@@ -104,6 +108,8 @@
 				__attribute__((aligned(PAGE_SIZE)));	\
 			/** VMCS of this CPU, required by VMX. */	\
 			struct vmcs vmcs				\
+				__attribute__((aligned(PAGE_SIZE)));	\
+			struct vmcs nested_vmcs				\
 				__attribute__((aligned(PAGE_SIZE)));	\
 		};							\
 		struct {						\

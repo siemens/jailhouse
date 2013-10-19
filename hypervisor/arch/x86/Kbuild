@@ -33,7 +33,7 @@ common-objs-y += ioapic.o
 common-objs-$(CONFIG_TEST_DEVICE) += test-device.o
 
 amd-objs := svm.o amd_iommu.o svm-vmexit.o $(common-objs-y)
-intel-objs := vmx.o vtd.o vmx-vmexit.o $(common-objs-y) cat.o
+intel-objs := vmx.o vtd.o vmx-vmexit.o $(common-objs-y) cat.o nvmx.o
 
 targets += $(amd-objs) $(intel-objs)
 

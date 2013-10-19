@@ -22,6 +22,13 @@
 
 #include <jailhouse/types.h>
 
+#define X86_EFLAGS_CF					0x00000001
+#define X86_EFLAGS_PF					0x00000004
+#define X86_EFLAGS_AF					0x00000010
+#define X86_EFLAGS_ZF					0x00000040
+#define X86_EFLAGS_SF					0x00000080
+#define X86_EFLAGS_OF					0x00000800
+
 /* leaf 0x01, ECX */
 #define X86_FEATURE_VMX					(1 << 5)
 #define X86_FEATURE_XSAVE				(1 << 26)
@@ -104,6 +111,7 @@
 #define MSR_FS_BASE					0xc0000100
 #define MSR_GS_BASE					0xc0000101
 #define MSR_KERNGS_BASE					0xc0000102
+#define MSR_VM_HSAVE_PA					0xc0010117
 
 #define FEATURE_CONTROL_LOCKED				(1 << 0)
 #define FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX	(1 << 2)
@@ -114,6 +122,7 @@
 
 #define MTRR_ENABLE					(1UL << 11)
 
+#define EFER_SCE					0x00000001
 #define EFER_LME					0x00000100
 #define EFER_LMA					0x00000400
 #define EFER_NXE					0x00000800
@@ -142,6 +151,14 @@
 #define X86_INST_LEN_HYPERCALL				3
 #define X86_INST_LEN_MOV_TO_CR				3
 #define X86_INST_LEN_XSETBV				3
+#define X86_INST_LEN_VMCALL				3
+#define X86_INST_LEN_VMXON_RAX				4
+#define X86_INST_LEN_VMXOFF				3
+#define X86_INST_LEN_INVEPT				5
+#define X86_INST_LEN_VMCLEAR_RAX			4
+#define X86_INST_LEN_VMPTRLD_RAX			3
+#define X86_INST_LEN_VMWRITE_REG_RDX			3
+#define X86_INST_LEN_VMREAD_RAX_RDX			3
 
 #define X86_REX_CODE					4
 
@@ -160,6 +177,7 @@
 
 #define DB_VECTOR					1
 #define NMI_VECTOR					2
+#define GP_VECTOR					13
 #define PF_VECTOR					14
 #define AC_VECTOR					17
 
