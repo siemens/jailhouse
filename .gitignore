@@ -1,0 +1,13 @@
+*.o
+*.mod.[co]
+*.cmd
+.tmp_versions
+Module.symvers
+modules.order
+jailhouse.ko
+hypervisor/include/jailhouse/config.h
+hypervisor/hypervisor.lds
+hypervisor/jailhouse.bin
+tools/jailhouse
+config/*.cell
+inmate/*.bin
