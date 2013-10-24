@@ -20,6 +20,20 @@ WARNING: This is work in progress! Don't expect things to be complete in any
 dimension. Use at your own risk. And keep the reset button in reach.
 
 
+Community
+---------
+
+Project home:   https://github.com/siemens/jailhouse
+
+git:            https://github.com/siemens/jailhouse.git
+                git@github.com:siemens/jailhouse.git
+
+Mailing list:   jailhouse-dev@googlegroups.com
+ Subscription:  jailhouse-dev+subscribe@googlegroups.com
+                https://groups.google.com/forum/#!forum/jailhouse/join
+ Archives:      http://news.gmane.org/gmane.linux.jailhouse
+
+
 Requirements (preliminary)
 --------------------------
 
