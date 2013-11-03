@@ -89,7 +89,7 @@ static char *hex2str(unsigned long long value, char *buf,
 	return buf;
 }
 
-static char *align(char *p1, char *p0, unsigned long width)
+static char *align(char *p1, char *p0, unsigned long width, char fill)
 {
 	unsigned int n;
 
@@ -98,7 +98,7 @@ static char *align(char *p1, char *p0, unsigned long width)
 
 	for (n = 1; p1 - n >= p0; n++)
 		*(p0 + width - n) = *(p1 - n);
-	memset(p0, ' ', width - (p1 - p0));
+	memset(p0, fill, width - (p1 - p0));
 	return p0 + width;
 }
 
@@ -106,7 +106,7 @@ static void __vprintk(const char *fmt, va_list ap)
 {
 	char buf[128];
 	char *p, *p0;
-	char c;
+	char c, fill;
 	unsigned long long v;
 	unsigned int width;
 	bool longmode;
@@ -126,6 +126,7 @@ static void __vprintk(const char *fmt, va_list ap)
 
 			width = 0;
 			p0 = p;
+			fill = (c == '0') ? '0' : ' ';
 			while (c >= '0' && c <= '9') {
 				width = width * 10 + c - '0';
 				c = *fmt++;
@@ -146,7 +147,7 @@ static void __vprintk(const char *fmt, va_list ap)
 				else
 					v = va_arg(ap, int);
 				p = int2str(v, p);
-				p = align(p, p0, width);
+				p = align(p, p0, width, fill);
 				break;
 			case 'p':
 				*p++ = '0';
@@ -163,7 +164,7 @@ static void __vprintk(const char *fmt, va_list ap)
 				else
 					v = va_arg(ap, unsigned int);
 				p = uint2str(v, p);
-				p = align(p, p0, width);
+				p = align(p, p0, width, fill);
 				break;
 			case 'x':
 				if (longmode)
@@ -171,7 +172,7 @@ static void __vprintk(const char *fmt, va_list ap)
 				else
 					v = va_arg(ap, unsigned int);
 				p = hex2str(v, p, 0);
-				p = align(p, p0, width);
+				p = align(p, p0, width, fill);
 				break;
 			default:
 				*p++ = '%';
