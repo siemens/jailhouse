@@ -173,6 +173,8 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 		set_pte(pte, phys, flags);
 	}
 
+	flush_tlb();
+
 	return 0;
 }
 
