@@ -771,7 +771,7 @@ static void vmx_disable_preemption_timer(void)
 	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
 }
 
-static void skip_emulated_instruction(unsigned int inst_len)
+static void vmx_skip_emulated_instruction(unsigned int inst_len)
 {
 	vmcs_write64(GUEST_RIP, vmcs_read64(GUEST_RIP) + inst_len);
 }
@@ -806,7 +806,7 @@ static bool vmx_handle_cr(struct registers *guest_regs,
 			val = ((unsigned long *)guest_regs)[15 - reg];
 
 		if (cr == 0 || cr == 4) {
-			skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
+			vmx_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
 			/* TODO: check for #GP reasons */
 			vmx_set_guest_cr(cr, val);
 			if (cr == 0 && val & X86_CR0_PG)
@@ -849,7 +849,7 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 		if (!inst_len)
 			return false;
 
-		skip_emulated_instruction(inst_len);
+		vmx_skip_emulated_instruction(inst_len);
 		return true;
 	}
 	panic_printk("FATAL: Unhandled APIC access, "
@@ -913,7 +913,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		}
 		return;
 	case EXIT_REASON_CPUID:
-		skip_emulated_instruction(X86_INST_LEN_CPUID);
+		vmx_skip_emulated_instruction(X86_INST_LEN_CPUID);
 		guest_regs->rax &= 0xffffffff;
 		guest_regs->rbx &= 0xffffffff;
 		guest_regs->rcx &= 0xffffffff;
@@ -922,7 +922,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			(u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
-		skip_emulated_instruction(X86_INST_LEN_VMCALL);
+		vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
 		switch (guest_regs->rax) {
 		case JAILHOUSE_HC_DISABLE:
 			guest_regs->rax = shutdown(cpu_data);
@@ -946,7 +946,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
-		skip_emulated_instruction(X86_INST_LEN_RDMSR);
+		vmx_skip_emulated_instruction(X86_INST_LEN_RDMSR);
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
 			x2apic_handle_read(guest_regs);
@@ -956,7 +956,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			     guest_regs->rcx);
 		break;
 	case EXIT_REASON_MSR_WRITE:
-		skip_emulated_instruction(X86_INST_LEN_WRMSR);
+		vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 		if (guest_regs->rcx == MSR_X2APIC_ICR) {
 			apic_handle_icr_write(cpu_data, guest_regs->rax,
 					      guest_regs->rdx);
