@@ -56,9 +56,10 @@ static unsigned int vmx_true_msr_offs;
 
 static bool vmxon(struct per_cpu *cpu_data)
 {
-	unsigned long vmxon_addr = page_map_hvirt2phys(cpu_data->vmxon_page);
+	unsigned long vmxon_addr;
 	u8 ok;
 
+	vmxon_addr = page_map_hvirt2phys(&cpu_data->vmxon_region);
 	asm volatile(
 		"vmxon (%1)\n\t"
 		"seta %0"
@@ -70,7 +71,7 @@ static bool vmxon(struct per_cpu *cpu_data)
 
 static bool vmcs_clear(struct per_cpu *cpu_data)
 {
-	unsigned long vmcs_addr = page_map_hvirt2phys(cpu_data->vmcs_page);
+	unsigned long vmcs_addr = page_map_hvirt2phys(&cpu_data->vmcs);
 	u8 ok;
 
 	asm volatile(
@@ -84,7 +85,7 @@ static bool vmcs_clear(struct per_cpu *cpu_data)
 
 static bool vmcs_load(struct per_cpu *cpu_data)
 {
-	unsigned long vmcs_addr = page_map_hvirt2phys(cpu_data->vmcs_page);
+	unsigned long vmcs_addr = page_map_hvirt2phys(&cpu_data->vmcs);
 	u8 ok;
 
 	asm volatile(
@@ -531,8 +532,10 @@ int vmx_cpu_init(struct per_cpu *cpu_data)
 		return -EIO;
 
 	revision_id = (u32)vmx_basic;
-	*(u32 *)cpu_data->vmxon_page = revision_id;
-	*(u32 *)cpu_data->vmcs_page = revision_id;
+	cpu_data->vmxon_region.revision_id = revision_id;
+	cpu_data->vmxon_region.shadow_indicator = 0;
+	cpu_data->vmcs.revision_id = revision_id;
+	cpu_data->vmcs.shadow_indicator = 0;
 
 	// TODO: validate CR0
 

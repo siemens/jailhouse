@@ -28,6 +28,13 @@
 
 #include <asm/cell.h>
 
+struct vmcs {
+	u32 revision_id:31;
+	u32 shadow_indicator:1;
+	u32 abort_indicator;
+	u64 data[(PAGE_SIZE - 4 - 4) / 8];
+} __attribute__((packed));
+
 struct per_cpu {
 	/* Keep these three in sync with defines above! */
 	u8 stack[PAGE_SIZE];
@@ -64,8 +71,8 @@ struct per_cpu {
 	bool flush_caches;
 	bool shutdown_cpu;
 
-	u8 vmxon_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
-	u8 vmcs_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+	struct vmcs vmxon_region __attribute__((aligned(PAGE_SIZE)));
+	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));
 } __attribute__((aligned(PAGE_SIZE)));
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)
