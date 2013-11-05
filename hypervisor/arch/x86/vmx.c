@@ -126,8 +126,8 @@ static bool vmcs_write64(unsigned long field, unsigned long val)
 		: "r" (val), "r" (field)
 		: "cc");
 	if (!ok)
-		printk("FATAL: vmwrite failed, error %d, caller %p\n",
-		       vmcs_read32(VM_INSTRUCTION_ERROR),
+		printk("FATAL: vmwrite %08lx failed, error %d, caller %p\n",
+		       field, vmcs_read32(VM_INSTRUCTION_ERROR),
 		       __builtin_return_address(0));
 	return ok;
 }
