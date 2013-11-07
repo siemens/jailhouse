@@ -114,6 +114,11 @@ static void cpu_init(struct per_cpu *cpu_data)
 		goto failed;
 
 	printk("OK\n");
+
+	/* If this CPU is last, make sure everything was committed before we
+	 * signal the other CPUs spinning on initialized_cpus that they can
+	 * continue. */
+	memory_barrier();
 	initialized_cpus++;
 	return;
 
