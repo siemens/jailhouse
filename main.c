@@ -24,7 +24,7 @@
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
 
-#include <jailhouse.h>
+#include "jailhouse.h"
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
 
