@@ -7,11 +7,16 @@ purpose it configures CPU and device virtualization features of the hardware
 platform in a way that none of these domains, called "cells" here, can
 interfere with each other in an unacceptable way.
 
-Jailhouse is optimized for simplicity rather than feature richness. Once
-activated, it runs bare-metal, i.e. it takes full control over the hardware
-and need no external support. However, in contrast to other bare-metal
-hypervisors, it is loaded and configured by a normal Linux system. Its
-management interface is based on Linux infrastructure. So you boot Linux
+Jailhouse is optimized for simplicity rather than feature richness. Unlike
+full-featured Linux-based hypervisors like KVM or Xen, Jailhouse does not
+support overcommitment of resources like CPUs, RAM or devices. It performs no
+scheduling and only virtualizes those resources in software, that are essential
+for a platform and cannot be partitioned in hardware.
+
+Once Jailhouse is activated, it runs bare-metal, i.e. it takes full control
+over the hardware and needs no external support. However, in contrast to other
+bare-metal hypervisors, it is loaded and configured by a normal Linux system.
+Its management interface is based on Linux infrastructure. So you boot Linux
 first, then you enable Jailhouse and finally you split off parts of the
 system's resources and assign them to additional cells.
 
