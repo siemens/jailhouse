@@ -10,6 +10,10 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef __x86_64__
+#error 64-bit kernel required!
+#endif
+
 #define JAILHOUSE_CALL_INS	"vmcall"
 #define JAILHOUSE_CALL_RESULT	"=a" (result)
 #define JAILHOUSE_CALL_NUM	"a" (num)

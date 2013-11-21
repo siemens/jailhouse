@@ -43,10 +43,11 @@ Requirements (preliminary)
 --------------------------
 
 currently:
- - Intel x86 processor with VMX support, more precisely
+ - Intel x86 processor with support for 64-bit and VMX, more precisely
     - EPT (extended page tables)
     - unrestricted guest mode
  - at least 2 logical CPUs
+ - x86-64 Linux kernel (tested against >= 3.9)
 
 upcoming:
  - Intel IOMMU with interrupt remapping support
