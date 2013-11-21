@@ -127,8 +127,14 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	write_gdtr(&dtr);
 
 	/* set CS */
-	asm volatile("mov %%cs,%0": "=m" (cpu_data->linux_cs));
+	asm volatile("mov %%cs,%0" : "=m" (cpu_data->linux_cs));
 	set_cs(GDT_DESC_CODE * 8);
+
+	/* save segment registers - they may point to 32 or 16 bit segments */
+	asm volatile("mov %%ds,%0" : "=m" (cpu_data->linux_ds));
+	asm volatile("mov %%es,%0" : "=m" (cpu_data->linux_es));
+	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs));
+	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs));
 
 	/* paranoid clearing of segment registers */
 	asm volatile(
@@ -209,6 +215,16 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 	asm volatile("lidtq %0" : : "m" (cpu_data->linux_idtr));
 
 	set_cs(cpu_data->linux_cs);
+
+	asm volatile("mov %0,%%ds" : : "r" (cpu_data->linux_ds));
+	asm volatile("mov %0,%%es" : : "r" (cpu_data->linux_es));
+	asm volatile("mov %0,%%fs" : : "r" (cpu_data->linux_fs));
+	asm volatile(
+		"swapgs\n\t"
+		"mov %0,%%gs\n\t"
+		"mfence\n\t"
+		"swapgs\n\t"
+		: : "r" (cpu_data->linux_gs));
 
 	/* clear busy flag in Linux TSS, then reload it */
 	gdt = (u64 *)cpu_data->linux_gdtr.base;

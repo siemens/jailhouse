@@ -49,7 +49,11 @@ struct per_cpu {
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 	unsigned long linux_ip;
 	unsigned long linux_cr3;
-	unsigned long linux_cs;
+	unsigned int linux_cs;
+	unsigned int linux_ds;
+	unsigned int linux_es;
+	unsigned int linux_fs;
+	unsigned int linux_gs;
 	unsigned long linux_tr;
 	unsigned long linux_tr_base;
 	u32 linux_tr_limit;

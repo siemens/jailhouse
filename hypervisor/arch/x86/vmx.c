@@ -368,25 +368,29 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(GUEST_CS_LIMIT, 0xffffffff);
 	ok &= vmcs_write32(GUEST_CS_AR_BYTES, 0x0a09b);
 
-	ok &= vmcs_write16(GUEST_DS_SELECTOR, 0);
+	ok &= vmcs_write16(GUEST_DS_SELECTOR, cpu_data->linux_ds);
 	ok &= vmcs_write64(GUEST_DS_BASE, 0);
-	ok &= vmcs_write32(GUEST_DS_LIMIT, 0);
-	ok &= vmcs_write32(GUEST_DS_AR_BYTES, 0x10000);
+	ok &= vmcs_write32(GUEST_DS_LIMIT, 0xffffffff);
+	ok &= vmcs_write32(GUEST_DS_AR_BYTES,
+			   cpu_data->linux_ds ? 0x0c0f3 : 0x10000);
 
-	ok &= vmcs_write16(GUEST_ES_SELECTOR, 0);
+	ok &= vmcs_write16(GUEST_ES_SELECTOR, cpu_data->linux_es);
 	ok &= vmcs_write64(GUEST_ES_BASE, 0);
-	ok &= vmcs_write32(GUEST_ES_LIMIT, 0);
-	ok &= vmcs_write32(GUEST_ES_AR_BYTES, 0x10000);
+	ok &= vmcs_write32(GUEST_ES_LIMIT, 0xffffffff);
+	ok &= vmcs_write32(GUEST_ES_AR_BYTES,
+			   cpu_data->linux_es ? 0x0c0f3 : 0x10000);
 
-	ok &= vmcs_write16(GUEST_FS_SELECTOR, 0);
+	ok &= vmcs_write16(GUEST_FS_SELECTOR, cpu_data->linux_fs);
 	ok &= vmcs_write64(GUEST_FS_BASE, cpu_data->linux_fs_base);
-	ok &= vmcs_write32(GUEST_FS_LIMIT, 0);
-	ok &= vmcs_write32(GUEST_FS_AR_BYTES, 0x10000);
+	ok &= vmcs_write32(GUEST_FS_LIMIT, 0xffffffff);
+	ok &= vmcs_write32(GUEST_FS_AR_BYTES,
+			   cpu_data->linux_fs ? 0x0c0f3 : 0x10000);
 
-	ok &= vmcs_write16(GUEST_GS_SELECTOR, 0);
+	ok &= vmcs_write16(GUEST_GS_SELECTOR, cpu_data->linux_gs);
 	ok &= vmcs_write64(GUEST_GS_BASE, cpu_data->linux_gs_base);
-	ok &= vmcs_write32(GUEST_GS_LIMIT, 0);
-	ok &= vmcs_write32(GUEST_GS_AR_BYTES, 0x10000);
+	ok &= vmcs_write32(GUEST_GS_LIMIT, 0xffffffff);
+	ok &= vmcs_write32(GUEST_GS_AR_BYTES,
+			   cpu_data->linux_gs ? 0x0c0f3 : 0x10000);
 
 	ok &= vmcs_write16(GUEST_SS_SELECTOR, 0);
 	ok &= vmcs_write64(GUEST_SS_BASE, 0);
@@ -630,6 +634,11 @@ vmx_cpu_deactivate_vmm(struct registers *guest_regs, struct per_cpu *cpu_data)
 	cpu_data->linux_sysenter_cs = vmcs_read32(GUEST_SYSENTER_CS);
 	cpu_data->linux_sysenter_eip = vmcs_read64(GUEST_SYSENTER_EIP);
 	cpu_data->linux_sysenter_esp = vmcs_read64(GUEST_SYSENTER_ESP);
+
+	cpu_data->linux_ds = vmcs_read16(GUEST_DS_SELECTOR);
+	cpu_data->linux_es = vmcs_read16(GUEST_ES_SELECTOR);
+	cpu_data->linux_fs = vmcs_read16(GUEST_FS_SELECTOR);
+	cpu_data->linux_gs = vmcs_read16(GUEST_GS_SELECTOR);
 
 	arch_cpu_restore(cpu_data);
 
