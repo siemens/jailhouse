@@ -104,6 +104,13 @@ struct desc_table_reg {
 	u64 base;
 } __attribute__((packed));
 
+struct segment {
+	u64 base;
+	u32 limit;
+	u32 access_rights;
+	u16 selector;
+};
+
 static unsigned long __force_order;
 
 static inline void cpu_relax(void)

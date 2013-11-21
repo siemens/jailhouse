@@ -77,6 +77,17 @@ int arch_init_early(struct cell *linux_cell,
 	return 0;
 }
 
+static void read_descriptor(struct per_cpu *cpu_data, struct segment *seg)
+{
+	u64 *desc;
+
+	desc = (u64 *)(cpu_data->linux_gdtr.base + (seg->selector & 0xfff8));
+	seg->base = ((desc[0] >> 16) & 0xffffff) |
+		((desc[0] >> 32) & 0xff000000) | (desc[1] << 32);
+	seg->limit = (desc[0] & 0xffff) | ((desc[0] >> 32) & 0xff0000);
+	seg->access_rights = (desc[0] >> 40) & 0xffff;
+}
+
 static void set_cs(u16 cs)
 {
 	struct farptr jmp_target;
@@ -94,22 +105,14 @@ static void set_cs(u16 cs)
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
 	struct desc_table_reg dtr;
-	u64 *linux_tr_desc;
 	int err, n;
 
 	/* read GDTR */
 	read_gdtr(&cpu_data->linux_gdtr);
 
 	/* read TR and TSS descriptor */
-	asm volatile("str %0" : "=m" (cpu_data->linux_tr));
-	linux_tr_desc = (u64 *)(cpu_data->linux_gdtr.base +
-		(cpu_data->linux_tr & 0xfff8));
-	cpu_data->linux_tr_base = ((linux_tr_desc[0] >> 16) & 0xffffff) |
-		((linux_tr_desc[0] >> 32) & 0xff000000) |
-		(linux_tr_desc[1] << 32);
-	cpu_data->linux_tr_limit = (linux_tr_desc[0] & 0xffff) |
-		((linux_tr_desc[0] >> 32) & 0xff0000);
-	cpu_data->linux_tr_ar_bytes = (linux_tr_desc[0] >> 40) & 0xffff;
+	asm volatile("str %0" : "=m" (cpu_data->linux_tss.selector));
+	read_descriptor(cpu_data, &cpu_data->linux_tss);
 
 	/* read registers to restore on first VM-entry */
 	for (n = 0; n < NUM_ENTRY_REGS; n++)
@@ -127,14 +130,14 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	write_gdtr(&dtr);
 
 	/* set CS */
-	asm volatile("mov %%cs,%0" : "=m" (cpu_data->linux_cs));
+	asm volatile("mov %%cs,%0" : "=m" (cpu_data->linux_cs.selector));
 	set_cs(GDT_DESC_CODE * 8);
 
 	/* save segment registers - they may point to 32 or 16 bit segments */
-	asm volatile("mov %%ds,%0" : "=m" (cpu_data->linux_ds));
-	asm volatile("mov %%es,%0" : "=m" (cpu_data->linux_es));
-	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs));
-	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs));
+	asm volatile("mov %%ds,%0" : "=m" (cpu_data->linux_ds.selector));
+	asm volatile("mov %%es,%0" : "=m" (cpu_data->linux_es.selector));
+	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs.selector));
+	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs.selector));
 
 	/* paranoid clearing of segment registers */
 	asm volatile(
@@ -154,8 +157,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	write_idtr(&dtr);
 
 	cpu_data->linux_efer = read_msr(MSR_EFER);
-	cpu_data->linux_fs_base = read_msr(MSR_FS_BASE);
-	cpu_data->linux_gs_base = read_msr(MSR_GS_BASE);
+	cpu_data->linux_fs.base = read_msr(MSR_FS_BASE);
+	cpu_data->linux_gs.base = read_msr(MSR_GS_BASE);
 
 	cpu_data->linux_sysenter_cs = read_msr(MSR_IA32_SYSENTER_CS);
 	cpu_data->linux_sysenter_eip = read_msr(MSR_IA32_SYSENTER_EIP);
@@ -214,25 +217,25 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 	asm volatile("lgdtq %0" : : "m" (cpu_data->linux_gdtr));
 	asm volatile("lidtq %0" : : "m" (cpu_data->linux_idtr));
 
-	set_cs(cpu_data->linux_cs);
+	set_cs(cpu_data->linux_cs.selector);
 
-	asm volatile("mov %0,%%ds" : : "r" (cpu_data->linux_ds));
-	asm volatile("mov %0,%%es" : : "r" (cpu_data->linux_es));
-	asm volatile("mov %0,%%fs" : : "r" (cpu_data->linux_fs));
+	asm volatile("mov %0,%%ds" : : "r" (cpu_data->linux_ds.selector));
+	asm volatile("mov %0,%%es" : : "r" (cpu_data->linux_es.selector));
+	asm volatile("mov %0,%%fs" : : "r" (cpu_data->linux_fs.selector));
 	asm volatile(
 		"swapgs\n\t"
 		"mov %0,%%gs\n\t"
 		"mfence\n\t"
 		"swapgs\n\t"
-		: : "r" (cpu_data->linux_gs));
+		: : "r" (cpu_data->linux_gs.selector));
 
 	/* clear busy flag in Linux TSS, then reload it */
 	gdt = (u64 *)cpu_data->linux_gdtr.base;
-	gdt[cpu_data->linux_tr / 8] &= ~TSS_BUSY_FLAG;
-	asm volatile("ltr %%ax" : : "a" (cpu_data->linux_tr));
+	gdt[cpu_data->linux_tss.selector / 8] &= ~TSS_BUSY_FLAG;
+	asm volatile("ltr %%ax" : : "a" (cpu_data->linux_tss.selector));
 
-	write_msr(MSR_FS_BASE, cpu_data->linux_fs_base);
-	write_msr(MSR_GS_BASE, cpu_data->linux_gs_base);
+	write_msr(MSR_FS_BASE, cpu_data->linux_fs.base);
+	write_msr(MSR_GS_BASE, cpu_data->linux_gs.base);
 
 	write_msr(MSR_IA32_SYSENTER_CS, cpu_data->linux_sysenter_cs);
 	write_msr(MSR_IA32_SYSENTER_EIP, cpu_data->linux_sysenter_eip);
