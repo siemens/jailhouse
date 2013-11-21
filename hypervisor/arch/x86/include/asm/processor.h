@@ -99,6 +99,11 @@ struct registers {
 	unsigned long rax;
 };
 
+struct desc_table_reg {
+	u16 limit;
+	u64 base;
+} __attribute__((packed));
+
 static unsigned long __force_order;
 
 static inline void cpu_relax(void)

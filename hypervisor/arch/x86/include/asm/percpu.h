@@ -15,6 +15,7 @@
 
 #include <asm/types.h>
 #include <asm/paging.h>
+#include <asm/processor.h>
 
 #define NUM_ENTRY_REGS			6
 
