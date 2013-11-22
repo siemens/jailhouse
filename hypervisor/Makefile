@@ -13,7 +13,7 @@
 LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include -I$(src)/include
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
-		 -fno-strict-aliasing -fpic -fpie -fno-common
+		 -fno-strict-aliasing -fpic -fpie -fno-common -fno-stack-protector
 ifneq ($(wildcard $(src)/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(src)/include/jailhouse/config.h
 endif

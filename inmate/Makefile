@@ -14,7 +14,7 @@ LINUXINCLUDE := -I$(src)
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
-		 -fno-common -I.
+		 -fno-common -fno-stack-protector -I.
 ifneq ($(wildcard $(src)/../hypervisor/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(src)/../hypervisor/include/jailhouse/config.h
 endif
