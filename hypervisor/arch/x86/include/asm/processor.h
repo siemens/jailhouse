@@ -78,6 +78,10 @@
 
 #define NMI_VECTOR					2
 
+#define DESC_PRESENT					(1UL << (15 + 32))
+#define DESC_CODE_DATA					(1UL << (12 + 32))
+#define DESC_PAGE_GRAN					(1UL << (23 + 32))
+
 #ifndef __ASSEMBLY__
 
 struct registers {

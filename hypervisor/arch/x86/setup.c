@@ -79,13 +79,25 @@ int arch_init_early(struct cell *linux_cell,
 
 static void read_descriptor(struct per_cpu *cpu_data, struct segment *seg)
 {
-	u64 *desc;
+	u64 *desc = (u64 *)(cpu_data->linux_gdtr.base +
+			    (seg->selector & 0xfff8));
 
-	desc = (u64 *)(cpu_data->linux_gdtr.base + (seg->selector & 0xfff8));
-	seg->base = ((desc[0] >> 16) & 0xffffff) |
-		((desc[0] >> 32) & 0xff000000) | (desc[1] << 32);
-	seg->limit = (desc[0] & 0xffff) | ((desc[0] >> 32) & 0xff0000);
-	seg->access_rights = (desc[0] >> 40) & 0xffff;
+	if (desc[0] & DESC_PRESENT) {
+		seg->base = ((desc[0] >> 16) & 0xffffff) |
+			((desc[0] >> 32) & 0xff000000);
+		if (!(desc[0] & DESC_CODE_DATA))
+			seg->base |= desc[1] << 32;
+
+		seg->limit = (desc[0] & 0xffff) | ((desc[0] >> 32) & 0xf0000);
+		if (desc[0] & DESC_PAGE_GRAN)
+			seg->limit = (seg->limit << 12) | 0xfff;
+
+		seg->access_rights = (desc[0] >> 40) & 0xf0ff;
+	} else {
+		seg->base = 0;
+		seg->limit = 0;
+		seg->access_rights = 0x10000;
+	}
 }
 
 static void set_cs(u16 cs)
