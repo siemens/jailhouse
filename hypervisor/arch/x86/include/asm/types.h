@@ -45,11 +45,6 @@ typedef u64 __u64;
 
 typedef enum { true=1, false=0 } bool;
 
-struct desc_table_reg {
-	u16 limit;
-	u64 base;
-} __attribute__((packed));
-
 struct cpu_set {
 	unsigned long max_cpu_id;
 	/* Note: The bitmap is supposed to be extended by embedding this

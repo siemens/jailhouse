@@ -23,6 +23,7 @@ struct {
 	__u64 ALIGN cpus[1];
 	struct jailhouse_memory ALIGN mem_regions[9];
 	__u8 ALIGN pio_bitmap[0x2000];
+	struct jailhouse_pci_device pci_devices[25];
 } ALIGN config = {
 	.header = {
 		.hypervisor_memory = {
@@ -40,8 +41,7 @@ struct {
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irq_lines = 0,
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
-
-			.num_pci_devices = 0,
+			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
 		},
 	},
 
@@ -147,5 +147,158 @@ struct {
 		[ 0x400/8 ...  0x47f/8] = 0, /* ACPI...? */
 		[ 0x480/8 ...  0xcf7/8] = -1,
 		[ 0xcf8/8 ... 0xffff/8] = 0, /* HACK: full PCI */
+	},
+
+	.pci_devices = {
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0x00,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0x08,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xb0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xb2,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xb3,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xc8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xd0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xd8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xe0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xe1,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xe8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xf0,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xf8,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfa,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfb,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfe,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x01,
+			.devfn = 0x00,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x01,
+			.devfn = 0x01,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x10,
+			.devfn = 0x00,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0xff,
+			.devfn = 0x00,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0xff,
+			.devfn = 0x01,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0xff,
+			.devfn = 0x10,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0xff,
+			.devfn = 0x11,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0xff,
+			.devfn = 0x12,
+		},
+		{
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0xff,
+			.devfn = 0x13,
+		},
 	},
 };

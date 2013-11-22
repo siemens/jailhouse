@@ -25,6 +25,10 @@ struct cell {
 		pgd_t *ept;
 	} vmx;
 
+	struct {
+		pgd_t *page_table;
+	} vtd;
+
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
 	unsigned int id;
 

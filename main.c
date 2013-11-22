@@ -24,7 +24,7 @@
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
 
-#include <jailhouse.h>
+#include "jailhouse.h"
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
 
@@ -370,6 +370,7 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 static const struct file_operations jailhouse_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = jailhouse_ioctl,
+	.compat_ioctl = jailhouse_ioctl,
 	.llseek = noop_llseek,
 };
 

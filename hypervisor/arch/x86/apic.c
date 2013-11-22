@@ -362,7 +362,10 @@ void apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 	apic_validate_ipi_mode(cpu_data, lo_val);
 
 	if ((lo_val & APIC_ICR_SH_MASK) == APIC_ICR_SH_SELF) {
-		apic_deliver_ipi(cpu_data, cpu_data->cpu_id, hi_val, lo_val);
+		apic_ops.write(APIC_REG_ICR, (lo_val & APIC_ICR_VECTOR_MASK) |
+					     APIC_ICR_DLVR_FIXED |
+					     APIC_ICR_TM_EDGE |
+					     APIC_ICR_SH_SELF);
 		return;
 	}
 

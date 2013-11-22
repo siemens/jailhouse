@@ -97,6 +97,10 @@
 #define NMI_VECTOR					2
 #define GP_VECTOR					13
 
+#define DESC_PRESENT					(1UL << (15 + 32))
+#define DESC_CODE_DATA					(1UL << (12 + 32))
+#define DESC_PAGE_GRAN					(1UL << (23 + 32))
+
 #ifndef __ASSEMBLY__
 
 struct registers {
@@ -116,6 +120,18 @@ struct registers {
 	unsigned long rdx;
 	unsigned long rcx;
 	unsigned long rax;
+};
+
+struct desc_table_reg {
+	u16 limit;
+	u64 base;
+} __attribute__((packed));
+
+struct segment {
+	u64 base;
+	u32 limit;
+	u32 access_rights;
+	u16 selector;
 };
 
 static unsigned long __force_order;

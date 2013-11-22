@@ -15,6 +15,7 @@
 
 #include <asm/types.h>
 #include <asm/paging.h>
+#include <asm/processor.h>
 
 #define NUM_ENTRY_REGS			6
 
@@ -49,14 +50,13 @@ struct per_cpu {
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 	unsigned long linux_ip;
 	unsigned long linux_cr3;
-	unsigned long linux_cs;
-	unsigned long linux_tr;
-	unsigned long linux_tr_base;
-	u32 linux_tr_limit;
-	u32 linux_tr_ar_bytes;
+	struct segment linux_cs;
+	struct segment linux_ds;
+	struct segment linux_es;
+	struct segment linux_fs;
+	struct segment linux_gs;
+	struct segment linux_tss;
 	unsigned long linux_efer;
-	unsigned long linux_fs_base;
-	unsigned long linux_gs_base;
 	unsigned long linux_sysenter_cs;
 	unsigned long linux_sysenter_eip;
 	unsigned long linux_sysenter_esp;
