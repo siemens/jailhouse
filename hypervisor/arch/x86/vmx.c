@@ -22,6 +22,10 @@
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
+static const struct segment invalid_seg = {
+	.access_rights = 0x10000
+};
+
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BITMAP_0000_READ ] = {
 		[      0/8 ...  0x7ff/8 ] = 0,
@@ -321,6 +325,19 @@ static bool vmx_set_cell_config(struct cell *cell)
 	return ok;
 }
 
+static bool vmx_set_guest_segment(const struct segment *seg,
+				  unsigned long selector_field)
+{
+	bool ok = true;
+
+	ok &= vmcs_write16(selector_field, seg->selector);
+	ok &= vmcs_write64(selector_field + GUEST_SEG_BASE, seg->base);
+	ok &= vmcs_write32(selector_field + GUEST_SEG_LIMIT, seg->limit);
+	ok &= vmcs_write32(selector_field + GUEST_SEG_AR_BYTES,
+			   seg->access_rights);
+	return ok;
+}
+
 static bool vmcs_setup(struct per_cpu *cpu_data)
 {
 	struct desc_table_reg dtr;
@@ -363,50 +380,15 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmcs_write64(GUEST_CR3, cpu_data->linux_cr3);
 
-	ok &= vmcs_write16(GUEST_CS_SELECTOR, cpu_data->linux_cs.selector);
-	ok &= vmcs_write64(GUEST_CS_BASE, 0);
-	ok &= vmcs_write32(GUEST_CS_LIMIT, 0xffffffff);
-	ok &= vmcs_write32(GUEST_CS_AR_BYTES, 0x0a09b);
 
-	ok &= vmcs_write16(GUEST_DS_SELECTOR, cpu_data->linux_ds.selector);
-	ok &= vmcs_write64(GUEST_DS_BASE, 0);
-	ok &= vmcs_write32(GUEST_DS_LIMIT, 0xffffffff);
-	ok &= vmcs_write32(GUEST_DS_AR_BYTES,
-			   cpu_data->linux_ds.selector ? 0x0c0f3 : 0x10000);
-
-	ok &= vmcs_write16(GUEST_ES_SELECTOR, cpu_data->linux_es.selector);
-	ok &= vmcs_write64(GUEST_ES_BASE, 0);
-	ok &= vmcs_write32(GUEST_ES_LIMIT, 0xffffffff);
-	ok &= vmcs_write32(GUEST_ES_AR_BYTES,
-			   cpu_data->linux_es.selector ? 0x0c0f3 : 0x10000);
-
-	ok &= vmcs_write16(GUEST_FS_SELECTOR, cpu_data->linux_fs.selector);
-	ok &= vmcs_write64(GUEST_FS_BASE, cpu_data->linux_fs.base);
-	ok &= vmcs_write32(GUEST_FS_LIMIT, 0xffffffff);
-	ok &= vmcs_write32(GUEST_FS_AR_BYTES,
-			   cpu_data->linux_fs.selector ? 0x0c0f3 : 0x10000);
-
-	ok &= vmcs_write16(GUEST_GS_SELECTOR, cpu_data->linux_gs.selector);
-	ok &= vmcs_write64(GUEST_GS_BASE, cpu_data->linux_gs.base);
-	ok &= vmcs_write32(GUEST_GS_LIMIT, 0xffffffff);
-	ok &= vmcs_write32(GUEST_GS_AR_BYTES,
-			   cpu_data->linux_gs.selector ? 0x0c0f3 : 0x10000);
-
-	ok &= vmcs_write16(GUEST_SS_SELECTOR, 0);
-	ok &= vmcs_write64(GUEST_SS_BASE, 0);
-	ok &= vmcs_write32(GUEST_SS_LIMIT, 0);
-	ok &= vmcs_write32(GUEST_SS_AR_BYTES, 0x10000);
-
-	ok &= vmcs_write16(GUEST_TR_SELECTOR, cpu_data->linux_tss.selector);
-	ok &= vmcs_write64(GUEST_TR_BASE, cpu_data->linux_tss.base);
-	ok &= vmcs_write32(GUEST_TR_LIMIT, cpu_data->linux_tss.limit);
-	ok &= vmcs_write32(GUEST_TR_AR_BYTES,
-			   cpu_data->linux_tss.access_rights);
-
-	ok &= vmcs_write16(GUEST_LDTR_SELECTOR, 0);
-	ok &= vmcs_write64(GUEST_LDTR_BASE, 0);
-	ok &= vmcs_write32(GUEST_LDTR_LIMIT, 0);
-	ok &= vmcs_write32(GUEST_LDTR_AR_BYTES, 0x10000);
+	ok &= vmx_set_guest_segment(&cpu_data->linux_cs, GUEST_CS_SELECTOR);
+	ok &= vmx_set_guest_segment(&cpu_data->linux_ds, GUEST_DS_SELECTOR);
+	ok &= vmx_set_guest_segment(&cpu_data->linux_es, GUEST_ES_SELECTOR);
+	ok &= vmx_set_guest_segment(&cpu_data->linux_fs, GUEST_FS_SELECTOR);
+	ok &= vmx_set_guest_segment(&cpu_data->linux_gs, GUEST_GS_SELECTOR);
+	ok &= vmx_set_guest_segment(&invalid_seg, GUEST_SS_SELECTOR);
+	ok &= vmx_set_guest_segment(&cpu_data->linux_tss, GUEST_TR_SELECTOR);
+	ok &= vmx_set_guest_segment(&invalid_seg, GUEST_LDTR_SELECTOR);
 
 	ok &= vmcs_write64(GUEST_GDTR_BASE, cpu_data->linux_gdtr.base);
 	ok &= vmcs_write32(GUEST_GDTR_LIMIT, cpu_data->linux_gdtr.limit);

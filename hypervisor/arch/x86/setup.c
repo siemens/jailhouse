@@ -126,6 +126,25 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	asm volatile("str %0" : "=m" (cpu_data->linux_tss.selector));
 	read_descriptor(cpu_data, &cpu_data->linux_tss);
 
+	/* save CS as long as we have access to the Linux page table */
+	asm volatile("mov %%cs,%0" : "=m" (cpu_data->linux_cs.selector));
+	read_descriptor(cpu_data, &cpu_data->linux_cs);
+
+	/* save segment registers - they may point to 32 or 16 bit segments */
+	asm volatile("mov %%ds,%0" : "=m" (cpu_data->linux_ds.selector));
+	read_descriptor(cpu_data, &cpu_data->linux_ds);
+
+	asm volatile("mov %%es,%0" : "=m" (cpu_data->linux_es.selector));
+	read_descriptor(cpu_data, &cpu_data->linux_es);
+
+	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs.selector));
+	read_descriptor(cpu_data, &cpu_data->linux_fs);
+	cpu_data->linux_fs.base = read_msr(MSR_FS_BASE);
+
+	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs.selector));
+	read_descriptor(cpu_data, &cpu_data->linux_gs);
+	cpu_data->linux_gs.base = read_msr(MSR_GS_BASE);
+
 	/* read registers to restore on first VM-entry */
 	for (n = 0; n < NUM_ENTRY_REGS; n++)
 		cpu_data->linux_reg[n] =
@@ -141,15 +160,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	dtr.base = (u64)&gdt;
 	write_gdtr(&dtr);
 
-	/* set CS */
-	asm volatile("mov %%cs,%0" : "=m" (cpu_data->linux_cs.selector));
 	set_cs(GDT_DESC_CODE * 8);
-
-	/* save segment registers - they may point to 32 or 16 bit segments */
-	asm volatile("mov %%ds,%0" : "=m" (cpu_data->linux_ds.selector));
-	asm volatile("mov %%es,%0" : "=m" (cpu_data->linux_es.selector));
-	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs.selector));
-	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs.selector));
 
 	/* paranoid clearing of segment registers */
 	asm volatile(
@@ -169,8 +180,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	write_idtr(&dtr);
 
 	cpu_data->linux_efer = read_msr(MSR_EFER);
-	cpu_data->linux_fs.base = read_msr(MSR_FS_BASE);
-	cpu_data->linux_gs.base = read_msr(MSR_GS_BASE);
 
 	cpu_data->linux_sysenter_cs = read_msr(MSR_IA32_SYSENTER_CS);
 	cpu_data->linux_sysenter_eip = read_msr(MSR_IA32_SYSENTER_EIP);
