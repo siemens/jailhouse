@@ -103,8 +103,11 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		goto error_unlock;
 
 	err = request_firmware(&hypervisor, JAILHOUSE_FW_NAME, jailhouse_dev);
-	if (err)
+	if (err) {
+		pr_err("jailhouse: Missing hypervisor image %s\n",
+		       JAILHOUSE_FW_NAME);
 		goto error_put_module;
+	}
 
 	header = (struct jailhouse_header *)hypervisor->data;
 
@@ -121,8 +124,11 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 
 	/* CMA would be better... */
 	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, hv_mem->size);
-	if (!hypervisor_mem)
+	if (!hypervisor_mem) {
+		pr_err("jailhouse: Unable to map RAM reserved for hypervisor "
+		       "at %08lx\n", (unsigned long)hv_mem->phys_start);
 		goto error_release_fw;
+	}
 
 	memcpy(hypervisor_mem, hypervisor->data, hypervisor->size);
 	memset(hypervisor_mem + hypervisor->size, 0,
@@ -164,7 +170,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 
 	mutex_unlock(&lock);
 
-	printk("The Jailhouse is opening.\n");
+	pr_info("The Jailhouse is opening.\n");
 
 	return 0;
 
@@ -226,13 +232,13 @@ static int jailhouse_disable(void)
 
 	for_each_cpu_mask(cpu, offlined_cpus)
 		if (cpu_up(cpu) != 0)
-			printk("Jailhouse: failed to bring CPU %d back "
+			pr_err("Jailhouse: failed to bring CPU %d back "
 			       "online\n", cpu);
 
 	enabled = false;
 	module_put(THIS_MODULE);
 
-	printk("The Jailhouse was closed.\n");
+	pr_info("The Jailhouse was closed.\n");
 
 unlock_out:
 	mutex_unlock(&lock);
@@ -326,7 +332,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	if (err)
 		goto unlock_out;
 
-	printk("Created Jailhouse cell \"%s\"\n", config->name);
+	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
 
 unlock_out:
 	mutex_unlock(&lock);
