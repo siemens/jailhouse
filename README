@@ -5,7 +5,7 @@ Jailhouse is a partitioning Hypervisor based on Linux. It is able to run
 bare-metal applications or (adapted) operating systems besides Linux. For this
 purpose it configures CPU and device virtualization features of the hardware
 platform in a way that none of these domains, called "cells" here, can
-interfere with each other in an unacceptable way.
+not interfere with each other in an unacceptable way.
 
 Jailhouse is optimized for simplicity rather than feature richness. Unlike
 full-featured Linux-based hypervisors like KVM or Xen, Jailhouse does not
