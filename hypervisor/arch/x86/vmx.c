@@ -969,6 +969,21 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		if (vmx_handle_apic_access(guest_regs, cpu_data))
 			return;
 		break;
+	case EXIT_REASON_XSETBV:
+		vmx_skip_emulated_instruction(X86_INST_LEN_XSETBV);
+		if (guest_regs->rax & X86_XCR0_FP &&
+		    (guest_regs->rax & ~cpuid_eax(0x0d)) == 0 &&
+		    guest_regs->rcx == 0 && guest_regs->rdx == 0) {
+			asm volatile(
+				"xsetbv"
+				: /* no output */
+				: "a" (guest_regs->rax), "c" (0), "d" (0));
+			return;
+		}
+		panic_printk("FATAL: Invalid xsetbv parameters: "
+			     "xcr[%d] = %08x:%08x\n", guest_regs->rcx,
+			     guest_regs->rdx, guest_regs->rax);
+		break;
 	default:
 		panic_printk("FATAL: Unhandled VM-Exit, reason %d, ",
 			     (u16)reason);

@@ -26,6 +26,8 @@
 #define X86_CR4_PGE					0x00000080
 #define X86_CR4_VMXE					0x00002000
 
+#define X86_XCR0_FP					0x00000001
+
 #define MSR_IA32_APICBASE				0x0000001b
 #define MSR_IA32_FEATURE_CONTROL			0x0000003a
 #define MSR_IA32_SYSENTER_CS				0x00000174
@@ -71,6 +73,7 @@
 #define X86_INST_LEN_WRMSR				2
 #define X86_INST_LEN_VMCALL				3
 #define X86_INST_LEN_MOV_TO_CR				3
+#define X86_INST_LEN_XSETBV				3
 
 #define X86_OP_REGR_PREFIX				0x44
 #define X86_OP_MOV_TO_MEM				0x89
@@ -143,6 +146,14 @@ static inline void cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx,
 	*eax =op;
 	*ecx = 0;
 	__cpuid(eax, ebx, ecx, edx);
+}
+
+static inline unsigned int cpuid_eax(unsigned int op)
+{
+	unsigned int eax, ebx, ecx, edx;
+
+	cpuid(op, &eax, &ebx, &ecx, &edx);
+	return eax;
 }
 
 static inline unsigned int cpuid_ecx(unsigned int op)
