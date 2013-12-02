@@ -36,6 +36,7 @@ int cell_init(struct cell *cell, struct jailhouse_cell_desc *config,
 	      bool copy_cpu_set);
 
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address);
+int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address);
 
 int shutdown(struct per_cpu *cpu_data);
 

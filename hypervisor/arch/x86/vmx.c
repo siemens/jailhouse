@@ -938,6 +938,10 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			guest_regs->rax = cell_create(cpu_data,
 						      guest_regs->rdi);
 			break;
+		case JAILHOUSE_HC_CELL_DESTROY:
+			guest_regs->rax = cell_destroy(cpu_data,
+						       guest_regs->rdi);
+			break;
 		default:
 			printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
 			       cpu_data->cpu_id, guest_regs->rax,

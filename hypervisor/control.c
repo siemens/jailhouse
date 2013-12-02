@@ -254,6 +254,11 @@ err_free_cell:
 	goto resume_out;
 }
 
+int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
+{
+	return -ENOSYS;
+}
+
 int shutdown(struct per_cpu *cpu_data)
 {
 	static bool shutdown_started;

@@ -361,6 +361,35 @@ kfree_config_out:
 	return err;
 }
 
+static int jailhouse_cell_destroy(const char __user *arg)
+{
+	char name[JAILHOUSE_CELL_NAME_MAXLEN];
+	int err;
+
+	if (strncpy_from_user(name, arg, sizeof(name) - 1) < 0)
+		return -EFAULT;
+	name[sizeof(name) - 1] = 0;
+
+	if (mutex_lock_interruptible(&lock) != 0)
+		return -EINTR;
+
+	if (!enabled) {
+		err = -EINVAL;
+		goto unlock_out;
+	}
+
+	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, __pa(name));
+	if (err)
+		goto unlock_out;
+
+	pr_info("Destroyed Jailhouse cell \"%s\"\n", name);
+
+unlock_out:
+	mutex_unlock(&lock);
+
+	return err;
+}
+
 static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 			    unsigned long arg)
 {
@@ -379,7 +408,7 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 			(struct jailhouse_new_cell __user *)arg);
 		break;
 	case JAILHOUSE_CELL_DESTROY:
-		err = -ENOSYS;
+		err = jailhouse_cell_destroy((const char __user *)arg);
 		break;
 	default:
 		err = -EINVAL;
