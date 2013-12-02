@@ -107,6 +107,16 @@ static void destroy_cpu_set(struct cell *cell)
 		page_free(&mem_pool, cell->cpu_set, 1);
 }
 
+static struct cell *cell_find(const char *name)
+{
+	struct cell *cell;
+
+	for (cell = &linux_cell; cell; cell = cell->next)
+		if (strcmp(cell->name, name) == 0)
+			break;
+	return cell;
+}
+
 int check_mem_regions(struct jailhouse_cell_desc *config)
 {
 	struct jailhouse_memory *mem;
@@ -156,6 +166,11 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	total_size = jailhouse_cell_config_size(cfg);
 	if (total_size > NUM_FOREIGN_PAGES * PAGE_SIZE) {
 		err = -E2BIG;
+		goto resume_out;
+	}
+
+	if (cell_find(cfg->name)) {
+		err = -EEXIST;
 		goto resume_out;
 	}
 
