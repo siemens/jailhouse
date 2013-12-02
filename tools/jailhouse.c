@@ -29,7 +29,7 @@ static void help(const char *progname)
 	       "   enable CONFIGFILE\n"
 	       "   disable\n"
 	       "   cell create CONFIGFILE PRELOADIMAGE [-l ADDRESS]\n"
-	       "   cell destroy NAME\n",
+	       "   cell destroy CONFIGFILE\n",
 	       progname);
 }
 
@@ -154,6 +154,8 @@ static int cell_create(int argc, char *argv[])
 
 static int cell_destroy(int argc, char *argv[])
 {
+	struct jailhouse_cell cell;
+	size_t size;
 	int err, fd;
 
 	if (argc != 4) {
@@ -161,13 +163,17 @@ static int cell_destroy(int argc, char *argv[])
 		exit(1);
 	}
 
+	cell.config_address = (unsigned long)read_file(argv[3], &size);
+	cell.config_size = size;
+
 	fd = open_dev();
 
-	err = ioctl(fd, JAILHOUSE_CELL_DESTROY, argv[3]);
+	err = ioctl(fd, JAILHOUSE_CELL_DESTROY, &cell);
 	if (err)
 		perror("JAILHOUSE_CELL_DESTROY");
 
 	close(fd);
+	free((void *)(unsigned long)cell.config_address);
 
 	return err;
 }

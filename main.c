@@ -363,12 +363,25 @@ kfree_config_out:
 
 static int jailhouse_cell_destroy(const char __user *arg)
 {
-	char name[JAILHOUSE_CELL_NAME_MAXLEN];
+	struct jailhouse_cell_desc *config;
+	struct jailhouse_cell cell;
+	unsigned int cpu;
 	int err;
 
-	if (strncpy_from_user(name, arg, sizeof(name) - 1) < 0)
+	if (copy_from_user(&cell, arg, sizeof(cell)))
 		return -EFAULT;
-	name[sizeof(name) - 1] = 0;
+
+	config = kmalloc(cell.config_size, GFP_KERNEL | GFP_DMA);
+	if (!config)
+		return -ENOMEM;
+
+	if (copy_from_user(config, (void *)(unsigned long)cell.config_address,
+			   cell.config_size)) {
+		err = -EFAULT;
+		goto kfree_config_out;
+	}
+	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
+
 
 	if (mutex_lock_interruptible(&lock) != 0)
 		return -EINTR;
@@ -378,14 +391,25 @@ static int jailhouse_cell_destroy(const char __user *arg)
 		goto unlock_out;
 	}
 
-	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, __pa(name));
+	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, __pa(config->name));
 	if (err)
 		goto unlock_out;
 
-	pr_info("Destroyed Jailhouse cell \"%s\"\n", name);
+	for_each_cell_cpu(cpu, config)
+		if (cpu_isset(cpu, offlined_cpus)) {
+			if (cpu_up(cpu) != 0)
+				pr_err("Jailhouse: failed to bring CPU %d "
+				       "back online\n", cpu);
+			cpu_clear(cpu, offlined_cpus);
+		}
+
+	pr_info("Destroyed Jailhouse cell \"%s\"\n", config->name);
 
 unlock_out:
 	mutex_unlock(&lock);
+
+kfree_config_out:
+	kfree(config);
 
 	return err;
 }

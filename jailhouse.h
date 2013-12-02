@@ -28,7 +28,12 @@ struct jailhouse_new_cell {
 	struct jailhouse_preload_image image[];
 };
 
+struct jailhouse_cell {
+	__u64 config_address;
+	__u32 config_size;
+};
+
 #define JAILHOUSE_ENABLE		_IOW(0, 0, struct jailhouse_system)
 #define JAILHOUSE_DISABLE		_IO(0, 1)
 #define JAILHOUSE_CELL_CREATE		_IOW(0, 2, struct jailhouse_new_cell)
-#define JAILHOUSE_CELL_DESTROY		_IOW(0, 3, const char *)
+#define JAILHOUSE_CELL_DESTROY		_IOW(0, 3, struct jailhouse_cell)
