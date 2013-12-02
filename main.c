@@ -42,6 +42,20 @@ static cpumask_t offlined_cpus;
 static atomic_t call_done;
 static int error_code;
 
+static inline unsigned int
+cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
+{
+	const unsigned long *cpu_mask =
+		((void *)config) + sizeof(struct jailhouse_cell_desc);
+
+	return find_next_bit(cpu_mask, config->cpu_set_size * 8, n + 1);
+}
+
+#define for_each_cell_cpu(cpu, config)				\
+	for ((cpu) = -1;					\
+	     (cpu) = cell_cpumask_next((cpu), (config)),	\
+	     (cpu) < (config)->cpu_set_size * 8;)
+
 #ifdef CONFIG_X86
 
 static void *jailhouse_ioremap(phys_addr_t start, unsigned long size)
@@ -254,11 +268,10 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	} cell_buffer;
 	struct jailhouse_new_cell *cell = &cell_buffer.cell;
 	struct jailhouse_preload_image *image = &cell->image[0];
-	unsigned int mask_pos, bit_pos, cpu;
 	struct jailhouse_cell_desc *config;
 	struct jailhouse_memory *ram;
+	unsigned int cpu;
 	void *cell_mem;
-	u8 *cpu_mask;
 	int err;
 
 	if (copy_from_user(cell, arg, sizeof(*cell)))
@@ -282,19 +295,14 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	cpu_mask = ((void *)config) + sizeof(struct jailhouse_cell_desc);
-	for (mask_pos = 0; mask_pos < config->cpu_set_size; mask_pos++)
-		for (bit_pos = 0; bit_pos < 8; bit_pos++) {
-			if (!(cpu_mask[mask_pos] & (1 << bit_pos)))
-				continue;
-			cpu = mask_pos * 8 + bit_pos;
-			if (cpu_online(cpu)) {
-				err = cpu_down(cpu);
-				if (err)
-					goto kfree_config_out;
-				cpu_set(cpu, offlined_cpus);
-			}
+	for_each_cell_cpu(cpu, config) {
+		if (cpu_online(cpu)) {
+			err = cpu_down(cpu);
+			if (err)
+				goto kfree_config_out;
+			cpu_set(cpu, offlined_cpus);
 		}
+	}
 
 	ram = ((void *)config) + sizeof(struct jailhouse_cell_desc) +
 		config->cpu_set_size;
