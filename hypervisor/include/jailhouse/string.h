@@ -12,3 +12,5 @@
 
 void *memcpy(void *d, const void *s, unsigned long n);
 void *memset(void *s, int c, unsigned long n);
+
+int strcmp(const char *s1, const char *s2);
