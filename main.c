@@ -295,15 +295,6 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	for_each_cell_cpu(cpu, config) {
-		if (cpu_online(cpu)) {
-			err = cpu_down(cpu);
-			if (err)
-				goto kfree_config_out;
-			cpu_set(cpu, offlined_cpus);
-		}
-	}
-
 	ram = ((void *)config) + sizeof(struct jailhouse_cell_desc) +
 		config->cpu_set_size;
 	if (config->num_memory_regions < 1 || ram->size < 1024 * 1024 ||
@@ -338,17 +329,32 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
+	for_each_cell_cpu(cpu, config)
+		if (cpu_online(cpu)) {
+			err = cpu_down(cpu);
+			if (err)
+				goto cpu_online_out;
+			cpu_set(cpu, offlined_cpus);
+		}
+
 	err = jailhouse_call1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
 	if (err)
-		goto unlock_out;
+		goto cpu_online_out;
 
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
+
+cpu_online_out:
+	if (err)
+		for_each_cell_cpu(cpu, config)
+			if (!cpu_online(cpu) && cpu_up(cpu) == 0)
+				cpu_clear(cpu, offlined_cpus);
 
 unlock_out:
 	mutex_unlock(&lock);
 
 iounmap_out:
 	iounmap((__force void __iomem *)cell_mem);
+
 kfree_config_out:
 	kfree(config);
 
