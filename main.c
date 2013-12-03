@@ -328,7 +328,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 
 	if (mutex_lock_interruptible(&lock) != 0) {
 		err = -EINTR;
-		goto kfree_config_out;
+		goto iounmap_out;
 	}
 
 	if (!enabled) {
