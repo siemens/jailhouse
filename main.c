@@ -314,6 +314,8 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 
 	cell_mem = jailhouse_ioremap(ram->phys_start, ram->size);
 	if (!cell_mem) {
+		pr_err("jailhouse: Unable to map RAM reserved for cell "
+		       "at %08lx\n", (unsigned long)ram->phys_start);
 		err = -EBUSY;
 		goto kfree_config_out;
 	}
