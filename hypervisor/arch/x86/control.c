@@ -13,15 +13,14 @@
 #include <jailhouse/control.h>
 #include <asm/vmx.h>
 
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell,
-		     struct jailhouse_cell_desc *config)
+int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell)
 {
 	unsigned int cpu;
 
-	vmx_cell_shrink(cpu_data->cell, config);
+	vmx_cell_shrink(cpu_data->cell, new_cell->config);
 
 	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id)
 		per_cpu(cpu)->flush_caches = true;
 
-	return vmx_cell_init(new_cell, config);
+	return vmx_cell_init(new_cell);
 }

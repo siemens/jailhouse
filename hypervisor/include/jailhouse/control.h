@@ -32,8 +32,7 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 	    )
 
 int check_mem_regions(struct jailhouse_cell_desc *config);
-int cell_init(struct cell *cell, struct jailhouse_cell_desc *config,
-	      bool copy_cpu_set);
+int cell_init(struct cell *cell, bool copy_cpu_set);
 
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address);
 int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address);
@@ -45,5 +44,4 @@ void arch_resume_cpu(unsigned int cpu_id);
 void arch_reset_cpu(unsigned int cpu_id);
 void arch_shutdown_cpu(unsigned int cpu_id);
 
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell,
-		     struct jailhouse_cell_desc *config);
+int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell);

@@ -160,8 +160,9 @@ void vmx_init(void)
 	msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_ICR/8] = 0x01;
 }
 
-int vmx_cell_init(struct cell *cell, struct jailhouse_cell_desc *config)
+int vmx_cell_init(struct cell *cell)
 {
+	struct jailhouse_cell_desc *config = cell->config;
 	struct jailhouse_memory *mem;
 	u32 page_flags, table_flags;
 	u32 pio_bitmap_size, size;

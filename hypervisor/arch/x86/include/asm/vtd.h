@@ -86,5 +86,5 @@ struct vtd_entry {
 #define VTD_PHMLIMIT_REG		0x78
 
 int vtd_init(void);
-int vtd_cell_init(struct cell *cell, struct jailhouse_cell_desc *config);
+int vtd_cell_init(struct cell *cell);
 void vtd_shutdown(void);

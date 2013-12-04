@@ -63,6 +63,8 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
+	linux_cell.config = &system_config->system;
+
 	if (system_config->config_memory.size > 0) {
 		size = PAGE_ALIGN(system_config->config_memory.size);
 
@@ -85,11 +87,11 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
-	error = arch_init_early(&linux_cell, &system_config->system);
+	error = arch_init_early(&linux_cell);
 	if (error)
 		return;
 
-	error = cell_init(&linux_cell, &system_config->system, false);
+	error = cell_init(&linux_cell, false);
 	if (error)
 		return;
 
@@ -128,7 +130,7 @@ failed:
 
 static void init_late(void)
 {
-	error = arch_init_late(&linux_cell, &system_config->system);
+	error = arch_init_late(&linux_cell);
 	if (error)
 		return;
 

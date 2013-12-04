@@ -127,8 +127,9 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	return true;
 }
 
-int vtd_cell_init(struct cell *cell, struct jailhouse_cell_desc *config)
+int vtd_cell_init(struct cell *cell)
 {
+	struct jailhouse_cell_desc *config = cell->config;
 	struct jailhouse_pci_device *dev;
 	void *reg_base = dmar_reg_base;
 	struct jailhouse_memory *mem;

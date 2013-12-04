@@ -12,8 +12,7 @@
 
 #include <jailhouse/entry.h>
 
-int arch_init_early(struct cell *linux_cell,
-		    struct jailhouse_cell_desc *config)
+int arch_init_early(struct cell *linux_cell)
 {
 	return -ENOSYS;
 }
@@ -23,8 +22,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	return -ENOSYS;
 }
 
-int arch_init_late(struct cell *linux_cell,
-		   struct jailhouse_cell_desc *config)
+int arch_init_late(struct cell *linux_cell)
 {
 	return -ENOSYS;
 }
@@ -49,7 +47,7 @@ void arch_suspend_cpu(unsigned int cpu_id) {}
 void arch_resume_cpu(unsigned int cpu_id) {}
 void arch_reset_cpu(unsigned int cpu_id) {}
 void arch_shutdown_cpu(unsigned int cpu_id) {}
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell,
-		     struct jailhouse_cell_desc *config) { return -ENOSYS; }
+int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell)
+{ return -ENOSYS; }
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
 void arch_dbg_write(const char *msg) {}

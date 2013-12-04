@@ -41,8 +41,7 @@ extern u8 nmi_entry[];
 
 static u32 idt[NUM_IDT_DESC * 4];
 
-int arch_init_early(struct cell *linux_cell,
-		    struct jailhouse_cell_desc *config)
+int arch_init_early(struct cell *linux_cell)
 {
 	unsigned long entry;
 	unsigned int vector;
@@ -70,7 +69,7 @@ int arch_init_early(struct cell *linux_cell,
 
 	vmx_init();
 
-	err = vmx_cell_init(linux_cell, config);
+	err = vmx_cell_init(linux_cell);
 	if (err)
 		return err;
 
@@ -202,8 +201,7 @@ error_out:
 	return err;
 }
 
-int arch_init_late(struct cell *linux_cell,
-		   struct jailhouse_cell_desc *config)
+int arch_init_late(struct cell *linux_cell)
 {
 	int err;
 
@@ -211,7 +209,7 @@ int arch_init_late(struct cell *linux_cell,
 	if (err)
 		return err;
 
-	err = vtd_cell_init(linux_cell, config);
+	err = vtd_cell_init(linux_cell);
 	if (err)
 		return err;
 

@@ -19,8 +19,9 @@
 #include <jailhouse/cell-config.h>
 
 struct cell {
-	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
 	unsigned int id;
+	unsigned int data_pages;
+	struct jailhouse_cell_desc *config;
 
 	struct cpu_set *cpu_set;
 	struct cpu_set small_cpu_set;

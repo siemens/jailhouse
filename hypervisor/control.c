@@ -38,7 +38,7 @@ static void cell_suspend(struct per_cpu *cpu_data)
 
 	for_each_cpu_except(cpu, cell->cpu_set, cpu_data->cpu_id)
 		arch_suspend_cpu(cpu);
-	printk("Suspended cell \"%s\"\n", cell->name);
+	printk("Suspended cell \"%s\"\n", cell->config->name);
 }
 
 static void cell_resume(struct per_cpu *cpu_data)
@@ -64,19 +64,17 @@ retry:
 	return id;
 }
 
-int cell_init(struct cell *cell, struct jailhouse_cell_desc *config,
-	      bool copy_cpu_set)
+int cell_init(struct cell *cell, bool copy_cpu_set)
 {
 	unsigned long *config_cpu_set =
-		(unsigned long *)(((void *)config) +
+		(unsigned long *)(((void *)cell->config) +
 				  sizeof(struct jailhouse_cell_desc));
-	unsigned long cpu_set_size = config->cpu_set_size;
+	unsigned long cpu_set_size = cell->config->cpu_set_size;
 	struct jailhouse_memory *config_ram =
 		(struct jailhouse_memory *)(((void *)config_cpu_set) +
 					    cpu_set_size);
 	struct cpu_set *cpu_set;
 
-	memcpy(cell->name, config->name, sizeof(cell->name));
 	cell->id = get_free_cell_id();
 
 	if (cpu_set_size > PAGE_SIZE)
@@ -112,7 +110,7 @@ static struct cell *cell_find(const char *name)
 	struct cell *cell;
 
 	for (cell = &linux_cell; cell; cell = cell->next)
-		if (strcmp(cell->name, name) == 0)
+		if (strcmp(cell->config->name, name) == 0)
 			break;
 	return cell;
 }
@@ -143,7 +141,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long mapping_addr = FOREIGN_MAPPING_BASE +
 		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
-	unsigned long header_size, total_size;
+	unsigned long cfg_header_size, cfg_total_size;
 	struct jailhouse_cell_desc *cfg;
 	struct cpu_set *shrinking_set;
 	unsigned int cell_pages, cpu;
@@ -152,19 +150,20 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	cell_suspend(cpu_data);
 
-	header_size = (config_address & ~PAGE_MASK) +
+	cfg_header_size = (config_address & ~PAGE_MASK) +
 		sizeof(struct jailhouse_cell_desc);
 
 	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
-			      header_size, mapping_addr, PAGE_READONLY_FLAGS,
-			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+			      cfg_header_size, mapping_addr,
+			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
+			      PAGE_DIR_LEVELS);
 	if (err)
 		goto resume_out;
 
 	cfg = (struct jailhouse_cell_desc *)(mapping_addr +
 					     (config_address & ~PAGE_MASK));
-	total_size = jailhouse_cell_config_size(cfg);
-	if (total_size > NUM_FOREIGN_PAGES * PAGE_SIZE) {
+	cfg_total_size = jailhouse_cell_config_size(cfg);
+	if (cfg_total_size > NUM_FOREIGN_PAGES * PAGE_SIZE) {
 		err = -E2BIG;
 		goto resume_out;
 	}
@@ -175,8 +174,9 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	}
 
 	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
-			      total_size, mapping_addr, PAGE_READONLY_FLAGS,
-			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+			      cfg_total_size, mapping_addr,
+			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
+			      PAGE_DIR_LEVELS);
 	if (err)
 		goto resume_out;
 
@@ -184,14 +184,18 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto resume_out;
 
-	cell_pages = PAGE_ALIGN(sizeof(*cell)) / PAGE_SIZE;
+	cell_pages = PAGE_ALIGN(sizeof(*cell) + cfg_total_size) / PAGE_SIZE;
 	cell = page_alloc(&mem_pool, cell_pages);
 	if (!cell) {
 		err = -ENOMEM;
 		goto resume_out;
 	}
 
-	err = cell_init(cell, cfg, true);
+	cell->data_pages = cell_pages;
+	cell->config = ((void *)cell) + sizeof(*cell);
+	memcpy(cell->config, cfg, cfg_total_size);
+
+	err = cell_init(cell, true);
 	if (err)
 		goto err_free_cell;
 
@@ -218,7 +222,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	for_each_cpu(cpu, cell->cpu_set)
 		clear_bit(cpu, shrinking_set->bitmap);
 
-	err = arch_cell_create(cpu_data, cell, cfg);
+	err = arch_cell_create(cpu_data, cell);
 	if (err)
 		goto err_restore_cpu_set;
 
@@ -232,7 +236,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	for_each_cpu(cpu, cell->cpu_set)
 		per_cpu(cpu)->cell = cell;
 
-	printk("Created cell \"%s\"\n", cell->name);
+	printk("Created cell \"%s\"\n", cell->config->name);
 
 	page_map_dump_stats("after cell creation");
 
@@ -276,7 +280,7 @@ int shutdown(struct per_cpu *cpu_data)
 		printk("Shutting down hypervisor\n");
 
 		while (cell) {
-			printk(" Closing cell \"%s\"\n", cell->name);
+			printk(" Closing cell \"%s\"\n", cell->config->name);
 
 			for_each_cpu(cpu, cell->cpu_set) {
 				printk("  Releasing CPU %d\n", cpu);
@@ -285,7 +289,8 @@ int shutdown(struct per_cpu *cpu_data)
 			cell = cell->next;
 		}
 
-		printk(" Closing Linux cell \"%s\"\n", linux_cell.name);
+		printk(" Closing Linux cell \"%s\"\n",
+		       linux_cell.config->name);
 	}
 	printk("  Releasing CPU %d\n", this_cpu);
 
