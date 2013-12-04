@@ -140,6 +140,16 @@ int apic_init(void)
 	return 0;
 }
 
+static void apic_send_nmi_ipi(struct per_cpu *target_data)
+{
+	apic_ops.send_ipi(target_data->apic_id,
+			  APIC_ICR_DLVR_NMI |
+			  APIC_ICR_DEST_PHYSICAL |
+			  APIC_ICR_LV_ASSERT |
+			  APIC_ICR_TM_EDGE |
+			  APIC_ICR_SH_NONE);
+}
+
 void arch_suspend_cpu(unsigned int cpu_id)
 {
 	struct per_cpu *target_data = per_cpu(cpu_id);
@@ -153,12 +163,7 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	spin_unlock(&wait_lock);
 
 	if (!target_stopped) {
-		apic_ops.send_ipi(target_data->apic_id,
-				  APIC_ICR_DLVR_NMI |
-				  APIC_ICR_DEST_PHYSICAL |
-				  APIC_ICR_LV_ASSERT |
-				  APIC_ICR_TM_EDGE |
-				  APIC_ICR_SH_NONE);
+		apic_send_nmi_ipi(target_data);
 
 		while (!target_data->cpu_stopped)
 			cpu_relax();
@@ -295,12 +300,7 @@ static void apic_deliver_ipi(struct per_cpu *cpu_data,
 
 		spin_unlock(&wait_lock);
 
-		apic_ops.send_ipi(target_data->apic_id,
-				  APIC_ICR_DLVR_NMI |
-				  APIC_ICR_DEST_PHYSICAL |
-				  APIC_ICR_LV_ASSERT |
-				  APIC_ICR_TM_EDGE |
-				  APIC_ICR_SH_NONE);
+		apic_send_nmi_ipi(target_data);
 		return;
 	case APIC_ICR_DLVR_SIPI:
 		target_data = per_cpu(target_cpu_id);
