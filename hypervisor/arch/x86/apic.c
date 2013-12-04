@@ -181,6 +181,7 @@ void arch_resume_cpu(unsigned int cpu_id)
 /* target cpu has to be stopped */
 void arch_reset_cpu(unsigned int cpu_id)
 {
+	per_cpu(cpu_id)->wait_for_sipi = true;
 	per_cpu(cpu_id)->sipi_vector = APIC_BSP_PSEUDO_SIPI;
 
 	arch_resume_cpu(cpu_id);
@@ -206,20 +207,24 @@ void apic_nmi_handler(struct per_cpu *cpu_data)
 
 int apic_handle_events(struct per_cpu *cpu_data)
 {
+	int sipi_vector = -1;
+
 	spin_lock(&wait_lock);
 
 	do {
 		if (cpu_data->init_signaled) {
 			cpu_data->init_signaled = false;
 			cpu_data->wait_for_sipi = true;
-		} else
-			cpu_data->sipi_vector = -1;
+			sipi_vector = -1;
+			vmx_cpu_park();
+			break;
+		}
 
 		cpu_data->cpu_stopped = true;
 
 		spin_unlock(&wait_lock);
 
-		while (cpu_data->wait_for_sipi || cpu_data->stop_cpu)
+		while (cpu_data->stop_cpu)
 			cpu_relax();
 
 		if (cpu_data->shutdown_cpu) {
@@ -232,6 +237,11 @@ int apic_handle_events(struct per_cpu *cpu_data)
 		spin_lock(&wait_lock);
 
 		cpu_data->cpu_stopped = false;
+
+		if (cpu_data->wait_for_sipi) {
+			cpu_data->wait_for_sipi = false;
+			sipi_vector = cpu_data->sipi_vector;
+		}
 	} while (cpu_data->init_signaled);
 
 	if (cpu_data->flush_caches) {
@@ -242,7 +252,7 @@ int apic_handle_events(struct per_cpu *cpu_data)
 
 	spin_unlock(&wait_lock);
 
-	return cpu_data->sipi_vector;
+	return sipi_vector;
 }
 
 static void apic_validate_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
@@ -276,6 +286,7 @@ static void apic_deliver_ipi(struct per_cpu *cpu_data,
 			     u32 orig_icr_hi, u32 icr_lo)
 {
 	struct per_cpu *target_data;
+	bool send_nmi;
 
 	if (target_cpu_id == APIC_INVALID_ID ||
 	    !test_bit(target_cpu_id, cpu_data->cell->cpu_set->bitmap)) {
@@ -293,27 +304,26 @@ static void apic_deliver_ipi(struct per_cpu *cpu_data,
 		printk("Ignoring NMI IPI\n");
 		return;
 	case APIC_ICR_DLVR_INIT:
-		spin_lock(&wait_lock);
-
-		if (!target_data->wait_for_sipi)
-			target_data->init_signaled = true;
-
-		spin_unlock(&wait_lock);
-
-		apic_send_nmi_ipi(target_data);
-		return;
 	case APIC_ICR_DLVR_SIPI:
-		target_data = per_cpu(target_cpu_id);
+		send_nmi = false;
 
 		spin_lock(&wait_lock);
 
-		if (target_data->wait_for_sipi) {
-			target_data->wait_for_sipi = false;
+		if ((icr_lo & APIC_ICR_DLVR_MASK) == APIC_ICR_DLVR_INIT) {
+			if (!target_data->wait_for_sipi) {
+				target_data->init_signaled = true;
+				send_nmi = true;
+			}
+		} else if (target_data->wait_for_sipi) {
 			target_data->sipi_vector =
 				icr_lo & APIC_ICR_VECTOR_MASK;
+			send_nmi = true;
 		}
 
 		spin_unlock(&wait_lock);
+
+		if (send_nmi)
+			apic_send_nmi_ipi(target_data);
 		return;
 	}
 

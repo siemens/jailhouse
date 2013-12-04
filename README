@@ -82,12 +82,12 @@ Demonstration in QEMU/KVM
 
 The included system configuration qemu-vm.c can be used to run Jailhouse in
 QEMU/KVM virtual machine on Intel x86 hosts. Currently it requires kvm.git,
-next branch on the host (in order to get support for nested unrestricted guest
-mode). 3.13 is expected to include all necessary feature for this test. You
-also need a Linux guest image with a recent kernel (tested with >= 3.9) and
-the ability to build a module for this kernel. Make sure the kvm-intel module
-was loaded with nested=1 to enable nested VMX support. Start the virtual
-machine as follows:
+next branch on the host (in order to get support for guest activity state HLT).
+3.14 is expected to include all necessary features for this setup. You also
+need a Linux guest image with a recent kernel (tested with >= 3.9) and the
+ability to build a module for this kernel. Make sure the kvm-intel module was
+loaded with nested=1 to enable nested VMX support. Start the virtual machine as
+follows:
 
     qemu-system-x86_64 LinuxInstallation.img -m 1G -enable-kvm -serial stdio \
         -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic \

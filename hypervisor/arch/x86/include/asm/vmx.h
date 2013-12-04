@@ -178,6 +178,7 @@ enum vmcs_field {
 #define GUEST_SEG_BASE			(GUEST_ES_BASE - GUEST_ES_SELECTOR)
 
 #define GUEST_ACTIVITY_ACTIVE			0
+#define GUEST_ACTIVITY_HLT			1
 
 #define VMX_MSR_BITMAP_0000_READ		0
 #define VMX_MSR_BITMAP_C000_READ		1
@@ -201,6 +202,8 @@ enum vmcs_field {
 
 #define VM_ENTRY_IA32E_MODE			0x00000200
 #define VM_ENTRY_LOAD_IA32_EFER			0x00008000
+
+#define VMX_MISC_ACTIVITY_HLT			0x00000040
 
 #define INTR_INFO_UNBLOCK_NMI			0x1000
 
@@ -292,3 +295,4 @@ void vmx_entry_failure(struct per_cpu *cpu_data);
 void vmx_invept(void);
 
 void vmx_schedule_vmexit(struct per_cpu *cpu_data);
+void vmx_cpu_park(void);

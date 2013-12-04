@@ -519,6 +519,10 @@ int vmx_cpu_init(struct per_cpu *cpu_data)
 	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
 		return -EIO;
 
+	/* require activity state HLT */
+	if (!(read_msr(MSR_IA32_VMX_MISC) & VMX_MISC_ACTIVITY_HLT))
+		return -EIO;
+
 	revision_id = (u32)vmx_basic;
 	cpu_data->vmxon_region.revision_id = revision_id;
 	cpu_data->vmxon_region.shadow_indicator = 0;
@@ -754,6 +758,12 @@ void vmx_schedule_vmexit(struct per_cpu *cpu_data)
 	pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
 	pin_based_ctrl |= PIN_BASED_VMX_PREEMPTION_TIMER;
 	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
+}
+
+void vmx_cpu_park(void)
+{
+	vmcs_write64(GUEST_RFLAGS, 0x02);
+	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
 }
 
 static void vmx_disable_preemption_timer(void)
