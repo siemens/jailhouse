@@ -40,6 +40,6 @@ struct cell {
 	struct cell *next;
 };
 
-extern struct cell *cell_list;
+extern struct cell linux_cell;
 
 #endif /* !_JAILHOUSE_ASM_CELL_H */

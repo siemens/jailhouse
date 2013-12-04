@@ -27,7 +27,7 @@ static DEFINE_SPINLOCK(init_lock);
 static unsigned int master_cpu_id = -1;
 static volatile unsigned int initialized_cpus;
 static volatile int error;
-static struct cell linux_cell;
+struct cell linux_cell;
 
 static int register_linux_cpu(struct per_cpu *cpu_data)
 {
@@ -92,8 +92,6 @@ static void init_early(unsigned int cpu_id)
 	error = cell_init(&linux_cell, &system_config->system, false);
 	if (error)
 		return;
-
-	cell_list = &linux_cell;
 
 	page_map_dump_stats("after early setup");
 	printk("Initializing first processor:\n");

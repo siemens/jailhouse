@@ -19,7 +19,6 @@
 #include <asm/spinlock.h>
 
 struct jailhouse_system *system_config;
-struct cell *cell_list;
 
 static DEFINE_SPINLOCK(shutdown_lock);
 
@@ -56,7 +55,7 @@ static unsigned int get_free_cell_id(void)
 	struct cell *cell;
 
 retry:
-	for (cell = cell_list; cell; cell = cell->next)
+	for (cell = &linux_cell; cell; cell = cell->next)
 		if (cell->id == id) {
 			id++;
 			goto retry;
@@ -210,7 +209,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_restore_cpu_set;
 
-	last = cell_list;
+	last = &linux_cell;
 	while (last->next)
 		last = last->next;
 	last->next = cell;
@@ -250,7 +249,7 @@ unmap_out:
 int shutdown(struct per_cpu *cpu_data)
 {
 	static bool shutdown_started;
-	struct cell *cell = cell_list->next;
+	struct cell *cell = linux_cell.next;
 	unsigned int this_cpu = cpu_data->cpu_id;
 	unsigned int cpu;
 
@@ -273,7 +272,7 @@ int shutdown(struct per_cpu *cpu_data)
 			cell = cell->next;
 		}
 
-		printk(" Closing Linux cell \"%s\"\n", cell_list->name);
+		printk(" Closing Linux cell \"%s\"\n", linux_cell.name);
 	}
 	printk("  Releasing CPU %d\n", this_cpu);
 
