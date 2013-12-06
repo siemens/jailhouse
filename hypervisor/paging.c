@@ -361,6 +361,15 @@ int paging_init(void)
 			goto error_nomem;
 	}
 
+	/* Make sure any remappings to the foreign regions can be performed
+	 * without allocations of page table pages. */
+	err = page_map_create(hv_page_table, 0,
+			      remap_pool.used_pages * PAGE_SIZE,
+			      FOREIGN_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
+			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+	if (err)
+		goto error_nomem;
+
 	return 0;
 
 error_nomem:
