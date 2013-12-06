@@ -56,7 +56,6 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 				unsigned long page_table_paddr,
 				unsigned long page_table_offset,
 				unsigned long virt, unsigned long flags);
-void page_map_release_foreign_page(unsigned int mapping_region);
 
 int paging_init(void);
 void page_map_dump_stats(const char *when);

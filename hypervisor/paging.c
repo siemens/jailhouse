@@ -255,18 +255,18 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
-		goto error_release;
+		return NULL;
 
 #if PAGE_DIR_LEVELS == 4
 	pgd = pgd_offset((pgd_t *)page_virt, virt);
 	if (!pgd_valid(pgd))
-		goto error_release;
+		return NULL;
 	phys = (unsigned long)pud4l_offset(pgd, page_table_offset, 0);
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
-		goto error_release;
+		return NULL;
 
 	pud = pud4l_offset((pgd_t *)&page_virt, page_table_offset, virt);
 #elif PAGE_DIR_LEVELS == 3
@@ -275,17 +275,17 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 # error Unsupported paging level
 #endif
 	if (!pud_valid(pud))
-		goto error_release;
+		return NULL;
 	phys = (unsigned long)pmd_offset(pud, page_table_offset, 0);
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
-		goto error_release;
+		return NULL;
 
 	pmd = pmd_offset((pud_t *)&page_virt, page_table_offset, virt);
 	if (!pmd_valid(pmd))
-		goto error_release;
+		return NULL;
 	if (pmd_is_hugepage(pmd))
 		phys = phys_address_hugepage(pmd, virt);
 	else {
@@ -294,32 +294,20 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 				      page_virt, PAGE_READONLY_FLAGS,
 				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
 		if (err)
-			goto error_release;
+			return NULL;
 
 		pte = pte_offset((pmd_t *)&page_virt, page_table_offset, virt);
 		if (!pte_valid(pte))
-			goto error_release;
+			return NULL;
 		phys = phys_address(pte, 0) + page_table_offset;
 	}
 
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      flags, PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
 	if (err)
-		goto error_release;
+		return NULL;
 
 	return (void *)page_virt;
-
-error_release:
-	page_map_release_foreign_page(mapping_region);
-	return NULL;
-}
-
-void page_map_release_foreign_page(unsigned int mapping_region)
-{
-	page_map_destroy(hv_page_table,
-			 FOREIGN_MAPPING_BASE +
-			 mapping_region * PAGE_SIZE * NUM_FOREIGN_PAGES,
-			 NUM_FOREIGN_PAGES * PAGE_SIZE, PAGE_DIR_LEVELS);
 }
 
 int paging_init(void)

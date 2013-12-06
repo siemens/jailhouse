@@ -127,9 +127,7 @@ restart:
 	if (does_write != is_write)
 		goto error_inconsitent;
 
-unmap_out:
-	page_map_release_foreign_page(cpu_data->cpu_id);
-
+unlock_out:
 	spin_unlock(&mmio_lock);
 	return access;
 
@@ -146,5 +144,5 @@ error_inconsitent:
 		     is_write ? "write" : "read");
 error:
 	access.inst_len = 0;
-	goto unmap_out;
+	goto unlock_out;
 }
