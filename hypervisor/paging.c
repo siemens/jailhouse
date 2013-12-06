@@ -314,7 +314,6 @@ int paging_init(void)
 {
 	unsigned long per_cpu_pages, config_pages, bitmap_pages;
 	unsigned long n;
-	u8 *addr;
 	int err;
 
 	mem_pool.pages =
@@ -351,15 +350,12 @@ int paging_init(void)
 		goto error_nomem;
 
 	/* Replicate hypervisor mapping of Linux */
-	for (addr = __start; addr < __start + hypervisor_header.size;
-	     addr += PAGE_SIZE) {
-		err = page_map_create(hv_page_table, page_map_hvirt2phys(addr),
-				      PAGE_SIZE, (unsigned long)addr,
-				      PAGE_DEFAULT_FLAGS, PAGE_DEFAULT_FLAGS,
-				      PAGE_DIR_LEVELS);
-		if (err)
-			goto error_nomem;
-	}
+	err = page_map_create(hv_page_table, page_map_hvirt2phys(__start),
+			      hypervisor_header.size, (unsigned long)__start,
+			      PAGE_DEFAULT_FLAGS, PAGE_DEFAULT_FLAGS,
+			      PAGE_DIR_LEVELS);
+	if (err)
+		goto error_nomem;
 
 	/* Make sure any remappings to the foreign regions can be performed
 	 * without allocations of page table pages. */
