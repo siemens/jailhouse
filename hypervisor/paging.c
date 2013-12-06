@@ -238,7 +238,7 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 				unsigned long page_table_offset,
 				unsigned long virt, unsigned long flags)
 {
-	unsigned long page_virt, pt_virt, phys;
+	unsigned long page_virt, phys;
 #if PAGE_DIR_LEVELS == 4
 	pgd_t *pgd;
 #endif
@@ -250,57 +250,53 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 	page_virt = FOREIGN_MAPPING_BASE +
 		mapping_region * PAGE_SIZE * NUM_FOREIGN_PAGES;
 
-	pt_virt = page_virt + PAGE_SIZE;
 	phys = page_table_paddr + page_table_offset;
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, pt_virt,
+	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
 		goto error_release;
 
 #if PAGE_DIR_LEVELS == 4
-	pgd = pgd_offset((pgd_t *)pt_virt, virt);
+	pgd = pgd_offset((pgd_t *)page_virt, virt);
 	if (!pgd_valid(pgd))
 		goto error_release;
-	pt_virt += PAGE_SIZE;
 	phys = (unsigned long)pud4l_offset(pgd, page_table_offset, 0);
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, pt_virt,
+	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
 		goto error_release;
 
-	pud = pud4l_offset((pgd_t *)&pt_virt, page_table_offset, virt);
+	pud = pud4l_offset((pgd_t *)&page_virt, page_table_offset, virt);
 #elif PAGE_DIR_LEVELS == 3
-	pud = pud3l_offset((pgd_t *)pt_virt, virt);
+	pud = pud3l_offset((pgd_t *)page_virt, virt);
 #else
 # error Unsupported paging level
 #endif
 	if (!pud_valid(pud))
 		goto error_release;
-	pt_virt += PAGE_SIZE;
 	phys = (unsigned long)pmd_offset(pud, page_table_offset, 0);
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, pt_virt,
+	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
 		goto error_release;
 
-	pmd = pmd_offset((pud_t *)&pt_virt, page_table_offset, virt);
+	pmd = pmd_offset((pud_t *)&page_virt, page_table_offset, virt);
 	if (!pmd_valid(pmd))
 		goto error_release;
 	if (pmd_is_hugepage(pmd))
 		phys = phys_address_hugepage(pmd, virt);
 	else {
-		pt_virt += PAGE_SIZE;
 		phys = (unsigned long)pte_offset(pmd, page_table_offset, 0);
-		err = page_map_create(hv_page_table, phys, PAGE_SIZE, pt_virt,
-				      PAGE_READONLY_FLAGS,
+		err = page_map_create(hv_page_table, phys, PAGE_SIZE,
+				      page_virt, PAGE_READONLY_FLAGS,
 				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
 		if (err)
 			goto error_release;
 
-		pte = pte_offset((pmd_t *)&pt_virt, page_table_offset, virt);
+		pte = pte_offset((pmd_t *)&page_virt, page_table_offset, virt);
 		if (!pte_valid(pte))
 			goto error_release;
 		phys = phys_address(pte, 0) + page_table_offset;
