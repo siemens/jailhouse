@@ -40,7 +40,7 @@ static u8 *map_code_page(struct per_cpu *cpu_data, unsigned long pc,
 		return current_page;
 	return page_map_get_foreign_page(cpu_data->cpu_id, page_table_addr,
 					 cpu_data->cell->page_offset, pc,
-					 PAGE_DEFAULT_FLAGS);
+					 PAGE_READONLY_FLAGS);
 }
 
 struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
