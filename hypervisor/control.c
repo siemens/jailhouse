@@ -131,6 +131,8 @@ int check_mem_regions(struct jailhouse_cell_desc *config)
 
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
+	unsigned long mapping_addr = FOREIGN_MAPPING_BASE +
+		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
 	unsigned long header_size, total_size;
 	struct jailhouse_cell_desc *cfg;
 	struct cpu_set *shrinking_set;
@@ -144,26 +146,22 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		sizeof(struct jailhouse_cell_desc);
 
 	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
-			      header_size, FOREIGN_MAPPING_BASE,
-			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS);
+			      header_size, mapping_addr, PAGE_READONLY_FLAGS,
+			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
 	if (err)
 		goto resume_out;
 
-	cfg = (struct jailhouse_cell_desc *)(FOREIGN_MAPPING_BASE +
+	cfg = (struct jailhouse_cell_desc *)(mapping_addr +
 					     (config_address & ~PAGE_MASK));
 	total_size = jailhouse_cell_config_size(cfg);
-	if (total_size >
-	    hypervisor_header.possible_cpus * NUM_FOREIGN_PAGES * PAGE_SIZE) {
-		total_size = PAGE_SIZE;
+	if (total_size > NUM_FOREIGN_PAGES * PAGE_SIZE) {
 		err = -E2BIG;
 		goto resume_out;
 	}
 
 	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
-			      total_size, FOREIGN_MAPPING_BASE,
-			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS);
+			      total_size, mapping_addr, PAGE_READONLY_FLAGS,
+			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
 	if (err)
 		goto resume_out;
 
