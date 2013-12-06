@@ -156,7 +156,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (total_size >
 	    hypervisor_header.possible_cpus * NUM_FOREIGN_PAGES * PAGE_SIZE) {
 		total_size = PAGE_SIZE;
-		err = -ENOMEM;
+		err = -E2BIG;
 		goto resume_out;
 	}
 

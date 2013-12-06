@@ -19,6 +19,7 @@
 #include <jailhouse/cell-config.h>
 
 #define EIO		5
+#define E2BIG		7
 #define ENOMEM		12
 #define EBUSY		16
 #define ENODEV		19
