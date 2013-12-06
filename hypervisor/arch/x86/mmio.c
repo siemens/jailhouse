@@ -30,16 +30,27 @@ struct sib {
 
 static DEFINE_SPINLOCK(mmio_lock);
 
+/* If current_page is non-NULL, pc must have been increased exactly by 1. */
+static u8 *map_code_page(struct per_cpu *cpu_data, unsigned long pc,
+			 unsigned long page_table_addr, u8 *current_page)
+{
+	/* If page offset is 0, previous pc was pointing to a different page,
+	 * and we have to map a new one now. */
+	if (current_page && ((pc & ~PAGE_MASK) != 0))
+		return current_page;
+	return page_map_get_foreign_page(cpu_data->cpu_id, page_table_addr,
+					 cpu_data->cell->page_offset, pc,
+					 PAGE_DEFAULT_FLAGS);
+}
+
 struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 			      unsigned long page_table_addr, bool is_write)
 {
 	struct mmio_access access = { .inst_len = 0 };
-	unsigned int cpu_id = cpu_data->cpu_id;
-	struct cell *cell = cpu_data->cell;
 	bool has_regr, has_modrm, does_write;
 	struct modrm modrm;
 	struct sib sib;
-	u8 *page;
+	u8 *page = NULL;
 
 	spin_lock(&mmio_lock);
 
@@ -47,9 +58,7 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 	has_regr = false;
 
 restart:
-	page = page_map_get_foreign_page(cpu_id, page_table_addr,
-					 cell->page_offset, pc,
-					 PAGE_DEFAULT_FLAGS);
+	page = map_code_page(cpu_data, pc, page_table_addr, page);
 	if (!page)
 		goto error_nopage;
 
@@ -80,9 +89,7 @@ restart:
 
 	if (has_modrm) {
 		pc++;
-		page = page_map_get_foreign_page(cpu_id, page_table_addr,
-						 cell->page_offset, pc,
-						 PAGE_DEFAULT_FLAGS);
+		page = map_code_page(cpu_data, pc, page_table_addr, page);
 		if (!page)
 			goto error_nopage;
 
@@ -93,10 +100,8 @@ restart:
 				goto error_unsupported;
 
 			pc++;
-			page = page_map_get_foreign_page(cpu_id,
-							 page_table_addr,
-							 cell->page_offset, pc,
-							 PAGE_DEFAULT_FLAGS);
+			page = map_code_page(cpu_data, pc, page_table_addr,
+					     page);
 			if (!page)
 				goto error_nopage;
 
@@ -123,7 +128,7 @@ restart:
 		goto error_inconsitent;
 
 unmap_out:
-	page_map_release_foreign_page(cpu_id);
+	page_map_release_foreign_page(cpu_data->cpu_id);
 
 	spin_unlock(&mmio_lock);
 	return access;
