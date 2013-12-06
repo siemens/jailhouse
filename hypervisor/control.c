@@ -157,7 +157,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	    hypervisor_header.possible_cpus * NUM_FOREIGN_PAGES * PAGE_SIZE) {
 		total_size = PAGE_SIZE;
 		err = -ENOMEM;
-		goto unmap_out;
+		goto resume_out;
 	}
 
 	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
@@ -165,17 +165,17 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS);
 	if (err)
-		goto unmap_out;
+		goto resume_out;
 
 	err = check_mem_regions(cfg);
 	if (err)
-		goto unmap_out;
+		goto resume_out;
 
 	cell_pages = PAGE_ALIGN(sizeof(*cell)) / PAGE_SIZE;
 	cell = page_alloc(&mem_pool, cell_pages);
 	if (!cell) {
 		err = -ENOMEM;
-		goto unmap_out;
+		goto resume_out;
 	}
 
 	err = cell_init(cell, cfg, true);
@@ -221,8 +221,6 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	printk("Created cell \"%s\"\n", cell->name);
 
-	page_map_destroy(hv_page_table, FOREIGN_MAPPING_BASE, total_size,
-			 PAGE_DIR_LEVELS);
 	page_map_dump_stats("after cell creation");
 
 	for_each_cpu(cpu, cell->cpu_set)
@@ -240,9 +238,6 @@ err_free_cpu_set:
 	destroy_cpu_set(cell);
 err_free_cell:
 	page_free(&mem_pool, cell, cell_pages);
-unmap_out:
-	page_map_destroy(hv_page_table, FOREIGN_MAPPING_BASE, total_size,
-			 PAGE_DIR_LEVELS);
 	goto resume_out;
 }
 
