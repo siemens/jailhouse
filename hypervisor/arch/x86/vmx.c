@@ -160,11 +160,28 @@ void vmx_init(void)
 	msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_ICR/8] = 0x01;
 }
 
+static int vmx_map_memory_region(struct cell *cell,
+				 struct jailhouse_memory *mem)
+{
+	u32 table_flags, page_flags = EPT_FLAG_WB_TYPE;
+
+	if (mem->access_flags & JAILHOUSE_MEM_READ)
+		page_flags |= EPT_FLAG_READ;
+	if (mem->access_flags & JAILHOUSE_MEM_WRITE)
+		page_flags |= EPT_FLAG_WRITE;
+	if (mem->access_flags & JAILHOUSE_MEM_EXECUTE)
+		page_flags |= EPT_FLAG_EXECUTE;
+	table_flags = page_flags & ~EPT_FLAG_WB_TYPE;
+
+	return page_map_create(cell->vmx.ept, mem->phys_start, mem->size,
+			       mem->virt_start, page_flags, table_flags,
+			       PAGE_DIR_LEVELS);
+}
+
 int vmx_cell_init(struct cell *cell)
 {
 	struct jailhouse_cell_desc *config = cell->config;
 	struct jailhouse_memory *mem;
-	u32 page_flags, table_flags;
 	u32 pio_bitmap_size, size;
 	u8 *pio_bitmap;
 	int n, err;
@@ -178,28 +195,17 @@ int vmx_cell_init(struct cell *cell)
 		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
-		page_flags = EPT_FLAG_WB_TYPE;
-		if (mem->access_flags & JAILHOUSE_MEM_READ)
-			page_flags |= EPT_FLAG_READ;
-		if (mem->access_flags & JAILHOUSE_MEM_WRITE)
-			page_flags |= EPT_FLAG_WRITE;
-		if (mem->access_flags & JAILHOUSE_MEM_EXECUTE)
-			page_flags |= EPT_FLAG_EXECUTE;
-		table_flags = page_flags & ~EPT_FLAG_WB_TYPE;
-
-		err = page_map_create(cell->vmx.ept, mem->phys_start,
-				      mem->size, mem->virt_start, page_flags,
-				      table_flags, PAGE_DIR_LEVELS);
+		err = vmx_map_memory_region(cell, mem);
 		if (err)
 			/* FIXME: release vmx.ept */
 			return err;
 	}
 
-	page_flags = EPT_FLAG_READ | EPT_FLAG_WRITE | EPT_FLAG_WB_TYPE;
-	table_flags = EPT_FLAG_READ | EPT_FLAG_WRITE;
 	err = page_map_create(cell->vmx.ept,
 			      page_map_hvirt2phys(apic_access_page),
-			      PAGE_SIZE, XAPIC_BASE, page_flags, table_flags,
+			      PAGE_SIZE, XAPIC_BASE,
+			      EPT_FLAG_READ|EPT_FLAG_WRITE|EPT_FLAG_WB_TYPE,
+			      EPT_FLAG_READ|EPT_FLAG_WRITE,
 			      PAGE_DIR_LEVELS);
 	if (err)
 		/* FIXME: release vmx.ept */
