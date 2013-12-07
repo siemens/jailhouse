@@ -487,7 +487,7 @@ int vmx_cpu_init(struct per_cpu *cpu_data)
 		return -EIO;
 
 	/* require VMCS memory access type == write back */
-	if (((vmx_basic >> 50) & 0xf) != 6)
+	if (((vmx_basic >> 50) & 0xf) != EPT_TYPE_WRITEBACK)
 		return -EIO;
 
 	if (vmx_basic & (1UL << 55))
