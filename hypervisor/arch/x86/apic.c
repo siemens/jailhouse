@@ -187,6 +187,16 @@ void arch_reset_cpu(unsigned int cpu_id)
 	arch_resume_cpu(cpu_id);
 }
 
+void arch_park_cpu(unsigned int cpu_id)
+{
+	per_cpu(cpu_id)->init_signaled = true;
+
+	/* make state change visible before signaling the CPU */
+	memory_barrier();
+
+	apic_send_nmi_ipi(per_cpu(cpu_id));
+}
+
 void arch_shutdown_cpu(unsigned int cpu_id)
 {
 	arch_suspend_cpu(cpu_id);

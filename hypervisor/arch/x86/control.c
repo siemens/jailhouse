@@ -27,3 +27,9 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 	flush_linux_cpu_caches(cpu_data);
 	return vmx_cell_init(cell);
 }
+
+void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
+{
+	vmx_cell_exit(cell);
+	flush_linux_cpu_caches(cpu_data);
+}

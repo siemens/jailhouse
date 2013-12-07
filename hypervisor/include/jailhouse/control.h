@@ -42,6 +42,8 @@ int shutdown(struct per_cpu *cpu_data);
 void arch_suspend_cpu(unsigned int cpu_id);
 void arch_resume_cpu(unsigned int cpu_id);
 void arch_reset_cpu(unsigned int cpu_id);
+void arch_park_cpu(unsigned int cpu_id);
 void arch_shutdown_cpu(unsigned int cpu_id);
 
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell);
+int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell);
+void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell);

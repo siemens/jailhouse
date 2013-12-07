@@ -256,6 +256,90 @@ void vmx_cell_shrink(struct cell *cell, struct jailhouse_cell_desc *config)
 	vmx_invept();
 }
 
+static bool address_in_region(unsigned long addr,
+			      struct jailhouse_memory *region)
+{
+	return addr >= region->phys_start &&
+	       addr < (region->phys_start + region->size);
+}
+
+static void vmx_remap_to_linux(struct jailhouse_memory *mem)
+{
+	struct jailhouse_memory *linux_mem, overlap;
+	int n, err;
+
+	linux_mem = (void *)linux_cell.config +
+		sizeof(struct jailhouse_cell_desc) +
+		linux_cell.config->cpu_set_size;
+
+	for (n = 0; n < linux_cell.config->num_memory_regions;
+	     n++, linux_mem++) {
+		if (address_in_region(mem->phys_start, linux_mem)) {
+			overlap.phys_start = mem->phys_start;
+			overlap.size = linux_mem->size -
+				(overlap.phys_start - linux_mem->phys_start);
+			if (overlap.size > mem->size)
+				overlap.size = mem->size;
+		} else if (address_in_region(linux_mem->phys_start, mem)) {
+			overlap.phys_start = linux_mem->phys_start;
+			overlap.size = mem->size -
+				(overlap.phys_start - mem->phys_start);
+			if (overlap.size > linux_mem->size)
+				overlap.size = linux_mem->size;
+		} else
+			continue;
+
+		overlap.virt_start = linux_mem->virt_start +
+			overlap.phys_start - linux_mem->phys_start;
+		overlap.access_flags = linux_mem->access_flags;
+
+		err = vmx_map_memory_region(&linux_cell, &overlap);
+		if (err)
+			printk("WARNING: Failed to re-assign memory region "
+			       "to Linux cell\n");
+	}
+}
+
+void vmx_cell_exit(struct cell *cell)
+{
+	struct jailhouse_cell_desc *config = cell->config;
+	u8 *pio_bitmap, *linux_pio_bitmap, *b;
+	struct jailhouse_memory *mem;
+	u32 pio_bitmap_size;
+	int n;
+
+	mem = (void *)config + sizeof(struct jailhouse_cell_desc) +
+		config->cpu_set_size;
+
+	for (n = 0; n < config->num_memory_regions; n++, mem++) {
+		page_map_destroy(cell->vmx.ept, mem->virt_start, mem->size,
+				 PAGE_DIR_LEVELS);
+		vmx_remap_to_linux(mem);
+	}
+	page_map_destroy(cell->vmx.ept, XAPIC_BASE, PAGE_SIZE,
+			 PAGE_DIR_LEVELS);
+
+	pio_bitmap = (void *)mem +
+		config->num_irq_lines * sizeof(struct jailhouse_irq_line);
+	pio_bitmap_size = config->pio_bitmap_size;
+
+	linux_pio_bitmap = (void *)linux_cell.config +
+		sizeof(struct jailhouse_cell_desc) +
+		linux_cell.config->cpu_set_size +
+		linux_cell.config->num_memory_regions *
+			sizeof(struct jailhouse_memory) +
+		linux_cell.config->num_irq_lines *
+			sizeof(struct jailhouse_irq_line);
+	if (linux_cell.config->pio_bitmap_size < pio_bitmap_size)
+		pio_bitmap_size = linux_cell.config->pio_bitmap_size;
+
+	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
+	     b++, pio_bitmap++, linux_pio_bitmap++, pio_bitmap_size--)
+		*b &= *pio_bitmap | *linux_pio_bitmap;
+
+	page_free(&mem_pool, cell->vmx.ept, 1);
+}
+
 void vmx_invept(void)
 {
 	unsigned long ept_cap = read_msr(MSR_IA32_VMX_EPT_VPID_CAP);

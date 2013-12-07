@@ -284,6 +284,7 @@ void vmx_init(void);
 
 int vmx_cell_init(struct cell *cell);
 void vmx_cell_shrink(struct cell *cell, struct jailhouse_cell_desc *config);
+void vmx_cell_exit(struct cell *cell);
 
 int vmx_cpu_init(struct per_cpu *cpu_data);
 void vmx_cpu_exit(struct per_cpu *cpu_data);

@@ -260,7 +260,68 @@ err_free_cell:
 
 int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 {
-	return -ENOSYS;
+	unsigned long mapping_addr = FOREIGN_MAPPING_BASE +
+		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
+	struct cell *cell, *previous;
+	unsigned long name_size;
+	const char *name;
+	unsigned int cpu;
+	int err = 0;
+
+	// TODO: access control
+
+	/* We do not support destruction over non-Linux cells so far */
+	if (cpu_data->cell != &linux_cell)
+		return -EINVAL;
+
+	cell_suspend(cpu_data);
+
+	name_size = (name_address & ~PAGE_MASK) + JAILHOUSE_CELL_NAME_MAXLEN;
+
+	err = page_map_create(hv_page_table, name_address & PAGE_MASK,
+			      name_size, mapping_addr, PAGE_READONLY_FLAGS,
+			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+	if (err)
+		goto resume_out;
+
+	name = (const char *)(mapping_addr + (name_address & ~PAGE_MASK));
+
+	cell = cell_find(name);
+	if (!cell) {
+		err = -ENOENT;
+		goto resume_out;
+	}
+
+	/* Linux cell cannot be destroyed */
+	if (cell == &linux_cell) {
+		err = -EINVAL;
+		goto resume_out;
+	}
+
+	printk("Closing cell \"%s\"\n", name);
+
+	for_each_cpu(cpu, cell->cpu_set) {
+		printk(" Parking CPU %d\n", cpu);
+		arch_park_cpu(cpu);
+
+		set_bit(cpu, linux_cell.cpu_set->bitmap);
+		per_cpu(cpu)->cell = &linux_cell;
+	}
+
+	arch_cell_destroy(cpu_data, cell);
+
+	previous = &linux_cell;
+	while (previous->next != cell)
+		previous = previous->next;
+	previous->next = cell->next;
+
+	page_free(&mem_pool, cell, cell->data_pages);
+	page_map_dump_stats("after cell destruction");
+
+resume_out:
+	cell_resume(cpu_data);
+
+	return err;
 }
 
 int shutdown(struct per_cpu *cpu_data)

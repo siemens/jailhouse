@@ -46,8 +46,10 @@ int phys_processor_id(void) { return 0; }
 void arch_suspend_cpu(unsigned int cpu_id) {}
 void arch_resume_cpu(unsigned int cpu_id) {}
 void arch_reset_cpu(unsigned int cpu_id) {}
+void arch_park_cpu(unsigned int cpu_id) {}
 void arch_shutdown_cpu(unsigned int cpu_id) {}
 int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell)
 { return -ENOSYS; }
+void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *new_cell) {}
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
 void arch_dbg_write(const char *msg) {}
