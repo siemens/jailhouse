@@ -411,7 +411,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_ACTIVE);
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
-	ok &= vmcs_write32(GUEST_PENDING_DBG_EXCEPTIONS, 0);
+	ok &= vmcs_write64(GUEST_PENDING_DBG_EXCEPTIONS, 0);
 
 	ok &= vmcs_write64(GUEST_IA32_EFER, cpu_data->linux_efer);
 
@@ -728,7 +728,7 @@ static void vmx_cpu_reset(struct registers *guest_regs,
 
 	ok &= vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_ACTIVE);
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
-	ok &= vmcs_write32(GUEST_PENDING_DBG_EXCEPTIONS, 0);
+	ok &= vmcs_write64(GUEST_PENDING_DBG_EXCEPTIONS, 0);
 
 	val = vmcs_read32(VM_ENTRY_CONTROLS);
 	val &= ~VM_ENTRY_IA32E_MODE;
