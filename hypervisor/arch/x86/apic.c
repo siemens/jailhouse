@@ -87,6 +87,7 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 {
 	unsigned int apic_id = phys_processor_id();
 	unsigned int cpu_id = cpu_data->cpu_id;
+	u32 ldr;
 
 	printk("(APIC ID %d) ", apic_id);
 
@@ -95,9 +96,12 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 	if (apic_to_cpu_id[apic_id] != APIC_INVALID_ID)
 		return -EBUSY;
 	/* only flat mode with LDR corresponding to logical ID supported */
-	if (!using_x2apic && (apic_ops.read(APIC_REG_DFR) != 0xffffffff ||
-	    apic_ops.read(APIC_REG_LDR) != 1UL << (cpu_id + 24)))
-		return -EINVAL;
+	if (!using_x2apic) {
+		ldr = apic_ops.read(APIC_REG_LDR);
+		if (apic_ops.read(APIC_REG_DFR) != 0xffffffff ||
+		    (ldr != 0 && ldr != 1UL << (cpu_id + 24)))
+			return -EINVAL;
+	}
 
 	apic_to_cpu_id[apic_id] = cpu_id;
 	cpu_data->apic_id = apic_id;
