@@ -1,0 +1,36 @@
+Things to be addressed, at some point. Unsorted, unprioritized, incomplete.
+
+o x86 support
+ - DMAR support for non-Linux cells
+ - DMAR error reporting
+ - interrupt remapping support
+ - AMD (SVM)?
+o ARM support
+o access control to management interface
+ - allow privileged cells to vote against reconfigurations
+   or to shut down orderly first
+o configuration
+ - review of format, rework of textual representation
+ - platform device assignment
+ - create base configuration from knowledge base and running system
+o setup validation
+ - check integrity of configurations
+ - check integrity of runtime environment
+  - Intel TXT support?
+  - secure boot?
+o inter-cell communication channel
+ - shared memory + doorbell IRQs
+ - queues + doorbell?
+o testing
+ - build tests for x86 and ARM
+ - unit tests?
+ - system tests, also in QEMU/KVM
+  - VT-d emulation for QEMU?
+o inmates
+ - reusable runtime environment for cell inmates
+ - port free small-footprint RTOS to Jailhouse bare-metal environment?
+   candidates could be: RTEMS, eCos, FreeRTOS
+o hardware error handling
+ - MCEs
+ - PCI AER
+ - ...
