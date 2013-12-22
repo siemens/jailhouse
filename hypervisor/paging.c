@@ -18,6 +18,8 @@
 
 #define BITS_PER_PAGE		(PAGE_SIZE * 8)
 
+#define INVALID_PAGE_NR		(~0UL)
+
 #define PAGE_SCRUB_ON_FREE	0x1
 
 extern u8 __start[], __page_pool[];
@@ -30,43 +32,58 @@ struct page_pool remap_pool = {
 
 pgd_t *hv_page_table;
 
-static void *page_alloc_one(struct page_pool *pool)
+static unsigned long find_next_free_page(struct page_pool *pool,
+					 unsigned long start)
 {
-	unsigned long word, page_nr;
+	unsigned long start_mask =
+		~0UL >> (BITS_PER_LONG - (start % BITS_PER_LONG));
+	unsigned long bmp_pos, bmp_val, page_nr;
 
-	for (word = 0; word < pool->pages / BITS_PER_LONG; word++)
-		if (pool->used_bitmap[word] != ~0UL) {
-			page_nr = ffz(pool->used_bitmap[word]) +
-				word * BITS_PER_LONG;
+	if (start >= pool->pages)
+		return INVALID_PAGE_NR;
+
+	for (bmp_pos = start / BITS_PER_LONG;
+	     bmp_pos < pool->pages / BITS_PER_LONG; bmp_pos++) {
+		bmp_val = pool->used_bitmap[bmp_pos] | start_mask;
+		start_mask = 0;
+		if (bmp_val != ~0UL) {
+			page_nr = ffz(bmp_val) + bmp_pos * BITS_PER_LONG;
 			if (page_nr >= pool->pages)
 				break;
-			set_bit(page_nr, pool->used_bitmap);
-			pool->used_pages++;
-			return pool->base_address + page_nr * PAGE_SIZE;
+			return page_nr;
 		}
+	}
 
-	return NULL;
+	return INVALID_PAGE_NR;
 }
 
 void *page_alloc(struct page_pool *pool, unsigned int num)
 {
-	void *start, *last, *next;
+	unsigned long start, last, next;
 	unsigned int allocated;
 
-	start = page_alloc_one(pool);
-	if (!start)
+	start = find_next_free_page(pool, 0);
+	if (start == INVALID_PAGE_NR)
 		return NULL;
 
+restart:
 	for (allocated = 1, last = start; allocated < num;
 	     allocated++, last = next) {
-		next = page_alloc_one(pool);
-		if (next != last + PAGE_SIZE) {
-			page_free(pool, start, allocated);
+		next = find_next_free_page(pool, last + 1);
+		if (next == INVALID_PAGE_NR)
 			return NULL;
+		if (next != last + 1) {
+			start = next;
+			goto restart;
 		}
 	}
 
-	return start;
+	for (allocated = 0; allocated < num; allocated++)
+		set_bit(start + allocated, pool->used_bitmap);
+
+	pool->used_pages += num;
+
+	return pool->base_address + start * PAGE_SIZE;
 }
 
 void page_free(struct page_pool *pool, void *page, unsigned int num)
