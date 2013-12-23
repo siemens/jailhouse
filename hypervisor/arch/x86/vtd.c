@@ -115,6 +115,8 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 			return false;
 		root_entry_table[device->bus].lo_word = VTD_ROOT_PRESENT |
 			page_map_hvirt2phys(context_entry_table);
+		flush_cache(&root_entry_table[device->bus].lo_word,
+			    sizeof(u64));
 	}
 
 	context_entry = &context_entry_table[device->devfn];
@@ -124,6 +126,7 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	context_entry->hi_word = (dmar_pt_levels == 3 ? VTD_CTX_AGAW_39
 						      : VTD_CTX_AGAW_48) |
 		((cell->id << VTD_CTX_DID_SHIFT) & VTD_CTX_DID16_MASK);
+	flush_cache(context_entry, sizeof(*context_entry));
 
 	return true;
 }
@@ -176,10 +179,6 @@ int vtd_cell_init(struct cell *cell)
 			/* FIXME: release vtd.page_table,
 			 * revert device additions*/
 			return -ENOMEM;
-
-	/* Brute-force write-back of CPU caches in case the hardware accesses
-	 * translation structures non-coherently */
-	asm volatile("wbinvd");
 
 	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 		if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)) {
