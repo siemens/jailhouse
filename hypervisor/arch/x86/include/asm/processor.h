@@ -149,21 +149,17 @@ static inline void cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx,
 	__cpuid(eax, ebx, ecx, edx);
 }
 
-static inline unsigned int cpuid_eax(unsigned int op)
-{
-	unsigned int eax, ebx, ecx, edx;
-
-	cpuid(op, &eax, &ebx, &ecx, &edx);
-	return eax;
+#define CPUID_REG(reg)						\
+static inline unsigned int cpuid_##reg(unsigned int op)		\
+{								\
+	unsigned int eax, ebx, ecx, edx;			\
+								\
+	cpuid(op, &eax, &ebx, &ecx, &edx);			\
+	return reg;						\
 }
 
-static inline unsigned int cpuid_ecx(unsigned int op)
-{
-	unsigned int eax, ebx, ecx, edx;
-
-	cpuid(op, &eax, &ebx, &ecx, &edx);
-	return ecx;
-}
+CPUID_REG(eax)
+CPUID_REG(ecx)
 
 static inline unsigned long read_cr0(void)
 {
