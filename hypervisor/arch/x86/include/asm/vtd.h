@@ -11,7 +11,7 @@
  */
 
 #include <jailhouse/acpi.h>
-#include <asm/types.h>
+#include <jailhouse/cell-config.h>
 
 #define ACPI_DMAR_DRHD			0
 #define ACPI_DMAR_RMRR			1
@@ -72,6 +72,8 @@ struct vtd_entry {
 # define VTD_CAP_SAGAW57		0x00000800
 # define VTD_CAP_SAGAW64		0x00001000
 #define VTD_ECAP_REG			0x10
+# define VTD_ECAP_IRO_MASK		0x0003ff00
+# define VTD_ECAP_IRO_SHIFT		8
 #define VTD_GCMD_REG			0x18
 # define VTD_GCMD_SRTP			0x40000000
 # define VTD_GCMD_TE			0x80000000
@@ -80,12 +82,26 @@ struct vtd_entry {
 # define VTD_GSTS_TE			0x80000000
 #define VTD_RTADDR_REG			0x20
 #define VTD_CCMD_REG			0x28
+# define VTD_CCMD_CIRG_GLOBAL		0x2000000000000000UL
+# define VTD_CCMD_CIRG_DOMAIN		0x4000000000000000UL
+# define VTD_CCMD_CIRG_DEVICE		0x6000000000000000UL
+# define VTD_CCMD_ICC			0x8000000000000000UL
 #define VTD_PMEN_REG			0x64
 #define VTD_PLMBASE_REG			0x68
 #define VTD_PLMLIMIT_REG		0x6C
 #define VTD_PHMBASE_REG			0x70
 #define VTD_PHMLIMIT_REG		0x78
 
+#define VTD_IOTLB_REG			0x08
+# define VTD_IOTLB_DID_SHIFT		32
+# define VTD_IOTLB_DW			0x0001000000000000UL
+# define VTD_IOTLB_DR			0x0002000000000000UL
+# define VTD_IOTLB_IIRG_GLOBAL		0x2000000000000000UL
+# define VTD_IOTLB_IIRG_DOMAIN		0x4000000000000000UL
+# define VTD_IOTLB_IIRG_PAGE		0x6000000000000000UL
+# define VTD_IOTLB_IVT			0x8000000000000000UL
+
 int vtd_init(void);
 int vtd_cell_init(struct cell *cell);
+void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config);
 void vtd_shutdown(void);

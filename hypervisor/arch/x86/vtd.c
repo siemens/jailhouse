@@ -23,6 +23,35 @@ static unsigned int dmar_units;
 static unsigned int dmar_pt_levels;
 static unsigned int dmar_num_did = ~0U;
 
+static void *vtd_iotlb_reg_base(void *reg_base)
+{
+	return reg_base + ((mmio_read64(reg_base + VTD_ECAP_REG) &
+			    VTD_ECAP_IRO_MASK) >> VTD_ECAP_IRO_SHIFT) * 16;
+}
+
+static void vtd_flush_domain_caches(unsigned int did)
+{
+	void *reg_base = dmar_reg_base;
+	void *iotlb_reg_base;
+	unsigned int n;
+
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+		mmio_write64(reg_base + VTD_CCMD_REG, did |
+			     VTD_CCMD_CIRG_DOMAIN | VTD_CCMD_ICC);
+		while (mmio_read64(reg_base + VTD_CCMD_REG) & VTD_CCMD_ICC)
+			cpu_relax();
+
+		iotlb_reg_base = vtd_iotlb_reg_base(reg_base);
+		mmio_write64(iotlb_reg_base + VTD_IOTLB_REG,
+			((unsigned long)did << VTD_IOTLB_DID_SHIFT) |
+			VTD_IOTLB_DW | VTD_IOTLB_DR | VTD_IOTLB_IIRG_DOMAIN |
+			VTD_IOTLB_IVT);
+		while (mmio_read64(iotlb_reg_base + VTD_IOTLB_REG) &
+		       VTD_IOTLB_IVT)
+			cpu_relax();
+	}
+}
+
 int vtd_init(void)
 {
 	const struct acpi_dmar_table *dmar;
@@ -90,6 +119,10 @@ int vtd_init(void)
 		if (caps & VTD_CAP_CM)
 			return -EIO;
 
+		/* We only support IOTLB registers withing the first page. */
+		if (vtd_iotlb_reg_base(reg_base) >= reg_base + PAGE_SIZE)
+			return -EIO;
+
 		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)
 			return -EBUSY;
 
@@ -113,6 +146,10 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 {
 	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;
+
+	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
+	       device->bus, device->devfn >> 3, device->devfn & 7,
+	       cell->config->name);
 
 	if (root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
@@ -204,6 +241,58 @@ int vtd_cell_init(struct cell *cell)
 		}
 
 	return 0;
+}
+
+static void vtd_remove_device_from_cell(struct cell *cell,
+					struct jailhouse_pci_device *device)
+{
+	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
+	struct vtd_entry *context_entry_table =
+		page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
+	struct vtd_entry *context_entry = &context_entry_table[device->devfn];
+	unsigned int n;
+
+	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
+		return;
+
+	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
+	       device->bus, device->devfn >> 3, device->devfn & 7,
+	       cell->config->name);
+
+	context_entry->lo_word &= ~VTD_CTX_PRESENT;
+	flush_cache(&context_entry->lo_word, sizeof(u64));
+
+	for (n = 0; n < 256; n++)
+		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)
+			return;
+
+	root_entry_table[device->bus].lo_word &= ~VTD_ROOT_PRESENT;
+	flush_cache(&root_entry_table[device->bus].lo_word, sizeof(u64));
+	page_free(&mem_pool, context_entry_table, 1);
+}
+
+void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
+{
+	struct jailhouse_memory *mem =
+		(void *)config + sizeof(struct jailhouse_cell_desc) +
+		config->cpu_set_size;
+	struct jailhouse_pci_device *dev;
+	unsigned int n;
+
+	for (n = 0; n < config->num_memory_regions; n++, mem++)
+		if (mem->access_flags & JAILHOUSE_MEM_DMA)
+			page_map_destroy(linux_cell.vtd.page_table,
+					 mem->phys_start, mem->size,
+					 dmar_pt_levels, PAGE_MAP_COHERENT);
+
+	dev = (void *)mem +
+		config->num_irq_lines * sizeof(struct jailhouse_irq_line) +
+		config->pio_bitmap_size;
+
+	for (n = 0; n < config->num_pci_devices; n++)
+		vtd_remove_device_from_cell(&linux_cell, &dev[n]);
+
+	vtd_flush_domain_caches(linux_cell.id);
 }
 
 void vtd_shutdown(void)

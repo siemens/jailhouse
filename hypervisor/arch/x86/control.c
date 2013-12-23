@@ -12,6 +12,7 @@
 
 #include <jailhouse/control.h>
 #include <asm/vmx.h>
+#include <asm/vtd.h>
 
 static void flush_linux_cpu_caches(struct per_cpu *cpu_data)
 {
@@ -23,9 +24,21 @@ static void flush_linux_cpu_caches(struct per_cpu *cpu_data)
 
 int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 {
+	int err;
+
+	/* TODO: Implement proper roll-backs on errors */
+
 	vmx_linux_cell_shrink(cell->config);
 	flush_linux_cpu_caches(cpu_data);
-	return vmx_cell_init(cell);
+	err = vmx_cell_init(cell);
+	if (err)
+		return err;
+
+	vtd_linux_cell_shrink(cell->config);
+	err = vtd_cell_init(cell);
+	if (err)
+		vmx_cell_exit(cell);
+	return err;
 }
 
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
