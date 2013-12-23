@@ -191,8 +191,8 @@ int vtd_cell_init(struct cell *cell)
 			 * revert device additions*/
 			return -ENOMEM;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)) {
+	if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE))
+		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 			mmio_write64(reg_base + VTD_RTADDR_REG,
 				     page_map_hvirt2phys(root_entry_table));
 			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
@@ -202,7 +202,6 @@ int vtd_cell_init(struct cell *cell)
 
 			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
 		}
-	}
 
 	return 0;
 }
