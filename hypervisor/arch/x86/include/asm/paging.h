@@ -206,6 +206,14 @@ static inline void flush_tlb(void)
 	write_cr4(cr4);
 }
 
+extern unsigned long cache_line_size;
+
+static inline void flush_cache(void *addr, long size)
+{
+	for (; size > 0; size -= cache_line_size, addr += cache_line_size)
+		asm volatile("clflush %0" : "+m" (*(char *)addr));
+}
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PAGING_H */

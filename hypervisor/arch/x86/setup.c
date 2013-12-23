@@ -39,6 +39,7 @@ static u64 gdt[] = {
 extern u8 exception_entries[];
 extern u8 nmi_entry[];
 
+unsigned long cache_line_size;
 static u32 idt[NUM_IDT_DESC * 4];
 
 int arch_init_early(struct cell *linux_cell)
@@ -46,6 +47,8 @@ int arch_init_early(struct cell *linux_cell)
 	unsigned long entry;
 	unsigned int vector;
 	int err;
+
+	cache_line_size = (cpuid_ebx(1) & 0xff00) >> 5;
 
 	err = apic_init();
 	if (err)
