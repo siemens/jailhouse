@@ -175,7 +175,7 @@ static int vmx_map_memory_region(struct cell *cell,
 
 	return page_map_create(cell->vmx.ept, mem->phys_start, mem->size,
 			       mem->virt_start, page_flags, table_flags,
-			       PAGE_DIR_LEVELS);
+			       PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 }
 
 int vmx_cell_init(struct cell *cell)
@@ -206,7 +206,7 @@ int vmx_cell_init(struct cell *cell)
 			      PAGE_SIZE, XAPIC_BASE,
 			      EPT_FLAG_READ|EPT_FLAG_WRITE|EPT_FLAG_WB_TYPE,
 			      EPT_FLAG_READ|EPT_FLAG_WRITE,
-			      PAGE_DIR_LEVELS);
+			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		/* FIXME: release vmx.ept */
 		return err;
@@ -243,7 +243,7 @@ void vmx_cell_shrink(struct cell *cell, struct jailhouse_cell_desc *config)
 		 * the original memory region, match phys_start and use
 		 * virt_start from there. */
 		page_map_destroy(cell->vmx.ept, mem->phys_start, mem->size,
-				 PAGE_DIR_LEVELS);
+				 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 
 	pio_bitmap = (void *)mem +
 		config->num_irq_lines * sizeof(struct jailhouse_irq_line);
@@ -313,11 +313,11 @@ void vmx_cell_exit(struct cell *cell)
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
 		page_map_destroy(cell->vmx.ept, mem->virt_start, mem->size,
-				 PAGE_DIR_LEVELS);
+				 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 		vmx_remap_to_linux(mem);
 	}
 	page_map_destroy(cell->vmx.ept, XAPIC_BASE, PAGE_SIZE,
-			 PAGE_DIR_LEVELS);
+			 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 
 	pio_bitmap = (void *)mem +
 		config->num_irq_lines * sizeof(struct jailhouse_irq_line);

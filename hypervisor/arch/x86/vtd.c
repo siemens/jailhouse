@@ -69,7 +69,8 @@ int vtd_init(void)
 		err = page_map_create(hv_page_table, drhd->register_base_addr,
 				      PAGE_SIZE, (unsigned long)reg_base,
 				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
+				      PAGE_MAP_NON_COHERENT);
 		if (err)
 			return err;
 
@@ -160,7 +161,7 @@ int vtd_cell_init(struct cell *cell)
 		err = page_map_create(cell->vtd.page_table, mem->phys_start,
 				      mem->size, mem->virt_start, page_flags,
 				      VTD_PAGE_READ | VTD_PAGE_WRITE,
-				      dmar_pt_levels);
+				      dmar_pt_levels, PAGE_MAP_COHERENT);
 		if (err)
 			/* FIXME: release vtd.page_table */
 			return err;

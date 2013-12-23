@@ -24,6 +24,11 @@ struct page_pool {
 	unsigned long flags;
 };
 
+enum page_map_coherent {
+	PAGE_MAP_COHERENT,
+	PAGE_MAP_NON_COHERENT,
+};
+
 extern struct page_pool mem_pool;
 extern struct page_pool remap_pool;
 
@@ -47,10 +52,12 @@ unsigned long page_map_virt2phys(pgd_t *page_table,
 				 unsigned long virt);
 
 int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
-		    unsigned long virt, unsigned long flags,
-		    unsigned long table_flags, unsigned int levels);
+		    unsigned long virt, unsigned long page_flags,
+		    unsigned long table_flags, unsigned int levels,
+		    enum page_map_coherent coherent);
 void page_map_destroy(pgd_t *page_table, unsigned long virt,
-		      unsigned long size, unsigned int levels);
+		      unsigned long size, unsigned int levels,
+		      enum page_map_coherent coherent);
 
 void *page_map_get_foreign_page(unsigned int mapping_region,
 				unsigned long page_table_paddr,

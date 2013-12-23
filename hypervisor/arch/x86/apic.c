@@ -129,7 +129,8 @@ int apic_init(void)
 		err = page_map_create(hv_page_table, XAPIC_BASE, PAGE_SIZE,
 				      (unsigned long)xapic_page,
 				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
+				      PAGE_MAP_NON_COHERENT);
 		if (err)
 			return err;
 		apic_ops.read = read_xapic;

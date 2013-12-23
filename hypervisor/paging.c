@@ -140,9 +140,17 @@ unsigned long page_map_virt2phys(pgd_t *page_table,
 	return phys_address(pte, virt);
 }
 
+static void flush_page_table(void *addr, unsigned long size,
+			     enum page_map_coherent coherent)
+{
+	if (coherent == PAGE_MAP_COHERENT)
+		flush_cache(addr, size);
+}
+
 int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 		    unsigned long virt, unsigned long flags,
-		    unsigned long table_flags, unsigned int levels)
+		    unsigned long table_flags, unsigned int levels,
+		    enum page_map_coherent coherent)
 {
 	unsigned long offs = hypervisor_header.page_offset;
 	pgd_t *pgd;
@@ -161,6 +169,7 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 					return -ENOMEM;
 				set_pgd(pgd, page_map_hvirt2phys(pud),
 					table_flags);
+				flush_page_table(pgd, sizeof(pgd), coherent);
 			}
 			pud = pud4l_offset(pgd, offs, virt);
 			break;
@@ -176,6 +185,7 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 			if (!pmd)
 				return -ENOMEM;
 			set_pud(pud, page_map_hvirt2phys(pmd), table_flags);
+			flush_page_table(pud, sizeof(pud), coherent);
 		}
 
 		pmd = pmd_offset(pud, offs, virt);
@@ -184,10 +194,12 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 			if (!pte)
 				return -ENOMEM;
 			set_pmd(pmd, page_map_hvirt2phys(pte), table_flags);
+			flush_page_table(pmd, sizeof(pmd), coherent);
 		}
 
 		pte = pte_offset(pmd, offs, virt);
 		set_pte(pte, phys, flags);
+		flush_page_table(pte, sizeof(pte), coherent);
 	}
 
 	flush_tlb();
@@ -196,7 +208,8 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 }
 
 void page_map_destroy(pgd_t *page_table, unsigned long virt,
-		      unsigned long size, unsigned int levels)
+		      unsigned long size, unsigned int levels,
+		      enum page_map_coherent coherent)
 {
 	unsigned long offs = hypervisor_header.page_offset;
 	pgd_t *pgd;
@@ -230,21 +243,25 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 
 		pte = pte_offset(pmd, offs, virt);
 		clear_pte(pte);
+		flush_page_table(pte, sizeof(pte), coherent);
 
 		if (!pt_empty(pmd, offs))
 			continue;
 		page_free(&mem_pool, pte_offset(pmd, offs, 0), 1);
 		clear_pmd(pmd);
+		flush_page_table(pmd, sizeof(pmd), coherent);
 
 		if (!pmd_empty(pud, offs))
 			continue;
 		page_free(&mem_pool, pmd_offset(pud, offs, 0), 1);
 		clear_pud(pud);
+		flush_page_table(pud, sizeof(pud), coherent);
 
 		if (levels < 4 || !pud_empty(pgd, offs))
 			continue;
 		page_free(&mem_pool, pud4l_offset(pgd, offs, 0), 1);
 		clear_pgd(pgd);
+		flush_page_table(pgd, sizeof(pgd), coherent);
 	}
 
 	flush_tlb();
@@ -270,7 +287,7 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 	phys = page_table_paddr + page_table_offset;
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS);
+			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
@@ -281,7 +298,7 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 	phys = (unsigned long)pud4l_offset(pgd, page_table_offset, 0);
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS);
+			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
@@ -296,7 +313,7 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 	phys = (unsigned long)pmd_offset(pud, page_table_offset, 0);
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS);
+			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
@@ -309,7 +326,8 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 		phys = (unsigned long)pte_offset(pmd, page_table_offset, 0);
 		err = page_map_create(hv_page_table, phys, PAGE_SIZE,
 				      page_virt, PAGE_READONLY_FLAGS,
-				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
+				      PAGE_MAP_NON_COHERENT);
 		if (err)
 			return NULL;
 
@@ -320,7 +338,8 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 	}
 
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
-			      flags, PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+			      flags, PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
+			      PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
@@ -370,7 +389,7 @@ int paging_init(void)
 	err = page_map_create(hv_page_table, page_map_hvirt2phys(__start),
 			      hypervisor_header.size, (unsigned long)__start,
 			      PAGE_DEFAULT_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS);
+			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		goto error_nomem;
 
@@ -379,7 +398,8 @@ int paging_init(void)
 	err = page_map_create(hv_page_table, 0,
 			      remap_pool.used_pages * PAGE_SIZE,
 			      FOREIGN_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
-			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS);
+			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
+			      PAGE_MAP_NON_COHERENT);
 	if (err)
 		goto error_nomem;
 

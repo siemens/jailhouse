@@ -78,7 +78,7 @@ static void init_early(unsigned int cpu_id)
 				system_config->config_memory.phys_start,
 				size, (unsigned long)config_memory,
 				PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
-				PAGE_DIR_LEVELS);
+				PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 		if (error)
 			return;
 	}
