@@ -54,7 +54,6 @@ struct acpi_dmar_drhd {
 #define VTD_CTX_AGAW_57			0x00000003
 #define VTD_CTX_AGAW_64			0x00000004
 #define VTD_CTX_DID_SHIFT		8
-#define VTD_CTX_DID16_MASK		0x00000f00
 
 struct vtd_entry {
 	u64 lo_word;
@@ -65,6 +64,7 @@ struct vtd_entry {
 #define VTD_PAGE_WRITE			0x00000002
 
 #define VTD_CAP_REG			0x08
+# define VTD_CAP_NUM_DID_MASK		0x00000007
 # define VTD_CAP_SAGAW30		0x00000100
 # define VTD_CAP_SAGAW39		0x00000200
 # define VTD_CAP_SAGAW48		0x00000400

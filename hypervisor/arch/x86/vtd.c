@@ -20,13 +20,14 @@ static struct vtd_entry __attribute__((aligned(PAGE_SIZE)))
 	root_entry_table[256];
 static void *dmar_reg_base;
 static unsigned int dmar_units;
-static unsigned dmar_pt_levels;
+static unsigned int dmar_pt_levels;
+static unsigned int dmar_num_did = ~0U;
 
 int vtd_init(void)
 {
 	const struct acpi_dmar_table *dmar;
 	const struct acpi_dmar_drhd *drhd;
-	unsigned int pt_levels;
+	unsigned int pt_levels, num_did;
 	void *reg_base = NULL;
 	unsigned long offset;
 	unsigned long caps;
@@ -89,6 +90,10 @@ int vtd_init(void)
 		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)
 			return -EBUSY;
 
+		num_did = 1 << (4 + (caps & VTD_CAP_NUM_DID_MASK) * 2);
+		if (num_did < dmar_num_did)
+			dmar_num_did = num_did;
+
 		dmar_units++;
 
 		offset += drhd->header.length;
@@ -123,9 +128,9 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	context_entry->lo_word = VTD_CTX_PRESENT |
 		VTD_CTX_FPD | VTD_CTX_TTYPE_MLP_UNTRANS |
 		page_map_hvirt2phys(cell->vtd.page_table);
-	context_entry->hi_word = (dmar_pt_levels == 3 ? VTD_CTX_AGAW_39
-						      : VTD_CTX_AGAW_48) |
-		((cell->id << VTD_CTX_DID_SHIFT) & VTD_CTX_DID16_MASK);
+	context_entry->hi_word =
+		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
+		(cell->id << VTD_CTX_DID_SHIFT);
 	flush_cache(context_entry, sizeof(*context_entry));
 
 	return true;
@@ -143,6 +148,9 @@ int vtd_cell_init(struct cell *cell)
 	// HACK for QEMU
 	if (dmar_units == 0)
 		return 0;
+
+	if (cell->id >= dmar_num_did)
+		return -ERANGE;
 
 	cell->vtd.page_table = page_alloc(&mem_pool, 1);
 	if (!cell->vtd.page_table)
