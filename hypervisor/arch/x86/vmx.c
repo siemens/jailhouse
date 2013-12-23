@@ -228,7 +228,7 @@ int vmx_cell_init(struct cell *cell)
 	return 0;
 }
 
-void vmx_cell_shrink(struct cell *cell, struct jailhouse_cell_desc *config)
+void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	struct jailhouse_memory *mem;
 	u32 pio_bitmap_size;
@@ -239,17 +239,15 @@ void vmx_cell_shrink(struct cell *cell, struct jailhouse_cell_desc *config)
 		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
-		/* FIXME: phys_start only works for the Linux cell. We need
-		 * the original memory region, match phys_start and use
-		 * virt_start from there. */
-		page_map_destroy(cell->vmx.ept, mem->phys_start, mem->size,
-				 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
+		page_map_destroy(linux_cell.vmx.ept, mem->phys_start,
+				 mem->size, PAGE_DIR_LEVELS,
+				 PAGE_MAP_NON_COHERENT);
 
 	pio_bitmap = (void *)mem +
 		config->num_irq_lines * sizeof(struct jailhouse_irq_line);
 	pio_bitmap_size = config->pio_bitmap_size;
 
-	for (b = cell->vmx.io_bitmap; pio_bitmap_size > 0;
+	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 	     b++, pio_bitmap++, pio_bitmap_size--)
 		*b |= ~*pio_bitmap;
 

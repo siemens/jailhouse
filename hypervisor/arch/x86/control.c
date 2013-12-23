@@ -23,7 +23,7 @@ static void flush_linux_cpu_caches(struct per_cpu *cpu_data)
 
 int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 {
-	vmx_cell_shrink(&linux_cell, cell->config);
+	vmx_linux_cell_shrink(cell->config);
 	flush_linux_cpu_caches(cpu_data);
 	return vmx_cell_init(cell);
 }
