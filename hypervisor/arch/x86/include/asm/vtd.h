@@ -65,6 +65,7 @@ struct vtd_entry {
 
 #define VTD_CAP_REG			0x08
 # define VTD_CAP_NUM_DID_MASK		0x00000007
+# define VTD_CAP_CM			0x00000080
 # define VTD_CAP_SAGAW30		0x00000100
 # define VTD_CAP_SAGAW39		0x00000200
 # define VTD_CAP_SAGAW48		0x00000400

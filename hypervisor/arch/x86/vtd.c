@@ -87,6 +87,9 @@ int vtd_init(void)
 			return -EIO;
 		dmar_pt_levels = pt_levels;
 
+		if (caps & VTD_CAP_CM)
+			return -EIO;
+
 		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)
 			return -EBUSY;
 
@@ -198,8 +201,6 @@ int vtd_cell_init(struct cell *cell)
 				cpu_relax();
 
 			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
-		} else {
-			// cache flush, somehow
 		}
 	}
 
