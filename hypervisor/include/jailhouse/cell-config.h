@@ -92,4 +92,13 @@ jailhouse_cell_mem_regions(const struct jailhouse_cell_desc *cell)
 		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size);
 }
 
+static inline const __u8 *
+jailhouse_cell_pio_bitmap(const struct jailhouse_cell_desc *cell)
+{
+	return (const __u8 *)((void *)cell +
+		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size +
+		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
+		cell->num_irq_lines * sizeof(struct jailhouse_irq_line));
+}
+
 #endif /* !_JAILHOUSE_CELL_CONFIG_H */

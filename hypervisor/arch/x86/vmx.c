@@ -183,9 +183,10 @@ int vmx_cell_init(struct cell *cell)
 	struct jailhouse_cell_desc *config = cell->config;
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
-	u32 pio_bitmap_size, size;
-	u8 *pio_bitmap;
+	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
+	u32 pio_bitmap_size = config->pio_bitmap_size;
 	int n, err;
+	u32 size;
 
 	/* build root cell EPT */
 	cell->vmx.ept = page_alloc(&mem_pool, 1);
@@ -209,10 +210,6 @@ int vmx_cell_init(struct cell *cell)
 		/* FIXME: release vmx.ept */
 		return err;
 
-	pio_bitmap = (void *)mem +
-		config->num_irq_lines * sizeof(struct jailhouse_irq_line);
-	pio_bitmap_size = config->pio_bitmap_size;
-
 	memset(cell->vmx.io_bitmap, -1, sizeof(cell->vmx.io_bitmap));
 
 	for (n = 0; n < 2; n++) {
@@ -230,18 +227,15 @@ void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
-	u32 pio_bitmap_size;
-	u8 *pio_bitmap, *b;
+	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
+	u32 pio_bitmap_size = config->pio_bitmap_size;
+	u8 *b;
 	int n;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
 		page_map_destroy(linux_cell.vmx.ept, mem->phys_start,
 				 mem->size, PAGE_DIR_LEVELS,
 				 PAGE_MAP_NON_COHERENT);
-
-	pio_bitmap = (void *)mem +
-		config->num_irq_lines * sizeof(struct jailhouse_irq_line);
-	pio_bitmap_size = config->pio_bitmap_size;
 
 	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 	     b++, pio_bitmap++, pio_bitmap_size--)
@@ -294,11 +288,14 @@ static void vmx_remap_to_linux(const struct jailhouse_memory *mem)
 
 void vmx_cell_exit(struct cell *cell)
 {
+	const u8 *linux_pio_bitmap =
+		jailhouse_cell_pio_bitmap(linux_cell.config);
 	struct jailhouse_cell_desc *config = cell->config;
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
-	u8 *pio_bitmap, *linux_pio_bitmap, *b;
-	u32 pio_bitmap_size;
+	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
+	u32 pio_bitmap_size = config->pio_bitmap_size;
+	u8 *b;
 	int n;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
@@ -309,17 +306,6 @@ void vmx_cell_exit(struct cell *cell)
 	page_map_destroy(cell->vmx.ept, XAPIC_BASE, PAGE_SIZE,
 			 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 
-	pio_bitmap = (void *)mem +
-		config->num_irq_lines * sizeof(struct jailhouse_irq_line);
-	pio_bitmap_size = config->pio_bitmap_size;
-
-	linux_pio_bitmap = (void *)linux_cell.config +
-		sizeof(struct jailhouse_cell_desc) +
-		linux_cell.config->cpu_set_size +
-		linux_cell.config->num_memory_regions *
-			sizeof(struct jailhouse_memory) +
-		linux_cell.config->num_irq_lines *
-			sizeof(struct jailhouse_irq_line);
 	if (linux_cell.config->pio_bitmap_size < pio_bitmap_size)
 		pio_bitmap_size = linux_cell.config->pio_bitmap_size;
 
