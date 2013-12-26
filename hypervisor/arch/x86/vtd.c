@@ -203,6 +203,9 @@ void vtd_shutdown(void)
 	void *reg_base = dmar_reg_base;
 	unsigned int n;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE)
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 		mmio_write32(reg_base + VTD_GCMD_REG, 0);
+		while (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)
+			cpu_relax();
+	}
 }
