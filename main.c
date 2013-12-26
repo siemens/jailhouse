@@ -271,7 +271,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	struct jailhouse_new_cell *cell = &cell_buffer.cell;
 	struct jailhouse_preload_image *image = &cell->image[0];
 	struct jailhouse_cell_desc *config;
-	struct jailhouse_memory *ram;
+	const struct jailhouse_memory *ram;
 	unsigned int cpu;
 	void *cell_mem;
 	int err;
@@ -297,8 +297,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	ram = ((void *)config) + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
+	ram = jailhouse_cell_mem_regions(config);
 	if (config->num_memory_regions < 1 || ram->size < 1024 * 1024 ||
 	    image->target_address + image->size > ram->size) {
 		err = -EINVAL;

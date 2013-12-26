@@ -161,7 +161,7 @@ void vmx_init(void)
 }
 
 static int vmx_map_memory_region(struct cell *cell,
-				 struct jailhouse_memory *mem)
+				 const struct jailhouse_memory *mem)
 {
 	u32 table_flags, page_flags = EPT_FLAG_WB_TYPE;
 
@@ -181,7 +181,8 @@ static int vmx_map_memory_region(struct cell *cell,
 int vmx_cell_init(struct cell *cell)
 {
 	struct jailhouse_cell_desc *config = cell->config;
-	struct jailhouse_memory *mem;
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(config);
 	u32 pio_bitmap_size, size;
 	u8 *pio_bitmap;
 	int n, err;
@@ -190,9 +191,6 @@ int vmx_cell_init(struct cell *cell)
 	cell->vmx.ept = page_alloc(&mem_pool, 1);
 	if (!cell->vmx.ept)
 		return -ENOMEM;
-
-	mem = (void *)config + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
 		err = vmx_map_memory_region(cell, mem);
@@ -230,13 +228,11 @@ int vmx_cell_init(struct cell *cell)
 
 void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
-	struct jailhouse_memory *mem;
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(config);
 	u32 pio_bitmap_size;
 	u8 *pio_bitmap, *b;
 	int n;
-
-	mem = (void *)config + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
 		page_map_destroy(linux_cell.vmx.ept, mem->phys_start,
@@ -255,20 +251,18 @@ void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 }
 
 static bool address_in_region(unsigned long addr,
-			      struct jailhouse_memory *region)
+			      const struct jailhouse_memory *region)
 {
 	return addr >= region->phys_start &&
 	       addr < (region->phys_start + region->size);
 }
 
-static void vmx_remap_to_linux(struct jailhouse_memory *mem)
+static void vmx_remap_to_linux(const struct jailhouse_memory *mem)
 {
-	struct jailhouse_memory *linux_mem, overlap;
+	const struct jailhouse_memory *linux_mem =
+		jailhouse_cell_mem_regions(linux_cell.config);
+	struct jailhouse_memory overlap;
 	int n, err;
-
-	linux_mem = (void *)linux_cell.config +
-		sizeof(struct jailhouse_cell_desc) +
-		linux_cell.config->cpu_set_size;
 
 	for (n = 0; n < linux_cell.config->num_memory_regions;
 	     n++, linux_mem++) {
@@ -301,13 +295,11 @@ static void vmx_remap_to_linux(struct jailhouse_memory *mem)
 void vmx_cell_exit(struct cell *cell)
 {
 	struct jailhouse_cell_desc *config = cell->config;
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(config);
 	u8 *pio_bitmap, *linux_pio_bitmap, *b;
-	struct jailhouse_memory *mem;
 	u32 pio_bitmap_size;
 	int n;
-
-	mem = (void *)config + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
 		page_map_destroy(cell->vmx.ept, mem->virt_start, mem->size,

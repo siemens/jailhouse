@@ -179,9 +179,10 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 int vtd_cell_init(struct cell *cell)
 {
 	struct jailhouse_cell_desc *config = cell->config;
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(config);
 	struct jailhouse_pci_device *dev;
 	void *reg_base = dmar_reg_base;
-	struct jailhouse_memory *mem;
 	u32 page_flags;
 	int n, err;
 
@@ -195,9 +196,6 @@ int vtd_cell_init(struct cell *cell)
 	cell->vtd.page_table = page_alloc(&mem_pool, 1);
 	if (!cell->vtd.page_table)
 		return -ENOMEM;
-
-	mem = (void *)config + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
 		if (!(mem->access_flags & JAILHOUSE_MEM_DMA))
@@ -273,9 +271,8 @@ static void vtd_remove_device_from_cell(struct cell *cell,
 
 void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
-	struct jailhouse_memory *mem =
-		(void *)config + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(config);
 	struct jailhouse_pci_device *dev;
 	unsigned int n;
 

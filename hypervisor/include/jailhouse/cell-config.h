@@ -85,4 +85,11 @@ jailhouse_system_config_size(struct jailhouse_system *system)
 		jailhouse_cell_config_size(&system->system);
 }
 
+static inline const struct jailhouse_memory *
+jailhouse_cell_mem_regions(const struct jailhouse_cell_desc *cell)
+{
+	return (const struct jailhouse_memory *)((void *)cell +
+		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size);
+}
+
 #endif /* !_JAILHOUSE_CELL_CONFIG_H */

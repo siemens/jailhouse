@@ -70,9 +70,8 @@ int cell_init(struct cell *cell, bool copy_cpu_set)
 		(unsigned long *)(((void *)cell->config) +
 				  sizeof(struct jailhouse_cell_desc));
 	unsigned long cpu_set_size = cell->config->cpu_set_size;
-	struct jailhouse_memory *config_ram =
-		(struct jailhouse_memory *)(((void *)config_cpu_set) +
-					    cpu_set_size);
+	const struct jailhouse_memory *config_ram =
+		jailhouse_cell_mem_regions(cell->config);
 	struct cpu_set *cpu_set;
 
 	cell->id = get_free_cell_id();
@@ -115,13 +114,11 @@ static struct cell *cell_find(const char *name)
 	return cell;
 }
 
-int check_mem_regions(struct jailhouse_cell_desc *config)
+int check_mem_regions(const struct jailhouse_cell_desc *config)
 {
-	struct jailhouse_memory *mem;
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(config);
 	unsigned int n;
-
-	mem = (void *)config + sizeof(struct jailhouse_cell_desc) +
-		config->cpu_set_size;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
 		if (mem->phys_start & ~PAGE_MASK ||
