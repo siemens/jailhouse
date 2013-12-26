@@ -244,10 +244,12 @@ static int jailhouse_disable(void)
 
 	iounmap((__force void __iomem *)hypervisor_mem);
 
-	for_each_cpu_mask(cpu, offlined_cpus)
+	for_each_cpu_mask(cpu, offlined_cpus) {
 		if (cpu_up(cpu) != 0)
 			pr_err("Jailhouse: failed to bring CPU %d back "
 			       "online\n", cpu);
+		cpu_clear(cpu, offlined_cpus);
+	}
 
 	enabled = false;
 	module_put(THIS_MODULE);
