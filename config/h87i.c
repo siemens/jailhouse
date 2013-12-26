@@ -189,7 +189,7 @@ struct {
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
-			.devfn = 0xe0,
+			.devfn = 0xe8,
 		},
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
