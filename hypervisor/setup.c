@@ -91,6 +91,7 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
+	linux_cell.id = -1;
 	error = cell_init(&linux_cell, false);
 	if (error)
 		return;
