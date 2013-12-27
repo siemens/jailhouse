@@ -45,5 +45,10 @@ void arch_reset_cpu(unsigned int cpu_id);
 void arch_park_cpu(unsigned int cpu_id);
 void arch_shutdown_cpu(unsigned int cpu_id);
 
+int arch_map_memory_region(struct cell *cell,
+			   const struct jailhouse_memory *mem);
+void arch_unmap_memory_region(struct cell *cell,
+			      const struct jailhouse_memory *mem);
+
 int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell);
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell);

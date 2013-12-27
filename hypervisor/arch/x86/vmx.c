@@ -160,8 +160,8 @@ void vmx_init(void)
 	msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_ICR/8] = 0x01;
 }
 
-static int vmx_map_memory_region(struct cell *cell,
-				 const struct jailhouse_memory *mem)
+int vmx_map_memory_region(struct cell *cell,
+			  const struct jailhouse_memory *mem)
 {
 	u32 table_flags, page_flags = EPT_FLAG_WB_TYPE;
 
@@ -176,6 +176,13 @@ static int vmx_map_memory_region(struct cell *cell,
 	return page_map_create(cell->vmx.ept, mem->phys_start, mem->size,
 			       mem->virt_start, page_flags, table_flags,
 			       PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
+}
+
+void vmx_unmap_memory_region(struct cell *cell,
+			     const struct jailhouse_memory *mem)
+{
+	page_map_destroy(cell->vmx.ept, mem->virt_start, mem->size,
+			 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 }
 
 int vmx_cell_init(struct cell *cell)
@@ -244,65 +251,15 @@ void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 	vmx_invept();
 }
 
-static bool address_in_region(unsigned long addr,
-			      const struct jailhouse_memory *region)
-{
-	return addr >= region->phys_start &&
-	       addr < (region->phys_start + region->size);
-}
-
-static void vmx_remap_to_linux(const struct jailhouse_memory *mem)
-{
-	const struct jailhouse_memory *linux_mem =
-		jailhouse_cell_mem_regions(linux_cell.config);
-	struct jailhouse_memory overlap;
-	int n, err;
-
-	for (n = 0; n < linux_cell.config->num_memory_regions;
-	     n++, linux_mem++) {
-		if (address_in_region(mem->phys_start, linux_mem)) {
-			overlap.phys_start = mem->phys_start;
-			overlap.size = linux_mem->size -
-				(overlap.phys_start - linux_mem->phys_start);
-			if (overlap.size > mem->size)
-				overlap.size = mem->size;
-		} else if (address_in_region(linux_mem->phys_start, mem)) {
-			overlap.phys_start = linux_mem->phys_start;
-			overlap.size = mem->size -
-				(overlap.phys_start - mem->phys_start);
-			if (overlap.size > linux_mem->size)
-				overlap.size = linux_mem->size;
-		} else
-			continue;
-
-		overlap.virt_start = linux_mem->virt_start +
-			overlap.phys_start - linux_mem->phys_start;
-		overlap.access_flags = linux_mem->access_flags;
-
-		err = vmx_map_memory_region(&linux_cell, &overlap);
-		if (err)
-			printk("WARNING: Failed to re-assign memory region "
-			       "to Linux cell\n");
-	}
-}
-
 void vmx_cell_exit(struct cell *cell)
 {
 	const u8 *linux_pio_bitmap =
 		jailhouse_cell_pio_bitmap(linux_cell.config);
 	struct jailhouse_cell_desc *config = cell->config;
-	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(config);
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
 	u32 pio_bitmap_size = config->pio_bitmap_size;
 	u8 *b;
-	int n;
 
-	for (n = 0; n < config->num_memory_regions; n++, mem++) {
-		page_map_destroy(cell->vmx.ept, mem->virt_start, mem->size,
-				 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
-		vmx_remap_to_linux(mem);
-	}
 	page_map_destroy(cell->vmx.ept, XAPIC_BASE, PAGE_SIZE,
 			 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 
@@ -446,7 +403,6 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmx_set_guest_cr(4, read_cr4());
 
 	ok &= vmcs_write64(GUEST_CR3, cpu_data->linux_cr3);
-
 
 	ok &= vmx_set_guest_segment(&cpu_data->linux_cs, GUEST_CS_SELECTOR);
 	ok &= vmx_set_guest_segment(&cpu_data->linux_ds, GUEST_DS_SELECTOR);

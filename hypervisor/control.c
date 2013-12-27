@@ -254,14 +254,56 @@ err_free_cell:
 	goto resume_out;
 }
 
+static bool address_in_region(unsigned long addr,
+			      const struct jailhouse_memory *region)
+{
+	return addr >= region->phys_start &&
+	       addr < (region->phys_start + region->size);
+}
+
+static void remap_to_linux(const struct jailhouse_memory *mem)
+{
+	const struct jailhouse_memory *linux_mem =
+		jailhouse_cell_mem_regions(linux_cell.config);
+	struct jailhouse_memory overlap;
+	int n;
+
+	for (n = 0; n < linux_cell.config->num_memory_regions;
+	     n++, linux_mem++) {
+		if (address_in_region(mem->phys_start, linux_mem)) {
+			overlap.phys_start = mem->phys_start;
+			overlap.size = linux_mem->size -
+				(overlap.phys_start - linux_mem->phys_start);
+			if (overlap.size > mem->size)
+				overlap.size = mem->size;
+		} else if (address_in_region(linux_mem->phys_start, mem)) {
+			overlap.phys_start = linux_mem->phys_start;
+			overlap.size = mem->size -
+				(overlap.phys_start - mem->phys_start);
+			if (overlap.size > linux_mem->size)
+				overlap.size = linux_mem->size;
+		} else
+			continue;
+
+		overlap.virt_start = linux_mem->virt_start +
+			overlap.phys_start - linux_mem->phys_start;
+		overlap.access_flags = linux_mem->access_flags;
+
+		if (arch_map_memory_region(&linux_cell, &overlap) != 0)
+			printk("WARNING: Failed to re-assign memory region "
+			       "to Linux cell\n");
+	}
+}
+
 int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 {
 	unsigned long mapping_addr = FOREIGN_MAPPING_BASE +
 		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
+	const struct jailhouse_memory *mem;
 	struct cell *cell, *previous;
 	unsigned long name_size;
+	unsigned int cpu, n;
 	const char *name;
-	unsigned int cpu;
 	int err = 0;
 
 	// TODO: access control
@@ -303,6 +345,12 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 
 		set_bit(cpu, linux_cell.cpu_set->bitmap);
 		per_cpu(cpu)->cell = &linux_cell;
+	}
+
+	mem = jailhouse_cell_mem_regions(cell->config);
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
+		arch_unmap_memory_region(cell, mem);
+		remap_to_linux(mem);
 	}
 
 	arch_cell_destroy(cpu_data, cell);
