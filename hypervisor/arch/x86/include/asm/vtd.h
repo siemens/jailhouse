@@ -102,6 +102,13 @@ struct vtd_entry {
 # define VTD_IOTLB_IVT			0x8000000000000000UL
 
 int vtd_init(void);
+
 int vtd_cell_init(struct cell *cell);
 void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config);
+int vtd_map_memory_region(struct cell *cell,
+			  const struct jailhouse_memory *mem);
+void vtd_unmap_memory_region(struct cell *cell,
+			     const struct jailhouse_memory *mem);
+void vtd_cell_exit(struct cell *cell);
+
 void vtd_shutdown(void);

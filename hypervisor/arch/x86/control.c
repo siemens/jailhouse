@@ -44,17 +44,28 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 int arch_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem)
 {
-	return vmx_map_memory_region(cell, mem);
+	int err;
+
+	err = vmx_map_memory_region(cell, mem);
+	if (err)
+		return err;
+
+	err = vtd_map_memory_region(cell, mem);
+	if (err)
+		vmx_unmap_memory_region(cell, mem);
+	return err;
 }
 
 void arch_unmap_memory_region(struct cell *cell,
 			      const struct jailhouse_memory *mem)
 {
+	vtd_unmap_memory_region(cell, mem);
 	vmx_unmap_memory_region(cell, mem);
 }
 
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
 {
+	vtd_cell_exit(cell);
 	vmx_cell_exit(cell);
 	flush_linux_cpu_caches(cpu_data);
 }

@@ -184,7 +184,6 @@ int vtd_cell_init(struct cell *cell)
 	const struct jailhouse_pci_device *dev =
 		jailhouse_cell_pci_devices(cell->config);
 	void *reg_base = dmar_reg_base;
-	u32 page_flags;
 	int n, err;
 
 	// HACK for QEMU
@@ -199,19 +198,7 @@ int vtd_cell_init(struct cell *cell)
 		return -ENOMEM;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
-		if (!(mem->access_flags & JAILHOUSE_MEM_DMA))
-			continue;
-
-		page_flags = 0;
-		if (mem->access_flags & JAILHOUSE_MEM_READ)
-			page_flags |= VTD_PAGE_READ;
-		if (mem->access_flags & JAILHOUSE_MEM_WRITE)
-			page_flags |= VTD_PAGE_WRITE;
-
-		err = page_map_create(cell->vtd.page_table, mem->phys_start,
-				      mem->size, mem->virt_start, page_flags,
-				      VTD_PAGE_READ | VTD_PAGE_WRITE,
-				      dmar_pt_levels, PAGE_MAP_COHERENT);
+		err = vtd_map_memory_region(cell, mem);
 		if (err)
 			/* FIXME: release vtd.page_table */
 			return err;
@@ -285,6 +272,75 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 		vtd_remove_device_from_cell(&linux_cell, &dev[n]);
 
 	vtd_flush_domain_caches(linux_cell.id);
+}
+
+int vtd_map_memory_region(struct cell *cell,
+			  const struct jailhouse_memory *mem)
+{
+	u32 page_flags = 0;
+
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return 0;
+
+	if (!(mem->access_flags & JAILHOUSE_MEM_DMA))
+		return 0;
+
+	if (mem->access_flags & JAILHOUSE_MEM_READ)
+		page_flags |= VTD_PAGE_READ;
+	if (mem->access_flags & JAILHOUSE_MEM_WRITE)
+		page_flags |= VTD_PAGE_WRITE;
+
+	return page_map_create(cell->vtd.page_table, mem->phys_start,
+			       mem->size, mem->virt_start, page_flags,
+			       VTD_PAGE_READ | VTD_PAGE_WRITE,
+			       dmar_pt_levels, PAGE_MAP_COHERENT);
+}
+
+void vtd_unmap_memory_region(struct cell *cell,
+			     const struct jailhouse_memory *mem)
+{
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return;
+
+	if (mem->access_flags & JAILHOUSE_MEM_DMA)
+		page_map_destroy(cell->vtd.page_table, mem->virt_start,
+				 mem->size, dmar_pt_levels, PAGE_MAP_COHERENT);
+}
+
+static bool vtd_return_device_to_linux(const struct jailhouse_pci_device *dev)
+{
+	const struct jailhouse_pci_device *linux_dev =
+		jailhouse_cell_pci_devices(linux_cell.config);
+	unsigned int n;
+
+	for (n = 0; n < linux_cell.config->num_pci_devices; n++)
+		if (linux_dev[n].domain == dev->domain &&
+		    linux_dev[n].bus == dev->bus &&
+		    linux_dev[n].devfn == dev->devfn)
+			return vtd_add_device_to_cell(&linux_cell,
+						      &linux_dev[n]);
+	return true;
+}
+
+void vtd_cell_exit(struct cell *cell)
+{
+	const struct jailhouse_pci_device *dev =
+		jailhouse_cell_pci_devices(cell->config);
+	unsigned int n;
+
+	for (n = 0; n < cell->config->num_pci_devices; n++) {
+		vtd_remove_device_from_cell(cell, &dev[n]);
+		if (!vtd_return_device_to_linux(&dev[n]))
+			printk("WARNING: Failed to re-assign PCI device to "
+			       "Linux cell\n");
+	}
+
+	vtd_flush_domain_caches(cell->id);
+	vtd_flush_domain_caches(linux_cell.id);
+
+	page_free(&mem_pool, cell->vtd.page_table, 1);
 }
 
 void vtd_shutdown(void)
