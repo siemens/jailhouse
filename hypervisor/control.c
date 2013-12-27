@@ -66,9 +66,8 @@ retry:
 
 int cell_init(struct cell *cell, bool copy_cpu_set)
 {
-	unsigned long *config_cpu_set =
-		(unsigned long *)(((void *)cell->config) +
-				  sizeof(struct jailhouse_cell_desc));
+	const unsigned long *config_cpu_set =
+		jailhouse_cell_cpu_set(cell->config);
 	unsigned long cpu_set_size = cell->config->cpu_set_size;
 	const struct jailhouse_memory *config_ram =
 		jailhouse_cell_mem_regions(cell->config);

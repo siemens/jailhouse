@@ -45,8 +45,7 @@ static int error_code;
 static inline unsigned int
 cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
 {
-	const unsigned long *cpu_mask =
-		((void *)config) + sizeof(struct jailhouse_cell_desc);
+	const unsigned long *cpu_mask = jailhouse_cell_cpu_set(config);
 
 	return find_next_bit(cpu_mask, config->cpu_set_size * 8, n + 1);
 }
