@@ -142,7 +142,7 @@ int vtd_init(void)
 }
 
 static bool vtd_add_device_to_cell(struct cell *cell,
-				   struct jailhouse_pci_device *device)
+			           const struct jailhouse_pci_device *device)
 {
 	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;
@@ -181,7 +181,8 @@ int vtd_cell_init(struct cell *cell)
 	struct jailhouse_cell_desc *config = cell->config;
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
-	struct jailhouse_pci_device *dev;
+	const struct jailhouse_pci_device *dev =
+		jailhouse_cell_pci_devices(cell->config);
 	void *reg_base = dmar_reg_base;
 	u32 page_flags;
 	int n, err;
@@ -216,10 +217,6 @@ int vtd_cell_init(struct cell *cell)
 			return err;
 	}
 
-	dev = (void *)mem +
-		config->num_irq_lines * sizeof(struct jailhouse_irq_line) +
-		config->pio_bitmap_size;
-
 	for (n = 0; n < config->num_pci_devices; n++)
 		if (!vtd_add_device_to_cell(cell, &dev[n]))
 			/* FIXME: release vtd.page_table,
@@ -241,8 +238,9 @@ int vtd_cell_init(struct cell *cell)
 	return 0;
 }
 
-static void vtd_remove_device_from_cell(struct cell *cell,
-					struct jailhouse_pci_device *device)
+static void
+vtd_remove_device_from_cell(struct cell *cell,
+			    const struct jailhouse_pci_device *device)
 {
 	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table =
@@ -273,7 +271,8 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
-	struct jailhouse_pci_device *dev;
+	const struct jailhouse_pci_device *dev =
+		jailhouse_cell_pci_devices(config);
 	unsigned int n;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
@@ -281,10 +280,6 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 			page_map_destroy(linux_cell.vtd.page_table,
 					 mem->phys_start, mem->size,
 					 dmar_pt_levels, PAGE_MAP_COHERENT);
-
-	dev = (void *)mem +
-		config->num_irq_lines * sizeof(struct jailhouse_irq_line) +
-		config->pio_bitmap_size;
 
 	for (n = 0; n < config->num_pci_devices; n++)
 		vtd_remove_device_from_cell(&linux_cell, &dev[n]);

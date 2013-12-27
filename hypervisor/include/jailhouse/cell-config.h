@@ -108,4 +108,14 @@ jailhouse_cell_pio_bitmap(const struct jailhouse_cell_desc *cell)
 		cell->num_irq_lines * sizeof(struct jailhouse_irq_line));
 }
 
+static inline const struct jailhouse_pci_device *
+jailhouse_cell_pci_devices(const struct jailhouse_cell_desc *cell)
+{
+	return (const struct jailhouse_pci_device *)((void *)cell +
+		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size +
+		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
+		cell->num_irq_lines * sizeof(struct jailhouse_irq_line) +
+		cell->pio_bitmap_size);
+}
+
 #endif /* !_JAILHOUSE_CELL_CONFIG_H */
