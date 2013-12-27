@@ -146,6 +146,11 @@ vector=10
 nmi_entry:
 	interrupt_entry apic_nmi_handler
 
+	.global irq_entry
+	.balign 16
+irq_entry:
+	interrupt_entry apic_irq_handler
+
 
 /* VM-exit handling */
 	.globl vm_exit

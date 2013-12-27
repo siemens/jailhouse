@@ -110,10 +110,8 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 
 int apic_init(void)
 {
-	unsigned long apicbase;
+	unsigned long apicbase = read_msr(MSR_IA32_APICBASE);
 	int err;
-
-	apicbase = read_msr(MSR_IA32_APICBASE);
 
 	if (apicbase & APIC_BASE_EXTD) {
 		/* set programmatically to enable address fixup */
@@ -218,6 +216,45 @@ void apic_nmi_handler(struct per_cpu *cpu_data)
 	vmx_schedule_vmexit(cpu_data);
 }
 
+void apic_irq_handler(struct per_cpu *cpu_data)
+{
+	apic_ops.write(APIC_REG_EOI, APIC_EOI_ACK);
+}
+
+static void apic_mask_lvt(unsigned int reg)
+{
+	unsigned int val = apic_ops.read(reg);
+
+	if (!(val & APIC_LVT_MASKED))
+		apic_ops.write(reg, val | APIC_LVT_MASKED);
+}
+
+static void apic_clear(void)
+{
+	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
+	int n;
+
+	apic_mask_lvt(APIC_REG_LVTERR);
+	if (maxlvt >= 6)
+		apic_mask_lvt(APIC_REG_LVTCMCI);
+	apic_mask_lvt(APIC_REG_LVTT);
+	if (maxlvt >= 5)
+		apic_mask_lvt(APIC_REG_LVTTHMR);
+	if (maxlvt >= 4)
+		apic_mask_lvt(APIC_REG_LVTPC);
+	apic_mask_lvt(APIC_REG_LVT0);
+	apic_mask_lvt(APIC_REG_LVT1);
+
+	for (n = APIC_NUM_INT_REGS-1; n >= 0; n--)
+		while (apic_ops.read(APIC_REG_ISR0 + n) != 0)
+			apic_ops.write(APIC_REG_EOI, APIC_EOI_ACK);
+
+	apic_ops.write(APIC_REG_TPR, 0);
+	enable_irq();
+	cpu_relax();
+	disable_irq();
+}
+
 int apic_handle_events(struct per_cpu *cpu_data)
 {
 	int sipi_vector = -1;
@@ -229,6 +266,7 @@ int apic_handle_events(struct per_cpu *cpu_data)
 			cpu_data->init_signaled = false;
 			cpu_data->wait_for_sipi = true;
 			sipi_vector = -1;
+			apic_clear();
 			vmx_cpu_park();
 			break;
 		}
@@ -241,8 +279,7 @@ int apic_handle_events(struct per_cpu *cpu_data)
 			cpu_relax();
 
 		if (cpu_data->shutdown_cpu) {
-			/* disable APIC */
-			apic_ops.write(APIC_REG_SPIV, 0);
+			apic_clear();
 			vmx_cpu_exit(cpu_data);
 			asm volatile("hlt");
 		}

@@ -24,7 +24,9 @@
 
 #define IDT_PRESENT_INT		0x00008e00
 
-#define NUM_IDT_DESC		20
+#define NUM_IDT_DESC		256
+#define NUM_EXCP_DESC		20
+#define IRQ_DESC_START		32
 
 struct farptr {
 	u64 offs;
@@ -40,6 +42,7 @@ static u64 gdt[] = {
 
 extern u8 exception_entries[];
 extern u8 nmi_entry[];
+extern u8 irq_entry[];
 
 unsigned long cache_line_size;
 static u32 idt[NUM_IDT_DESC * 4];
@@ -64,7 +67,7 @@ int arch_init_early(struct cell *linux_cell)
 		return err;
 
 	entry = (unsigned long)exception_entries;
-	for (vector = 0; vector < NUM_IDT_DESC; vector++) {
+	for (vector = 0; vector < NUM_EXCP_DESC; vector++) {
 		if (vector == NMI_VECTOR || vector == 15)
 			continue;
 		set_idt_int_gate(vector, entry);
@@ -72,6 +75,9 @@ int arch_init_early(struct cell *linux_cell)
 	}
 
 	set_idt_int_gate(NMI_VECTOR, (unsigned long)nmi_entry);
+
+	for (vector = IRQ_DESC_START; vector < NUM_IDT_DESC; vector++)
+		set_idt_int_gate(vector, (unsigned long)irq_entry);
 
 	vmx_init();
 
