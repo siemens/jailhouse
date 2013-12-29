@@ -143,6 +143,10 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	struct cell *cell, *last;
 	int err;
 
+	/* We do not support creation over non-Linux cells so far. */
+	if (cpu_data->cell != &linux_cell)
+		return -EPERM;
+
 	cell_suspend(&linux_cell, cpu_data);
 
 	cfg_header_size = (config_address & ~PAGE_MASK) +
@@ -307,9 +311,9 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 
 	// TODO: access control
 
-	/* We do not support destruction over non-Linux cells so far */
+	/* We do not support destruction over non-Linux cells so far. */
 	if (cpu_data->cell != &linux_cell)
-		return -EINVAL;
+		return -EPERM;
 
 	cell_suspend(&linux_cell, cpu_data);
 
@@ -378,6 +382,10 @@ int shutdown(struct per_cpu *cpu_data)
 	unsigned int cpu;
 
 	// TODO: access control
+
+	/* We do not support shutdown over non-Linux cells so far. */
+	if (cpu_data->cell != &linux_cell)
+		return -EPERM;
 
 	spin_lock(&shutdown_lock);
 
