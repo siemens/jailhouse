@@ -31,9 +31,8 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 	return cpu;
 }
 
-static void cell_suspend(struct per_cpu *cpu_data)
+static void cell_suspend(struct cell *cell, struct per_cpu *cpu_data)
 {
-	struct cell *cell = cpu_data->cell;
 	unsigned int cpu;
 
 	for_each_cpu_except(cpu, cell->cpu_set, cpu_data->cpu_id)
@@ -144,7 +143,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	struct cell *cell, *last;
 	int err;
 
-	cell_suspend(cpu_data);
+	cell_suspend(&linux_cell, cpu_data);
 
 	cfg_header_size = (config_address & ~PAGE_MASK) +
 		sizeof(struct jailhouse_cell_desc);
@@ -312,7 +311,7 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 	if (cpu_data->cell != &linux_cell)
 		return -EINVAL;
 
-	cell_suspend(cpu_data);
+	cell_suspend(&linux_cell, cpu_data);
 
 	name_size = (name_address & ~PAGE_MASK) + JAILHOUSE_CELL_NAME_MAXLEN;
 
@@ -336,6 +335,8 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 		err = -EINVAL;
 		goto resume_out;
 	}
+
+	cell_suspend(cell, cpu_data);
 
 	printk("Closing cell \"%s\"\n", name);
 
