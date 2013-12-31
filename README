@@ -48,6 +48,10 @@ currently:
     - unrestricted guest mode
  - at least 2 logical CPUs
  - x86-64 Linux kernel (tested against >= 3.9)
+    - VT-d usage has to be disabled in the Linux kernel, e.g. via command
+      line parameters:
+
+        intel_iommu=off intremap=off
 
 upcoming:
  - Intel IOMMU with interrupt remapping support
