@@ -113,9 +113,7 @@ vector=10
 	no_error_entry 19
 
 
-	.global nmi_entry
-	.balign 16
-nmi_entry:
+.macro interrupt_entry func
 	push %rax
 	push %rcx
 	push %rdx
@@ -128,7 +126,7 @@ nmi_entry:
 
 	mov %rsp,%rdi
 	and $PAGE_MASK,%rdi
-	call apic_nmi_handler
+	call \func
 
 	pop %r11
 	pop %r10
@@ -141,6 +139,12 @@ nmi_entry:
 	pop %rax
 
 	iretq
+.endm
+
+	.global nmi_entry
+	.balign 16
+nmi_entry:
+	interrupt_entry apic_nmi_handler
 
 
 /* VM-exit handling */
