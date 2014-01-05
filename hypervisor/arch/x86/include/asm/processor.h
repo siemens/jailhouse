@@ -237,6 +237,16 @@ static inline void write_idtr(struct desc_table_reg *val)
 	asm volatile("lidtq %0" : "=m" (*val));
 }
 
+static inline void enable_irq(void)
+{
+	asm volatile("sti");
+}
+
+static inline void disable_irq(void)
+{
+	asm volatile("cli");
+}
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PROCESSOR_H */
