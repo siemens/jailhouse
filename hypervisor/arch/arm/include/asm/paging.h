@@ -193,6 +193,10 @@ static inline void flush_tlb(void)
 {
 }
 
+static inline void flush_cache(void *addr, long size)
+{
+}
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PAGING_H */
