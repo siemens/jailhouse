@@ -22,6 +22,8 @@
 
 #define TSS_BUSY_FLAG		(1UL << (9 + 32))
 
+#define IDT_PRESENT_INT		0x00008e00
+
 #define NUM_IDT_DESC		20
 
 struct farptr {
@@ -42,6 +44,13 @@ extern u8 nmi_entry[];
 unsigned long cache_line_size;
 static u32 idt[NUM_IDT_DESC * 4];
 
+static void set_idt_int_gate(unsigned int vector, unsigned long entry)
+{
+	idt[vector * 4] = (entry & 0xffff) | ((GDT_DESC_CODE * 8) << 16);
+	idt[vector * 4 + 1] = IDT_PRESENT_INT | (entry & 0xffff0000);
+	idt[vector * 4 + 2] = entry >> 32;
+}
+
 int arch_init_early(struct cell *linux_cell)
 {
 	unsigned long entry;
@@ -58,17 +67,11 @@ int arch_init_early(struct cell *linux_cell)
 	for (vector = 0; vector < NUM_IDT_DESC; vector++) {
 		if (vector == NMI_VECTOR || vector == 15)
 			continue;
-		idt[vector * 4] = (entry & 0xffff) |
-			((GDT_DESC_CODE * 8) << 16);
-		idt[vector * 4 + 1] = 0x8e00 | (entry & 0xffff0000);
-		idt[vector * 4 + 2] = entry >> 32;
+		set_idt_int_gate(vector, entry);
 		entry += 16;
 	}
 
-	entry = (unsigned long)nmi_entry;
-	idt[NMI_VECTOR * 4] = (entry & 0xffff) | ((GDT_DESC_CODE * 8) << 16);
-	idt[NMI_VECTOR * 4 + 1] = 0x8e00 | (entry & 0xffff0000);
-	idt[NMI_VECTOR * 4 + 2] = entry >> 32;
+	set_idt_int_gate(NMI_VECTOR, (unsigned long)nmi_entry);
 
 	vmx_init();
 
