@@ -815,6 +815,34 @@ static void update_efer(void)
 		     vmcs_read32(VM_ENTRY_CONTROLS) | VM_ENTRY_IA32E_MODE);
 }
 
+static void vmx_handle_hypercall(struct registers *guest_regs,
+				 struct per_cpu *cpu_data)
+{
+	vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
+
+	switch (guest_regs->rax) {
+	case JAILHOUSE_HC_DISABLE:
+		guest_regs->rax = shutdown(cpu_data);
+		if (guest_regs->rax == 0) {
+			vtd_shutdown();
+			vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
+		}
+		break;
+	case JAILHOUSE_HC_CELL_CREATE:
+		guest_regs->rax = cell_create(cpu_data, guest_regs->rdi);
+		break;
+	case JAILHOUSE_HC_CELL_DESTROY:
+		guest_regs->rax = cell_destroy(cpu_data, guest_regs->rdi);
+		break;
+	default:
+		printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
+		       cpu_data->cpu_id, guest_regs->rax,
+		       vmcs_read64(GUEST_RIP) - X86_INST_LEN_VMCALL);
+		guest_regs->rax = -ENOSYS;
+		break;
+	}
+}
+
 static bool vmx_handle_cr(struct registers *guest_regs,
 			  struct per_cpu *cpu_data)
 {
@@ -948,30 +976,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			(u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
-		vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
-		switch (guest_regs->rax) {
-		case JAILHOUSE_HC_DISABLE:
-			guest_regs->rax = shutdown(cpu_data);
-			if (guest_regs->rax == 0) {
-				vtd_shutdown();
-				vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
-			}
-			break;
-		case JAILHOUSE_HC_CELL_CREATE:
-			guest_regs->rax = cell_create(cpu_data,
-						      guest_regs->rdi);
-			break;
-		case JAILHOUSE_HC_CELL_DESTROY:
-			guest_regs->rax = cell_destroy(cpu_data,
-						       guest_regs->rdi);
-			break;
-		default:
-			printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
-			       cpu_data->cpu_id, guest_regs->rax,
-			       vmcs_read64(GUEST_RIP) - X86_INST_LEN_VMCALL);
-			guest_regs->rax = -ENOSYS;
-			break;
-		}
+		vmx_handle_hypercall(guest_regs, cpu_data);
 		return;
 	case EXIT_REASON_CR_ACCESS:
 		if (vmx_handle_cr(guest_regs, cpu_data))
