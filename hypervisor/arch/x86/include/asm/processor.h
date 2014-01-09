@@ -17,6 +17,8 @@
 
 #define X86_FEATURE_VMX					(1 << 5)
 
+#define X86_RFLAGS_VM					(1 << 17)
+
 #define X86_CR0_PE					0x00000001
 #define X86_CR0_ET					0x00000010
 #define X86_CR0_NW					0x20000000

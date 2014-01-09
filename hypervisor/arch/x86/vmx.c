@@ -820,6 +820,13 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 {
 	vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
 
+	if ((!(vmcs_read64(GUEST_IA32_EFER) & EFER_LMA) &&
+	     vmcs_read64(GUEST_RFLAGS) & X86_RFLAGS_VM) ||
+	    (vmcs_read16(GUEST_CS_SELECTOR) & 3) != 0) {
+		guest_regs->rax = -EPERM;
+		return;
+	}
+
 	switch (guest_regs->rax) {
 	case JAILHOUSE_HC_DISABLE:
 		guest_regs->rax = shutdown(cpu_data);
