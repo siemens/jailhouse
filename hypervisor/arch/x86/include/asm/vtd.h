@@ -79,7 +79,7 @@ struct vtd_entry {
 # define VTD_GCMD_TE			0x80000000
 #define VTD_GSTS_REG			0x1C
 # define VTD_GSTS_SRTP			0x40000000
-# define VTD_GSTS_TE			0x80000000
+# define VTD_GSTS_TES			0x80000000
 #define VTD_RTADDR_REG			0x20
 #define VTD_CCMD_REG			0x28
 # define VTD_CCMD_CIRG_GLOBAL		0x2000000000000000UL

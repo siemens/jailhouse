@@ -123,7 +123,7 @@ int vtd_init(void)
 		if (vtd_iotlb_reg_base(reg_base) >= reg_base + PAGE_SIZE)
 			return -EIO;
 
-		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)
+		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
 			return -EBUSY;
 
 		num_did = 1 << (4 + (caps & VTD_CAP_NUM_DID_MASK) * 2);
@@ -210,7 +210,7 @@ int vtd_cell_init(struct cell *cell)
 			 * revert device additions*/
 			return -ENOMEM;
 
-	if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE))
+	if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
 		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 			mmio_write64(reg_base + VTD_RTADDR_REG,
 				     page_map_hvirt2phys(root_entry_table));
@@ -350,7 +350,7 @@ void vtd_shutdown(void)
 
 	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 		mmio_write32(reg_base + VTD_GCMD_REG, 0);
-		while (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TE)
+		while (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
 			cpu_relax();
 	}
 }
