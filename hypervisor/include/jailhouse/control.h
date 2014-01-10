@@ -52,3 +52,5 @@ void arch_unmap_memory_region(struct cell *cell,
 
 int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell);
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell);
+
+void arch_shutdown(void);

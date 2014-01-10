@@ -58,3 +58,4 @@ void arch_unmap_memory_region(struct cell *cell,
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *new_cell) {}
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
 void arch_dbg_write(const char *msg) {}
+void arch_shutdown(void) {}

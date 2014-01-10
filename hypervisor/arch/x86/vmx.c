@@ -20,7 +20,6 @@
 #include <asm/apic.h>
 #include <asm/fault.h>
 #include <asm/vmx.h>
-#include <asm/vtd.h>
 
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
@@ -830,10 +829,8 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 	switch (guest_regs->rax) {
 	case JAILHOUSE_HC_DISABLE:
 		guest_regs->rax = shutdown(cpu_data);
-		if (guest_regs->rax == 0) {
-			vtd_shutdown();
+		if (guest_regs->rax == 0)
 			vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
-		}
 		break;
 	case JAILHOUSE_HC_CELL_CREATE:
 		guest_regs->rax = cell_create(cpu_data, guest_regs->rdi);

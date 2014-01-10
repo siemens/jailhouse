@@ -69,3 +69,8 @@ void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
 	vmx_cell_exit(cell);
 	flush_linux_cpu_caches(cpu_data);
 }
+
+void arch_shutdown(void)
+{
+	vtd_shutdown();
+}

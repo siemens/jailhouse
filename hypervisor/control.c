@@ -406,6 +406,7 @@ int shutdown(struct per_cpu *cpu_data)
 
 		printk(" Closing Linux cell \"%s\"\n",
 		       linux_cell.config->name);
+		arch_shutdown();
 	}
 	printk("  Releasing CPU %d\n", this_cpu);
 
