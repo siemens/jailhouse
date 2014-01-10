@@ -220,6 +220,9 @@ int vtd_cell_init(struct cell *cell)
 				cpu_relax();
 
 			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
+			while (!(mmio_read32(reg_base + VTD_GSTS_REG) &
+				 VTD_GSTS_TES))
+				cpu_relax();
 		}
 
 	return 0;
