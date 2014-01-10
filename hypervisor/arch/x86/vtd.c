@@ -225,6 +225,9 @@ int vtd_cell_init(struct cell *cell)
 				 VTD_GSTS_SRTP))
 				cpu_relax();
 
+			vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
+					      VTD_IOTLB_IIRG_GLOBAL);
+
 			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
 			while (!(mmio_read32(reg_base + VTD_GSTS_REG) &
 				 VTD_GSTS_TES))
