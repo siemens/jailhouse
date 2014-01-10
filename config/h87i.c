@@ -21,7 +21,7 @@
 struct {
 	struct jailhouse_system ALIGN header;
 	__u64 ALIGN cpus[1];
-	struct jailhouse_memory ALIGN mem_regions[8];
+	struct jailhouse_memory ALIGN mem_regions[9];
 	__u8 ALIGN pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[13];
 } ALIGN config = {
@@ -76,6 +76,14 @@ struct {
 			.phys_start = 0xcca79000,
 			.virt_start = 0xcca79000,
 			.size = 0x12787000,
+			.access_flags = JAILHOUSE_MEM_READ |
+				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
+				JAILHOUSE_MEM_DMA,
+		},
+		/* RAM */ {
+			.phys_start = 0xcf200000,
+			.virt_start = 0xcf200000,
+			.size = 0x10000000,
 			.access_flags = JAILHOUSE_MEM_READ |
 				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
 				JAILHOUSE_MEM_DMA,
