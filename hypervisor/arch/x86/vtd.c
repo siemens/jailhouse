@@ -29,27 +29,33 @@ static void *vtd_iotlb_reg_base(void *reg_base)
 			    VTD_ECAP_IRO_MASK) >> VTD_ECAP_IRO_SHIFT) * 16;
 }
 
+static void vtd_flush_dmar_caches(void *reg_base, u64 ctx_scope,
+				  u64 iotlb_scope)
+{
+	void *iotlb_reg_base;
+
+	mmio_write64(reg_base + VTD_CCMD_REG, ctx_scope | VTD_CCMD_ICC);
+	while (mmio_read64(reg_base + VTD_CCMD_REG) & VTD_CCMD_ICC)
+		cpu_relax();
+
+	iotlb_reg_base = vtd_iotlb_reg_base(reg_base);
+	mmio_write64(iotlb_reg_base + VTD_IOTLB_REG,
+		     iotlb_scope | VTD_IOTLB_DW | VTD_IOTLB_DR |
+		     VTD_IOTLB_IVT);
+	while (mmio_read64(iotlb_reg_base + VTD_IOTLB_REG) & VTD_IOTLB_IVT)
+		cpu_relax();
+}
+
 static void vtd_flush_domain_caches(unsigned int did)
 {
+	u64 iotlb_scope = VTD_IOTLB_IIRG_DOMAIN |
+		((unsigned long)did << VTD_IOTLB_DID_SHIFT);
 	void *reg_base = dmar_reg_base;
-	void *iotlb_reg_base;
 	unsigned int n;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		mmio_write64(reg_base + VTD_CCMD_REG, did |
-			     VTD_CCMD_CIRG_DOMAIN | VTD_CCMD_ICC);
-		while (mmio_read64(reg_base + VTD_CCMD_REG) & VTD_CCMD_ICC)
-			cpu_relax();
-
-		iotlb_reg_base = vtd_iotlb_reg_base(reg_base);
-		mmio_write64(iotlb_reg_base + VTD_IOTLB_REG,
-			((unsigned long)did << VTD_IOTLB_DID_SHIFT) |
-			VTD_IOTLB_DW | VTD_IOTLB_DR | VTD_IOTLB_IIRG_DOMAIN |
-			VTD_IOTLB_IVT);
-		while (mmio_read64(iotlb_reg_base + VTD_IOTLB_REG) &
-		       VTD_IOTLB_IVT)
-			cpu_relax();
-	}
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE)
+		vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_DOMAIN | did,
+				      iotlb_scope);
 }
 
 int vtd_init(void)
