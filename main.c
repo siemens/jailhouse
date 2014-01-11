@@ -21,6 +21,7 @@
 #include <linux/slab.h>
 #include <linux/smp.h>
 #include <linux/uaccess.h>
+#include <linux/reboot.h>
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
 
@@ -455,16 +456,40 @@ static struct miscdevice jailhouse_misc_dev = {
 	.fops = &jailhouse_fops,
 };
 
+static int jailhouse_shutdown_notify(struct notifier_block *unused1,
+				     unsigned long unused2, void *unused3)
+{
+	int err;
+
+	err = jailhouse_disable();
+	if (err && err != -EINVAL)
+		pr_emerg("jailhouse: ordered shutdown failed!\n");
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block jailhouse_shutdown_nb = {
+	.notifier_call = jailhouse_shutdown_notify,
+};
+
 static int __init jailhouse_init(void)
 {
+	int err;
+
 	jailhouse_dev = root_device_register("jailhouse");
 	if (IS_ERR(jailhouse_dev))
 		return PTR_ERR(jailhouse_dev);
-	return misc_register(&jailhouse_misc_dev);
+
+	err = misc_register(&jailhouse_misc_dev);
+	if (!err)
+		register_reboot_notifier(&jailhouse_shutdown_nb);
+
+	return err;
 }
 
 static void __exit jailhouse_exit(void)
 {
+	unregister_reboot_notifier(&jailhouse_shutdown_nb);
 	misc_deregister(&jailhouse_misc_dev);
 	root_device_unregister(jailhouse_dev);
 }
