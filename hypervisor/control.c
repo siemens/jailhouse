@@ -395,20 +395,22 @@ int shutdown(struct per_cpu *cpu_data)
 		printk("Shutting down hypervisor\n");
 
 		while (cell) {
-			printk(" Closing cell \"%s\"\n", cell->config->name);
+			cell_suspend(cell, cpu_data);
+
+			printk("Closing cell \"%s\"\n", cell->config->name);
 
 			for_each_cpu(cpu, cell->cpu_set) {
-				printk("  Releasing CPU %d\n", cpu);
+				printk(" Releasing CPU %d\n", cpu);
 				arch_shutdown_cpu(cpu);
 			}
 			cell = cell->next;
 		}
 
-		printk(" Closing Linux cell \"%s\"\n",
+		printk("Closing Linux cell \"%s\"\n",
 		       linux_cell.config->name);
 		arch_shutdown();
 	}
-	printk("  Releasing CPU %d\n", this_cpu);
+	printk(" Releasing CPU %d\n", this_cpu);
 
 	spin_unlock(&shutdown_lock);
 
