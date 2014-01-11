@@ -77,9 +77,12 @@ extern bool using_x2apic;
 int apic_init(void);
 int apic_cpu_init(struct per_cpu *cpu_data);
 
+void apic_clear(void);
+
+void apic_send_nmi_ipi(struct per_cpu *target_data);
+
 void apic_nmi_handler(struct per_cpu *cpu_data);
 void apic_irq_handler(struct per_cpu *cpu_data);
-int apic_handle_events(struct per_cpu *cpu_data);
 
 void apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val);
 

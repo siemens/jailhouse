@@ -18,6 +18,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/hypercall.h>
 #include <asm/apic.h>
+#include <asm/control.h>
 #include <asm/fault.h>
 #include <asm/vmx.h>
 
@@ -963,7 +964,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		/* fall through */
 	case EXIT_REASON_PREEMPTION_TIMER:
 		vmx_disable_preemption_timer();
-		sipi_vector = apic_handle_events(cpu_data);
+		sipi_vector = x86_handle_events(cpu_data);
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);

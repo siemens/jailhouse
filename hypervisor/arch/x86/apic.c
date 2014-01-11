@@ -17,14 +17,13 @@
 #include <jailhouse/mmio.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
+#include <asm/control.h>
 #include <asm/fault.h>
-#include <asm/spinlock.h>
 #include <asm/vmx.h>
 
 bool using_x2apic;
 
 static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = APIC_INVALID_ID };
-static DEFINE_SPINLOCK(wait_lock);
 static void *xapic_page;
 
 static struct {
@@ -143,7 +142,7 @@ int apic_init(void)
 	return 0;
 }
 
-static void apic_send_nmi_ipi(struct per_cpu *target_data)
+void apic_send_nmi_ipi(struct per_cpu *target_data)
 {
 	apic_ops.send_ipi(target_data->apic_id,
 			  APIC_ICR_DLVR_NMI |
@@ -151,64 +150,6 @@ static void apic_send_nmi_ipi(struct per_cpu *target_data)
 			  APIC_ICR_LV_ASSERT |
 			  APIC_ICR_TM_EDGE |
 			  APIC_ICR_SH_NONE);
-}
-
-void arch_suspend_cpu(unsigned int cpu_id)
-{
-	struct per_cpu *target_data = per_cpu(cpu_id);
-	bool target_stopped;
-
-	spin_lock(&wait_lock);
-
-	target_data->stop_cpu = true;
-	target_stopped = target_data->cpu_stopped;
-
-	spin_unlock(&wait_lock);
-
-	if (!target_stopped) {
-		apic_send_nmi_ipi(target_data);
-
-		while (!target_data->cpu_stopped)
-			cpu_relax();
-	}
-}
-
-void arch_resume_cpu(unsigned int cpu_id)
-{
-	/* make any state changes visible before releasing the CPU */
-	memory_barrier();
-
-	per_cpu(cpu_id)->stop_cpu = false;
-}
-
-/* target cpu has to be stopped */
-void arch_reset_cpu(unsigned int cpu_id)
-{
-	per_cpu(cpu_id)->wait_for_sipi = true;
-	per_cpu(cpu_id)->sipi_vector = APIC_BSP_PSEUDO_SIPI;
-
-	arch_resume_cpu(cpu_id);
-}
-
-/* target cpu has to be stopped */
-void arch_park_cpu(unsigned int cpu_id)
-{
-	per_cpu(cpu_id)->init_signaled = true;
-
-	arch_resume_cpu(cpu_id);
-}
-
-void arch_shutdown_cpu(unsigned int cpu_id)
-{
-	arch_suspend_cpu(cpu_id);
-	per_cpu(cpu_id)->shutdown_cpu = true;
-	arch_resume_cpu(cpu_id);
-	/*
-	 * Note: The caller has to ensure that the target CPU has enough time
-	 * to reach the shutdown position before destroying the code path it
-	 * has to take to get there. This can be ensured by bringing the CPU
-	 * online again under Linux before cleaning up the hypervisor.
-	 */
 }
 
 void apic_nmi_handler(struct per_cpu *cpu_data)
@@ -229,7 +170,7 @@ static void apic_mask_lvt(unsigned int reg)
 		apic_ops.write(reg, val | APIC_LVT_MASKED);
 }
 
-static void apic_clear(void)
+void apic_clear(void)
 {
 	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
 	int n;
@@ -253,56 +194,6 @@ static void apic_clear(void)
 	enable_irq();
 	cpu_relax();
 	disable_irq();
-}
-
-int apic_handle_events(struct per_cpu *cpu_data)
-{
-	int sipi_vector = -1;
-
-	spin_lock(&wait_lock);
-
-	do {
-		if (cpu_data->init_signaled && !cpu_data->stop_cpu) {
-			cpu_data->init_signaled = false;
-			cpu_data->wait_for_sipi = true;
-			sipi_vector = -1;
-			apic_clear();
-			vmx_cpu_park();
-			break;
-		}
-
-		cpu_data->cpu_stopped = true;
-
-		spin_unlock(&wait_lock);
-
-		while (cpu_data->stop_cpu)
-			cpu_relax();
-
-		if (cpu_data->shutdown_cpu) {
-			apic_clear();
-			vmx_cpu_exit(cpu_data);
-			asm volatile("hlt");
-		}
-
-		spin_lock(&wait_lock);
-
-		cpu_data->cpu_stopped = false;
-
-		if (cpu_data->wait_for_sipi) {
-			cpu_data->wait_for_sipi = false;
-			sipi_vector = cpu_data->sipi_vector;
-		}
-	} while (cpu_data->init_signaled);
-
-	if (cpu_data->flush_caches) {
-		cpu_data->flush_caches = false;
-		flush_tlb();
-		vmx_invept();
-	}
-
-	spin_unlock(&wait_lock);
-
-	return sipi_vector;
 }
 
 static void apic_validate_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
@@ -335,9 +226,6 @@ static void apic_deliver_ipi(struct per_cpu *cpu_data,
 			     unsigned int target_cpu_id,
 			     u32 orig_icr_hi, u32 icr_lo)
 {
-	struct per_cpu *target_data;
-	bool send_nmi;
-
 	if (target_cpu_id == APIC_INVALID_ID ||
 	    !test_bit(target_cpu_id, cpu_data->cell->cpu_set->bitmap)) {
 		printk("WARNING: CPU %d specified IPI destination outside "
@@ -346,38 +234,21 @@ static void apic_deliver_ipi(struct per_cpu *cpu_data,
 		return;
 	}
 
-	target_data = per_cpu(target_cpu_id);
-
 	switch (icr_lo & APIC_ICR_DLVR_MASK) {
 	case APIC_ICR_DLVR_NMI:
 		/* TODO: must be sent via hypervisor */
 		printk("Ignoring NMI IPI\n");
-		return;
+		break;
 	case APIC_ICR_DLVR_INIT:
+		x86_send_init_sipi(target_cpu_id, X86_INIT, -1);
+		break;
 	case APIC_ICR_DLVR_SIPI:
-		send_nmi = false;
-
-		spin_lock(&wait_lock);
-
-		if ((icr_lo & APIC_ICR_DLVR_MASK) == APIC_ICR_DLVR_INIT) {
-			if (!target_data->wait_for_sipi) {
-				target_data->init_signaled = true;
-				send_nmi = true;
-			}
-		} else if (target_data->wait_for_sipi) {
-			target_data->sipi_vector =
-				icr_lo & APIC_ICR_VECTOR_MASK;
-			send_nmi = true;
-		}
-
-		spin_unlock(&wait_lock);
-
-		if (send_nmi)
-			apic_send_nmi_ipi(target_data);
-		return;
+		x86_send_init_sipi(target_cpu_id, X86_SIPI,
+				   icr_lo & APIC_ICR_VECTOR_MASK);
+		break;
+	default:
+		apic_ops.send_ipi(per_cpu(target_cpu_id)->apic_id, icr_lo);
 	}
-
-	apic_ops.send_ipi(target_data->apic_id, icr_lo);
 }
 
 static void apic_deliver_logical_dest_ipi(struct per_cpu *cpu_data,
