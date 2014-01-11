@@ -262,7 +262,7 @@ int apic_handle_events(struct per_cpu *cpu_data)
 	spin_lock(&wait_lock);
 
 	do {
-		if (cpu_data->init_signaled) {
+		if (cpu_data->init_signaled && !cpu_data->stop_cpu) {
 			cpu_data->init_signaled = false;
 			cpu_data->wait_for_sipi = true;
 			sipi_vector = -1;
