@@ -103,43 +103,6 @@ void page_free(struct page_pool *pool, void *page, unsigned int num)
 	}
 }
 
-unsigned long page_map_virt2phys(pgd_t *page_table,
-				 unsigned long page_table_offset,
-				 unsigned long virt)
-{
-	pgd_t *pgd;
-	pud_t *pud;
-	pmd_t *pmd;
-	pte_t *pte;
-
-#if PAGE_DIR_LEVELS == 4
-	pgd = pgd_offset(page_table, virt);
-	if (!pgd_valid(pgd))
-		return INVALID_PHYS_ADDR;
-
-	pud = pud4l_offset(pgd, page_table_offset, virt);
-#elif PAGE_DIR_LEVELS == 3
-	pud = pud3l_offset(pgd, page_table_offset, virt);
-#else
-# error Unsupported paging level
-#endif
-	if (!pud_valid(pud))
-		return INVALID_PHYS_ADDR;
-
-	pmd = pmd_offset(pud, page_table_offset, virt);
-	if (!pmd_valid(pud))
-		return INVALID_PHYS_ADDR;
-
-	if (pmd_is_hugepage(pmd))
-		return phys_address_hugepage(pmd, virt);
-
-	pte = pte_offset(pmd, page_table_offset, virt);
-	if (!pte_valid(pte))
-		return INVALID_PHYS_ADDR;
-
-	return phys_address(pte, virt);
-}
-
 static void flush_page_table(void *addr, unsigned long size,
 			     enum page_map_coherent coherent)
 {
