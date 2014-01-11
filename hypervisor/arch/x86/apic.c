@@ -222,9 +222,8 @@ static void apic_validate_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
 	}
 }
 
-static void apic_deliver_ipi(struct per_cpu *cpu_data,
-			     unsigned int target_cpu_id,
-			     u32 orig_icr_hi, u32 icr_lo)
+static void apic_send_ipi(struct per_cpu *cpu_data, unsigned int target_cpu_id,
+			  u32 orig_icr_hi, u32 icr_lo)
 {
 	if (target_cpu_id == APIC_INVALID_ID ||
 	    !test_bit(target_cpu_id, cpu_data->cell->cpu_set->bitmap)) {
@@ -251,9 +250,9 @@ static void apic_deliver_ipi(struct per_cpu *cpu_data,
 	}
 }
 
-static void apic_deliver_logical_dest_ipi(struct per_cpu *cpu_data,
-					  unsigned long dest, u32 lo_val,
-					  u32 hi_val)
+static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
+				       unsigned long dest, u32 lo_val,
+				       u32 hi_val)
 {
 	unsigned int target_cpu_id;
 	unsigned int logical_id;
@@ -271,16 +270,14 @@ static void apic_deliver_logical_dest_ipi(struct per_cpu *cpu_data,
 			apic_id = logical_id |
 				(cluster_id << X2APIC_CLUSTER_ID_SHIFT);
 			target_cpu_id = apic_to_cpu_id[apic_id];
-			apic_deliver_ipi(cpu_data, target_cpu_id, hi_val,
-					 lo_val);
+			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 		}
 	} else {
 		dest_mask = ~dest;
 		while (dest_mask != ~0UL) {
 			target_cpu_id = ffz(dest_mask);
 			dest_mask |= 1UL << target_cpu_id;
-			apic_deliver_ipi(cpu_data, target_cpu_id, hi_val,
-					 lo_val);
+			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 		}
 	}
 }
@@ -306,12 +303,12 @@ void apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 
 	if (lo_val & APIC_ICR_DEST_LOGICAL) {
 		lo_val &= ~APIC_ICR_DEST_LOGICAL;
-		apic_deliver_logical_dest_ipi(cpu_data, dest, lo_val, hi_val);
+		apic_send_logical_dest_ipi(cpu_data, dest, lo_val, hi_val);
 	} else {
 		target_cpu_id = APIC_INVALID_ID;
 		if (dest <= APIC_MAX_PHYS_ID)
 			target_cpu_id = apic_to_cpu_id[dest];
-		apic_deliver_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
+		apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 	}
 }
 
