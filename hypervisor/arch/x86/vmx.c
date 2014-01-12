@@ -164,6 +164,7 @@ int vmx_map_memory_region(struct cell *cell,
 			  const struct jailhouse_memory *mem)
 {
 	u32 table_flags, page_flags = EPT_FLAG_WB_TYPE;
+	u64 phys_start = mem->phys_start;
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
 		page_flags |= EPT_FLAG_READ;
@@ -171,9 +172,11 @@ int vmx_map_memory_region(struct cell *cell,
 		page_flags |= EPT_FLAG_WRITE;
 	if (mem->flags & JAILHOUSE_MEM_EXECUTE)
 		page_flags |= EPT_FLAG_EXECUTE;
+	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
+		phys_start = page_map_hvirt2phys(&cell->comm_page);
 	table_flags = page_flags & ~EPT_FLAG_WB_TYPE;
 
-	return page_map_create(cell->vmx.ept, mem->phys_start, mem->size,
+	return page_map_create(cell->vmx.ept, phys_start, mem->size,
 			       mem->virt_start, page_flags, table_flags,
 			       PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 }
@@ -240,9 +243,10 @@ void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 	int n;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
-		page_map_destroy(linux_cell.vmx.ept, mem->phys_start,
-				 mem->size, PAGE_DIR_LEVELS,
-				 PAGE_MAP_NON_COHERENT);
+		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
+			page_map_destroy(linux_cell.vmx.ept, mem->phys_start,
+					 mem->size, PAGE_DIR_LEVELS,
+					 PAGE_MAP_NON_COHERENT);
 
 	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 	     b++, pio_bitmap++, pio_bitmap_size--)

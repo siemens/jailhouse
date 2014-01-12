@@ -17,6 +17,7 @@
 #include <asm/paging.h>
 
 #include <jailhouse/cell-config.h>
+#include <jailhouse/hypercall.h>
 
 struct cell {
 	struct {
@@ -39,6 +40,11 @@ struct cell {
 	unsigned long page_offset;
 
 	struct cell *next;
+
+	union {
+		struct jailhouse_comm_region comm_region;
+		u8 padding[PAGE_SIZE];
+	} __attribute__((aligned(PAGE_SIZE))) comm_page;
 };
 
 extern struct cell linux_cell;

@@ -10,8 +10,16 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef _JAILHOUSE_HYPERCALL_H
+#define _JAILHOUSE_HYPERCALL_H
+
 #include <asm/jailhouse.h>
 
 #define JAILHOUSE_HC_DISABLE		0
 #define JAILHOUSE_HC_CELL_CREATE	1
 #define JAILHOUSE_HC_CELL_DESTROY	2
+
+struct jailhouse_comm_region {
+};
+
+#endif /* !_JAILHOUSE_HYPERCALL_H */

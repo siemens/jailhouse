@@ -355,7 +355,8 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 	mem = jailhouse_cell_mem_regions(cell->config);
 	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
 		arch_unmap_memory_region(cell, mem);
-		remap_to_linux(mem);
+		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
+			remap_to_linux(mem);
 	}
 
 	arch_cell_destroy(cpu_data, cell);
