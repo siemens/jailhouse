@@ -44,7 +44,6 @@ struct {
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irq_lines = 0,
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
-
 			.num_pci_devices = 0,
 		},
 	},
@@ -58,38 +57,34 @@ struct {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
 			.size = 0x3c000000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* ACPI */ {
 			.phys_start = 0x3fffe000,
 			.virt_start = 0x3fffe000,
 			.size = 0x2000,
-			.access_flags = JAILHOUSE_MEM_READ,
+			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* PCI */ {
 			.phys_start = 0x80000000,
 			.virt_start = 0x80000000,
 			.size = 0x7ec00000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* yeah, that's not really safe... */
 		/* IOAPIC */ {
 			.phys_start = 0xfec00000,
 			.virt_start = 0xfec00000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* the same here until we catch MSIs via interrupt remapping */
 		/* HPET */ {
 			.phys_start = 0xfed00000,
 			.virt_start = 0xfed00000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 	},
 

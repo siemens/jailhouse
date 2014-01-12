@@ -122,10 +122,10 @@ int check_mem_regions(const struct jailhouse_cell_desc *config)
 		if (mem->phys_start & ~PAGE_MASK ||
 		    mem->virt_start & ~PAGE_MASK ||
 		    mem->size & ~PAGE_MASK ||
-		    mem->access_flags & ~JAILHOUSE_MEM_VALID_FLAGS) {
+		    mem->flags & ~JAILHOUSE_MEM_VALID_FLAGS) {
 			printk("FATAL: Invalid memory bar (%p, %p, %p, %x)\n",
 			       mem->phys_start, mem->virt_start, mem->size,
-			       mem->access_flags);
+			       mem->flags);
 			return -EINVAL;
 		}
 	}
@@ -290,7 +290,7 @@ static void remap_to_linux(const struct jailhouse_memory *mem)
 
 		overlap.virt_start = linux_mem->virt_start +
 			overlap.phys_start - linux_mem->phys_start;
-		overlap.access_flags = linux_mem->access_flags;
+		overlap.flags = linux_mem->flags;
 
 		if (arch_map_memory_region(&linux_cell, &overlap) != 0)
 			printk("WARNING: Failed to re-assign memory region "

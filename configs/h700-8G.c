@@ -54,70 +54,62 @@ struct {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
 			.size = 0x3c000000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
 			.phys_start = 0x40000000,
 			.virt_start = 0x40000000,
 			.size = 0x7f7de000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* ACPI */ {
 			.phys_start = 0xbf7de000,
 			.virt_start = 0xbf7de000,
 			.size = 0x21000,
-			.access_flags = JAILHOUSE_MEM_READ,
+			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* RAM */ {
 			.phys_start = 0xbf7ff000,
 			.virt_start = 0xbf7ff000,
 			.size = 0x801000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* PCI */ {
 			.phys_start = 0xc0000000,
 			.virt_start = 0xc0000000,
 			.size = 0x3eb00000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* yeah, that's not really safe... */
 		/* IOAPIC */ {
 			.phys_start = 0xfec00000,
 			.virt_start = 0xfec00000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* the same here until we catch MSIs via interrupt remapping */
 		/* HPET */ {
 			.phys_start = 0xfed00000,
 			.virt_start = 0xfed00000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* RAM */ {
 			.phys_start = 0x100000000,
 			.virt_start = 0x100000000,
 			.size = 0xfc000000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
 			.phys_start = 0x200000000,
 			.virt_start = 0x200000000,
 			.size = 0x3c000000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 	},
 

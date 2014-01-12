@@ -49,8 +49,8 @@ struct {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
 			.size = 0x3c000000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE,
 		},
 	},
 };

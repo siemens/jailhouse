@@ -56,102 +56,90 @@ struct {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
 			.size = 0x1bf00000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
 			.phys_start = 0x1ff00000,
 			.virt_start = 0x1ff00000,
 			.size = 0x100000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
 			.phys_start = 0x20200000,
 			.virt_start = 0x20200000,
 			.size = 0x1fe04000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
 			.phys_start = 0x40005000,
 			.virt_start = 0x40005000,
 			.size = 0x97f3c000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* ACPI */ {
 			.phys_start = 0xd8a2a000,
 			.virt_start = 0xd8a2a000,
 			.size = 0x11e000,
-			.access_flags = JAILHOUSE_MEM_READ,
+			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* RAM */ {
 			.phys_start = 0xda382000,
 			.virt_start = 0xda382000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* ACPI */ {
 			.phys_start = 0xda383000,
 			.virt_start = 0xda383000,
 			.size = 0x43000,
-			.access_flags = JAILHOUSE_MEM_READ,
+			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* RAM */ {
 			.phys_start = 0xda3c6000,
 			.virt_start = 0xda3c6000,
 			.size = 0x9df000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
 			.phys_start = 0xdafef000,
 			.virt_start = 0xdafef000,
 			.size = 0x11000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* PCI */ {
 			.phys_start = 0xdfa00000,
 			.virt_start = 0xdfa00000,
 			.size = 0x1f100000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* yeah, that's not really safe... */
 		/* IOAPIC */ {
 			.phys_start = 0xfec00000,
 			.virt_start = 0xfec00000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* the same here until we catch MSIs via interrupt remapping */
 		/* HPET */ {
 			.phys_start = 0xfed00000,
 			.virt_start = 0xfed00000,
 			.size = 0x1000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* RAM */ {
 			.phys_start = 0x100000000,
 			.virt_start = 0x100000000,
 			.size = 0x1e600000,
-			.access_flags = JAILHOUSE_MEM_READ |
-				JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_EXECUTE |
-				JAILHOUSE_MEM_DMA,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
-
 	},
 
 	.pio_bitmap = {

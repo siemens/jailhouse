@@ -165,11 +165,11 @@ int vmx_map_memory_region(struct cell *cell,
 {
 	u32 table_flags, page_flags = EPT_FLAG_WB_TYPE;
 
-	if (mem->access_flags & JAILHOUSE_MEM_READ)
+	if (mem->flags & JAILHOUSE_MEM_READ)
 		page_flags |= EPT_FLAG_READ;
-	if (mem->access_flags & JAILHOUSE_MEM_WRITE)
+	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		page_flags |= EPT_FLAG_WRITE;
-	if (mem->access_flags & JAILHOUSE_MEM_EXECUTE)
+	if (mem->flags & JAILHOUSE_MEM_EXECUTE)
 		page_flags |= EPT_FLAG_EXECUTE;
 	table_flags = page_flags & ~EPT_FLAG_WB_TYPE;
 

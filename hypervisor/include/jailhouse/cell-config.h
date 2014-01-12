@@ -22,7 +22,6 @@ struct jailhouse_cell_desc {
 	__u32 num_memory_regions;
 	__u32 num_irq_lines;
 	__u32 pio_bitmap_size;
-
 	__u32 num_pci_devices;
 
 	__u32 padding[3];
@@ -42,7 +41,7 @@ struct jailhouse_memory {
 	__u64 phys_start;
 	__u64 virt_start;
 	__u64 size;
-	__u64 access_flags;
+	__u64 flags;
 };
 
 struct jailhouse_irq_line {

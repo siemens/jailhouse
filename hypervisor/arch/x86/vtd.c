@@ -275,7 +275,7 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 	unsigned int n;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
-		if (mem->access_flags & JAILHOUSE_MEM_DMA)
+		if (mem->flags & JAILHOUSE_MEM_DMA)
 			page_map_destroy(linux_cell.vtd.page_table,
 					 mem->phys_start, mem->size,
 					 dmar_pt_levels, PAGE_MAP_COHERENT);
@@ -295,12 +295,12 @@ int vtd_map_memory_region(struct cell *cell,
 	if (dmar_units == 0)
 		return 0;
 
-	if (!(mem->access_flags & JAILHOUSE_MEM_DMA))
+	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
 
-	if (mem->access_flags & JAILHOUSE_MEM_READ)
+	if (mem->flags & JAILHOUSE_MEM_READ)
 		page_flags |= VTD_PAGE_READ;
-	if (mem->access_flags & JAILHOUSE_MEM_WRITE)
+	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		page_flags |= VTD_PAGE_WRITE;
 
 	return page_map_create(cell->vtd.page_table, mem->phys_start,
@@ -316,7 +316,7 @@ void vtd_unmap_memory_region(struct cell *cell,
 	if (dmar_units == 0)
 		return;
 
-	if (mem->access_flags & JAILHOUSE_MEM_DMA)
+	if (mem->flags & JAILHOUSE_MEM_DMA)
 		page_map_destroy(cell->vtd.page_table, mem->virt_start,
 				 mem->size, dmar_pt_levels, PAGE_MAP_COHERENT);
 }
