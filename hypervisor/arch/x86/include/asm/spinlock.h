@@ -10,6 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef _JAILHOUSE_ASM_SPINLOCK_H
+#define _JAILHOUSE_ASM_SPINLOCK_H
+
 #include <asm/bitops.h>
 #include <asm/processor.h>
 
@@ -30,3 +33,5 @@ static inline void spin_unlock(spinlock_t *lock)
 	asm volatile("": : :"memory");
 	clear_bit(0, &lock->state);
 }
+
+#endif /* !_JAILHOUSE_ASM_SPINLOCK_H */

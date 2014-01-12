@@ -13,12 +13,10 @@
 #include <jailhouse/control.h>
 #include <asm/apic.h>
 #include <asm/control.h>
-#include <asm/spinlock.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
-static DEFINE_SPINLOCK(wait_lock);
-
+/* all cell CPUs (except cpu_data) have to be stopped */
 static void flush_linux_cpu_caches(struct per_cpu *cpu_data)
 {
 	unsigned int cpu;
@@ -85,12 +83,12 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	struct per_cpu *target_data = per_cpu(cpu_id);
 	bool target_stopped;
 
-	spin_lock(&wait_lock);
+	spin_lock(&target_data->control_lock);
 
 	target_data->stop_cpu = true;
 	target_stopped = target_data->cpu_stopped;
 
-	spin_unlock(&wait_lock);
+	spin_unlock(&target_data->control_lock);
 
 	if (!target_stopped) {
 		apic_send_nmi_ipi(target_data);
@@ -144,7 +142,7 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 	struct per_cpu *target_data = per_cpu(cpu_id);
 	bool send_nmi = false;
 
-	spin_lock(&wait_lock);
+	spin_lock(&target_data->control_lock);
 
 	if (type == X86_INIT) {
 		if (!target_data->wait_for_sipi) {
@@ -156,7 +154,7 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 		send_nmi = true;
 	}
 
-	spin_unlock(&wait_lock);
+	spin_unlock(&target_data->control_lock);
 
 	if (send_nmi)
 		apic_send_nmi_ipi(target_data);
@@ -166,7 +164,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 {
 	int sipi_vector = -1;
 
-	spin_lock(&wait_lock);
+	spin_lock(&cpu_data->control_lock);
 
 	do {
 		if (cpu_data->init_signaled && !cpu_data->stop_cpu) {
@@ -180,7 +178,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 		cpu_data->cpu_stopped = true;
 
-		spin_unlock(&wait_lock);
+		spin_unlock(&cpu_data->control_lock);
 
 		while (cpu_data->stop_cpu)
 			cpu_relax();
@@ -191,7 +189,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 			asm volatile("1: hlt; jmp 1b");
 		}
 
-		spin_lock(&wait_lock);
+		spin_lock(&cpu_data->control_lock);
 
 		cpu_data->cpu_stopped = false;
 
@@ -207,7 +205,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 		vmx_invept();
 	}
 
-	spin_unlock(&wait_lock);
+	spin_unlock(&cpu_data->control_lock);
 
 	return sipi_vector;
 }

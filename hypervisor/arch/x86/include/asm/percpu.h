@@ -28,6 +28,7 @@
 #ifndef __ASSEMBLY__
 
 #include <asm/cell.h>
+#include <asm/spinlock.h>
 
 struct vmcs {
 	u32 revision_id:31;
@@ -62,6 +63,17 @@ struct per_cpu {
 	unsigned long linux_sysenter_esp;
 	bool initialized;
 	enum { VMXOFF = 0, VMXON, VMCS_READY } vmx_state;
+
+	/*
+	 * protects the following per_cpu fields (unless CPU is stopped):
+	 *  - stop_cpu
+	 *  - cpu_stopped (except for spinning on it to become true)
+	 *  - wait_for_sipi
+	 *  - init_signaled
+	 *  - sipi_vector
+	 *  - flush_caches
+	 */
+	spinlock_t control_lock;
 
 	volatile bool stop_cpu;
 	volatile bool wait_for_sipi;
