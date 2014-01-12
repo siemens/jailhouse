@@ -10,7 +10,7 @@
 # the COPYING file in the top-level directory.
 #
 
-subdir-y := hypervisor config inmates
+subdir-y := hypervisor configs inmates
 
 obj-m := jailhouse.o
 

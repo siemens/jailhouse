@@ -74,9 +74,9 @@ Configuration
 Jailhouse requires one configuration file for the complete system and one for
 each additional cell beside Linux. The configuration is currently being
 defined manually by filling C structures. To study the structure, use
-config/qemu-vm.c for a system configuration and config/apic-demo.c for a cell
+configs/qemu-vm.c for a system configuration and configs/apic-demo.c for a cell
 configuration as reference. The build system will pick up every .c file from
-the config/ directory and generate a corresponding .cell file. .cell files can
+the configs/ directory and generate a corresponding .cell file. .cell files can
 then be passed to the jailhouse command line tool for enabling the hypervisor
 and creating new cells.
 

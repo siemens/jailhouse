@@ -9,4 +9,4 @@ jailhouse.ko
 hypervisor/include/jailhouse/config.h
 hypervisor/hypervisor.lds
 tools/jailhouse
-config/*.cell
+configs/*.cell
