@@ -54,6 +54,7 @@ static inline u32 inl(u16 port)
 	return v;
 }
 
+extern unsigned int printk_uart_base;
 void printk(const char *fmt, ...);
 
 void *memset(void *s, int c, unsigned long n);

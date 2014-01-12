@@ -12,6 +12,12 @@
 
 #include <inmate.h>
 
+#ifdef CONFIG_UART_OXPCIE952
+#define UART_BASE		0xe010
+#else
+#define UART_BASE		0x3f8
+#endif
+
 #define NS_PER_MSEC		1000000UL
 #define NS_PER_SEC		1000000000UL
 
@@ -116,6 +122,8 @@ static void init_apic(void)
 
 void inmate_main(void)
 {
+	printk_uart_base = UART_BASE;
+
 	if (init_pm_timer())
 		init_apic();
 
