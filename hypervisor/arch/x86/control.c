@@ -188,7 +188,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 		if (cpu_data->shutdown_cpu) {
 			apic_clear();
 			vmx_cpu_exit(cpu_data);
-			asm volatile("hlt");
+			asm volatile("1: hlt; jmp 1b");
 		}
 
 		spin_lock(&wait_lock);
