@@ -13,7 +13,6 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
-#include <asm/spinlock.h>
 #include <asm/fault.h>
 
 struct modrm {
@@ -27,8 +26,6 @@ struct sib {
 	u8 index:3;
 	u8 ss:2;
 } __attribute__((packed));
-
-static DEFINE_SPINLOCK(mmio_lock);
 
 /* If current_page is non-NULL, pc must have been increased exactly by 1. */
 static u8 *map_code_page(struct per_cpu *cpu_data, unsigned long pc,
@@ -51,8 +48,6 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 	struct modrm modrm;
 	struct sib sib;
 	u8 *page = NULL;
-
-	spin_lock(&mmio_lock);
 
 	access.inst_len = 0;
 	has_regr = false;
@@ -127,8 +122,6 @@ restart:
 	if (does_write != is_write)
 		goto error_inconsitent;
 
-unlock_out:
-	spin_unlock(&mmio_lock);
 	return access;
 
 error_nopage:
@@ -144,5 +137,5 @@ error_inconsitent:
 		     is_write ? "write" : "read");
 error:
 	access.inst_len = 0;
-	goto unlock_out;
+	return access;
 }
