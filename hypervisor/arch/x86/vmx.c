@@ -593,6 +593,10 @@ void vmx_cpu_exit(struct per_cpu *cpu_data)
 		return;
 
 	cpu_data->vmx_state = VMXOFF;
+	/* Write vmx_state to ensure that vmx_schedule_vmexit stops accessing
+	 * the VMCS (a compiler barrier would be sufficient, in fact). */
+	memory_barrier();
+
 	vmcs_clear(cpu_data);
 	asm volatile("vmxoff" : : : "cc");
 	write_cr4(read_cr4() & ~X86_CR4_VMXE);
