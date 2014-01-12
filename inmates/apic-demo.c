@@ -11,6 +11,7 @@
  */
 
 #include <inmate.h>
+#include <jailhouse/hypercall.h>
 
 #ifdef CONFIG_UART_OXPCIE952
 #define UART_BASE		0xe010
@@ -36,6 +37,9 @@ static u32 idt[NUM_IDT_DESC * 4];
 static unsigned long apic_frequency;
 static unsigned long expected_time;
 static unsigned long min = -1, max;
+
+static struct jailhouse_comm_region *comm_region =
+	(struct jailhouse_comm_region *)0x100000UL;
 
 struct desc_table_reg {
 	u16 limit;
@@ -127,7 +131,17 @@ void inmate_main(void)
 	if (init_pm_timer())
 		init_apic();
 
-	while (1) {
+	while (comm_region->msg_to_cell != JAILHOUSE_MSG_SHUTDOWN_REQUESTED)
 		asm volatile("hlt");
-	}
+
+	printk("Rejecting first shutdown - try again!\n");
+	jailhouse_send_reply_from_cell(comm_region,
+				       JAILHOUSE_MSG_SHUTDOWN_DENIED);
+
+	while (comm_region->msg_to_cell != JAILHOUSE_MSG_SHUTDOWN_REQUESTED)
+		asm volatile("hlt");
+
+	printk("Stopped APIC demo\n");
+	jailhouse_send_reply_from_cell(comm_region, JAILHOUSE_MSG_SHUTDOWN_OK);
+	asm volatile("cli; hlt");
 }

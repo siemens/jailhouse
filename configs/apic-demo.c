@@ -21,12 +21,11 @@
 struct {
 	struct jailhouse_cell_desc ALIGN cell;
 	__u64 ALIGN cpus[1];
-	struct jailhouse_memory ALIGN mem_regions[1];
+	struct jailhouse_memory ALIGN mem_regions[2];
 	__u8 ALIGN pio_bitmap[0x2000];
 } ALIGN config = {
 	.cell = {
 		.name = "APIC Demo",
-		.flags = JAILHOUSE_CELL_UNMANAGED_EXIT,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
@@ -46,6 +45,12 @@ struct {
 			.size = 0x00100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
+		},
+		/* communication region */ {
+			.virt_start = 0x00100000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_COMM_REGION,
 		},
 	},
 

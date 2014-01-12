@@ -28,6 +28,18 @@ typedef unsigned int u32;
 typedef signed long s64;
 typedef unsigned long u64;
 
+typedef s8 __s8;
+typedef u8 __u8;
+
+typedef s16 __s16;
+typedef u16 __u16;
+
+typedef s32 __s32;
+typedef u32 __u32;
+
+typedef s64 __s64;
+typedef u64 __u64;
+
 typedef enum { true=1, false=0 } bool;
 
 static inline void cpu_relax(void)
