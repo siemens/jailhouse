@@ -84,7 +84,7 @@ void apic_send_nmi_ipi(struct per_cpu *target_data);
 void apic_nmi_handler(struct per_cpu *cpu_data);
 void apic_irq_handler(struct per_cpu *cpu_data);
 
-void apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val);
+bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val);
 
 unsigned int apic_mmio_access(struct registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,

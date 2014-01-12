@@ -196,7 +196,7 @@ void apic_clear(void)
 	disable_irq();
 }
 
-static void apic_validate_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
+static bool apic_valid_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
 {
 	switch (lo_val & APIC_ICR_DLVR_MASK) {
 	case APIC_ICR_DLVR_INIT:
@@ -208,7 +208,7 @@ static void apic_validate_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
 	default:
 		panic_printk("FATAL: Unsupported APIC delivery mode, "
 			     "ICR.lo=%x\n", lo_val);
-		panic_stop(cpu_data);
+		return false;
 	}
 
 	switch (lo_val & APIC_ICR_SH_MASK) {
@@ -218,8 +218,9 @@ static void apic_validate_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
 	default:
 		panic_printk("FATAL: Unsupported shorthand, ICR.lo=%x\n",
 			     lo_val);
-		panic_stop(cpu_data);
+		return false;
 	}
+	return true;
 }
 
 static void apic_send_ipi(struct per_cpu *cpu_data, unsigned int target_cpu_id,
@@ -282,19 +283,20 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 	}
 }
 
-void apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
+bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 {
 	unsigned int target_cpu_id;
 	unsigned long dest;
 
-	apic_validate_ipi_mode(cpu_data, lo_val);
+	if (!apic_valid_ipi_mode(cpu_data, lo_val))
+		return false;
 
 	if ((lo_val & APIC_ICR_SH_MASK) == APIC_ICR_SH_SELF) {
 		apic_ops.write(APIC_REG_ICR, (lo_val & APIC_ICR_VECTOR_MASK) |
 					     APIC_ICR_DLVR_FIXED |
 					     APIC_ICR_TM_EDGE |
 					     APIC_ICR_SH_SELF);
-		return;
+		return true;
 	}
 
 	dest = hi_val;
@@ -310,6 +312,7 @@ void apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 			target_cpu_id = apic_to_cpu_id[dest];
 		apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 	}
+	return true;
 }
 
 unsigned int apic_mmio_access(struct registers *guest_regs,
@@ -331,8 +334,9 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 	if (is_write) {
 		val = ((unsigned long *)guest_regs)[access.reg];
 		if (reg == APIC_REG_ICR) {
-			apic_handle_icr_write(cpu_data, val,
-					      apic_ops.read(APIC_REG_ICR_HI));
+			if (!apic_handle_icr_write(cpu_data, val,
+					apic_ops.read(APIC_REG_ICR_HI)))
+				return 0;
 		} else if (reg == APIC_REG_LDR &&
 			 val != 1UL << (cpu_data->cpu_id + 24)) {
 			panic_printk("FATAL: Unsupported change to LDR: %x\n",

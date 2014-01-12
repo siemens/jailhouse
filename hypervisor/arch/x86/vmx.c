@@ -959,7 +959,8 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	if (reason & EXIT_REASONS_FAILED_VMENTRY) {
 		panic_printk("FATAL: VM-Entry failure, reason %d\n",
 			     (u16)reason);
-		goto dump_and_stop;
+		dump_guest_regs(guest_regs);
+		panic_stop(cpu_data);
 	}
 
 	switch (reason) {
@@ -1004,8 +1005,9 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	case EXIT_REASON_MSR_WRITE:
 		vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 		if (guest_regs->rcx == MSR_X2APIC_ICR) {
-			apic_handle_icr_write(cpu_data, guest_regs->rax,
-					      guest_regs->rdx);
+			if (!apic_handle_icr_write(cpu_data, guest_regs->rax,
+						   guest_regs->rdx))
+				break;
 			return;
 		}
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
@@ -1041,9 +1043,8 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		dump_vm_exit_details(reason);
 		break;
 	}
-dump_and_stop:
 	dump_guest_regs(guest_regs);
-	panic_stop(cpu_data);
+	panic_halt(cpu_data);
 }
 
 void vmx_entry_failure(struct per_cpu *cpu_data)
