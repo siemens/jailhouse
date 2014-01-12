@@ -45,7 +45,6 @@ void panic_stop(struct per_cpu *cpu_data)
 	if (cpu_data) {
 		panic_printk(" %d", cpu_data->cpu_id);
 		cpu_data->cpu_stopped = true;
-		vmx_cpu_exit(cpu_data);
 	}
 	panic_printk("\n");
 
