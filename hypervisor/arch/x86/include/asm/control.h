@@ -17,4 +17,5 @@ enum x86_init_sipi { X86_INIT, X86_SIPI };
 void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 		        int sipi_vector);
 
+void x86_enter_wait_for_sipi(struct per_cpu *cpu_data);
 int x86_handle_events(struct per_cpu *cpu_data);

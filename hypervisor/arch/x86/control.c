@@ -160,6 +160,15 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 		apic_send_nmi_ipi(target_data);
 }
 
+/* control_lock has to be held */
+void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
+{
+	cpu_data->init_signaled = false;
+	cpu_data->wait_for_sipi = true;
+	apic_clear();
+	vmx_cpu_park();
+}
+
 int x86_handle_events(struct per_cpu *cpu_data)
 {
 	int sipi_vector = -1;
@@ -168,11 +177,8 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 	do {
 		if (cpu_data->init_signaled && !cpu_data->stop_cpu) {
-			cpu_data->init_signaled = false;
-			cpu_data->wait_for_sipi = true;
+			x86_enter_wait_for_sipi(cpu_data);
 			sipi_vector = -1;
-			apic_clear();
-			vmx_cpu_park();
 			break;
 		}
 
