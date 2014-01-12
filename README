@@ -116,7 +116,7 @@ Next you can create a cell with a demonstration application as follows:
     jailhouse cell create /path/to/apic-demo.cell /path/to/apic-demo.bin \
         -l 0xf0000
 
-apic-demo.bin is left by the built process in the inmate/ directory. This
+apic-demo.bin is left by the built process in the inmates/ directory. This
 application will program the APIC timer interrupt to fire at 10 Hz, measuring
 the jitter against the PM timer and displaying the result on the 
 console. Given that this demonstration runs in a virtual machine, obviously
