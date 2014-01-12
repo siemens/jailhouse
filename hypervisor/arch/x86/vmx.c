@@ -775,7 +775,7 @@ void vmx_schedule_vmexit(struct per_cpu *cpu_data)
 {
 	u32 pin_based_ctrl;
 
-	if (!cpu_data->vmx_state == VMCS_READY)
+	if (cpu_data->vmx_state != VMCS_READY)
 		return;
 
 	pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
