@@ -13,13 +13,19 @@
 #ifndef _JAILHOUSE_HYPERCALL_H
 #define _JAILHOUSE_HYPERCALL_H
 
-#include <asm/jailhouse_hypercall.h>
+#define JAILHOUSE_HC_DISABLE			0
+#define JAILHOUSE_HC_CELL_CREATE		1
+#define JAILHOUSE_HC_CELL_DESTROY		2
 
-#define JAILHOUSE_HC_DISABLE		0
-#define JAILHOUSE_HC_CELL_CREATE	1
-#define JAILHOUSE_HC_CELL_DESTROY	2
+#define JAILHOUSE_MSG_NONE			0
 
 struct jailhouse_comm_region {
+	volatile __u32 msg_to_cell;
+	volatile __u32 reply_from_cell;
+
+	/* errors etc. */
 };
+
+#include <asm/jailhouse_hypercall.h>
 
 #endif /* !_JAILHOUSE_HYPERCALL_H */
