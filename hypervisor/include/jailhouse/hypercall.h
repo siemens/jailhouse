@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_HYPERCALL_H
 #define _JAILHOUSE_HYPERCALL_H
 
-#include <asm/jailhouse.h>
+#include <asm/jailhouse_hypercall.h>
 
 #define JAILHOUSE_HC_DISABLE		0
 #define JAILHOUSE_HC_CELL_CREATE	1
