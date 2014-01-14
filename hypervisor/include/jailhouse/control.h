@@ -14,6 +14,9 @@
 #include <asm/percpu.h>
 #include <jailhouse/cell-config.h>
 
+#define SHUTDOWN_NONE			0
+#define SHUTDOWN_STARTED		1
+
 extern struct jailhouse_system *system_config;
 
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,

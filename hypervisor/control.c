@@ -377,10 +377,10 @@ resume_out:
 
 int shutdown(struct per_cpu *cpu_data)
 {
-	static bool shutdown_started;
 	struct cell *cell = linux_cell.next;
 	unsigned int this_cpu = cpu_data->cpu_id;
 	unsigned int cpu;
+	int ret;
 
 	// TODO: access control
 
@@ -390,9 +390,7 @@ int shutdown(struct per_cpu *cpu_data)
 
 	spin_lock(&shutdown_lock);
 
-	if (!shutdown_started) {
-		shutdown_started = true;
-
+	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
 		printk("Shutting down hypervisor\n");
 
 		while (cell) {
@@ -410,10 +408,19 @@ int shutdown(struct per_cpu *cpu_data)
 		printk("Closing Linux cell \"%s\"\n",
 		       linux_cell.config->name);
 		arch_shutdown();
+
+		for_each_cpu(cpu, linux_cell.cpu_set)
+			per_cpu(cpu)->shutdown_state = SHUTDOWN_STARTED;
 	}
-	printk(" Releasing CPU %d\n", this_cpu);
+
+	if (cpu_data->shutdown_state == SHUTDOWN_STARTED) {
+		printk(" Releasing CPU %d\n", this_cpu);
+		ret = 0;
+	} else
+		ret = cpu_data->shutdown_state;
+	cpu_data->shutdown_state = SHUTDOWN_NONE;
 
 	spin_unlock(&shutdown_lock);
 
-	return 0;
+	return ret;
 }
