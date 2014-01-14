@@ -26,6 +26,7 @@ struct {
 } ALIGN config = {
 	.cell = {
 		.name = "APIC Demo",
+		.flags = JAILHOUSE_CELL_UNMANAGED_EXIT,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),

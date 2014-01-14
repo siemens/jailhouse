@@ -15,8 +15,11 @@
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
+#define JAILHOUSE_CELL_UNMANAGED_EXIT	0x00000001
+
 struct jailhouse_cell_desc {
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
+	__u32 flags;
 
 	__u32 cpu_set_size;
 	__u32 num_memory_regions;
@@ -24,7 +27,7 @@ struct jailhouse_cell_desc {
 	__u32 pio_bitmap_size;
 	__u32 num_pci_devices;
 
-	__u32 padding[3];
+	__u32 padding[2];
 };
 
 #define JAILHOUSE_MEM_READ		0x0001

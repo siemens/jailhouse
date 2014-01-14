@@ -257,6 +257,23 @@ err_free_cell:
 	goto resume_out;
 }
 
+static bool cell_shutdown_ok(struct cell *cell)
+{
+	volatile u32 *reply = &cell->comm_page.comm_region.reply_from_cell;
+
+	if (cell->config->flags & JAILHOUSE_CELL_UNMANAGED_EXIT)
+		return true;
+
+	jailhouse_send_msg_to_cell(&cell->comm_page.comm_region,
+				   JAILHOUSE_MSG_SHUTDOWN_REQUESTED);
+
+	while (*reply != JAILHOUSE_MSG_SHUTDOWN_DENIED &&
+	       *reply != JAILHOUSE_MSG_SHUTDOWN_OK)
+		cpu_relax();
+
+	return *reply == JAILHOUSE_MSG_SHUTDOWN_OK;
+}
+
 static bool address_in_region(unsigned long addr,
 			      const struct jailhouse_memory *region)
 {
@@ -309,8 +326,6 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 	const char *name;
 	int err = 0;
 
-	// TODO: access control
-
 	/* We do not support destruction over non-Linux cells so far. */
 	if (cpu_data->cell != &linux_cell)
 		return -EPERM;
@@ -337,6 +352,11 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 	/* Linux cell cannot be destroyed */
 	if (cell == &linux_cell) {
 		err = -EINVAL;
+		goto resume_out;
+	}
+
+	if (!cell_shutdown_ok(cell)) {
+		err = -EPERM;
 		goto resume_out;
 	}
 
@@ -377,12 +397,10 @@ resume_out:
 
 int shutdown(struct per_cpu *cpu_data)
 {
-	struct cell *cell = linux_cell.next;
 	unsigned int this_cpu = cpu_data->cpu_id;
+	struct cell *cell;
 	unsigned int cpu;
-	int ret;
-
-	// TODO: access control
+	int state, ret;
 
 	/* We do not support shutdown over non-Linux cells so far. */
 	if (cpu_data->cell != &linux_cell)
@@ -391,26 +409,33 @@ int shutdown(struct per_cpu *cpu_data)
 	spin_lock(&shutdown_lock);
 
 	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
-		printk("Shutting down hypervisor\n");
+		state = SHUTDOWN_STARTED;
+		for (cell = linux_cell.next; cell; cell = cell->next)
+			if (!cell_shutdown_ok(cell))
+				state = -EPERM;
 
-		while (cell) {
-			cell_suspend(cell, cpu_data);
+		if (state == SHUTDOWN_STARTED) {
+			printk("Shutting down hypervisor\n");
 
-			printk("Closing cell \"%s\"\n", cell->config->name);
+			for (cell = linux_cell.next; cell; cell = cell->next) {
+				cell_suspend(cell, cpu_data);
 
-			for_each_cpu(cpu, cell->cpu_set) {
-				printk(" Releasing CPU %d\n", cpu);
-				arch_shutdown_cpu(cpu);
+				printk("Closing cell \"%s\"\n",
+				       cell->config->name);
+
+				for_each_cpu(cpu, cell->cpu_set) {
+					printk(" Releasing CPU %d\n", cpu);
+					arch_shutdown_cpu(cpu);
+				}
 			}
-			cell = cell->next;
+
+			printk("Closing Linux cell \"%s\"\n",
+			       linux_cell.config->name);
+			arch_shutdown();
 		}
 
-		printk("Closing Linux cell \"%s\"\n",
-		       linux_cell.config->name);
-		arch_shutdown();
-
 		for_each_cpu(cpu, linux_cell.cpu_set)
-			per_cpu(cpu)->shutdown_state = SHUTDOWN_STARTED;
+			per_cpu(cpu)->shutdown_state = state;
 	}
 
 	if (cpu_data->shutdown_state == SHUTDOWN_STARTED) {

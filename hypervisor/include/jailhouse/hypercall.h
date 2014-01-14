@@ -19,6 +19,13 @@
 
 #define JAILHOUSE_MSG_NONE			0
 
+/* messages to cell */
+#define JAILHOUSE_MSG_SHUTDOWN_REQUESTED	1
+
+/* replies from cell */
+#define JAILHOUSE_MSG_SHUTDOWN_DENIED		1
+#define JAILHOUSE_MSG_SHUTDOWN_OK		2
+
 struct jailhouse_comm_region {
 	volatile __u32 msg_to_cell;
 	volatile __u32 reply_from_cell;
