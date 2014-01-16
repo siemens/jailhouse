@@ -96,7 +96,7 @@ jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
 			       __u32 reply)
 {
 	comm_region->msg_to_cell = JAILHOUSE_MSG_NONE;
-	/* unsure message was cleared before sending reply */
+	/* ensure message was cleared before sending reply */
 	asm volatile("mfence" : : : "memory");
 	comm_region->reply_from_cell = reply;
 }
