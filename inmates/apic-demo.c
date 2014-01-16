@@ -126,6 +126,8 @@ static void init_apic(void)
 
 void inmate_main(void)
 {
+	unsigned int n;
+
 	printk_uart_base = UART_BASE;
 
 	if (init_pm_timer())
@@ -138,10 +140,11 @@ void inmate_main(void)
 	jailhouse_send_reply_from_cell(comm_region,
 				       JAILHOUSE_MSG_SHUTDOWN_DENIED);
 
-	while (comm_region->msg_to_cell != JAILHOUSE_MSG_SHUTDOWN_REQUESTED)
+	for (n = 0; n < 10; n++)
 		asm volatile("hlt");
 
 	printk("Stopped APIC demo\n");
-	jailhouse_send_reply_from_cell(comm_region, JAILHOUSE_MSG_SHUTDOWN_OK);
+	comm_region->cell_status = JAILHOUSE_CELL_SHUT_DOWN;
+
 	asm volatile("cli; hlt");
 }
