@@ -230,11 +230,11 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 	flush_tlb();
 }
 
-void *page_map_get_foreign_page(unsigned int mapping_region,
+void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 				unsigned long page_table_paddr,
-				unsigned long page_table_offset,
 				unsigned long virt, unsigned long flags)
 {
+	unsigned long page_table_offset = cpu_data->cell->page_offset;
 	unsigned long page_virt, phys;
 #if PAGE_DIR_LEVELS == 4
 	pgd_t *pgd;
@@ -245,7 +245,7 @@ void *page_map_get_foreign_page(unsigned int mapping_region,
 	int err;
 
 	page_virt = FOREIGN_MAPPING_BASE +
-		mapping_region * PAGE_SIZE * NUM_FOREIGN_PAGES;
+		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
 
 	phys = page_table_paddr + page_table_offset;
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,

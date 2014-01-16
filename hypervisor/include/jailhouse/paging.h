@@ -55,9 +55,8 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 		      unsigned long size, unsigned int levels,
 		      enum page_map_coherent coherent);
 
-void *page_map_get_foreign_page(unsigned int mapping_region,
+void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 				unsigned long page_table_paddr,
-				unsigned long page_table_offset,
 				unsigned long virt, unsigned long flags);
 
 int paging_init(void);
