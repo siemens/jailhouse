@@ -50,6 +50,9 @@ static inline void *page_map_phys2hvirt(unsigned long phys)
 unsigned long page_map_virt2phys(pgd_t *page_table, unsigned long virt,
 				 unsigned int levels);
 
+unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
+				       unsigned long gphys);
+
 int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 		    unsigned long virt, unsigned long page_flags,
 		    unsigned long table_flags, unsigned int levels,

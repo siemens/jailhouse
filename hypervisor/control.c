@@ -68,8 +68,6 @@ int cell_init(struct cell *cell, bool copy_cpu_set)
 	const unsigned long *config_cpu_set =
 		jailhouse_cell_cpu_set(cell->config);
 	unsigned long cpu_set_size = cell->config->cpu_set_size;
-	const struct jailhouse_memory *config_ram =
-		jailhouse_cell_mem_regions(cell->config);
 	struct cpu_set *cpu_set;
 
 	cell->id = get_free_cell_id();
@@ -90,8 +88,6 @@ int cell_init(struct cell *cell, bool copy_cpu_set)
 	cell->cpu_set = cpu_set;
 	if (copy_cpu_set)
 		memcpy(cell->cpu_set->bitmap, config_cpu_set, cpu_set_size);
-
-	cell->page_offset = config_ram->phys_start;
 
 	return 0;
 }

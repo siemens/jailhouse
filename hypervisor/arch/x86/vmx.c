@@ -188,6 +188,13 @@ void vmx_unmap_memory_region(struct cell *cell,
 			 PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 }
 
+unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
+				       unsigned long gphys)
+{
+	return page_map_virt2phys(cpu_data->cell->vmx.ept, gphys,
+				  PAGE_DIR_LEVELS);
+}
+
 int vmx_cell_init(struct cell *cell)
 {
 	struct jailhouse_cell_desc *config = cell->config;

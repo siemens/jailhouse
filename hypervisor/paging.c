@@ -274,7 +274,6 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 				unsigned long page_table_paddr,
 				unsigned long virt, unsigned long flags)
 {
-	unsigned long page_table_offset = cpu_data->cell->page_offset;
 	unsigned long page_virt, phys;
 #if PAGE_DIR_LEVELS == 4
 	pgd_t *pgd;
@@ -287,7 +286,9 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 	page_virt = FOREIGN_MAPPING_BASE +
 		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
 
-	phys = page_table_paddr + page_table_offset;
+	phys = arch_page_map_gphys2phys(cpu_data, page_table_paddr);
+	if (phys == INVALID_PHYS_ADDR)
+		return NULL;
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
@@ -298,14 +299,17 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 	pgd = pgd_offset((pgd_t *)page_virt, virt);
 	if (!pgd_valid(pgd))
 		return NULL;
-	phys = (unsigned long)pud4l_offset(pgd, page_table_offset, 0);
+	phys = arch_page_map_gphys2phys(cpu_data,
+			(unsigned long)pud4l_offset(pgd, 0, 0));
+	if (phys == INVALID_PHYS_ADDR)
+		return NULL;
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
-	pud = pud4l_offset((pgd_t *)&page_virt, page_table_offset, virt);
+	pud = pud4l_offset((pgd_t *)&page_virt, 0, virt);
 #elif PAGE_DIR_LEVELS == 3
 	pud = pud3l_offset((pgd_t *)page_virt, virt);
 #else
@@ -313,20 +317,26 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 #endif
 	if (!pud_valid(pud))
 		return NULL;
-	phys = (unsigned long)pmd_offset(pud, page_table_offset, 0);
+	phys = arch_page_map_gphys2phys(cpu_data,
+				        (unsigned long)pmd_offset(pud, 0, 0));
+	if (phys == INVALID_PHYS_ADDR)
+		return NULL;
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
-	pmd = pmd_offset((pud_t *)&page_virt, page_table_offset, virt);
+	pmd = pmd_offset((pud_t *)&page_virt, 0, virt);
 	if (!pmd_valid(pmd))
 		return NULL;
 	if (pmd_is_hugepage(pmd))
 		phys = phys_address_hugepage(pmd, virt);
 	else {
-		phys = (unsigned long)pte_offset(pmd, page_table_offset, 0);
+		phys = arch_page_map_gphys2phys(cpu_data,
+				(unsigned long)pte_offset(pmd, 0, 0));
+		if (phys == INVALID_PHYS_ADDR)
+			return NULL;
 		err = page_map_create(hv_page_table, phys, PAGE_SIZE,
 				      page_virt, PAGE_READONLY_FLAGS,
 				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
@@ -334,11 +344,14 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 		if (err)
 			return NULL;
 
-		pte = pte_offset((pmd_t *)&page_virt, page_table_offset, virt);
+		pte = pte_offset((pmd_t *)&page_virt, 0, virt);
 		if (!pte_valid(pte))
 			return NULL;
-		phys = phys_address(pte, 0) + page_table_offset;
+		phys = phys_address(pte, 0);
 	}
+	phys = arch_page_map_gphys2phys(cpu_data, phys);
+	if (phys == INVALID_PHYS_ADDR)
+		return NULL;
 
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
 			      flags, PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,

@@ -37,8 +37,6 @@ struct cell {
 	struct cpu_set *cpu_set;
 	struct cpu_set small_cpu_set;
 
-	unsigned long page_offset;
-
 	struct cell *next;
 
 	union {
