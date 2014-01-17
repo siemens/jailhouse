@@ -44,7 +44,7 @@ typedef enum { true=1, false=0 } bool;
 
 static inline void cpu_relax(void)
 {
-	asm volatile("rep; nop");
+	asm volatile("rep; nop" : : : "memory");
 }
 
 static inline void outb(u8 v, u16 port)

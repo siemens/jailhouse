@@ -125,7 +125,7 @@ static unsigned long __force_order;
 
 static inline void cpu_relax(void)
 {
-	asm volatile("rep; nop");
+	asm volatile("rep; nop" : : : "memory");
 }
 
 static inline void memory_barrier(void)
