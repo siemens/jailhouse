@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/types.h>
+#include <asm/percpu.h>
 #include <asm/paging.h>
 #include <asm/processor.h>
 

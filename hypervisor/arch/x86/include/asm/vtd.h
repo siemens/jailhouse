@@ -11,6 +11,8 @@
  */
 
 #include <jailhouse/acpi.h>
+#include <asm/cell.h>
+
 #include <jailhouse/cell-config.h>
 
 #define ACPI_DMAR_DRHD			0
