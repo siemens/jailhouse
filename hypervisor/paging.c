@@ -203,9 +203,8 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 		pte = pte_offset(pmd, offs, virt);
 		set_pte(pte, phys, flags);
 		flush_page_table(pte, sizeof(pte), coherent);
+		arch_tlb_flush_page(virt);
 	}
-
-	flush_tlb();
 
 	return 0;
 }
@@ -265,9 +264,9 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 		page_free(&mem_pool, pud4l_offset(pgd, offs, 0), 1);
 		clear_pgd(pgd);
 		flush_page_table(pgd, sizeof(pgd), coherent);
-	}
 
-	flush_tlb();
+		arch_tlb_flush_page(virt);
+	}
 }
 
 void *page_map_get_foreign_page(struct per_cpu *cpu_data,

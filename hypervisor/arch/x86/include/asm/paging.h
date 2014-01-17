@@ -198,12 +198,17 @@ static inline bool pt_empty(pmd_t *pmd, unsigned long page_table_offset)
 	return true;
 }
 
-static inline void flush_tlb(void)
+static inline void x86_tlb_flush_all(void)
 {
 	unsigned long cr4 = read_cr4();
 
 	write_cr4(cr4 & ~X86_CR4_PGE);
 	write_cr4(cr4);
+}
+
+static inline void arch_tlb_flush_page(unsigned long addr)
+{
+	asm volatile("invlpg (%0)" : : "r" (addr));
 }
 
 extern unsigned long cache_line_size;

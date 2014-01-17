@@ -207,7 +207,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 	if (cpu_data->flush_caches) {
 		cpu_data->flush_caches = false;
-		flush_tlb();
+		x86_tlb_flush_all();
 		vmx_invept();
 	}
 

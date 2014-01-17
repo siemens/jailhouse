@@ -189,7 +189,7 @@ static inline bool pt_empty(pmd_t *pmd, unsigned long page_table_offset)
 	return true;
 }
 
-static inline void flush_tlb(void)
+static inline void arch_tlb_flush_page(unsigned long addr)
 {
 }
 
