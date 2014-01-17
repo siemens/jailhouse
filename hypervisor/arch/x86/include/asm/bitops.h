@@ -43,15 +43,15 @@ clear_bit(int nr, volatile unsigned long *addr)
 static inline __attribute__((always_inline)) void
 set_bit(unsigned int nr, volatile unsigned long *addr)
 {
-        if (__builtin_constant_p(nr)) {
-                asm volatile("lock orb %1,%0"
-                        : CONST_MASK_ADDR(nr, addr)
-                        : "iq" ((u8)CONST_MASK(nr))
-                        : "memory");
-        } else {
-                asm volatile("lock bts %1,%0"
-                        : BITOP_ADDR(addr) : "Ir" (nr) : "memory");
-        }
+	if (__builtin_constant_p(nr)) {
+		asm volatile("lock orb %1,%0"
+			: CONST_MASK_ADDR(nr, addr)
+			: "iq" ((u8)CONST_MASK(nr))
+			: "memory");
+	} else {
+		asm volatile("lock bts %1,%0"
+			: BITOP_ADDR(addr) : "Ir" (nr) : "memory");
+	}
 }
 
 static inline __attribute__((always_inline)) int
@@ -70,7 +70,7 @@ static inline int variable_test_bit(int nr, volatile const unsigned long *addr)
 		     : "=r" (oldbit)
 		     : "m" (*(unsigned long *)addr), "Ir" (nr));
 
-        return oldbit;
+	return oldbit;
 }
 
 #define test_bit(nr, addr)			\

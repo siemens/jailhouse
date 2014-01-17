@@ -148,7 +148,7 @@ int vtd_init(void)
 }
 
 static bool vtd_add_device_to_cell(struct cell *cell,
-			           const struct jailhouse_pci_device *device)
+				   const struct jailhouse_pci_device *device)
 {
 	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;

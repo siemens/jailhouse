@@ -30,7 +30,7 @@ static inline void spin_lock(spinlock_t *lock)
 
 static inline void spin_unlock(spinlock_t *lock)
 {
-	asm volatile("": : :"memory");
+	asm volatile("" : : : "memory");
 	clear_bit(0, &lock->state);
 }
 

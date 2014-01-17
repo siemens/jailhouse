@@ -43,7 +43,7 @@ typedef u32 __u32;
 typedef s64 __s64;
 typedef u64 __u64;
 
-typedef enum { true=1, false=0 } bool;
+typedef enum { true = 1, false = 0 } bool;
 
 struct cpu_set {
 	unsigned long max_cpu_id;

@@ -318,7 +318,7 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 	if (!pud_valid(pud))
 		return NULL;
 	phys = arch_page_map_gphys2phys(cpu_data,
-				        (unsigned long)pmd_offset(pud, 0, 0));
+					(unsigned long)pmd_offset(pud, 0, 0));
 	if (phys == INVALID_PHYS_ADDR)
 		return NULL;
 	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,

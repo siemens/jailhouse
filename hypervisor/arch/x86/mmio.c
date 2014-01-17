@@ -100,7 +100,7 @@ restart:
 				goto error_nopage;
 
 			sib = *(struct sib *)&page[pc & PAGE_OFFS_MASK];
-			if (sib.ss !=0 || sib.index != 4 || sib.reg != 5)
+			if (sib.ss != 0 || sib.index != 4 || sib.reg != 5)
 				goto error_unsupported;
 			access.inst_len += 5;
 			break;

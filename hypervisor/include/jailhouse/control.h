@@ -22,13 +22,13 @@ extern struct jailhouse_system *system_config;
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 		      int exception);
 
-#define for_each_cpu(cpu, set) 					\
+#define for_each_cpu(cpu, set)					\
 	for ((cpu) = -1;					\
 	     (cpu) = next_cpu((cpu), (set), -1),		\
 	     (cpu) <= (set)->max_cpu_id;			\
 	    )
 
-#define for_each_cpu_except(cpu, set, exception) 		\
+#define for_each_cpu_except(cpu, set, exception)		\
 	for ((cpu) = -1;					\
 	     (cpu) = next_cpu((cpu), (set), (exception)),	\
 	     (cpu) <= (set)->max_cpu_id;			\
