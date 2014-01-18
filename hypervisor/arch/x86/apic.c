@@ -104,6 +104,9 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 
 	apic_to_cpu_id[apic_id] = cpu_id;
 	cpu_data->apic_id = apic_id;
+
+	cpu_data->sipi_vector = -1;
+
 	return 0;
 }
 

@@ -109,7 +109,6 @@ void arch_resume_cpu(unsigned int cpu_id)
 /* target cpu has to be stopped */
 void arch_reset_cpu(unsigned int cpu_id)
 {
-	per_cpu(cpu_id)->wait_for_sipi = true;
 	per_cpu(cpu_id)->sipi_vector = APIC_BSP_PSEUDO_SIPI;
 
 	arch_resume_cpu(cpu_id);
@@ -199,9 +198,10 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 		cpu_data->cpu_stopped = false;
 
-		if (cpu_data->wait_for_sipi) {
+		if (cpu_data->sipi_vector >= 0) {
 			cpu_data->wait_for_sipi = false;
 			sipi_vector = cpu_data->sipi_vector;
+			cpu_data->sipi_vector = -1;
 		}
 	} while (cpu_data->init_signaled);
 
