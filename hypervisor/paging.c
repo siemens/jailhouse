@@ -22,7 +22,7 @@
 
 #define PAGE_SCRUB_ON_FREE	0x1
 
-extern u8 __start[], __page_pool[];
+extern u8 __page_pool[];
 
 struct page_pool mem_pool;
 struct page_pool remap_pool = {
@@ -367,8 +367,8 @@ int paging_init(void)
 	unsigned long n;
 	int err;
 
-	mem_pool.pages =
-		(hypervisor_header.size - (__page_pool - __start)) / PAGE_SIZE;
+	mem_pool.pages = (hypervisor_header.size -
+		(__page_pool - (u8 *)&hypervisor_header)) / PAGE_SIZE;
 	per_cpu_pages = hypervisor_header.possible_cpus *
 		sizeof(struct per_cpu) / PAGE_SIZE;
 	bitmap_pages = (mem_pool.pages + BITS_PER_PAGE - 1) / BITS_PER_PAGE;
@@ -401,8 +401,10 @@ int paging_init(void)
 		goto error_nomem;
 
 	/* Replicate hypervisor mapping of Linux */
-	err = page_map_create(hv_page_table, page_map_hvirt2phys(__start),
-			      hypervisor_header.size, (unsigned long)__start,
+	err = page_map_create(hv_page_table,
+			      page_map_hvirt2phys(&hypervisor_header),
+			      hypervisor_header.size,
+			      (unsigned long)&hypervisor_header,
 			      PAGE_DEFAULT_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)

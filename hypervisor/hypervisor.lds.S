@@ -15,7 +15,6 @@
 SECTIONS
 {
 	. = 0;
-	__start = .;
 	.header		: { *(.header) }
 
 	. = ALIGN(16);

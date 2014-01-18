@@ -18,7 +18,6 @@
 #include <jailhouse/string.h>
 #include <asm/spinlock.h>
 
-extern u8 __start[];
 extern u8 __bss_start[], __bss_end[];
 
 void *config_memory;
@@ -56,7 +55,7 @@ static void init_early(unsigned int cpu_id)
 
 	printk("\nInitializing Jailhouse hypervisor on CPU %d\n", cpu_id);
 	printk("Code location: %p\n",
-	       __start + sizeof(struct jailhouse_header));
+	       (void *)&hypervisor_header + sizeof(struct jailhouse_header));
 
 	error = paging_init();
 	if (error)
