@@ -73,21 +73,22 @@ got_done:
 
 
 /* Exception/interrupt entry points */
-.macro no_error_entry vector
-	.balign 16
-	pushq $-1
+.macro common_exception_entry vector
 	pushq $\vector
 	mov %rsp,%rdi
 	call exception_handler
 1:	jmp 1b
 .endm
 
+.macro no_error_entry vector
+	.balign 16
+	pushq $-1
+	common_exception_entry \vector
+.endm
+
 .macro error_entry vector
 	.balign 16
-	pushq $\vector
-	mov %rsp,%rdi
-	call exception_handler
-1:	jmp 1b
+	common_exception_entry \vector
 .endm
 
 	.global exception_entries
