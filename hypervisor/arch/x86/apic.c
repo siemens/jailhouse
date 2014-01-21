@@ -324,7 +324,7 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			      bool is_write)
 {
 	struct mmio_access access;
-	unsigned long val;
+	u32 val;
 
 	access = mmio_parse(cpu_data, rip, page_table_addr, is_write);
 	if (access.inst_len == 0)
