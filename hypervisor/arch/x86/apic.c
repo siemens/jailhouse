@@ -21,6 +21,8 @@
 #include <asm/fault.h>
 #include <asm/vmx.h>
 
+#define XAPIC_REG(x2apic_reg)		((x2apic_reg) << 4)
+
 bool using_x2apic;
 
 static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = APIC_INVALID_ID };
@@ -35,25 +37,27 @@ static struct {
 
 static u32 read_xapic(unsigned int reg)
 {
-	return *(volatile u32 *)(xapic_page + (reg << 4));
+	return mmio_read32(xapic_page + XAPIC_REG(reg));
 }
 
 static u32 read_xapic_id(void)
 {
-	return *(volatile u32 *)(xapic_page + (APIC_REG_ID << 4)) >> 24;
+	return mmio_read32(xapic_page + XAPIC_REG(APIC_REG_ID)) >>
+		XAPIC_DEST_SHIFT;
 }
 
 static void write_xapic(unsigned int reg, u32 val)
 {
-	*(volatile u32 *)(xapic_page + (reg << 4)) = val;
+	mmio_write32(xapic_page + XAPIC_REG(reg), val);
 }
 
 static void send_xapic_ipi(u32 apic_id, u32 icr_lo)
 {
 	while (read_xapic(APIC_REG_ICR) & APIC_ICR_DS_PENDING)
 		cpu_relax();
-	*(volatile u32 *)(xapic_page + (APIC_REG_ICR_HI << 4)) = apic_id << 24;
-	*(volatile u32 *)(xapic_page + (APIC_REG_ICR << 4)) = icr_lo;
+	mmio_write32(xapic_page + XAPIC_REG(APIC_REG_ICR_HI),
+		     apic_id << XAPIC_DEST_SHIFT);
+	mmio_write32(xapic_page + XAPIC_REG(APIC_REG_ICR), icr_lo);
 }
 
 static u32 read_x2apic(unsigned int reg)
@@ -98,7 +102,7 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 	if (!using_x2apic) {
 		ldr = apic_ops.read(APIC_REG_LDR);
 		if (apic_ops.read(APIC_REG_DFR) != 0xffffffff ||
-		    (ldr != 0 && ldr != 1UL << (cpu_id + 24)))
+		    (ldr != 0 && ldr != 1UL << (cpu_id + XAPIC_DEST_SHIFT)))
 			return -EINVAL;
 	}
 
@@ -304,7 +308,7 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 
 	dest = hi_val;
 	if (!using_x2apic)
-		dest >>= 24;
+		dest >>= XAPIC_DEST_SHIFT;
 
 	if (lo_val & APIC_ICR_DEST_LOGICAL) {
 		lo_val &= ~APIC_ICR_DEST_LOGICAL;
@@ -341,7 +345,7 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 					apic_ops.read(APIC_REG_ICR_HI)))
 				return 0;
 		} else if (reg == APIC_REG_LDR &&
-			 val != 1UL << (cpu_data->cpu_id + 24)) {
+			 val != 1UL << (cpu_data->cpu_id + XAPIC_DEST_SHIFT)) {
 			panic_printk("FATAL: Unsupported change to LDR: %x\n",
 				     val);
 			return 0;
