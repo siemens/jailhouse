@@ -282,8 +282,7 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 	pte_t *pte;
 	int err;
 
-	page_virt = FOREIGN_MAPPING_BASE +
-		cpu_data->cpu_id * PAGE_SIZE * NUM_FOREIGN_PAGES;
+	page_virt = FOREIGN_MAPPING_CPU_BASE(cpu_data);
 
 	phys = arch_page_map_gphys2phys(cpu_data, page_table_paddr);
 	if (phys == INVALID_PHYS_ADDR)

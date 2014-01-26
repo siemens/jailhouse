@@ -16,6 +16,10 @@
 
 #define PAGE_ALIGN(s)		((s + PAGE_SIZE-1) & PAGE_MASK)
 
+#define FOREIGN_MAPPING_CPU_BASE(cpu_data)				\
+	(FOREIGN_MAPPING_BASE + (cpu_data)->cpu_id * PAGE_SIZE *	\
+	 NUM_FOREIGN_PAGES)
+
 struct page_pool {
 	void *base_address;
 	unsigned long pages;
