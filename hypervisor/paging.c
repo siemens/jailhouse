@@ -269,11 +269,12 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 	}
 }
 
-void *page_map_get_foreign_page(struct per_cpu *cpu_data,
-				unsigned long page_table_paddr,
-				unsigned long virt, unsigned long flags)
+void *page_map_get_guest_page(struct per_cpu *cpu_data,
+			      unsigned long page_table_paddr,
+			      unsigned long virt, unsigned long flags)
 {
-	unsigned long page_virt, phys;
+	unsigned long page_virt = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
+	unsigned long phys;
 #if PAGE_DIR_LEVELS == 4
 	pgd_t *pgd;
 #endif
@@ -281,8 +282,6 @@ void *page_map_get_foreign_page(struct per_cpu *cpu_data,
 	pmd_t *pmd;
 	pte_t *pte;
 	int err;
-
-	page_virt = FOREIGN_MAPPING_CPU_BASE(cpu_data);
 
 	phys = arch_page_map_gphys2phys(cpu_data, page_table_paddr);
 	if (phys == INVALID_PHYS_ADDR)
@@ -391,7 +390,7 @@ int paging_init(void)
 
 	remap_pool.used_bitmap = page_alloc(&mem_pool, NUM_REMAP_BITMAP_PAGES);
 	remap_pool.used_pages =
-		hypervisor_header.possible_cpus * NUM_FOREIGN_PAGES;
+		hypervisor_header.possible_cpus * NUM_TEMPORARY_PAGES;
 	for (n = 0; n < remap_pool.used_pages; n++)
 		set_bit(n, remap_pool.used_bitmap);
 
@@ -409,11 +408,11 @@ int paging_init(void)
 	if (err)
 		goto error_nomem;
 
-	/* Make sure any remappings to the foreign regions can be performed
+	/* Make sure any remappings to the temporary regions can be performed
 	 * without allocations of page table pages. */
 	err = page_map_create(hv_page_table, 0,
 			      remap_pool.used_pages * PAGE_SIZE,
-			      FOREIGN_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
+			      TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
 			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 			      PAGE_MAP_NON_COHERENT);
 	if (err)

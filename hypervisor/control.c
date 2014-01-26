@@ -130,7 +130,7 @@ int check_mem_regions(const struct jailhouse_cell_desc *config)
 
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
-	unsigned long mapping_addr = FOREIGN_MAPPING_CPU_BASE(cpu_data);
+	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
 	unsigned long cfg_header_size, cfg_total_size;
 	struct jailhouse_cell_desc *cfg;
 	struct cpu_set *shrinking_set;
@@ -157,7 +157,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	cfg = (struct jailhouse_cell_desc *)(mapping_addr +
 					     (config_address & ~PAGE_MASK));
 	cfg_total_size = jailhouse_cell_config_size(cfg);
-	if (cfg_total_size > NUM_FOREIGN_PAGES * PAGE_SIZE) {
+	if (cfg_total_size > NUM_TEMPORARY_PAGES * PAGE_SIZE) {
 		err = -E2BIG;
 		goto resume_out;
 	}
@@ -316,7 +316,7 @@ static void remap_to_linux(const struct jailhouse_memory *mem)
 
 int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 {
-	unsigned long mapping_addr = FOREIGN_MAPPING_CPU_BASE(cpu_data);
+	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
 	const struct jailhouse_memory *mem;
 	struct cell *cell, *previous;
 	unsigned long name_size;

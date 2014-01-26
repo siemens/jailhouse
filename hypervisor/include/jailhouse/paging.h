@@ -16,9 +16,9 @@
 
 #define PAGE_ALIGN(s)		((s + PAGE_SIZE-1) & PAGE_MASK)
 
-#define FOREIGN_MAPPING_CPU_BASE(cpu_data)				\
-	(FOREIGN_MAPPING_BASE + (cpu_data)->cpu_id * PAGE_SIZE *	\
-	 NUM_FOREIGN_PAGES)
+#define TEMPORARY_MAPPING_CPU_BASE(cpu_data)				\
+	(TEMPORARY_MAPPING_BASE + (cpu_data)->cpu_id * PAGE_SIZE *	\
+	 NUM_TEMPORARY_PAGES)
 
 struct page_pool {
 	void *base_address;
@@ -65,9 +65,9 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 		      unsigned long size, unsigned int levels,
 		      enum page_map_coherent coherent);
 
-void *page_map_get_foreign_page(struct per_cpu *cpu_data,
-				unsigned long page_table_paddr,
-				unsigned long virt, unsigned long flags);
+void *page_map_get_guest_page(struct per_cpu *cpu_data,
+			      unsigned long page_table_paddr,
+			      unsigned long virt, unsigned long flags);
 
 int paging_init(void);
 void page_map_dump_stats(const char *when);
