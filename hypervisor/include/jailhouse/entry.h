@@ -14,7 +14,7 @@
 #define _JAILHOUSE_ENTRY_H
 
 #include <jailhouse/header.h>
-#include <asm/percpu.h>
+#include <asm/types.h>
 
 #include <jailhouse/cell-config.h>
 
@@ -29,6 +29,9 @@
 #define EINVAL		22
 #define ERANGE		34
 #define ENOSYS		38
+
+struct per_cpu;
+struct cell;
 
 extern struct jailhouse_header hypervisor_header;
 extern void *config_memory;
