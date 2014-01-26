@@ -10,6 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef _JAILHOUSE_PAGING_H
+#define _JAILHOUSE_PAGING_H
+
 #include <jailhouse/entry.h>
 #include <asm/types.h>
 #include <asm/paging.h>
@@ -34,10 +37,16 @@ enum page_map_coherent {
 	PAGE_MAP_NON_COHERENT,
 };
 
+typedef pgd_t *page_table_t;
+
+struct paging_structures {
+	page_table_t root_table;
+};
+
 extern struct page_pool mem_pool;
 extern struct page_pool remap_pool;
 
-extern pgd_t *hv_page_table;
+extern struct paging_structures hv_paging_structs;
 
 void *page_alloc(struct page_pool *pool, unsigned int num);
 void page_free(struct page_pool *pool, void *first_page, unsigned int num);
@@ -52,19 +61,19 @@ static inline void *page_map_phys2hvirt(unsigned long phys)
 	return (void *)phys + hypervisor_header.page_offset;
 }
 
-unsigned long page_map_virt2phys(pgd_t *page_table, unsigned long virt,
-				 unsigned int levels);
+unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
+				 unsigned long virt, unsigned int levels);
 
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 				       unsigned long gphys);
 
-int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
-		    unsigned long virt, unsigned long page_flags,
-		    unsigned long table_flags, unsigned int levels,
-		    enum page_map_coherent coherent);
-void page_map_destroy(pgd_t *page_table, unsigned long virt,
-		      unsigned long size, unsigned int levels,
-		      enum page_map_coherent coherent);
+int page_map_create(const struct paging_structures *pg_structs,
+		    unsigned long phys, unsigned long size, unsigned long virt,
+		    unsigned long flags, unsigned long table_flags,
+		    unsigned int levels, enum page_map_coherent coherent);
+void page_map_destroy(const struct paging_structures *pg_structs,
+		      unsigned long virt, unsigned long size,
+		      unsigned int levels, enum page_map_coherent coherent);
 
 void *page_map_get_guest_page(struct per_cpu *cpu_data,
 			      unsigned long page_table_paddr,
@@ -72,3 +81,5 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 
 int paging_init(void);
 void page_map_dump_stats(const char *when);
+
+#endif /* !_JAILHOUSE_PAGING_H */

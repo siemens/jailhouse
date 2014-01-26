@@ -147,7 +147,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	cfg_header_size = (config_address & ~PAGE_MASK) +
 		sizeof(struct jailhouse_cell_desc);
 
-	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
+	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
 			      cfg_header_size, mapping_addr,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
@@ -167,7 +167,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto resume_out;
 	}
 
-	err = page_map_create(hv_page_table, config_address & PAGE_MASK,
+	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
 			      cfg_total_size, mapping_addr,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
@@ -332,7 +332,7 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 
 	name_size = (name_address & ~PAGE_MASK) + JAILHOUSE_CELL_NAME_MAXLEN;
 
-	err = page_map_create(hv_page_table, name_address & PAGE_MASK,
+	err = page_map_create(&hv_paging_structs, name_address & PAGE_MASK,
 			      name_size, mapping_addr, PAGE_READONLY_FLAGS,
 			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 			      PAGE_MAP_NON_COHERENT);

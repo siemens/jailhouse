@@ -30,7 +30,7 @@ struct page_pool remap_pool = {
 	.pages = BITS_PER_PAGE * NUM_REMAP_BITMAP_PAGES,
 };
 
-pgd_t *hv_page_table;
+struct paging_structures hv_paging_structs;
 
 static unsigned long find_next_free_page(struct page_pool *pool,
 					 unsigned long start)
@@ -103,8 +103,8 @@ void page_free(struct page_pool *pool, void *page, unsigned int num)
 	}
 }
 
-unsigned long page_map_virt2phys(pgd_t *page_table, unsigned long virt,
-				 unsigned int levels)
+unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
+				 unsigned long virt, unsigned int levels)
 {
 	unsigned long offs = hypervisor_header.page_offset;
 	pgd_t *pgd;
@@ -114,14 +114,14 @@ unsigned long page_map_virt2phys(pgd_t *page_table, unsigned long virt,
 
 	switch (levels) {
 	case 4:
-		pgd = pgd_offset(page_table, virt);
+		pgd = pgd_offset(pg_structs->root_table, virt);
 		if (!pgd_valid(pgd))
 			return INVALID_PHYS_ADDR;
 
 		pud = pud4l_offset(pgd, offs, virt);
 		break;
 	case 3:
-		pud = pud3l_offset(page_table, virt);
+		pud = pud3l_offset(pg_structs->root_table, virt);
 		break;
 	default:
 		return INVALID_PHYS_ADDR;
@@ -150,10 +150,10 @@ static void flush_page_table(void *addr, unsigned long size,
 		flush_cache(addr, size);
 }
 
-int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
-		    unsigned long virt, unsigned long flags,
-		    unsigned long table_flags, unsigned int levels,
-		    enum page_map_coherent coherent)
+int page_map_create(const struct paging_structures *pg_structs,
+		    unsigned long phys, unsigned long size, unsigned long virt,
+		    unsigned long flags, unsigned long table_flags,
+		    unsigned int levels, enum page_map_coherent coherent)
 {
 	unsigned long offs = hypervisor_header.page_offset;
 	pgd_t *pgd;
@@ -165,7 +165,7 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 	     phys += PAGE_SIZE, virt += PAGE_SIZE, size -= PAGE_SIZE) {
 		switch (levels) {
 		case 4:
-			pgd = pgd_offset(page_table, virt);
+			pgd = pgd_offset(pg_structs->root_table, virt);
 			if (!pgd_valid(pgd)) {
 				pud = page_alloc(&mem_pool, 1);
 				if (!pud)
@@ -177,7 +177,7 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 			pud = pud4l_offset(pgd, offs, virt);
 			break;
 		case 3:
-			pud = pud3l_offset(page_table, virt);
+			pud = pud3l_offset(pg_structs->root_table, virt);
 			break;
 		default:
 			return -EINVAL;
@@ -209,9 +209,9 @@ int page_map_create(pgd_t *page_table, unsigned long phys, unsigned long size,
 	return 0;
 }
 
-void page_map_destroy(pgd_t *page_table, unsigned long virt,
-		      unsigned long size, unsigned int levels,
-		      enum page_map_coherent coherent)
+void page_map_destroy(const struct paging_structures *pg_structs,
+		      unsigned long virt, unsigned long size,
+		      unsigned int levels, enum page_map_coherent coherent)
 {
 	unsigned long offs = hypervisor_header.page_offset;
 	pgd_t *pgd;
@@ -223,7 +223,7 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 	     virt += PAGE_SIZE, size -= PAGE_SIZE) {
 		switch (levels) {
 		case 4:
-			pgd = pgd_offset(page_table, virt);
+			pgd = pgd_offset(pg_structs->root_table, virt);
 			if (!pgd_valid(pgd))
 				continue;
 
@@ -231,7 +231,7 @@ void page_map_destroy(pgd_t *page_table, unsigned long virt,
 			break;
 		case 3:
 			pgd = 0; /* silence compiler warning */
-			pud = pud3l_offset(page_table, virt);
+			pud = pud3l_offset(pg_structs->root_table, virt);
 			break;
 		default:
 			return;
@@ -286,7 +286,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 	phys = arch_page_map_gphys2phys(cpu_data, page_table_paddr);
 	if (phys == INVALID_PHYS_ADDR)
 		return NULL;
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
+	err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
@@ -300,7 +300,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 			(unsigned long)pud4l_offset(pgd, 0, 0));
 	if (phys == INVALID_PHYS_ADDR)
 		return NULL;
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
+	err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
@@ -318,7 +318,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 					(unsigned long)pmd_offset(pud, 0, 0));
 	if (phys == INVALID_PHYS_ADDR)
 		return NULL;
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
+	err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE, page_virt,
 			      PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,
 			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
 	if (err)
@@ -334,7 +334,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 				(unsigned long)pte_offset(pmd, 0, 0));
 		if (phys == INVALID_PHYS_ADDR)
 			return NULL;
-		err = page_map_create(hv_page_table, phys, PAGE_SIZE,
+		err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE,
 				      page_virt, PAGE_READONLY_FLAGS,
 				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 				      PAGE_MAP_NON_COHERENT);
@@ -350,7 +350,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 	if (phys == INVALID_PHYS_ADDR)
 		return NULL;
 
-	err = page_map_create(hv_page_table, phys, PAGE_SIZE, page_virt,
+	err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE, page_virt,
 			      flags, PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 			      PAGE_MAP_NON_COHERENT);
 	if (err)
@@ -394,12 +394,12 @@ int paging_init(void)
 	for (n = 0; n < remap_pool.used_pages; n++)
 		set_bit(n, remap_pool.used_bitmap);
 
-	hv_page_table = page_alloc(&mem_pool, 1);
-	if (!hv_page_table)
+	hv_paging_structs.root_table = page_alloc(&mem_pool, 1);
+	if (!hv_paging_structs.root_table)
 		goto error_nomem;
 
 	/* Replicate hypervisor mapping of Linux */
-	err = page_map_create(hv_page_table,
+	err = page_map_create(&hv_paging_structs,
 			      page_map_hvirt2phys(&hypervisor_header),
 			      hypervisor_header.size,
 			      (unsigned long)&hypervisor_header,
@@ -410,7 +410,7 @@ int paging_init(void)
 
 	/* Make sure any remappings to the temporary regions can be performed
 	 * without allocations of page table pages. */
-	err = page_map_create(hv_page_table, 0,
+	err = page_map_create(&hv_paging_structs, 0,
 			      remap_pool.used_pages * PAGE_SIZE,
 			      TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
 			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,

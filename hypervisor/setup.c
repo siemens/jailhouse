@@ -72,7 +72,7 @@ static void init_early(unsigned int cpu_id)
 			return;
 		}
 
-		error = page_map_create(hv_page_table,
+		error = page_map_create(&hv_paging_structs,
 				system_config->config_memory.phys_start,
 				size, (unsigned long)config_memory,
 				PAGE_READONLY_FLAGS, PAGE_DEFAULT_FLAGS,

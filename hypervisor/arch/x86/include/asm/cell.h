@@ -13,8 +13,7 @@
 #ifndef _JAILHOUSE_ASM_CELL_H
 #define _JAILHOUSE_ASM_CELL_H
 
-#include <asm/types.h>
-#include <asm/paging.h>
+#include <jailhouse/paging.h>
 
 #include <jailhouse/cell-config.h>
 #include <jailhouse/hypercall.h>
@@ -23,11 +22,11 @@ struct cell {
 	struct {
 		/* should be first as it requires page alignment */
 		u8 __attribute__((aligned(PAGE_SIZE))) io_bitmap[2*PAGE_SIZE];
-		pgd_t *ept;
+		struct paging_structures ept_structs;
 	} vmx;
 
 	struct {
-		pgd_t *page_table;
+		struct paging_structures pg_structs;
 	} vtd;
 
 	unsigned int id;

@@ -105,8 +105,9 @@ int vtd_init(void)
 		else if (reg_base != dmar_reg_base + dmar_units * PAGE_SIZE)
 			return -ENOMEM;
 
-		err = page_map_create(hv_page_table, drhd->register_base_addr,
-				      PAGE_SIZE, (unsigned long)reg_base,
+		err = page_map_create(&hv_paging_structs,
+				      drhd->register_base_addr, PAGE_SIZE,
+				      (unsigned long)reg_base,
 				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
 				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 				      PAGE_MAP_NON_COHERENT);
@@ -176,7 +177,7 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	context_entry = &context_entry_table[device->devfn];
 	context_entry->lo_word = VTD_CTX_PRESENT |
 		VTD_CTX_FPD | VTD_CTX_TTYPE_MLP_UNTRANS |
-		page_map_hvirt2phys(cell->vtd.page_table);
+		page_map_hvirt2phys(cell->vtd.pg_structs.root_table);
 	context_entry->hi_word =
 		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
 		(cell->id << VTD_CTX_DID_SHIFT);
@@ -202,20 +203,20 @@ int vtd_cell_init(struct cell *cell)
 	if (cell->id >= dmar_num_did)
 		return -ERANGE;
 
-	cell->vtd.page_table = page_alloc(&mem_pool, 1);
-	if (!cell->vtd.page_table)
+	cell->vtd.pg_structs.root_table = page_alloc(&mem_pool, 1);
+	if (!cell->vtd.pg_structs.root_table)
 		return -ENOMEM;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++) {
 		err = vtd_map_memory_region(cell, mem);
 		if (err)
-			/* FIXME: release vtd.page_table */
+			/* FIXME: release vtd.pg_structs.root_table */
 			return err;
 	}
 
 	for (n = 0; n < config->num_pci_devices; n++)
 		if (!vtd_add_device_to_cell(cell, &dev[n]))
-			/* FIXME: release vtd.page_table,
+			/* FIXME: release vtd.pg_structs.root_table,
 			 * revert device additions*/
 			return -ENOMEM;
 
@@ -279,7 +280,7 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
 		if (mem->flags & JAILHOUSE_MEM_DMA)
-			page_map_destroy(linux_cell.vtd.page_table,
+			page_map_destroy(&linux_cell.vtd.pg_structs,
 					 mem->phys_start, mem->size,
 					 dmar_pt_levels, PAGE_MAP_COHERENT);
 
@@ -306,7 +307,7 @@ int vtd_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		page_flags |= VTD_PAGE_WRITE;
 
-	return page_map_create(cell->vtd.page_table, mem->phys_start,
+	return page_map_create(&cell->vtd.pg_structs, mem->phys_start,
 			       mem->size, mem->virt_start, page_flags,
 			       VTD_PAGE_READ | VTD_PAGE_WRITE,
 			       dmar_pt_levels, PAGE_MAP_COHERENT);
@@ -320,7 +321,7 @@ void vtd_unmap_memory_region(struct cell *cell,
 		return;
 
 	if (mem->flags & JAILHOUSE_MEM_DMA)
-		page_map_destroy(cell->vtd.page_table, mem->virt_start,
+		page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
 				 mem->size, dmar_pt_levels, PAGE_MAP_COHERENT);
 }
 
@@ -355,7 +356,7 @@ void vtd_cell_exit(struct cell *cell)
 	vtd_flush_domain_caches(cell->id);
 	vtd_flush_domain_caches(linux_cell.id);
 
-	page_free(&mem_pool, cell->vtd.page_table, 1);
+	page_free(&mem_pool, cell->vtd.pg_structs.root_table, 1);
 }
 
 void vtd_shutdown(void)
