@@ -33,11 +33,8 @@ SECTIONS
 	}
 
 	. = ALIGN(16);
-	.bss		: {
-		__bss_start = .;
-		*(.bss)
-		__bss_end = .;
-	}
+	.bss		: { *(.bss) }
+	__hv_core_end = .;
 
 	. = ALIGN(PAGE_SIZE);
 	__page_pool = .;

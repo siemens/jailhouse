@@ -18,7 +18,7 @@
 #include <jailhouse/string.h>
 #include <asm/spinlock.h>
 
-extern u8 __bss_start[], __bss_end[];
+extern u8 __hv_core_end[];
 
 void *config_memory;
 
@@ -175,8 +175,7 @@ int entry(struct per_cpu *cpu_data)
 struct jailhouse_header __attribute__((section(".header")))
 hypervisor_header = {
 	.signature = JAILHOUSE_SIGNATURE,
-	.bss_start = (unsigned long)__bss_start,
-	.bss_end = (unsigned long)__bss_end,
+	.core_size = (unsigned long)__hv_core_end,
 	.percpu_size = sizeof(struct per_cpu),
 	.entry = (unsigned long)arch_entry,
 };

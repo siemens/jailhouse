@@ -130,7 +130,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		   sizeof(header->signature)) != 0)
 		goto error_release_fw;
 
-	hv_core_size = PAGE_ALIGN(header->bss_end);
+	hv_core_size = PAGE_ALIGN(header->core_size);
 	percpu_size = num_possible_cpus() * header->percpu_size;
 	config_size = jailhouse_system_config_size(&config_header);
 	if (hv_mem->size <= hv_core_size + percpu_size + config_size)

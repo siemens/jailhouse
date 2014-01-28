@@ -15,8 +15,7 @@
 struct jailhouse_header {
 	/* filled at build time */
 	char signature[8];
-	unsigned long bss_start;
-	unsigned long bss_end;
+	unsigned long core_size;
 	unsigned long percpu_size;
 	unsigned long entry;
 
