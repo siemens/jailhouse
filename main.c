@@ -39,6 +39,7 @@ static struct device *jailhouse_dev;
 static DEFINE_MUTEX(lock);
 static bool enabled;
 static void *hypervisor_mem;
+static unsigned long hv_core_percpu_size;
 static cpumask_t offlined_cpus;
 static atomic_t call_done;
 static int error_code;
@@ -99,11 +100,11 @@ static void enter_hypervisor(void *info)
 
 static int jailhouse_enable(struct jailhouse_system __user *arg)
 {
-	unsigned long hv_core_size, percpu_size, config_size;
 	const struct firmware *hypervisor;
 	struct jailhouse_system config_header;
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
+	unsigned long config_size;
 	int err;
 
 	if (copy_from_user(&config_header, arg, sizeof(config_header)))
@@ -130,10 +131,10 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		   sizeof(header->signature)) != 0)
 		goto error_release_fw;
 
-	hv_core_size = PAGE_ALIGN(header->core_size);
-	percpu_size = num_possible_cpus() * header->percpu_size;
+	hv_core_percpu_size = PAGE_ALIGN(header->core_size) +
+		num_possible_cpus() * header->percpu_size;
 	config_size = jailhouse_system_config_size(&config_header);
-	if (hv_mem->size <= hv_core_size + percpu_size + config_size)
+	if (hv_mem->size <= hv_core_percpu_size + config_size)
 		goto error_release_fw;
 
 	/* CMA would be better... */
@@ -154,7 +155,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		(unsigned long)hypervisor_mem - hv_mem->phys_start;
 	header->possible_cpus = num_possible_cpus();
 
-	if (copy_from_user(hypervisor_mem + hv_core_size + percpu_size, arg,
+	if (copy_from_user(hypervisor_mem + hv_core_percpu_size, arg,
 			   config_size)) {
 		err = -EFAULT;
 		goto error_unmap;
@@ -204,7 +205,16 @@ error_unlock:
 
 static void leave_hypervisor(void *info)
 {
+	unsigned long size;
+	void *page;
 	int err;
+
+	/* Touch each hypervisor page we may need during the switch so that
+	 * the active mm definitely contains all mappings. At least x86 does
+	 * not support taking any faults while switching worlds. */
+	for (page = hypervisor_mem, size = hv_core_percpu_size; size > 0;
+	     size -= PAGE_SIZE, page += PAGE_SIZE)
+		readl(page);
 
 	/* either returns 0 or the same error code across all CPUs */
 	err = jailhouse_call0(JAILHOUSE_HC_DISABLE);
