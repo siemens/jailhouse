@@ -22,6 +22,8 @@
 #include <linux/smp.h>
 #include <linux/uaccess.h>
 #include <linux/reboot.h>
+#include <linux/vmalloc.h>
+#include <linux/io.h>
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
 
@@ -58,29 +60,37 @@ cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
 	     (cpu) < (config)->cpu_set_size * 8;)
 
 #ifdef CONFIG_X86
-
-static void *jailhouse_ioremap(phys_addr_t start, unsigned long size)
-{
-	void *addr;
-
-	addr = (__force void *)ioremap_cache(start, size);
-	if (addr)
-		set_memory_x((unsigned long)addr, size / PAGE_SIZE);
-	return addr;
-}
-
+#define JAILHOUSE_BASE		0xfffffffff0000000
 #elif defined(CONFIG_ARM)
-
-#include <asm/mach/map.h>
-
-static void *jailhouse_ioremap(phys_addr_t start, unsigned long size)
-{
-	return (__force void *)__arm_ioremap(start, size, MT_MEMORY);
-}
-
+#define JAILHOUSE_BASE		0xe0000000
 #else
 #error Unsupported architecture
 #endif
+
+static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
+			       unsigned long size)
+{
+	struct vm_struct *vma;
+
+	if (virt)
+		vma = __get_vm_area(size, VM_IOREMAP, virt,
+				    virt + size + PAGE_SIZE);
+	else
+		vma = __get_vm_area(size, VM_IOREMAP, VMALLOC_START,
+				    VMALLOC_END);
+	if (!vma)
+		return NULL;
+	vma->phys_addr = phys;
+
+	if (ioremap_page_range((unsigned long)vma->addr,
+			       (unsigned long)vma->addr + size, phys,
+			       PAGE_KERNEL_EXEC)) {
+		vunmap(vma->addr);
+		return NULL;
+	}
+
+	return vma->addr;
+}
 
 static void enter_hypervisor(void *info)
 {
@@ -137,8 +147,8 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	if (hv_mem->size <= hv_core_percpu_size + config_size)
 		goto error_release_fw;
 
-	/* CMA would be better... */
-	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, hv_mem->size);
+	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, JAILHOUSE_BASE,
+					   hv_mem->size);
 	if (!hypervisor_mem) {
 		pr_err("jailhouse: Unable to map RAM reserved for hypervisor "
 		       "at %08lx\n", (unsigned long)hv_mem->phys_start);
@@ -190,7 +200,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	return 0;
 
 error_unmap:
-	iounmap((__force void __iomem *)hypervisor_mem);
+	vunmap(hypervisor_mem);
 
 error_release_fw:
 	release_firmware(hypervisor);
@@ -252,7 +262,7 @@ static int jailhouse_disable(void)
 	if (err)
 		goto unlock_out;
 
-	iounmap((__force void __iomem *)hypervisor_mem);
+	vunmap(hypervisor_mem);
 
 	for_each_cpu_mask(cpu, offlined_cpus) {
 		if (cpu_up(cpu) != 0)
@@ -314,7 +324,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto kfree_config_out;
 	}
 
-	cell_mem = jailhouse_ioremap(ram->phys_start, ram->size);
+	cell_mem = jailhouse_ioremap(ram->phys_start, 0, ram->size);
 	if (!cell_mem) {
 		pr_err("jailhouse: Unable to map RAM reserved for cell "
 		       "at %08lx\n", (unsigned long)ram->phys_start);
@@ -327,12 +337,12 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 			   (void *)(unsigned long)image->source_address,
 			   image->size)) {
 		err = -EFAULT;
-		goto iounmap_out;
+		goto unmap_out;
 	}
 
 	if (mutex_lock_interruptible(&lock) != 0) {
 		err = -EINTR;
-		goto iounmap_out;
+		goto unmap_out;
 	}
 
 	if (!enabled) {
@@ -363,8 +373,8 @@ cpu_online_out:
 unlock_out:
 	mutex_unlock(&lock);
 
-iounmap_out:
-	iounmap((__force void __iomem *)cell_mem);
+unmap_out:
+	vunmap(cell_mem);
 
 kfree_config_out:
 	kfree(config);
