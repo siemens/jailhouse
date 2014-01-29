@@ -20,13 +20,15 @@
 
 extern u8 __hv_core_end[];
 
+static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
+
 void *config_memory;
+struct cell linux_cell;
 
 static DEFINE_SPINLOCK(init_lock);
 static unsigned int master_cpu_id = -1;
 static volatile unsigned int initialized_cpus;
 static volatile int error;
-struct cell linux_cell;
 
 static int register_linux_cpu(struct per_cpu *cpu_data)
 {
@@ -44,6 +46,8 @@ static int register_linux_cpu(struct per_cpu *cpu_data)
 
 static void init_early(unsigned int cpu_id)
 {
+	struct jailhouse_memory hv_page;
+	unsigned long core_percpu_size;
 	unsigned long size;
 
 	master_cpu_id = cpu_id;
@@ -93,6 +97,25 @@ static void init_early(unsigned int cpu_id)
 	error = cell_init(&linux_cell, false);
 	if (error)
 		return;
+
+	/*
+	 * Back the region of the hypervisor core and per-CPU page with empty
+	 * pages for Linux. This allows to fault-in the hypervisor region into
+	 * Linux' page table before shutdown without triggering violations.
+	 */
+	hv_page.phys_start = page_map_hvirt2phys(empty_page);
+	hv_page.virt_start = page_map_hvirt2phys(&hypervisor_header);
+	hv_page.size = PAGE_SIZE;
+	hv_page.flags = JAILHOUSE_MEM_READ;
+	core_percpu_size = PAGE_ALIGN(hypervisor_header.core_size) +
+		hypervisor_header.possible_cpus * sizeof(struct per_cpu);
+	while (core_percpu_size > 0) {
+		error = arch_map_memory_region(&linux_cell, &hv_page);
+		if (error)
+			return;
+		core_percpu_size -= PAGE_SIZE;
+		hv_page.virt_start += PAGE_SIZE;
+	}
 
 	page_map_dump_stats("after early setup");
 	printk("Initializing first processor:\n");
