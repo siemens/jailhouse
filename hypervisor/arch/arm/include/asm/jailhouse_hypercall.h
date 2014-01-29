@@ -18,6 +18,10 @@
 #define JAILHOUSE_CALL_ARG3		"r3"
 #define JAILHOUSE_CALL_ARG4		"r4"
 
+#ifndef __asmeq
+#define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
+#endif
+
 static inline __u32 jailhouse_call0(__u32 num)
 {
 	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
@@ -109,4 +113,24 @@ static inline __u32 jailhouse_call4(__u32 num, __u32 arg1, __u32 arg2,
 		  "r" (__arg4)
 		: "memory");
 	return num_result;
+}
+
+static inline void
+jailhouse_send_msg_to_cell(struct jailhouse_comm_region *comm_region,
+			   __u32 msg)
+{
+	comm_region->reply_from_cell = JAILHOUSE_MSG_NONE;
+	/* ensure reply was cleared before sending new message */
+	asm volatile("dmb ishst" : : : "memory");
+	comm_region->msg_to_cell = msg;
+}
+
+static inline void
+jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
+			       __u32 reply)
+{
+	comm_region->msg_to_cell = JAILHOUSE_MSG_NONE;
+	/* ensure message was cleared before sending reply */
+	asm volatile("dmb ishst" : : : "memory");
+	comm_region->reply_from_cell = reply;
 }

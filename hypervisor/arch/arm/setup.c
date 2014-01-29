@@ -41,6 +41,7 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 #include <jailhouse/processor.h>
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
+#include <jailhouse/paging.h>
 void arch_dbg_write_init(void) {}
 int phys_processor_id(void) { return 0; }
 void arch_suspend_cpu(unsigned int cpu_id) {}
@@ -59,3 +60,6 @@ void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *new_cell) {}
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
 void arch_dbg_write(const char *msg) {}
 void arch_shutdown(void) {}
+unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
+				       unsigned long gphys)
+{ return INVALID_PHYS_ADDR; }

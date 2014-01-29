@@ -48,6 +48,7 @@ struct per_cpu {
 	int sipi_vector;
 	bool flush_caches;
 	bool shutdown_cpu;
+	int shutdown_state;
 } __attribute__((aligned(PAGE_SIZE)));
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)
