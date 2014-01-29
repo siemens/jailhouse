@@ -42,7 +42,7 @@ extern pgd_t *hv_page_table;
 void *page_alloc(struct page_pool *pool, unsigned int num);
 void page_free(struct page_pool *pool, void *first_page, unsigned int num);
 
-static inline unsigned long page_map_hvirt2phys(void *hvirt)
+static inline unsigned long page_map_hvirt2phys(const void *hvirt)
 {
 	return (unsigned long)hvirt - hypervisor_header.page_offset;
 }
