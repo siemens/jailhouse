@@ -18,7 +18,7 @@
 #include <jailhouse/string.h>
 #include <asm/spinlock.h>
 
-extern u8 __hv_core_end[];
+extern u8 __text_start[], __hv_core_end[];
 
 static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
 
@@ -58,8 +58,7 @@ static void init_early(unsigned int cpu_id)
 	arch_dbg_write_init();
 
 	printk("\nInitializing Jailhouse hypervisor on CPU %d\n", cpu_id);
-	printk("Code location: %p\n",
-	       (void *)&hypervisor_header + sizeof(struct jailhouse_header));
+	printk("Code location: %p\n", __text_start);
 
 	error = paging_init();
 	if (error)

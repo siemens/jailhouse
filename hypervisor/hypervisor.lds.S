@@ -18,6 +18,7 @@ SECTIONS
 	.header		: { *(.header) }
 
 	. = ALIGN(16);
+	__text_start = .;
 	.text		: { *(.text) }
 
 	. = ALIGN(16);
