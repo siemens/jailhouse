@@ -17,7 +17,7 @@ obj-m := jailhouse.o
 ccflags-y := -I$(src)/hypervisor/arch/$(SRCARCH)/include \
 	     -I$(src)/hypervisor/include
 
-jailhouse-y := main.o
+jailhouse-y := driver.o
 
 # out-of-tree build
 
