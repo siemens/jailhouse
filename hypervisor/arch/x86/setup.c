@@ -10,10 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/control.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
-#include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
