@@ -3,18 +3,29 @@ Things to be addressed, at some point. Unsorted, unprioritized, incomplete.
 o x86 support
  - DMAR error reporting
  - interrupt remapping support
+ - PCI resource access control
+  - bus scanning?
+  - config space
  - AMD (SVM)?
 o ARM support
 o access control to management interface
- - allow privileged cells to vote against reconfigurations
-   or to shut down orderly first
+ - prevent reconfigurations / overlaps with existing cells when adding new ones
 o configuration
+ - add official support to assign resources to multiple cells
+   (shared pages, read-only PIO ports)
  - review of format, rework of textual representation
  - platform device assignment
  - create base configuration from knowledge base and running system
+o rework paging mechanism
+ - fully table-driven
+ - add all required x86 paging modes (32-bit, PAE etc.)
+ - adjust MMIO to use correct paging mode
+ - hugepage support (will drastically reduce memory need)
 o setup validation
  - check integrity of configurations
- - check integrity of runtime environment
+ - check integrity of runtime environment (hypervisor core & page_pool,
+   probably just excluding volatile Linux-related state variables)
+  - pure software solution (without security requirements)
   - Intel TXT support?
   - secure boot?
 o inter-cell communication channel
