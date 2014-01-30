@@ -120,7 +120,6 @@ int apic_init(void)
 	int err;
 
 	if (apicbase & APIC_BASE_EXTD) {
-		/* set programmatically to enable address fixup */
 		apic_ops.read = read_x2apic;
 		apic_ops.read_id = read_x2apic_id;
 		apic_ops.write = write_x2apic;

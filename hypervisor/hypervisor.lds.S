@@ -11,10 +11,11 @@
  */
 
 #include <asm/paging.h>
+#include <asm/jailhouse_hypercall.h>
 
 SECTIONS
 {
-	. = 0;
+	. = JAILHOUSE_BASE;
 	.header		: { *(.header) }
 
 	. = ALIGN(16);
@@ -26,12 +27,6 @@ SECTIONS
 
 	. = ALIGN(16);
 	.data		: { *(.data) }
-
-	.got		: {
-		__got_start = .;
-		*(.got*)
-		__got_end = .;
-	}
 
 	. = ALIGN(16);
 	.bss		: { *(.bss) }

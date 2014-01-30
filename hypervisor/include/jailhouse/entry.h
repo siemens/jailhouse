@@ -33,8 +33,7 @@
 extern struct jailhouse_header hypervisor_header;
 extern void *config_memory;
 
-int arch_entry(int cpu_id);
-void got_init(void);
+int arch_entry(unsigned int cpu_id);
 void vm_exit(void);
 
 int entry(struct per_cpu *cpu_data);

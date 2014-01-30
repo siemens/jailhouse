@@ -52,9 +52,6 @@ static void init_early(unsigned int cpu_id)
 
 	master_cpu_id = cpu_id;
 
-	/* must be first, printk/arch_dbg_write uses the GOT */
-	got_init();
-
 	arch_dbg_write_init();
 
 	printk("\nInitializing Jailhouse hypervisor on CPU %d\n", cpu_id);
@@ -197,7 +194,7 @@ int entry(struct per_cpu *cpu_data)
 struct jailhouse_header __attribute__((section(".header")))
 hypervisor_header = {
 	.signature = JAILHOUSE_SIGNATURE,
-	.core_size = (unsigned long)__hv_core_end,
+	.core_size = (unsigned long)__hv_core_end - JAILHOUSE_BASE,
 	.percpu_size = sizeof(struct per_cpu),
-	.entry = (unsigned long)arch_entry,
+	.entry = arch_entry,
 };

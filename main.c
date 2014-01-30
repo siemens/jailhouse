@@ -59,14 +59,6 @@ cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
 	     (cpu) = cell_cpumask_next((cpu), (config)),	\
 	     (cpu) < (config)->cpu_set_size * 8;)
 
-#ifdef CONFIG_X86
-#define JAILHOUSE_BASE		0xfffffffff0000000
-#elif defined(CONFIG_ARM)
-#define JAILHOUSE_BASE		0xe0000000
-#else
-#error Unsupported architecture
-#endif
-
 static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 			       unsigned long size)
 {
@@ -95,13 +87,10 @@ static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 static void enter_hypervisor(void *info)
 {
 	struct jailhouse_header *header = info;
-	entry_func entry;
 	int err;
 
-	entry = (entry_func)(hypervisor_mem + header->entry);
-
 	/* either returns 0 or the same error code across all CPUs */
-	err = entry(smp_processor_id());
+	err = header->entry(smp_processor_id());
 	if (err)
 		error_code = err;
 

@@ -10,6 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#define JAILHOUSE_BASE			0xf0000000
+
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \
 					"hvc #0x4a48"
 #define JAILHOUSE_CALL_NUM_RESULT	"r0"
@@ -21,6 +23,8 @@
 #ifndef __asmeq
 #define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
 #endif
+
+#ifndef __ASSEMBLY__
 
 static inline __u32 jailhouse_call0(__u32 num)
 {
@@ -134,3 +138,5 @@ jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
 	asm volatile("dmb ishst" : : : "memory");
 	comm_region->reply_from_cell = reply;
 }
+
+#endif /* !__ASSEMBLY__ */

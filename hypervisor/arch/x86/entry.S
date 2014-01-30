@@ -53,25 +53,6 @@ arch_entry:
 	ret
 
 
-/* Fix up Global Offset Table with absolute hypervisor address */
-	.globl got_init
-got_init:
-	lea __got_start(%rip),%rdx
-	lea __got_end(%rip),%rcx
-	lea hypervisor_header(%rip),%rax
-
-got_loop:
-	cmp %rdx,%rcx
-	je got_done
-
-	add %rax,(%rdx)
-	add $8,%rdx
-	jmp got_loop
-
-got_done:
-	ret
-
-
 /* Exception/interrupt entry points */
 .macro common_exception_entry vector
 	pushq $\vector

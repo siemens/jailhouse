@@ -17,7 +17,7 @@ struct jailhouse_header {
 	char signature[8];
 	unsigned long core_size;
 	unsigned long percpu_size;
-	unsigned long entry;
+	int (*entry)(unsigned int);
 
 	/* filled by loader */
 	unsigned long size;
@@ -25,5 +25,3 @@ struct jailhouse_header {
 	unsigned int possible_cpus;
 	unsigned int online_cpus;
 };
-
-typedef int (*entry_func)(unsigned int);

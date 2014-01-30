@@ -14,6 +14,8 @@
 #error 64-bit kernel required!
 #endif
 
+#define JAILHOUSE_BASE		0xfffffffff0000000
+
 #define JAILHOUSE_CALL_INS	"vmcall"
 #define JAILHOUSE_CALL_RESULT	"=a" (result)
 #define JAILHOUSE_CALL_NUM	"a" (num)
@@ -21,6 +23,8 @@
 #define JAILHOUSE_CALL_ARG2	"S" (arg2)
 #define JAILHOUSE_CALL_ARG3	"d" (arg3)
 #define JAILHOUSE_CALL_ARG4	"c" (arg4)
+
+#ifndef __ASSEMBLY__
 
 static inline __u32 jailhouse_call0(__u32 num)
 {
@@ -100,3 +104,5 @@ jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
 	asm volatile("mfence" : : : "memory");
 	comm_region->reply_from_cell = reply;
 }
+
+#endif /* !__ASSEMBLY__ */
