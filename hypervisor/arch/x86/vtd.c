@@ -39,9 +39,12 @@ static void vtd_flush_dmar_caches(void *reg_base, u64 ctx_scope,
 		cpu_relax();
 
 	iotlb_reg_base = vtd_iotlb_reg_base(reg_base);
+
 	mmio_write64(iotlb_reg_base + VTD_IOTLB_REG,
-		     iotlb_scope | VTD_IOTLB_DW | VTD_IOTLB_DR |
-		     VTD_IOTLB_IVT);
+		iotlb_scope | VTD_IOTLB_DW | VTD_IOTLB_DR | VTD_IOTLB_IVT |
+		mmio_read64_field(iotlb_reg_base + VTD_IOTLB_REG,
+			VTD_IOTLB_R_MASK));
+
 	while (mmio_read64(iotlb_reg_base + VTD_IOTLB_REG) & VTD_IOTLB_IVT)
 		cpu_relax();
 }
