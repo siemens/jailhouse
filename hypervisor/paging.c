@@ -134,6 +134,33 @@ static void flush_pt_entry(pt_entry_t pte, enum page_map_coherent coherent)
 		flush_cache(pte, sizeof(*pte));
 }
 
+static int split_hugepage(const struct paging *paging, pt_entry_t pte,
+			  unsigned long virt, enum page_map_coherent coherent)
+{
+	unsigned long phys = paging->get_phys(pte, virt);
+	struct paging_structures sub_structs;
+	unsigned long page_mask, flags;
+
+	if (phys == INVALID_PHYS_ADDR)
+		return 0;
+
+	page_mask = ~(paging->page_size - 1);
+	phys &= page_mask;
+	virt &= page_mask;
+
+	flags = paging->get_flags(pte);
+
+	sub_structs.root_paging = paging + 1;
+	sub_structs.root_table = page_alloc(&mem_pool, 1);
+	if (!sub_structs.root_table)
+		return -ENOMEM;
+	paging->set_next_pt(pte, page_map_hvirt2phys(sub_structs.root_table));
+	flush_pt_entry(pte, coherent);
+
+	return page_map_create(&sub_structs, phys, paging->page_size, virt,
+			       flags, coherent);
+}
+
 int page_map_create(const struct paging_structures *pg_structs,
 		    unsigned long phys, unsigned long size, unsigned long virt,
 		    unsigned long flags, enum page_map_coherent coherent)
@@ -145,15 +172,32 @@ int page_map_create(const struct paging_structures *pg_structs,
 		const struct paging *paging = pg_structs->root_paging;
 		page_table_t pt = pg_structs->root_table;
 		pt_entry_t pte;
+		int err;
 
 		while (1) {
 			pte = paging->get_entry(pt, virt);
-			if (paging->page_size > 0) {
+			if (paging->page_size > 0 &&
+			    paging->page_size <= size &&
+			    (virt & (paging->page_size - 1)) == 0) {
+				/*
+				 * We might be overwriting a more fine-grained
+				 * mapping, so release it first. This cannot
+				 * fail as we are working along hugepage
+				 * boundaries.
+				 */
+				if (paging->page_size > PAGE_SIZE)
+					page_map_destroy(pg_structs, virt,
+							 paging->page_size,
+							 coherent);
 				paging->set_terminal(pte, phys, flags);
 				flush_pt_entry(pte, coherent);
 				break;
 			}
 			if (paging->entry_valid(pte)) {
+				err = split_hugepage(paging, pte, virt,
+						     coherent);
+				if (err)
+					return err;
 				pt = page_map_phys2hvirt(
 						paging->get_next_pt(pte));
 			} else {
@@ -175,9 +219,9 @@ int page_map_create(const struct paging_structures *pg_structs,
 	return 0;
 }
 
-void page_map_destroy(const struct paging_structures *pg_structs,
-		      unsigned long virt, unsigned long size,
-		      enum page_map_coherent coherent)
+int page_map_destroy(const struct paging_structures *pg_structs,
+		     unsigned long virt, unsigned long size,
+		     enum page_map_coherent coherent)
 {
 	size = PAGE_ALIGN(size);
 
@@ -187,6 +231,7 @@ void page_map_destroy(const struct paging_structures *pg_structs,
 		unsigned long page_size;
 		pt_entry_t pte;
 		int n = 0;
+		int err;
 
 		/* walk down the page table, saving intermediate tables */
 		pt[0] = pg_structs->root_table;
@@ -194,8 +239,15 @@ void page_map_destroy(const struct paging_structures *pg_structs,
 			pte = paging->get_entry(pt[n], virt);
 			if (!paging->entry_valid(pte))
 				break;
-			if (paging->get_phys(pte, virt) != INVALID_PHYS_ADDR)
-				break;
+			if (paging->get_phys(pte, virt) != INVALID_PHYS_ADDR) {
+				if (paging->page_size > size) {
+					err = split_hugepage(paging, pte, virt,
+							     coherent);
+					if (err)
+						return err;
+				} else
+					break;
+			}
 			pt[++n] = page_map_phys2hvirt(
 					paging->get_next_pt(pte));
 			paging++;
@@ -220,6 +272,7 @@ void page_map_destroy(const struct paging_structures *pg_structs,
 		virt += page_size;
 		size -= page_size;
 	}
+	return 0;
 }
 
 void *page_map_get_guest_page(struct per_cpu *cpu_data,

@@ -109,9 +109,9 @@ unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 int page_map_create(const struct paging_structures *pg_structs,
 		    unsigned long phys, unsigned long size, unsigned long virt,
 		    unsigned long flags, enum page_map_coherent coherent);
-void page_map_destroy(const struct paging_structures *pg_structs,
-		      unsigned long virt, unsigned long size,
-		      enum page_map_coherent coherent);
+int page_map_destroy(const struct paging_structures *pg_structs,
+		     unsigned long virt, unsigned long size,
+		     enum page_map_coherent coherent);
 
 void *page_map_get_guest_page(struct per_cpu *cpu_data,
 			      const struct paging *paging,

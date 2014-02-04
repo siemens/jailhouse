@@ -287,24 +287,30 @@ vtd_remove_device_from_cell(struct cell *cell,
 	page_free(&mem_pool, context_entry_table, 1);
 }
 
-void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
+int vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
 	const struct jailhouse_pci_device *dev =
 		jailhouse_cell_pci_devices(config);
 	unsigned int n;
+	int err = 0;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
-		if (mem->flags & JAILHOUSE_MEM_DMA)
-			page_map_destroy(&linux_cell.vtd.pg_structs,
-					 mem->phys_start, mem->size,
-					 PAGE_MAP_COHERENT);
+		if (mem->flags & JAILHOUSE_MEM_DMA) {
+			err = page_map_destroy(&linux_cell.vtd.pg_structs,
+					       mem->phys_start, mem->size,
+					       PAGE_MAP_COHERENT);
+			if (err)
+				goto out;
+		}
 
 	for (n = 0; n < config->num_pci_devices; n++)
 		vtd_remove_device_from_cell(&linux_cell, &dev[n]);
 
+out:
 	vtd_flush_domain_caches(linux_cell.id);
+	return err;
 }
 
 int vtd_map_memory_region(struct cell *cell,
@@ -337,6 +343,8 @@ void vtd_unmap_memory_region(struct cell *cell,
 		return;
 
 	if (mem->flags & JAILHOUSE_MEM_DMA)
+		/* This cannot fail. The region was mapped as a whole before,
+		 * thus no hugepages need to be broken up to unmap it. */
 		page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
 				 mem->size, PAGE_MAP_COHERENT);
 }

@@ -257,6 +257,8 @@ int vmx_map_memory_region(struct cell *cell,
 void vmx_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 {
+	/* This cannot fail. The region was mapped as a whole before, thus no
+	 * hugepages need to be broken up to unmap it. */
 	page_map_destroy(&cell->vmx.ept_structs, mem->virt_start, mem->size,
 			 PAGE_MAP_NON_COHERENT);
 }
@@ -312,26 +314,32 @@ int vmx_cell_init(struct cell *cell)
 	return 0;
 }
 
-void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
+int vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
 	u32 pio_bitmap_size = config->pio_bitmap_size;
+	int err = 0;
 	u8 *b;
 	int n;
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
-		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
-			page_map_destroy(&linux_cell.vmx.ept_structs,
-					 mem->phys_start, mem->size,
-					 PAGE_MAP_NON_COHERENT);
+		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION)) {
+			err = page_map_destroy(&linux_cell.vmx.ept_structs,
+					       mem->phys_start, mem->size,
+					       PAGE_MAP_NON_COHERENT);
+			if (err)
+				goto out;
+		}
 
 	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 	     b++, pio_bitmap++, pio_bitmap_size--)
 		*b |= ~*pio_bitmap;
 
+out:
 	vmx_invept();
+	return err;
 }
 
 void vmx_cell_exit(struct cell *cell)
