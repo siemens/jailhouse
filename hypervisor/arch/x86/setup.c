@@ -77,7 +77,9 @@ int arch_init_early(struct cell *linux_cell)
 	for (vector = IRQ_DESC_START; vector < NUM_IDT_DESC; vector++)
 		set_idt_int_gate(vector, (unsigned long)irq_entry);
 
-	vmx_init();
+	err = vmx_init();
+	if (err)
+		return err;
 
 	err = vmx_cell_init(linux_cell);
 	if (err)

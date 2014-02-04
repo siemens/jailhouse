@@ -282,7 +282,7 @@ enum vmcs_field {
 #define APIC_ACCESS_TYPE_LINEAR_READ		0x00000000
 #define APIC_ACCESS_TYPE_LINEAR_WRITE		0x00001000
 
-void vmx_init(void);
+int vmx_init(void);
 
 int vmx_cell_init(struct cell *cell);
 void vmx_linux_cell_shrink(struct jailhouse_cell_desc *config);

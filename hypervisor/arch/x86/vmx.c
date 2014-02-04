@@ -148,15 +148,74 @@ static bool vmcs_write32(unsigned long field, u32 value)
 	return vmcs_write64(field, value);
 }
 
+static int vmx_check_features(void)
+{
+	unsigned long vmx_proc_ctrl, vmx_proc_ctrl2, ept_cap;
+	unsigned long vmx_pin_ctrl, vmx_basic;
+
+	if (!(cpuid_ecx(1) & X86_FEATURE_VMX))
+		return -ENODEV;
+
+	vmx_basic = read_msr(MSR_IA32_VMX_BASIC);
+
+	/* require VMCS size <= PAGE_SIZE */
+	if (((vmx_basic >> 32) & 0x1fff) > PAGE_SIZE)
+		return -EIO;
+
+	/* require VMCS memory access type == write back */
+	if (((vmx_basic >> 50) & 0xf) != EPT_TYPE_WRITEBACK)
+		return -EIO;
+
+	if (vmx_basic & (1UL << 55))
+		vmx_true_msr_offs = MSR_IA32_VMX_TRUE_PINBASED_CTLS -
+			MSR_IA32_VMX_PINBASED_CTLS;
+
+	/* require NMI exiting and preemption timer support */
+	vmx_pin_ctrl = read_msr(MSR_IA32_VMX_PINBASED_CTLS +
+				vmx_true_msr_offs) >> 32;
+	if (!(vmx_pin_ctrl & PIN_BASED_NMI_EXITING) ||
+	    !(vmx_pin_ctrl & PIN_BASED_VMX_PREEMPTION_TIMER))
+		return -EIO;
+
+	/* require I/O and MSR bitmap as well as secondary controls support */
+	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_PROCBASED_CTLS +
+				 vmx_true_msr_offs) >> 32;
+	if (!(vmx_proc_ctrl & CPU_BASED_USE_IO_BITMAPS) ||
+	    !(vmx_proc_ctrl & CPU_BASED_USE_MSR_BITMAPS) ||
+	    !(vmx_proc_ctrl & CPU_BASED_ACTIVATE_SECONDARY_CONTROLS))
+		return -EIO;
+
+	/* require APIC access, EPT and unrestricted guest mode support */
+	vmx_proc_ctrl2 = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2) >> 32;
+	ept_cap = read_msr(MSR_IA32_VMX_EPT_VPID_CAP);
+	if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES) ||
+	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_ENABLE_EPT) ||
+	    (ept_cap & EPT_MANDATORY_FEATURES) != EPT_MANDATORY_FEATURES ||
+	    !(ept_cap & (EPT_INVEPT_SINGLE | EPT_INVEPT_GLOBAL)) ||
+	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
+		return -EIO;
+
+	/* require activity state HLT */
+	if (!(read_msr(MSR_IA32_VMX_MISC) & VMX_MISC_ACTIVITY_HLT))
+		return -EIO;
+
+	return 0;
+}
+
 static void ept_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
 	*pte = (next_pt & 0x000ffffffffff000UL) | EPT_FLAG_READ |
 		EPT_FLAG_WRITE | EPT_FLAG_EXECUTE;
 }
 
-void vmx_init(void)
+int vmx_init(void)
 {
 	unsigned int n;
+	int err;
+
+	err = vmx_check_features();
+	if (err)
+		return err;
 
 	/* derive ept_paging from very similar x86_64_paging */
 	memcpy(ept_paging, x86_64_paging, sizeof(ept_paging));
@@ -164,7 +223,7 @@ void vmx_init(void)
 		ept_paging[n].set_next_pt = ept_set_next_pt;
 
 	if (!using_x2apic)
-		return;
+		return 0;
 
 	/* allow direct x2APIC access except for ICR writes */
 	memset(&msr_bitmap[VMX_MSR_BITMAP_0000_READ][MSR_X2APIC_BASE/8], 0,
@@ -172,6 +231,8 @@ void vmx_init(void)
 	memset(&msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_BASE/8], 0,
 	       (MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/8);
 	msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_ICR/8] = 0x01;
+
+	return 0;
 }
 
 int vmx_map_memory_region(struct cell *cell,
@@ -512,63 +573,19 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 int vmx_cpu_init(struct per_cpu *cpu_data)
 {
-	unsigned long vmx_proc_ctrl, vmx_proc_ctrl2, ept_cap;
-	unsigned long vmx_pin_ctrl, feature_ctrl, mask;
-	unsigned long vmx_basic;
-	unsigned long cr4;
+	unsigned long cr4, feature_ctrl, mask;
 	u32 revision_id;
-
-	if (!(cpuid_ecx(1) & X86_FEATURE_VMX))
-		return -ENODEV;
+	int err;
 
 	cr4 = read_cr4();
 	if (cr4 & X86_CR4_VMXE)
 		return -EBUSY;
 
-	vmx_basic = read_msr(MSR_IA32_VMX_BASIC);
+	err = vmx_check_features();
+	if (err)
+		return err;
 
-	/* require VMCS size <= PAGE_SIZE */
-	if (((vmx_basic >> 32) & 0x1fff) > PAGE_SIZE)
-		return -EIO;
-
-	/* require VMCS memory access type == write back */
-	if (((vmx_basic >> 50) & 0xf) != EPT_TYPE_WRITEBACK)
-		return -EIO;
-
-	if (vmx_basic & (1UL << 55))
-		vmx_true_msr_offs = MSR_IA32_VMX_TRUE_PINBASED_CTLS -
-			MSR_IA32_VMX_PINBASED_CTLS;
-
-	/* require NMI exiting and preemption timer support */
-	vmx_pin_ctrl = read_msr(MSR_IA32_VMX_PINBASED_CTLS +
-				vmx_true_msr_offs) >> 32;
-	if (!(vmx_pin_ctrl & PIN_BASED_NMI_EXITING) ||
-	    !(vmx_pin_ctrl & PIN_BASED_VMX_PREEMPTION_TIMER))
-		return -EIO;
-
-	/* require I/O and MSR bitmap as well as secondary controls support */
-	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_PROCBASED_CTLS +
-				 vmx_true_msr_offs) >> 32;
-	if (!(vmx_proc_ctrl & CPU_BASED_USE_IO_BITMAPS) ||
-	    !(vmx_proc_ctrl & CPU_BASED_USE_MSR_BITMAPS) ||
-	    !(vmx_proc_ctrl & CPU_BASED_ACTIVATE_SECONDARY_CONTROLS))
-		return -EIO;
-
-	/* require APIC access, EPT and unrestricted guest mode support */
-	vmx_proc_ctrl2 = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2) >> 32;
-	ept_cap = read_msr(MSR_IA32_VMX_EPT_VPID_CAP);
-	if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES) ||
-	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_ENABLE_EPT) ||
-	    (ept_cap & EPT_MANDATORY_FEATURES) != EPT_MANDATORY_FEATURES ||
-	    !(ept_cap & (EPT_INVEPT_SINGLE | EPT_INVEPT_GLOBAL)) ||
-	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
-		return -EIO;
-
-	/* require activity state HLT */
-	if (!(read_msr(MSR_IA32_VMX_MISC) & VMX_MISC_ACTIVITY_HLT))
-		return -EIO;
-
-	revision_id = (u32)vmx_basic;
+	revision_id = (u32)read_msr(MSR_IA32_VMX_BASIC);
 	cpu_data->vmxon_region.revision_id = revision_id;
 	cpu_data->vmxon_region.shadow_indicator = 0;
 	cpu_data->vmcs.revision_id = revision_id;
