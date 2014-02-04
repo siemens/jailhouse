@@ -18,14 +18,10 @@
 
 #define PAGE_SIZE		4096
 #define PAGE_MASK		~(PAGE_SIZE - 1)
+#define PAGE_OFFS_MASK		(PAGE_SIZE - 1)
 
 #define PAGE_DIR_LEVELS		4
-
-#define PAGE_TABLE_OFFS_MASK	0x0000000000000ff8UL
-#define PAGE_ADDR_MASK		0x000ffffffffff000UL
-#define PAGE_OFFS_MASK		0x0000000000000fffUL
-#define HUGEPAGE_ADDR_MASK	0x000fffffffe00000UL
-#define HUGEPAGE_OFFS_MASK	0x00000000001fffffUL
+#define MAX_PAGE_DIR_LEVELS	4
 
 #define PAGE_FLAG_PRESENT	0x01
 #define PAGE_FLAG_RW		0x02
@@ -44,158 +40,7 @@
 
 #ifndef __ASSEMBLY__
 
-typedef unsigned long pgd_t;
-typedef unsigned long pud_t;
-typedef unsigned long pmd_t;
-typedef unsigned long pte_t;
-
-static inline bool pgd_valid(pgd_t *pgd)
-{
-	return *pgd & 1;
-}
-
-static inline pgd_t *pgd_offset(pgd_t *page_table, unsigned long addr)
-{
-	return (pgd_t *)((unsigned long)page_table +
-			 ((addr >> 36) & PAGE_TABLE_OFFS_MASK));
-}
-
-static inline void set_pgd(pgd_t *pgd, unsigned long addr, unsigned long flags)
-{
-	*pgd = (addr & PAGE_ADDR_MASK) | flags;
-}
-
-static inline void clear_pgd(pgd_t *pgd)
-{
-	*pgd = 0;
-}
-
-static inline bool pud_valid(pud_t *pud)
-{
-	return *pud & 1;
-}
-
-static inline pud_t *pud4l_offset(pgd_t *pgd, unsigned long page_table_offset,
-				  unsigned long addr)
-{
-	unsigned long pud = (*pgd & PAGE_ADDR_MASK) +
-		((addr >> 27) & PAGE_TABLE_OFFS_MASK);
-
-	return (pud_t *)(pud + page_table_offset);
-}
-
-static inline pud_t *pud3l_offset(pgd_t *page_table, unsigned long addr)
-{
-	return (pud_t *)((unsigned long)page_table +
-			 ((addr >> 27) & PAGE_TABLE_OFFS_MASK));
-}
-
-static inline void set_pud(pud_t *pud, unsigned long addr, unsigned long flags)
-{
-	*pud = (addr & PAGE_ADDR_MASK) | flags;
-}
-
-static inline void clear_pud(pud_t *pud)
-{
-	*pud = 0;
-}
-
-static inline bool pmd_valid(pmd_t *pmd)
-{
-	return *pmd & 1;
-}
-
-static inline bool pmd_is_hugepage(pmd_t *pmd)
-{
-	return *pmd & (1 << 7);
-}
-
-static inline pmd_t *pmd_offset(pud_t *pud, unsigned long page_table_offset,
-				unsigned long addr)
-{
-	unsigned long pmd = (*pud & PAGE_ADDR_MASK) +
-		((addr >> 18) & PAGE_TABLE_OFFS_MASK);
-
-	return (pmd_t *)(pmd + page_table_offset);
-}
-
-static inline void set_pmd(pmd_t *pmd, unsigned long addr, unsigned long flags)
-{
-	*pmd = (addr & PAGE_ADDR_MASK) | flags;
-}
-
-static inline void clear_pmd(pmd_t *pmd)
-{
-	*pmd = 0;
-}
-
-static inline bool pte_valid(pte_t *pte)
-{
-	return *pte & 1;
-}
-
-static inline pte_t *pte_offset(pmd_t *pmd, unsigned long page_table_offset,
-				unsigned long addr)
-{
-	unsigned long pte = (*pmd & PAGE_ADDR_MASK) +
-		((addr >> 9) & PAGE_TABLE_OFFS_MASK);
-
-	return (pte_t *)(pte + page_table_offset);
-}
-
-static inline void set_pte(pte_t *pte, unsigned long addr, unsigned long flags)
-{
-	*pte = (addr & PAGE_ADDR_MASK) | flags;
-}
-
-static inline void clear_pte(pte_t *pte)
-{
-	*pte = 0;
-}
-
-static inline unsigned long phys_address(pte_t *pte, unsigned long addr)
-{
-	return (*pte & PAGE_ADDR_MASK) + (addr & PAGE_OFFS_MASK);
-}
-
-static inline unsigned long phys_address_hugepage(pmd_t *pmd,
-						  unsigned long addr)
-{
-	return (*pmd & HUGEPAGE_ADDR_MASK) + (addr & HUGEPAGE_OFFS_MASK);
-}
-
-static inline bool pud_empty(pgd_t *pgd, unsigned long page_table_offset)
-{
-	pud_t *pud = (pud_t *)((*pgd & PAGE_ADDR_MASK) + page_table_offset);
-	int n;
-
-	for (n = 0; n < PAGE_SIZE / sizeof(pud_t); n++, pud++)
-		if (pud_valid(pud))
-			return false;
-	return true;
-}
-
-static inline bool pmd_empty(pud_t *pud, unsigned long page_table_offset)
-{
-	pmd_t *pmd = (pmd_t *)((*pud & PAGE_ADDR_MASK) + page_table_offset);
-	int n;
-
-	for (n = 0; n < PAGE_SIZE / sizeof(pmd_t); n++, pmd++)
-		if (pmd_valid(pmd))
-			return false;
-	return true;
-}
-
-static inline bool pt_empty(pmd_t *pmd, unsigned long page_table_offset)
-{
-	pte_t *pte = (pte_t *)((*pmd & PAGE_ADDR_MASK) + page_table_offset);
-	int n;
-
-	for (n = 0; n < PAGE_SIZE / sizeof(pte_t); n++, pte++)
-		if (pte_valid(pte))
-			return false;
-	return true;
-}
+typedef unsigned long *pt_entry_t;
 
 static inline void x86_tlb_flush_all(void)
 {

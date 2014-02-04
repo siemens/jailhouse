@@ -35,7 +35,8 @@ static u8 *map_code_page(struct per_cpu *cpu_data, unsigned long pc,
 	 * and we have to map a new one now. */
 	if (current_page && ((pc & ~PAGE_MASK) != 0))
 		return current_page;
-	return page_map_get_guest_page(cpu_data, page_table_addr, pc,
+	return page_map_get_guest_page(cpu_data, x86_64_paging,
+				       page_table_addr, pc,
 				       PAGE_READONLY_FLAGS);
 }
 

@@ -65,6 +65,8 @@ struct vtd_entry {
 #define VTD_PAGE_READ			0x00000001
 #define VTD_PAGE_WRITE			0x00000002
 
+#define VTD_MAX_PAGE_DIR_LEVELS		4
+
 #define VTD_CAP_REG			0x08
 # define VTD_CAP_NUM_DID_MASK		0x00000007
 # define VTD_CAP_CM			0x00000080

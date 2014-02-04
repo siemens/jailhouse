@@ -56,6 +56,7 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	},
 };
 static u8 __attribute__((aligned(PAGE_SIZE))) apic_access_page[PAGE_SIZE];
+static struct paging ept_paging[EPT_PAGE_DIR_LEVELS];
 
 static unsigned int vmx_true_msr_offs;
 
@@ -147,8 +148,21 @@ static bool vmcs_write32(unsigned long field, u32 value)
 	return vmcs_write64(field, value);
 }
 
+static void ept_set_next_pt(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & 0x000ffffffffff000UL) | EPT_FLAG_READ |
+		EPT_FLAG_WRITE | EPT_FLAG_EXECUTE;
+}
+
 void vmx_init(void)
 {
+	unsigned int n;
+
+	/* derive ept_paging from very similar x86_64_paging */
+	memcpy(ept_paging, x86_64_paging, sizeof(ept_paging));
+	for (n = 0; n < EPT_PAGE_DIR_LEVELS; n++)
+		ept_paging[n].set_next_pt = ept_set_next_pt;
+
 	if (!using_x2apic)
 		return;
 
@@ -206,6 +220,7 @@ int vmx_cell_init(struct cell *cell)
 	u32 size;
 
 	/* build root cell EPT */
+	cell->vmx.ept_structs.root_paging = ept_paging;
 	cell->vmx.ept_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!cell->vmx.ept_structs.root_table)
 		return -ENOMEM;
@@ -915,7 +930,9 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 		if (offset & 0x00f)
 			break;
 
-		page_table_addr = vmcs_read64(GUEST_CR3) & PAGE_ADDR_MASK;
+		// FIXME: retrieve actual guest paging mode!
+		page_table_addr =
+			vmcs_read64(GUEST_CR3) & 0x000ffffffffff000UL;
 
 		inst_len = apic_mmio_access(guest_regs, cpu_data,
 					    vmcs_read64(GUEST_RIP),

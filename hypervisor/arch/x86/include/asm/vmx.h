@@ -255,6 +255,8 @@ enum vmcs_field {
 #define EXIT_REASON_XSETBV			55
 #define EXIT_REASON_INVPCID			58
 
+#define EPT_PAGE_DIR_LEVELS			4
+
 #define EPT_FLAG_READ				0x001
 #define EPT_FLAG_WRITE				0x002
 #define EPT_FLAG_EXECUTE			0x004

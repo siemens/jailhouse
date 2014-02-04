@@ -63,3 +63,5 @@ void arch_shutdown(void) {}
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 				       unsigned long gphys)
 { return INVALID_PHYS_ADDR; }
+
+const struct paging arm_paging[1];

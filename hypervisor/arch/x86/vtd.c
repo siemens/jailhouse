@@ -13,11 +13,13 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/string.h>
 #include <asm/vtd.h>
 
 /* TODO: Support multiple segments */
 static struct vtd_entry __attribute__((aligned(PAGE_SIZE)))
 	root_entry_table[256];
+static struct paging vtd_paging[VTD_MAX_PAGE_DIR_LEVELS];
 static void *dmar_reg_base;
 static unsigned int dmar_units;
 static unsigned int dmar_pt_levels;
@@ -61,11 +63,17 @@ static void vtd_flush_domain_caches(unsigned int did)
 				      iotlb_scope);
 }
 
+static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & 0x000ffffffffff000UL) | VTD_PAGE_READ |
+		VTD_PAGE_WRITE;
+}
+
 int vtd_init(void)
 {
+	unsigned int pt_levels, num_did, n;
 	const struct acpi_dmar_table *dmar;
 	const struct acpi_dmar_drhd *drhd;
-	unsigned int pt_levels, num_did;
 	void *reg_base = NULL;
 	unsigned long offset;
 	unsigned long caps;
@@ -148,6 +156,15 @@ int vtd_init(void)
 	} while (offset < dmar->header.length &&
 		 drhd->header.type == ACPI_DMAR_DRHD);
 
+	/*
+	 * Derive vdt_paging from very similar x86_64_paging,
+	 * replicating 0..3 for 4 levels and 1..3 for 3 levels.
+	 */
+	memcpy(vtd_paging, &x86_64_paging[4 - dmar_pt_levels],
+	       sizeof(struct paging) * dmar_pt_levels);
+	for (n = 0; n < dmar_pt_levels; n++)
+		vtd_paging[n].set_next_pt = vtd_set_next_pt;
+
 	return 0;
 }
 
@@ -203,6 +220,7 @@ int vtd_cell_init(struct cell *cell)
 	if (cell->id >= dmar_num_did)
 		return -ERANGE;
 
+	cell->vtd.pg_structs.root_paging = vtd_paging;
 	cell->vtd.pg_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!cell->vtd.pg_structs.root_table)
 		return -ENOMEM;
