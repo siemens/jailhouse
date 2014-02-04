@@ -271,7 +271,7 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 			X2APIC_DEST_CLUSTER_ID_SHIFT;
 		dest_mask = ~(dest & X2APIC_DEST_LOGICAL_ID_MASK);
 		while (dest_mask != ~0UL) {
-			logical_id = ffz(dest_mask);
+			logical_id = ffzl(dest_mask);
 			dest_mask |= 1UL << logical_id;
 			apic_id = logical_id |
 				(cluster_id << X2APIC_CLUSTER_ID_SHIFT);
@@ -281,7 +281,7 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 	} else {
 		dest_mask = ~dest;
 		while (dest_mask != ~0UL) {
-			target_cpu_id = ffz(dest_mask);
+			target_cpu_id = ffzl(dest_mask);
 			dest_mask |= 1UL << target_cpu_id;
 			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 		}

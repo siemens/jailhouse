@@ -14,7 +14,7 @@ LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include -I$(src)/include
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fno-pic -fno-common \
-		 -fno-stack-protector
+		 -fno-stack-protector -fno-builtin-ffsl
 
 ifeq ($(SRCARCH),x86)
 KBUILD_CFLAGS += -mcmodel=kernel

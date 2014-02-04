@@ -89,11 +89,19 @@ static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
 	return oldbit;
 }
 
-static inline unsigned long ffz(unsigned long word)
+static inline unsigned long ffzl(unsigned long word)
 {
 	asm("rep; bsf %1,%0"
 		: "=r" (word)
 		: "r" (~word));
+	return word;
+}
+
+static inline unsigned long ffsl(unsigned long word)
+{
+	asm("rep; bsf %1,%0"
+		: "=r" (word)
+		: "rm" (word));
 	return word;
 }
 

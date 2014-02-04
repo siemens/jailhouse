@@ -52,7 +52,7 @@ static unsigned long find_next_free_page(struct page_pool *pool,
 		bmp_val = pool->used_bitmap[bmp_pos] | start_mask;
 		start_mask = 0;
 		if (bmp_val != ~0UL) {
-			page_nr = ffz(bmp_val) + bmp_pos * BITS_PER_LONG;
+			page_nr = ffzl(bmp_val) + bmp_pos * BITS_PER_LONG;
 			if (page_nr >= pool->pages)
 				break;
 			return page_nr;

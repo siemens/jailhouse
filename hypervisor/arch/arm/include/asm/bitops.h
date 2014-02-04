@@ -47,7 +47,7 @@ static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
 	return 0;
 }
 
-static inline unsigned long ffz(unsigned long word)
+static inline unsigned long ffzl(unsigned long word)
 {
 	return 0;
 }
