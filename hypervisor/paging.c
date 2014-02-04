@@ -109,7 +109,7 @@ void page_free(struct page_pool *pool, void *page, unsigned int num)
 }
 
 unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
-				 unsigned long virt, unsigned int levels)
+				 unsigned long virt)
 {
 	const struct paging *paging = pg_structs->root_paging;
 	page_table_t pt = pg_structs->root_table;
@@ -136,8 +136,7 @@ static void flush_pt_entry(pt_entry_t pte, enum page_map_coherent coherent)
 
 int page_map_create(const struct paging_structures *pg_structs,
 		    unsigned long phys, unsigned long size, unsigned long virt,
-		    unsigned long flags, unsigned long table_flags,
-		    unsigned int levels, enum page_map_coherent coherent)
+		    unsigned long flags, enum page_map_coherent coherent)
 {
 	virt &= PAGE_MASK;
 	size = PAGE_ALIGN(size);
@@ -178,7 +177,7 @@ int page_map_create(const struct paging_structures *pg_structs,
 
 void page_map_destroy(const struct paging_structures *pg_structs,
 		      unsigned long virt, unsigned long size,
-		      unsigned int levels, enum page_map_coherent coherent)
+		      enum page_map_coherent coherent)
 {
 	size = PAGE_ALIGN(size);
 
@@ -243,7 +242,6 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 		err = page_map_create(&hv_paging_structs, phys,
 				      PAGE_SIZE, page_virt,
 				      PAGE_READONLY_FLAGS,
-				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 				      PAGE_MAP_NON_COHERENT);
 		if (err)
 			return NULL;
@@ -261,8 +259,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 
 	/* map guest page */
 	err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE, page_virt,
-			      flags, PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
-			      PAGE_MAP_NON_COHERENT);
+			      flags, PAGE_MAP_NON_COHERENT);
 	if (err)
 		return NULL;
 
@@ -314,8 +311,7 @@ int paging_init(void)
 			      page_map_hvirt2phys(&hypervisor_header),
 			      hypervisor_header.size,
 			      (unsigned long)&hypervisor_header,
-			      PAGE_DEFAULT_FLAGS, PAGE_DEFAULT_FLAGS,
-			      PAGE_DIR_LEVELS, PAGE_MAP_NON_COHERENT);
+			      PAGE_DEFAULT_FLAGS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		goto error_nomem;
 
@@ -324,7 +320,6 @@ int paging_init(void)
 	err = page_map_create(&hv_paging_structs, 0,
 			      remap_pool.used_pages * PAGE_SIZE,
 			      TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
-			      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 			      PAGE_MAP_NON_COHERENT);
 	if (err)
 		goto error_nomem;

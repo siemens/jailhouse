@@ -117,7 +117,6 @@ int vtd_init(void)
 				      drhd->register_base_addr, PAGE_SIZE,
 				      (unsigned long)reg_base,
 				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				      PAGE_DEFAULT_FLAGS, PAGE_DIR_LEVELS,
 				      PAGE_MAP_NON_COHERENT);
 		if (err)
 			return err;
@@ -300,7 +299,7 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 		if (mem->flags & JAILHOUSE_MEM_DMA)
 			page_map_destroy(&linux_cell.vtd.pg_structs,
 					 mem->phys_start, mem->size,
-					 dmar_pt_levels, PAGE_MAP_COHERENT);
+					 PAGE_MAP_COHERENT);
 
 	for (n = 0; n < config->num_pci_devices; n++)
 		vtd_remove_device_from_cell(&linux_cell, &dev[n]);
@@ -311,7 +310,7 @@ void vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 int vtd_map_memory_region(struct cell *cell,
 			  const struct jailhouse_memory *mem)
 {
-	u32 page_flags = 0;
+	u32 flags = 0;
 
 	// HACK for QEMU
 	if (dmar_units == 0)
@@ -321,14 +320,13 @@ int vtd_map_memory_region(struct cell *cell,
 		return 0;
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
-		page_flags |= VTD_PAGE_READ;
+		flags |= VTD_PAGE_READ;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
-		page_flags |= VTD_PAGE_WRITE;
+		flags |= VTD_PAGE_WRITE;
 
 	return page_map_create(&cell->vtd.pg_structs, mem->phys_start,
-			       mem->size, mem->virt_start, page_flags,
-			       VTD_PAGE_READ | VTD_PAGE_WRITE,
-			       dmar_pt_levels, PAGE_MAP_COHERENT);
+			       mem->size, mem->virt_start, flags,
+			       PAGE_MAP_COHERENT);
 }
 
 void vtd_unmap_memory_region(struct cell *cell,
@@ -340,7 +338,7 @@ void vtd_unmap_memory_region(struct cell *cell,
 
 	if (mem->flags & JAILHOUSE_MEM_DMA)
 		page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
-				 mem->size, dmar_pt_levels, PAGE_MAP_COHERENT);
+				 mem->size, PAGE_MAP_COHERENT);
 }
 
 static bool vtd_return_device_to_linux(const struct jailhouse_pci_device *dev)

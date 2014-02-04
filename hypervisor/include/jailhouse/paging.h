@@ -101,18 +101,17 @@ static inline void *page_map_phys2hvirt(unsigned long phys)
 }
 
 unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
-				 unsigned long virt, unsigned int levels);
+				 unsigned long virt);
 
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 				       unsigned long gphys);
 
 int page_map_create(const struct paging_structures *pg_structs,
 		    unsigned long phys, unsigned long size, unsigned long virt,
-		    unsigned long flags, unsigned long table_flags,
-		    unsigned int levels, enum page_map_coherent coherent);
+		    unsigned long flags, enum page_map_coherent coherent);
 void page_map_destroy(const struct paging_structures *pg_structs,
 		      unsigned long virt, unsigned long size,
-		      unsigned int levels, enum page_map_coherent coherent);
+		      enum page_map_coherent coherent);
 
 void *page_map_get_guest_page(struct per_cpu *cpu_data,
 			      const struct paging *paging,

@@ -20,7 +20,6 @@
 #define PAGE_MASK		~(PAGE_SIZE - 1)
 #define PAGE_OFFS_MASK		(PAGE_SIZE - 1)
 
-#define PAGE_DIR_LEVELS		4
 #define MAX_PAGE_DIR_LEVELS	4
 
 #define PAGE_FLAG_PRESENT	0x01
