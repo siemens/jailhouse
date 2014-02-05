@@ -17,10 +17,8 @@ o configuration
  - platform device assignment
  - create base configuration from knowledge base and running system
 o rework paging mechanism
- - fully table-driven
  - add all required x86 paging modes (32-bit, PAE etc.)
  - adjust MMIO to use correct paging mode
- - hugepage support (will drastically reduce memory need)
 o setup validation
  - check integrity of configurations
  - check integrity of runtime environment (hypervisor core & page_pool,
