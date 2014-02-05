@@ -268,6 +268,8 @@ enum vmcs_field {
 
 #define EPT_PAGE_WALK_4				(1UL << 6)
 #define EPTP_WB					(1UL << 14)
+#define EPT_2M_PAGES				(1UL << 16)
+#define EPT_1G_PAGES				(1UL << 17)
 #define EPT_INVEPT				(1UL << 20)
 #define EPT_INVEPT_SINGLE			(1UL << 25)
 #define EPT_INVEPT_GLOBAL			(1UL << 26)

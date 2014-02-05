@@ -69,6 +69,18 @@ static pt_entry_t x86_64_get_entry_l1(page_table_t page_table,
 	return &page_table[(virt >> 12) & 0x1ff];
 }
 
+static void x86_64_set_terminal_l3(pt_entry_t pte, unsigned long phys,
+				   unsigned long flags)
+{
+	*pte = (phys & 0x000fffffc0000000UL) | X86_64_FLAG_HUGEPAGE | flags;
+}
+
+static void x86_64_set_terminal_l2(pt_entry_t pte, unsigned long phys,
+				   unsigned long flags)
+{
+	*pte = (phys & 0x000fffffffe00000UL) | X86_64_FLAG_HUGEPAGE | flags;
+}
+
 static void x86_64_set_terminal_l1(pt_entry_t pte, unsigned long phys,
 				   unsigned long flags)
 {
@@ -123,16 +135,18 @@ const struct paging x86_64_paging[] = {
 		.get_next_pt	= x86_64_get_next_pt_l4,
 	},
 	{
+		.page_size	= 1024 * 1024 * 1024,
 		X86_64_PAGING_COMMON,
 		.get_entry	= x86_64_get_entry_l3,
-		/* set_terminal not valid */
+		.set_terminal	= x86_64_set_terminal_l3,
 		.get_phys	= x86_64_get_phys_l3,
 		.get_next_pt	= x86_64_get_next_pt_l23,
 	},
 	{
+		.page_size	= 2 * 1024 * 1024,
 		X86_64_PAGING_COMMON,
 		.get_entry	= x86_64_get_entry_l2,
-		/* set_terminal not valid */
+		.set_terminal	= x86_64_set_terminal_l2,
 		.get_phys	= x86_64_get_phys_l2,
 		.get_next_pt	= x86_64_get_next_pt_l23,
 	},

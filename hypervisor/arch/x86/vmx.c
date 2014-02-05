@@ -221,6 +221,10 @@ int vmx_init(void)
 	memcpy(ept_paging, x86_64_paging, sizeof(ept_paging));
 	for (n = 0; n < EPT_PAGE_DIR_LEVELS; n++)
 		ept_paging[n].set_next_pt = ept_set_next_pt;
+	if (!(read_msr(MSR_IA32_VMX_EPT_VPID_CAP) & EPT_1G_PAGES))
+		ept_paging[1].page_size = 0;
+	if (!(read_msr(MSR_IA32_VMX_EPT_VPID_CAP) & EPT_2M_PAGES))
+		ept_paging[2].page_size = 0;
 
 	if (!using_x2apic)
 		return 0;

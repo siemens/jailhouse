@@ -71,12 +71,11 @@ static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 
 int vtd_init(void)
 {
+	unsigned long offset, caps, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
 	const struct acpi_dmar_table *dmar;
 	const struct acpi_dmar_drhd *drhd;
 	void *reg_base = NULL;
-	unsigned long offset;
-	unsigned long caps;
 	int err;
 
 	dmar = (struct acpi_dmar_table *)acpi_find_table("DMAR", NULL);
@@ -128,6 +127,7 @@ int vtd_init(void)
 			pt_levels = 4;
 		else
 			return -EIO;
+		sllps_caps &= caps;
 
 		if (dmar_pt_levels > 0 && dmar_pt_levels != pt_levels)
 			return -EIO;
@@ -163,6 +163,10 @@ int vtd_init(void)
 	       sizeof(struct paging) * dmar_pt_levels);
 	for (n = 0; n < dmar_pt_levels; n++)
 		vtd_paging[n].set_next_pt = vtd_set_next_pt;
+	if (!(sllps_caps & VTD_CAP_SLLPS1G))
+		vtd_paging[dmar_pt_levels - 3].page_size = 0;
+	if (!(sllps_caps & VTD_CAP_SLLPS2M))
+		vtd_paging[dmar_pt_levels - 2].page_size = 0;
 
 	return 0;
 }
