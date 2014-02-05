@@ -25,8 +25,8 @@ static unsigned int dmar_num_did = ~0U;
 
 static void *vtd_iotlb_reg_base(void *reg_base)
 {
-	return reg_base + ((mmio_read64(reg_base + VTD_ECAP_REG) &
-			    VTD_ECAP_IRO_MASK) >> VTD_ECAP_IRO_SHIFT) * 16;
+	return reg_base + mmio_read64_field(reg_base + VTD_ECAP_REG,
+					    VTD_ECAP_IRO_MASK) * 16;
 }
 
 static void vtd_flush_dmar_caches(void *reg_base, u64 ctx_scope,
@@ -43,7 +43,7 @@ static void vtd_flush_dmar_caches(void *reg_base, u64 ctx_scope,
 	mmio_write64(iotlb_reg_base + VTD_IOTLB_REG,
 		iotlb_scope | VTD_IOTLB_DW | VTD_IOTLB_DR | VTD_IOTLB_IVT |
 		mmio_read64_field(iotlb_reg_base + VTD_IOTLB_REG,
-			VTD_IOTLB_R_MASK));
+				  VTD_IOTLB_R_MASK));
 
 	while (mmio_read64(iotlb_reg_base + VTD_IOTLB_REG) & VTD_IOTLB_IVT)
 		cpu_relax();

@@ -42,8 +42,8 @@ static u32 read_xapic(unsigned int reg)
 
 static u32 read_xapic_id(void)
 {
-	return mmio_read32(xapic_page + XAPIC_REG(APIC_REG_ID)) >>
-		XAPIC_DEST_SHIFT;
+	return mmio_read32_field(xapic_page + XAPIC_REG(APIC_REG_ID),
+				 XAPIC_DEST_MASK);
 }
 
 static void write_xapic(unsigned int reg, u32 val)

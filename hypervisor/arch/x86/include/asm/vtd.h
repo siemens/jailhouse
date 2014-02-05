@@ -75,7 +75,6 @@ struct vtd_entry {
 # define VTD_CAP_SAGAW64		0x00001000
 #define VTD_ECAP_REG			0x10
 # define VTD_ECAP_IRO_MASK		0x0003ff00
-# define VTD_ECAP_IRO_SHIFT		8
 #define VTD_GCMD_REG			0x18
 # define VTD_GCMD_SRTP			0x40000000
 # define VTD_GCMD_TE			0x80000000
