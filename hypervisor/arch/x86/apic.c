@@ -322,13 +322,13 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 
 unsigned int apic_mmio_access(struct registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,
-			      unsigned long page_table_addr, unsigned int reg,
-			      bool is_write)
+			      const struct guest_paging_structures *pg_structs,
+			      unsigned int reg, bool is_write)
 {
 	struct mmio_access access;
 	u32 val;
 
-	access = mmio_parse(cpu_data, rip, page_table_addr, is_write);
+	access = mmio_parse(cpu_data, rip, pg_structs, is_write);
 	if (access.inst_len == 0)
 		return 0;
 	if (access.size != 4) {

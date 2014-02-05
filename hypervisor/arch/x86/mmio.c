@@ -28,22 +28,21 @@ struct sib {
 } __attribute__((packed));
 
 /* If current_page is non-NULL, pc must have been increased exactly by 1. */
-static u8 *map_code_page(struct per_cpu *cpu_data, unsigned long pc,
-			 unsigned long page_table_addr, u8 *current_page)
+static u8 *map_code_page(struct per_cpu *cpu_data,
+			 const struct guest_paging_structures *pg_structs,
+			 unsigned long pc, u8 *current_page)
 {
-	struct guest_paging_structures pg_structs = {
-		x86_64_paging, page_table_addr
-	};
 	/* If page offset is 0, previous pc was pointing to a different page,
 	 * and we have to map a new one now. */
 	if (current_page && ((pc & ~PAGE_MASK) != 0))
 		return current_page;
-	return page_map_get_guest_page(cpu_data, &pg_structs, pc,
+	return page_map_get_guest_page(cpu_data, pg_structs, pc,
 				       PAGE_READONLY_FLAGS);
 }
 
 struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
-			      unsigned long page_table_addr, bool is_write)
+			      const struct guest_paging_structures *pg_structs,
+			      bool is_write)
 {
 	struct mmio_access access = { .inst_len = 0 };
 	bool has_regr, has_modrm, does_write;
@@ -55,7 +54,7 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 	has_regr = false;
 
 restart:
-	page = map_code_page(cpu_data, pc, page_table_addr, page);
+	page = map_code_page(cpu_data, pg_structs, pc, page);
 	if (!page)
 		goto error_nopage;
 
@@ -86,7 +85,7 @@ restart:
 
 	if (has_modrm) {
 		pc++;
-		page = map_code_page(cpu_data, pc, page_table_addr, page);
+		page = map_code_page(cpu_data, pg_structs, pc, page);
 		if (!page)
 			goto error_nopage;
 
@@ -97,8 +96,7 @@ restart:
 				goto error_unsupported;
 
 			pc++;
-			page = map_code_page(cpu_data, pc, page_table_addr,
-					     page);
+			page = map_code_page(cpu_data, pg_structs, pc, page);
 			if (!page)
 				goto error_nopage;
 

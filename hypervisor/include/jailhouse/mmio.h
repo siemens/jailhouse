@@ -13,6 +13,7 @@
 #ifndef _JAILHOUSE_MMIO_H
 #define _JAILHOUSE_MMIO_H
 
+#include <jailhouse/paging.h>
 #include <asm/percpu.h>
 
 struct mmio_access {
@@ -42,7 +43,8 @@ static inline void mmio_write64(void *address, u64 value)
 }
 
 struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
-			      unsigned long page_table_addr, bool is_write);
+			      const struct guest_paging_structures *pg_structs,
+			      bool is_write);
 
 /**
  * mmio_read32_field() - Read value of 32-bit register field

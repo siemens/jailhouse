@@ -936,11 +936,25 @@ static bool vmx_handle_cr(struct registers *guest_regs,
 	return false;
 }
 
+static bool
+vmx_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
+{
+	if (vmcs_read32(VM_ENTRY_CONTROLS) & VM_ENTRY_IA32E_MODE) {
+		pg_structs->root_paging = x86_64_paging;
+		pg_structs->root_table_gphys =
+			vmcs_read64(GUEST_CR3) & 0x000ffffffffff000UL;
+	} else {
+		printk("FATAL: Unsupported paging mode\n");
+		return false;
+	}
+	return true;
+}
+
 static bool vmx_handle_apic_access(struct registers *guest_regs,
 				   struct per_cpu *cpu_data)
 {
+	struct guest_paging_structures pg_structs;
 	unsigned int inst_len, offset;
-	unsigned long page_table_addr;
 	u64 qualification;
 	bool is_write;
 
@@ -954,13 +968,12 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 		if (offset & 0x00f)
 			break;
 
-		// FIXME: retrieve actual guest paging mode!
-		page_table_addr =
-			vmcs_read64(GUEST_CR3) & 0x000ffffffffff000UL;
+		if (!vmx_get_guest_paging_structs(&pg_structs))
+			break;
 
 		inst_len = apic_mmio_access(guest_regs, cpu_data,
 					    vmcs_read64(GUEST_RIP),
-					    page_table_addr, offset >> 4,
+					    &pg_structs, offset >> 4,
 					    is_write);
 		if (!inst_len)
 			return false;

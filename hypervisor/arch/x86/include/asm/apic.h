@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/paging.h>
 #include <asm/percpu.h>
 
 /* currently our limit due to fixed-size APID ID map */
@@ -91,8 +92,8 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val);
 
 unsigned int apic_mmio_access(struct registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,
-			      unsigned long page_table_addr, unsigned int reg,
-			      bool is_write);
+			      const struct guest_paging_structures *pg_structs,
+			      unsigned int reg, bool is_write);
 
 void x2apic_handle_write(struct registers *guest_regs);
 void x2apic_handle_read(struct registers *guest_regs);
