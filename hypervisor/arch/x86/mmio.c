@@ -31,12 +31,14 @@ struct sib {
 static u8 *map_code_page(struct per_cpu *cpu_data, unsigned long pc,
 			 unsigned long page_table_addr, u8 *current_page)
 {
+	struct guest_paging_structures pg_structs = {
+		x86_64_paging, page_table_addr
+	};
 	/* If page offset is 0, previous pc was pointing to a different page,
 	 * and we have to map a new one now. */
 	if (current_page && ((pc & ~PAGE_MASK) != 0))
 		return current_page;
-	return page_map_get_guest_page(cpu_data, x86_64_paging,
-				       page_table_addr, pc,
+	return page_map_get_guest_page(cpu_data, &pg_structs, pc,
 				       PAGE_READONLY_FLAGS);
 }
 

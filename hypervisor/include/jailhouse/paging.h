@@ -78,6 +78,11 @@ struct paging_structures {
 	page_table_t root_table;
 };
 
+struct guest_paging_structures {
+	const struct paging *root_paging;
+	unsigned long root_table_gphys;
+};
+
 #include <asm/paging_modes.h>
 
 extern struct page_pool mem_pool;
@@ -114,8 +119,7 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 		     enum page_map_coherent coherent);
 
 void *page_map_get_guest_page(struct per_cpu *cpu_data,
-			      const struct paging *paging,
-			      unsigned long page_table_gphys,
+			      const struct guest_paging_structures *pg_structs,
 			      unsigned long virt, unsigned long flags);
 
 int paging_init(void);

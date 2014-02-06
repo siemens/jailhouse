@@ -276,10 +276,11 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 }
 
 void *page_map_get_guest_page(struct per_cpu *cpu_data,
-			      const struct paging *paging,
-			      unsigned long page_table_gphys,
+			      const struct guest_paging_structures *pg_structs,
 			      unsigned long virt, unsigned long flags)
 {
+	unsigned long page_table_gphys = pg_structs->root_table_gphys;
+	const struct paging *paging = pg_structs->root_paging;
 	unsigned long page_virt, phys, gphys;
 	pt_entry_t pte;
 	int err;
