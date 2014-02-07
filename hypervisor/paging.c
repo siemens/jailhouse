@@ -280,7 +280,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 			      unsigned long page_table_gphys,
 			      unsigned long virt, unsigned long flags)
 {
-	unsigned long page_virt, phys;
+	unsigned long page_virt, phys, gphys;
 	pt_entry_t pte;
 	int err;
 
@@ -303,13 +303,16 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 		pte = paging->get_entry((page_table_t)page_virt, virt);
 		if (!paging->entry_valid(pte))
 			return NULL;
-		phys = paging->get_phys(pte, virt);
-		if (phys != INVALID_PHYS_ADDR)
+		gphys = paging->get_phys(pte, virt);
+		if (gphys != INVALID_PHYS_ADDR)
 			break;
 		page_table_gphys = paging->get_next_pt(pte);
 		paging++;
 	}
 
+	phys = arch_page_map_gphys2phys(cpu_data, gphys);
+	if (phys == INVALID_PHYS_ADDR)
+		return NULL;
 	/* map guest page */
 	err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE, page_virt,
 			      flags, PAGE_MAP_NON_COHERENT);
