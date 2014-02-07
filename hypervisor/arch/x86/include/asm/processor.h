@@ -25,6 +25,7 @@
 #define X86_CR0_CD					0x40000000
 #define X86_CR0_PG					0x80000000
 
+#define X86_CR4_PAE					0x00000020
 #define X86_CR4_PGE					0x00000080
 #define X86_CR4_VMXE					0x00002000
 

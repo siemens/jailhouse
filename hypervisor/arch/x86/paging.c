@@ -12,7 +12,7 @@
 
 #include <jailhouse/paging.h>
 
-#define X86_64_FLAG_HUGEPAGE	0x80
+#define X86_FLAG_HUGEPAGE	0x80
 
 static bool x86_64_entry_valid(pt_entry_t pte)
 {
@@ -72,13 +72,13 @@ static pt_entry_t x86_64_get_entry_l1(page_table_t page_table,
 static void x86_64_set_terminal_l3(pt_entry_t pte, unsigned long phys,
 				   unsigned long flags)
 {
-	*pte = (phys & 0x000fffffc0000000UL) | X86_64_FLAG_HUGEPAGE | flags;
+	*pte = (phys & 0x000fffffc0000000UL) | X86_FLAG_HUGEPAGE | flags;
 }
 
 static void x86_64_set_terminal_l2(pt_entry_t pte, unsigned long phys,
 				   unsigned long flags)
 {
-	*pte = (phys & 0x000fffffffe00000UL) | X86_64_FLAG_HUGEPAGE | flags;
+	*pte = (phys & 0x000fffffffe00000UL) | X86_FLAG_HUGEPAGE | flags;
 }
 
 static void x86_64_set_terminal_l1(pt_entry_t pte, unsigned long phys,
@@ -89,7 +89,7 @@ static void x86_64_set_terminal_l1(pt_entry_t pte, unsigned long phys,
 
 static unsigned long x86_64_get_phys_l3(pt_entry_t pte, unsigned long virt)
 {
-	if (!(*pte & X86_64_FLAG_HUGEPAGE))
+	if (!(*pte & X86_FLAG_HUGEPAGE))
 		return INVALID_PHYS_ADDR;
 	return (*pte & 0x000fffffc0000000UL) |
 	       (virt & 0x000000003fffffffUL);
@@ -97,7 +97,7 @@ static unsigned long x86_64_get_phys_l3(pt_entry_t pte, unsigned long virt)
 
 static unsigned long x86_64_get_phys_l2(pt_entry_t pte, unsigned long virt)
 {
-	if (!(*pte & X86_64_FLAG_HUGEPAGE))
+	if (!(*pte & X86_FLAG_HUGEPAGE))
 		return INVALID_PHYS_ADDR;
 	return (*pte & 0x000fffffffe00000UL) |
 	       (virt & 0x00000000001fffffUL);
@@ -156,6 +156,67 @@ const struct paging x86_64_paging[] = {
 		.get_entry	= x86_64_get_entry_l1,
 		.set_terminal	= x86_64_set_terminal_l1,
 		.get_phys	= x86_64_get_phys_l1,
+		/* get_next_pt not valid */
+	},
+};
+
+static bool i386_entry_valid(pt_entry_t pte)
+{
+	return *(u32 *)pte & 1;
+}
+
+static pt_entry_t i386_get_entry_l2(page_table_t page_table,
+				    unsigned long virt)
+{
+	u32 *page_table32 = (u32 *)page_table;
+
+	return (pt_entry_t)&page_table32[(virt >> 22) & 0x3ff];
+}
+
+static pt_entry_t i386_get_entry_l1(page_table_t page_table,
+				    unsigned long virt)
+{
+	u32 *page_table32 = (u32 *)page_table;
+
+	return (pt_entry_t)&page_table32[(virt >> 12) & 0x3ff];
+}
+
+static unsigned long i386_get_phys_l2(pt_entry_t pte, unsigned long virt)
+{
+	u32 pte32 = *(u32 *)pte;
+
+	if (!(pte32 & X86_FLAG_HUGEPAGE))
+		return INVALID_PHYS_ADDR;
+	return ((unsigned long)(pte32 & 0x0001e000) << (32 - 13)) |
+		(pte32 & 0xffc00000) |
+		 (virt & 0x003fffff);
+}
+
+static unsigned long i386_get_phys_l1(pt_entry_t pte, unsigned long virt)
+{
+	return (*(u32 *)pte & 0xfffff000) |
+		      (virt & 0x00000fff);
+}
+
+static unsigned long i386_get_next_pt_l2(pt_entry_t pte)
+{
+	return *(u32 *)pte & 0xfffff000UL;
+}
+
+/* read-only, no page table construction supported */
+const struct paging i386_paging[] = {
+	{
+		.page_size	= 4 * 1024 * 1024,
+		.entry_valid	= i386_entry_valid,
+		.get_entry	= i386_get_entry_l2,
+		.get_phys	= i386_get_phys_l2,
+		.get_next_pt	= i386_get_next_pt_l2,
+	},
+	{
+		.page_size	= PAGE_SIZE,
+		.entry_valid	= i386_entry_valid,
+		.get_entry	= i386_get_entry_l1,
+		.get_phys	= i386_get_phys_l1,
 		/* get_next_pt not valid */
 	},
 };

@@ -943,6 +943,11 @@ vmx_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 		pg_structs->root_paging = x86_64_paging;
 		pg_structs->root_table_gphys =
 			vmcs_read64(GUEST_CR3) & 0x000ffffffffff000UL;
+	} else if (vmcs_read64(GUEST_CR0) & X86_CR0_PG &&
+		 !(vmcs_read64(GUEST_CR4) & X86_CR4_PAE)) {
+		pg_structs->root_paging = i386_paging;
+		pg_structs->root_table_gphys =
+			vmcs_read64(GUEST_CR3) & 0xfffff000UL;
 	} else {
 		printk("FATAL: Unsupported paging mode\n");
 		return false;
