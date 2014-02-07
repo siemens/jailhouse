@@ -85,6 +85,7 @@
 
 #define NMI_VECTOR					2
 
+#define DESC_TSS_BUSY					(1UL << (9 + 32))
 #define DESC_PRESENT					(1UL << (15 + 32))
 #define DESC_CODE_DATA					(1UL << (12 + 32))
 #define DESC_PAGE_GRAN					(1UL << (23 + 32))

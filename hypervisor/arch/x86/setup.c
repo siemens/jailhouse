@@ -18,8 +18,6 @@
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
-#define TSS_BUSY_FLAG		(1UL << (9 + 32))
-
 #define IDT_PRESENT_INT		0x00008e00
 
 #define NUM_IDT_DESC		256
@@ -181,7 +179,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 		: : "r" (0));
 
 	/* clear TSS busy flag set by previous loading, then set TR */
-	gdt[GDT_DESC_TSS] &= ~TSS_BUSY_FLAG;
+	gdt[GDT_DESC_TSS] &= ~DESC_TSS_BUSY;
 	asm volatile("ltr %%ax" : : "a" (GDT_DESC_TSS * 8));
 
 	/* swap IDTR */
@@ -262,7 +260,7 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 
 	/* clear busy flag in Linux TSS, then reload it */
 	gdt = (u64 *)cpu_data->linux_gdtr.base;
-	gdt[cpu_data->linux_tss.selector / 8] &= ~TSS_BUSY_FLAG;
+	gdt[cpu_data->linux_tss.selector / 8] &= ~DESC_TSS_BUSY;
 	asm volatile("ltr %%ax" : : "a" (cpu_data->linux_tss.selector));
 
 	write_msr(MSR_FS_BASE, cpu_data->linux_fs.base);
