@@ -39,7 +39,7 @@ extern void *config_memory;
 int arch_entry(unsigned int cpu_id);
 void vm_exit(void);
 
-int entry(struct per_cpu *cpu_data);
+int entry(unsigned int cpu_id, struct per_cpu *cpu_data);
 
 int arch_init_early(struct cell *linux_cell);
 int arch_cpu_init(struct per_cpu *cpu_data);

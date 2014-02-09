@@ -23,7 +23,6 @@
 #define PERCPU_SIZE_SHIFT		14
 #define PERCPU_STACK_END		PAGE_SIZE
 #define PERCPU_LINUX_SP			PERCPU_STACK_END
-#define PERCPU_CPU_ID			(PERCPU_LINUX_SP + 8)
 
 #ifndef __ASSEMBLY__
 
@@ -38,11 +37,11 @@ struct vmcs {
 } __attribute__((packed));
 
 struct per_cpu {
-	/* Keep these three in sync with defines above! */
+	/* Keep these two in sync with defines above! */
 	u8 stack[PAGE_SIZE];
 	unsigned long linux_sp;
-	unsigned int cpu_id;
 
+	unsigned int cpu_id;
 	u32 apic_id;
 	struct cell *cell;
 
@@ -111,8 +110,6 @@ static inline void __check_assumptions(void)
 	CHECK_ASSUMPTION(sizeof(cpu_data.stack) == PERCPU_STACK_END);
 	CHECK_ASSUMPTION(__builtin_offsetof(struct per_cpu, linux_sp) ==
 			 PERCPU_LINUX_SP);
-	CHECK_ASSUMPTION(__builtin_offsetof(struct per_cpu, cpu_id) ==
-			 PERCPU_CPU_ID);
 }
 #endif /* !__ASSEMBLY__ */
 

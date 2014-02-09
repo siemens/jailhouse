@@ -25,23 +25,22 @@ arch_entry:
 	push %r14
 	push %r15
 
-	mov %rdi,%rdx
-	shl $PERCPU_SIZE_SHIFT,%rdi
+	mov %rdi,%rsi
+	shl $PERCPU_SIZE_SHIFT,%rsi
 	lea __page_pool(%rip),%rax
-	add %rax,%rdi
+	add %rax,%rsi
 
-	mov %rsp,PERCPU_LINUX_SP(%rdi)
-	mov %edx,PERCPU_CPU_ID(%rdi)
+	mov %rsp,PERCPU_LINUX_SP(%rsi)
 
-	lea PERCPU_STACK_END-8(%rdi),%rsp
+	lea PERCPU_STACK_END-8(%rsi),%rsp
 
-	push %rdi
+	push %rsi
 
 	call entry
 
-	pop %rdi
+	pop %rsi
 
-	mov PERCPU_LINUX_SP(%rdi),%rsp
+	mov PERCPU_LINUX_SP(%rsi),%rsp
 
 	pop %r15
 	pop %r14

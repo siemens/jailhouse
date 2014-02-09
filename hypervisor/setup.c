@@ -155,15 +155,17 @@ static void init_late(void)
 	printk("Initializing remaining processors:\n");
 }
 
-int entry(struct per_cpu *cpu_data)
+int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 {
 	bool master = false;
+
+	cpu_data->cpu_id = cpu_id;
 
 	spin_lock(&init_lock);
 
 	if (master_cpu_id == -1) {
 		master = true;
-		init_early(cpu_data->cpu_id);
+		init_early(cpu_id);
 	}
 
 	if (!error) {
