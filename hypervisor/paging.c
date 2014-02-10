@@ -165,6 +165,7 @@ int page_map_create(const struct paging_structures *pg_structs,
 		    unsigned long phys, unsigned long size, unsigned long virt,
 		    unsigned long flags, enum page_map_coherent coherent)
 {
+	phys &= PAGE_MASK;
 	virt &= PAGE_MASK;
 	size = PAGE_ALIGN(size);
 
@@ -178,7 +179,7 @@ int page_map_create(const struct paging_structures *pg_structs,
 			pte = paging->get_entry(pt, virt);
 			if (paging->page_size > 0 &&
 			    paging->page_size <= size &&
-			    (virt & (paging->page_size - 1)) == 0) {
+			    ((phys | virt) & (paging->page_size - 1)) == 0) {
 				/*
 				 * We might be overwriting a more fine-grained
 				 * mapping, so release it first. This cannot
