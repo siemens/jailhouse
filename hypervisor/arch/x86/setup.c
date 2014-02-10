@@ -160,16 +160,18 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 			((unsigned long *)cpu_data->linux_sp)[n];
 	cpu_data->linux_ip = ((unsigned long *)cpu_data->linux_sp)[6];
 
-	/* swap CR3 */
-	cpu_data->linux_cr3 = read_cr3();
-	write_cr3(page_map_hvirt2phys(hv_paging_structs.root_table));
-
 	/* set GDTR */
 	dtr.limit = NUM_GDT_DESC * 8 - 1;
 	dtr.base = (u64)&gdt;
 	write_gdtr(&dtr);
 
 	set_cs(GDT_DESC_CODE * 8);
+
+	/* swap IDTR */
+	read_idtr(&cpu_data->linux_idtr);
+	dtr.limit = NUM_IDT_DESC * 16 - 1;
+	dtr.base = (u64)&idt;
+	write_idtr(&dtr);
 
 	/* paranoid clearing of segment registers */
 	asm volatile(
@@ -182,11 +184,9 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	gdt[GDT_DESC_TSS] &= ~DESC_TSS_BUSY;
 	asm volatile("ltr %%ax" : : "a" (GDT_DESC_TSS * 8));
 
-	/* swap IDTR */
-	read_idtr(&cpu_data->linux_idtr);
-	dtr.limit = NUM_IDT_DESC * 16 - 1;
-	dtr.base = (u64)&idt;
-	write_idtr(&dtr);
+	/* swap CR3 */
+	cpu_data->linux_cr3 = read_cr3();
+	write_cr3(page_map_hvirt2phys(hv_paging_structs.root_table));
 
 	cpu_data->linux_efer = read_msr(MSR_EFER);
 
