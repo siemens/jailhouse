@@ -123,6 +123,7 @@ void *page_map_get_guest_page(struct per_cpu *cpu_data,
 			      unsigned long virt, unsigned long flags);
 
 int paging_init(void);
+void arch_paging_init(void);
 void page_map_dump_stats(const char *when);
 
 #endif /* !_JAILHOUSE_PAGING_H */

@@ -15,4 +15,4 @@
 extern const struct paging x86_64_paging[];
 extern const struct paging i386_paging[];
 
-#define hv_paging	x86_64_paging
+extern struct paging hv_paging[];

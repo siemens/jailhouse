@@ -16,6 +16,7 @@
 #include <asm/types.h>
 
 #define X86_FEATURE_VMX					(1 << 5)
+#define X86_FEATURE_GBPAGES				(1 << 26)
 
 #define X86_RFLAGS_VM					(1 << 17)
 
@@ -165,6 +166,7 @@ static inline unsigned int cpuid_##reg(unsigned int op)		\
 CPUID_REG(eax)
 CPUID_REG(ebx)
 CPUID_REG(ecx)
+CPUID_REG(edx)
 
 static inline unsigned long read_cr0(void)
 {

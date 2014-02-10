@@ -359,6 +359,8 @@ int paging_init(void)
 	for (n = 0; n < remap_pool.used_pages; n++)
 		set_bit(n, remap_pool.used_bitmap);
 
+	arch_paging_init();
+
 	hv_paging_structs.root_paging = hv_paging;
 	hv_paging_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!hv_paging_structs.root_table)

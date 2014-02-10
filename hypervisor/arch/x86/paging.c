@@ -11,8 +11,11 @@
  */
 
 #include <jailhouse/paging.h>
+#include <jailhouse/string.h>
 
 #define X86_FLAG_HUGEPAGE	0x80
+
+struct paging hv_paging[MAX_PAGE_DIR_LEVELS];
 
 static bool x86_64_entry_valid(pt_entry_t pte)
 {
@@ -159,6 +162,13 @@ const struct paging x86_64_paging[] = {
 		/* get_next_pt not valid */
 	},
 };
+
+void arch_paging_init(void)
+{
+	memcpy(hv_paging, x86_64_paging, sizeof(x86_64_paging));
+	if (!(cpuid_edx(0x80000001) & X86_FEATURE_GBPAGES))
+		hv_paging[1].page_size = 0;
+}
 
 static bool i386_entry_valid(pt_entry_t pte)
 {
