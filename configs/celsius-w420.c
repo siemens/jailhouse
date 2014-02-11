@@ -29,7 +29,7 @@ struct {
 } ALIGN config = {
 	.header = {
 		.hypervisor_memory = {
-			.phys_start = 0x1bf00000,
+			.phys_start = 0x1c000000,
 			.size = 0x4000000,
 		},
 		.config_memory = {
