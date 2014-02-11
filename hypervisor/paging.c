@@ -26,7 +26,7 @@ extern u8 __page_pool[];
 
 struct page_pool mem_pool;
 struct page_pool remap_pool = {
-	.base_address = (void *)REMAP_BASE_ADDR,
+	.base_address = (void *)REMAP_BASE,
 	.pages = BITS_PER_PAGE * NUM_REMAP_BITMAP_PAGES,
 };
 
