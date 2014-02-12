@@ -1,0 +1,172 @@
+-------------------------------------------------------------------------------
+ This Article by Valentine Sinitsyn was published in two parts on LWN.net in
+ January 2014. It is licensed under Creative Commons Attribution-ShareAlike
+ (CC-BY-SA).
+
+ Please note that its content my be partially outdated due to code changes
+ applied after the article was released. However, this article is not meant to
+ remain unchanged; feel free to post corrections and additions as patches to
+ the Jailhouse project.
+-------------------------------------------------------------------------------
+
+Understanding the Jailhouse Hypervisor
+
+Jailhouse [1] is a new partitioning hypervisor that runs bare-metal applications or modified guest OS images. Currently it is for x86_64 only, and this will be the architecture we implicitly refer to in the text. However, ARM is on the roadmap, and since the code is portable, support for other architectures can be added as well. Compared to other virtualization solutions like KVM or Xen, Jailhouse is lightweight and doesn't support over-commitment of the resources. Guests can't share CPU because there is no scheduler, and Jailhouse can't emulate devices you don't have. Hardware virtualization support (VT-x and VT-d for x86) is required. All of these makes the hypervisor design clean, and its code small and relatively simple. Yet Jailhouse is not a toy and is targeted at production use. For example, it can be employed for Services OS partitions creation [2]. Jailhouse uses Linux to bootstrap itself and to issue commands to the hypervisor, however it doesn't depend on Linux and is completely self-contained. The code is available freely under GPLv2 license.
+
+This article provides an overview of how Jailhouse works internally, and aims those who intend to hack on it or want to know what Jailhouse is (currently) capable of. It doesn't explain how to use the hypervisor - please consult README or the mailing list [3] instead.
+
+This text is an extended version of the two-part article series originally published by the LWN.
+
+Concepts
+========
+
+Jailhouse splits your system into isolated partitions called "cells". Each cell runs one guest and has a set of assigned resources (CPUs, memory regions, PCI devices) that it fully controls. Hypervisor's job is to manage cells and maintain their isolation from each other.
+
+A running Jailhouse system has at least one cell known as the "Linux cell". It contains Linux operating system used to initially launch the hypervisor and to control it afterwards. This cell's role is somewhat similar to dom0 in Xen. However, the Linux cell doesn't assert full control on hardware resources, as dom0 does. Instead, when a new cell is created, its CPUs and memory are taken from a Linux cell. This process is called 'shrinking'.
+
+Data structures
+===============
+
+Jailhouse uses struct jailhouse_system (defined in cell-config.h) as a descriptor for the system it runs on. This structure contains three fields:
+
+* hypervisor_memory, which defines Jailhouse's location in memory;
+
+* config_memory, which points to the region where hardware configuration is stored (in x86, it's the ACPI tables); and
+
+* system, a cell descriptor which sets the initial configuration for a Linux cell.
+
+Cell descriptor starts with struct jailhouse_cell_desc, defined in cell-config.h as well. This structure contains basic information like cell's name, size of CPU set, number of memory regions, IRQ lines and PCI devices. After struct jailhouse_cell_desc, several variable-sized arrays follow:
+
+* cpu_set: a bitmap which lists cell's CPUs (1 at Nth position means Nth CPU is assigned to the cell);
+
+* mem_regions: an array which stores physical address, guest physical address (virt_start), size and access flags for this cell's memory regions. There can be many of them: RAM (currently it must be the first region), PCI, ACPI or I/O APIC. See config/qemu-vm.c for an example;
+
+* irq_lines: an array which describes IRQ lines. It's unused now and may disappear or change in future;
+
+* I/O bitmap (usually referred to as pio_bitmap), which controls I/O ports accessible from the cell (1 means the port is inaccessible). This is x86-only, since no other conceivable architecture has separate I/O space;
+
+* pci_devices: an array, which maps PCI devices to VT-d domains.
+
+jailhouse_system_config_size() returns system descriptor size, jailhouse_cell_config_size() calculates cell descriptor size.
+
+Currently, Jailhouse has no human-readable configuration files. C structures mentioned earlier (see config/*.c) are compiled with '-O binary' objcopy(1) flag to produce raw binaries rather than ELF objects, and jailhouse userspace tool (see tools/jailhouse.h) loads them into memory as is. Creating such descriptors is tedious work that require good knowledge of hardware architecture. There are no sanity checks for descriptors except basic validation, so you can easily create something unusable. Nothing prevents Jailhouse from using a higher-level XML or similar text-based configuration files in the future - they are just not implemented yet.
+
+Another common data structure is struct per_cpu, which is architecture-specific and defined in x86/include/asm/percpu.h. It describes a CPU that is assigned to a cell. Throughout this text, we will refer to it as cpu_data. There is one cpu_data for each processor Jailhouse manages, and it is stored in per_cpu memory region (see 'Memory management'). cpu_data contains information like logical CPU identifier (cpu_id field), APIC identifier (apic_id), hypervisor stack (stack[PAGE_SIZE]), back reference to the cell this CPU belongs to (cell), a set of Linux registers (i. e. register values used when Linux moved to this CPU's cell), CPU mode (stopped, wait-for-SIPI, etc). It also holds VMXON and VMCS regions required for VT-x.
+
+Finally, there is struct jailhouse_header defined in header.h, which describes the hypervisor as a whole. It is located at the very beginning of the hypervisor binary image and contains various information like hypervisor entry point address, its memory size, per_cpu area size, page offset (see below) and number of possible/online CPUs. Some fields in this structure have static values, while the loader initializes the others at Jailhouse startup.
+
+Memory management
+=================
+
+Jailhouse operates in physically continuous memory region. Currently, it needs to be reserved at boot using "memmap=" kernel command-line parameter. Future versions may use Contiguous Memory Allocator (CMA) [4] instead. When you enable Jailhouse, the loader linearly maps this memory somewhere in kernel virtual address space. Its offset from the memory region's base address is stored in page_offset field of the header. This makes converting from host virtual to physical address (and the reverse) trivial: page_map_hvirt2phys() and page_map_phys2hvirt() functions only need to subtract or add page_offset.
+
+An overall (physical) layout of Jailhouse memory region is shown at Fig. 1:
+
+    +-----------+-------------------+-----------------+------------+--------------+------+
+    | Guest RAM | hypervisor_header | Hypervisor Code | cpu_data[] | system_confg | Heap |
+    +-----------+-------------------+-----------------+------------+--------------+------+
+                |__start                              |__page_pool                       |hypervisor_header.size
+
+Fig. 1 Jailhouse physical memory layout scheme. Lowercase labels are global symbols or common function argument names.
+
+To manage this memory, Jailhouse utilizes a simple bitmap-based page allocator available through page_alloc() function. The function that initializes memory management is paging_init(). It creates two page pools (struct page_pool defined in paging.h): mem_pool to manage free physical pages, and remap_pool for [host] virtual address space regions. mem_pool begins at __page_pool, so paging_init() marks per_cpu area (cpu_data[]) and system_config as already allocated. remap_pool appears in VT-d and xAPIC code, and maps config_memory pages. It also includes the foreign mapping region (see below), however it is not allocated dynamically but reserved in page_init() during the hypervisor startup. As the last step, paging_init() copies the Linux mappings for the hypervisor memory (addresses between __start and hypervisor_header.size) into hv_page_table global variable. This page directory is used later in host (VMX root) mode.
+
+page_map_create() function creates page mappings. It is mainly useful when initializing Extended Page Tables (EPT) for the cell. When a mapping is no longer needed, one calls page_map_destroy() to release it. By default, Jailhouse has no access to guest ("foreign") pages. They are mapped on request either manually or by page_map_get_foreign_page() function that accepts guest virtual address and creates a mapping at FOREIGN_MAPPING_BASE (currently, 1M) in host virtual address space. This is similar to fixmaps in Linux kernel in that it allows to create short-living non-linear mappings. Each CPU has its own foreign mapping region, and fixed number of foreign pages (NUM_FOREIGN_PAGES, currently 16) can be mapped to it.
+
+Jailhouse itself is not mapped into cells. This way, it is protected from unwanted guest access.
+
+Enabling Jailhouse
+==================
+
+To enable the hypervisor, Jailhouse needs to initialize its subsystems, create a Linux cell according to system_config, enable VT-x on each CPU and finally migrate Linux to its cell to continue running in guest mode. From this point, the hypervisor asserts full control over the system's resources.
+
+As stated earlier, Jailhouse doesn't depend on Linux. However, Linux is used to initialize the hypervisor and to control it later. For these tasks, jailhouse userspace tool issues ioctls to /dev/jailhouse. jailhouse.ko module (the loader), compiled from main.c, registers this device node on load.
+
+To enable Jailhouse, the jailhouse tool issues JAILHOUSE_ENABLE ioctl which causes a call to jailhouse_enable(). It loads the hypervisor code to memory via request_firmware() call. This is the same mechanism device drivers use. Then jailhouse_enable() maps Jailhouse's reserved memory region (as described in "Memory management") using ioremap() and marks its pages as executable. The hypervisor loaded and a system configuration (struct jailhouse_system) copied from userspace are laid out as shown at Fig. 1. Finally, jailhouse_enable() calls enter_hypervisor() on each CPU, passing it the header, and waits till all these calls return. After that Jailhouse is considered enabled, and the firmware is released.
+
+hypervisor_enter() is really a thin wrapper that jumps to the entry point set in the header, passing it what smp_processor_id() returns as an argument. The entry point is defined in hypervisor/setup.c as arch_entry, which is coded in assembler and resides in x86/entry.S. This code locates per_cpu region for a given cpu_id using RIP-relative addressing, stores Linux stack pointer and cpu_id in it, sets Jailhouse stack, and calls generic entry() function, passing it a pointer to cpu_data. When it returns, Linux stack pointer is restored.
+
+entry() function is what actually enables Jailhouse. It behaves slightly differently for the first CPU it initializes and the rest of them. The first CPU is called "master" and it is responsible for system-wide initializations and checks. It sets up paging (see "Memory management"), maps config_memory if it is present in the system configuration, checks memory regions defined in the Linux cell descriptor for alignment and access flags, initializes the APIC (see "Interrupts handling"), creates Jailhouse's Interrupt Descriptor Table (IDT), configures x2APIC guest (VMX non-root) access (if available), and initializes the Linux cell (see "Cell initialization"). After that, VT-d is enabled and configured for the Linux cell (we won't go into details here, see [2] for an overview of VT-d operation). Non-master CPUs only initialize themselves.
+
+CPU Initialization
+------------------
+
+CPU initialization is a lengthy process that begins in cpu_init() function. For the starters, CPU is registered as "Linux CPU": its ID is validated, and if it is on system CPU set, it is added to the Linux cell. The rest of the procedure is architecture-specific and continues in arch_cpu_init(). For x86, it saves current register values including RIP, segment selectors, CR3, TR, GDTR and the descriptors in linux_* fields of the cpu_data structure. These values will be restored on first VM entry. IA32_SYSENTER Model Specific Registers (MSR) used for Linux system calls, and IA32_EFER MSR (used for 64-bit mode switch) are also stored. Then Jailhouse swaps the IDT (interrupt handlers), Global Descriptor Table (GDT) that contains segment descriptors, and CR3 (page directory pointer) register with its own values. Jailhouse's IDT is discussed in "Handling interrupts", and hv_page_table is used for CR3.
+
+Compared to IA-32 mode, segmentation's role in IA-32e (64-bit mode) is greatly reduced. Segment base addresses and limits are ignored, so access is permitted to the whole address range. Given that, Jailhouse uses only bare minimum of segments: one for code with 'L' bit enabled in the descriptor, and the obligatory TSS segment. Code segment selector is loaded to CS to indicate Jailhouse code is 64-bit. DS, ES and SS are not used in 64-bit mode, however, they are set to null selectors that cause #GP if accidentally accessed.
+
+Finally, arch_cpu_init() fills cpu_data->apic_id (see apic_cpu_init()) and configures VMX for the CPU. This is done in vmx_cpu_init() which first checks that CPU provides all the required features. Then it prepares Virtual Machine Control Structure (VMCS) which is located in cpu_data, and enables Virtual Machine eXtensions (VMX) on the CPU. VMCS region is configured in vmcs_setup() so that on every VM entry or exit:
+
+* The host (Jailhouse) gets the control and segmentation registers values described earlier in this section. The corresponding VMCS fields are simply copied from hardware registers arch_cpu_init() set. LMA and LME bits are raised in the host IA32_EFER MSR, indicating that the processor is in 64-bit mode, and the stack pointer is set to the end of cpu_data->stack (remember stack grows down). Host RIP (instruction pointer) is set to vm_exit defined in x86/entry.S. It calls vmx_handle_exit() function and resumes VM execution with VMRESUME instruction when it returns. This way, on each VM exit the control is transferred to the dispatch function that analyzes the exit reason and acts appropriately. SYSENTER MSRa are cleared because Jailhouse has no userspace applications or system calls, and its guests use a different means to switch to the hypervisor (see "Creating a cell").
+
+* The guest gets its control and segmentation registers from cpu_data->linux_*. RSP and RIP are taken from the kernel stack frame created for arch_entry() call. This way, on VM entry Linux code will continue execution as if entry(smp_processor_id()) call in hypervisor_enter() has already completed - the kernel is transparently migrated to the cell. The guest's IA32_EFER MSR is also set to its Linux value so 64-bit mode is enabled on VM entry. Cells besides Linux cell will reset their CPUs just after initialization, overwriting values defined here.
+
+vmcs_setup() enables the following VMX features: MSR and I/O bitmaps (access to specific I/O ports or MSRs results in VM exit, which Jailhouse either handles or panics); Unrestricted guest mode (allows guests to run in unprotected unpaged mode; this is needed to emulate hardware reset as described in 'Creating a cell' and for CPU hot-plugging to "recycle" CPUs from destroyed); Extended Page Tables (required for Unrestricted guest mode and used for guest physical address space mappings); Preemption timer (used to schedule VM exit as described later).
+
+When all CPUs are initialized, entry() function calls arch_cpu_activate_vmm(). This is point of no return: it sets RAX to zero, loads all general-purposes registers left and issues VMLAUNCH instruction to enter the VM. Due to guest register setup described earlier and because RAX (which, by convention, stores function return value) is 0, Linux will consider entry(smp_processor_id()) call successful and move on as a guest.
+
+Handling interrupts
+-------------------
+
+Modern x86 processors cores have Local Advanced Programmable Interrupt Controller (LAPIC) that delivers Inter-Processor Interrupts (IPIs) as well as external interrupts that I/O APIC, which is part of system's chipset, generates. Currently, Jailhouse virtualizes LAPIC only; I/O APIC is simply mapped to Linux cell, which is not quite safe because malicious guest (or Linux kernel module) can reprogram it to tamper with other guests work.
+
+LAPIC work in xAPIC or x2APIC mode. xAPIC is programmed via Memory Mapped I/O (MMIO), while x2AIPC uses MSRs. x2APIC is backward compatible with xAPIC, and its MSR addresses directly map to offsets in MMIO page. When apic_init() initializes APIC, it checks if x2APIC is enabled and sets up apic_ops access methods appropriately. Internally, Jailhouse refers to all APIC registers by their MSR addresses. For xAPIC, these values are transparently converted to the corresponding MMIO offsets (see read_xapic() and write_xapic() functions as examples).
+
+Jailhouse virtualizes APIC in both modes, however the mechanism is slightly different. For xAPIC, a special APIC access page (apic_access_page[PAGE_SIZE] defined in vmx.c) is mapped at XAPIC_BASE (0xfee00000) guest physical address via EPT. This happens in vmx_cell_init() (see "Cell initialization"). Later in vmcs_setup(), APIC virtualization is enabled and apic_access_page physical address is stored as APIC access address. This way, every time a guest tries to access virtual APIC MMIO region, VM exit occurs. No data is really read from apic_access_page or written to it, so CPUs can share this page. For x2APIC, normal MSR bitmaps are used. By default, Jailhouse traps access to all APIC registers. However, if apic_init() detects that host APIC is in x2APIC mode, the bitmap is changed so that only ICR (Interrupt Control Register) access is trapped. This happens when master CPU executes vmx_init() (see "Enabling Jailhouser").
+
+There is a special case when a guest tries to access virtual x2APIC on a system where x2APIC is not really enabled. Here, MSR bitmap remains unmodified. Jailhouse intercepts access to all APIC registers and passes incoming requests to xAPIC using apic_ops access methods, effectively emulating x2APIC on top of xAPIC. Since APIC registers are referred in apic.c by their MSR addresses regardless the mode, this emulation has very little overhead.
+
+The main reason behind Jailhouse trapping ICR (and few other registers) access is isolation: a cell shouldn't be able to send an IPI to the CPU not in its own CPU set, and ICR is what defines the interrupt destination. To achieve isolation, apic_cpu_init() function that master CPU calls during initialization, stores apic_id to cpu_id mapping in the array of the same name. When CPU is assigned a Logical APIC ID, Jailhouse enforces it to be equal to cpu_id (see apic_mmio_access()). This way, when IPI is sent to physical or logical destination, the hypervisor is able to map it to cpu_id and check if the CPU is on the cell's set. See apic_deliver_ipi() for details.
+
+Now let's turn to interrupt handling. In vmcs_setup(), Jailhouse skips enabling external-interrupt exiting and sets exception bitmaps to all-zeroes. This means the the only interrupt that results in VM exit is Non-Maskable Interrupt (NMI). Everything else is dispatched through guest IDT and handled in guest mode. Since  cells asserts full control on their own resources, this makes sense.
+
+Currently, NMIs can only come from the hypervisor itself (see TODO in apic_deliver_ipi() function) which uses them to control CPUs (arch_suspend_cpu() is an example). When NMI occurs in VM, it exits and Jailhouse re-throws NMI in host mode. The CPU dispatches it through the host IDT and jumps to apic_nmi_handler(). It schedules another VM exit using VMX feature known as preemption timer. vmcs_setup() sets this timer to zero, so if it is enabled, VM exit occurs immediately after VM entry. The reason behind this indirection is serialization: this way, NMIs (which are asynchronous by nature) are always delivered after guest entries.
+
+At this next exit, vmx_handle_exit() calls apic_handle_events() which spins in a loop waiting for cpu_data->wait_for_sipi or cpu->stop_cpu to become false. arch_suspend_cpu() sets cpu->stop_cpu flag and arch_resume_cpu() clears it, and apic_deliver_ipi() function resets cpu_data->wait_for_sipi for a target CPU when delivering Startup IPI (SIPI). It also stores the vector SIPI contains in cpu_data->sipi_vector for later use (see "Creating a cell"). For Jailhouse-initiated CPU resets, arch_reset_cpu() sets sipi_vector to APIC_BSP_PSEUDO_SIPI (0x100, real SIPI vectors are always less than 0xff).
+
+Any other interrupt or exception in host mode is considered serious fault and results in panic.
+
+Creating a cell
+=================
+
+To create a new cell, Jailhouse needs to shrink the Linux cell. It also obviously needs to load guest image and perform CPU reset to jump at the guest's entry point.
+
+This process starts in a Linux cell with the ioctl (JAILHOUSE_CELL_CREATE) that cause jailhouse_cell_create() function call in the Linux kernel. It copies cell configuration and guest image from userspace (jailhouse userspace tool reads these from files and stores in memory). Then, the cell's memory region is mapped as in jailhouse_enable() and guest image is moved to the target (physical) address specified by the user. After that, jailhouse_cell_create() calls standard Linux cpu_down() function to offline each CPU assigned to the new cell. This is required so Linux won't try to schedule processes on them anymore. Finally, the loader issues a hypercall (JAILHOUSE_HC_CELL_CREATE) using VMCALL instruction and passes a pointer to struct jailhouse_cell_desc that describe the new cell as its argument. This causes VM exit from the Linux cell to the hypervisor, and vmx_handle_exit() dispatches the call to the cell_create() function.
+
+cell_create() suspends all CPUs assigned to the cell except the one executing the function (if it is in cell's CPU set) to prevent races. This is done in cell_suspend() that indirectly signals an NMI (see "Handling interrupts") to each CPU and waits for cpu_stopped flag on target cpu_data. Then, the cell configuration is mapped from the Linux cell to per-CPU region above FOREIGN_MAPPING_BASE in host virtual address space (the loader copies this structure to Linux kernel memory). However, a caution should be taken not to step out of the region, which puts maximum size requirement on cell descriptor. Memory regions are checked as for Linux cell, and the new cell is allocated and initialized (see "Cell initialization"). After that, Linux cell is shrunk: all the new cell's CPUs are removed from its CPU set, page maps for guest physical addresses are destroyed, and the new cell's I/O resources have their bits set in parent cell's io_bitmap, so accessing them will result in VM exit (and panic). This is done in cell_create() and vmx_cell_shrink(). Finally, the new cell is added to the cells list (which is singly linked list having linux_cell as its head) and each CPU in the cell is reset using arch_cpu_reset(). It sends pseudo SIPI as described in "Handling interrupts". In a response, the hypervisor executes vmx_cpu_reset().
+
+For pseudo SIPI, this function sets CS:RIP to 000f:fff0. Then it disables paging, protection, and 64-bit mode, and clears all segment selectors. On the next VM entry, the CPU will start executing code located at 0x000ffff0 in real mode. If you followed README instructions, it is just were apic-demo.bin 16-bit entry point is. The address 0x000ffff0 is different from real reset vector for x86 (0xfffffff0), and there is the reason. Jailhouse is not designed to run unmodified guests and has no BIOS emulation, so it can simplify boot process and skip A20 gate emulation required for real reset vector to work. When a guest modifies CR0 to enable protection and (later) paging, VM exit occurs and vmx_handle_cr() handles it. This function determines that the guest changes CR0 and calls update_efer() to check if the guest has requested 64-bit mode (LME bit in IA32_EFER is set, LMA bit is not set). If it is the case, Jailhouse sets LMA bit in guest IA32_EFER to reflect that IA-32e mode is on, and modifies VMCS to enable 64-bit mode on VM entry. You can follow these steps in inmate/header.S, which bootstraps apic-demo.bin guest.
+
+Cell initialization
+-------------------
+
+Cells are represented by struct cell, defined in x86/include/asm/cell.h. This structure contains page table directories for VMX and VT-d, io_bitmap for VMX, cpu_set and other fields. It is initialized as follows. First, cell_init() copies a name for the cell from a descriptor and allocates cpu_data->cpu_set if needed (sets less than 64 CPUs in size are stored within struct cell in small_cpu_set field). Then, arch_cell_create(), the same function that shrinks Linux cell, calls vmx_cell_init() for the new one. The latter allocates VMX and VT-d resources (page directories and I/O bitmap), creates EPT mappings for guest physical address ranges (as per struct jailhouse_cell_desc), maps APIC access page (see "Handling interrupts") and copies I/O bitmap to struct cell from the cell descriptor (struct jailhouse_cell_desc). For linux_cell, master CPU calls this function during system-wide initializations. All of these are later applied to the VM in vmx_set_cell_config(). It is called either indirectly from vmx_cpu_init() during CPU initialization for Linux cell, or from vmx_cpu_reset() for the rest.
+
+When linux_cell is shrunk, jailhouse_cell_create() has already put detached CPUs offline (see "Creating a cell"). Linux never uses guest memory pages since they are taken from the region reserved at boot (see "Memory management"). However, Jailhouse currently takes no action to detach I/O resources and devices in general. If they were attached to Linux cell, they will remain attached, and it may cause panic if Linux driver tries to use an I/O port that moved to other cell. To prevent this, you should not assign these resources to Linux cell, or manually unload Linux driver for the device, or even blacklist it in Linux.
+
+Deleting a cell
+===============
+
+At the time of writing, Jailhouse had no support for cell destruction. However this feature has recently appeared in the development branch and will likely be available soon. When a cell is destroyed, its CPUs and memory pages are reassigned back to Linux cell, and other resources are also returned where they originate from. The CPUs are also moved to wait-for-SIPI mode ("parked").
+
+Disabling Jailhouse
+===================
+
+To disable Jailhouse, the userspace tool issues JAILHOUSE_DISABLE ioctl which causes a call to jailhouse_disable(). This function calls leave_hypervisor() on each CPU in the Linux cell and waits for these calls to complete. Then hypervisor_mem mapping created in jailhouse_enable() is destroyed, the function brings up all offlined CPUs (which were presumably moved to other cells) and exits. From this point, Linux kernel runs bare-metal again.
+
+leave_hypervisor() simply issues JALIHOUSE_HC_DISABLE hypercall. It causes VM exit at the given CPU, and vmx_handle_exit() calls shutdown(). For the first Linux CPU that called it, this function iterates over CPUs in all cells other than Linux cell and calls arch_shutdown_cpu() for each of these CPUs; for the rest, it does nothing. arch_shutdown_cpu() is equivalent to suspending the CPU, setting cpu_data->shutdown_cpu to true and resuming it back. As described in "Handling interrupts", this transfers the control to apic_handle_events(), but this time this function detects that CPU is shutting down. It disables APIC and effectively executes VMXOFF; HLT to disable VMX on the CPU and halt it. This way, the hypervisor is disabled on all CPUs outside Linux cell.
+
+When shutdown() returns, VT-d is disabled and the hypervisor restores Linux environment for the CPU. First, cpu_data->linux_* fields are copied from VMCS guest area. Then, arch_cpu_restore() is called to disable VMX (without halting the CPU this time) and restore register values along with Linux GDT and IDT from cpu_data->linux_*. Afterwards, general purpose registers are popped from the hypervisor stack, Linux stack is restored, RAX is zeroed and RET instruction is issued. For Linux kernel, everything will look like leave_hypervisor() has returned successfully. This happens to each CPU in the Linux cell. After that, offlined CPUs (likely halted by arch_shutdown_cpu()) are brought back to the active state, as described earlier.
+
+Conclusion
+==========
+
+Jailhouse is a young project that is developed in quick paces. It is lightweight VMM and does not intend to replace full-featured hypervisors like Xen or KVM, but this doesn't mean that Jailhouse itself is feature-limited. It is rare project that has a potential both in a classroom and in production, and we hope this article helped you to understand it better.
+
+Resources
+=========
+
+1. <https://github.com/siemens/jailhouse>
+2. <http://software.intel.com/en-us/articles/intel-virtualization-technology-for-directed-io-vt-d-enhancing-intel-platforms-for-efficient-virtualization-of-io-devices>
+3. <https://groups.google.com/forum/#!forum/jailhouse-dev>
+4. <http://lwn.net/Articles/396657/>
