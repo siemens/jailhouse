@@ -1,0 +1,74 @@
+Memory Layout of the Jailhouse Hypervisor
+=========================================
+
+While the hypervisor is running, two memory regions are visible it its address
+space: the hypervisor region and the remapping region. Jailhouse cells are not
+mapped into hypervisor's address space, with the exception of explicitly shared
+pages and pages that are temporarily mapped, e.g. during MMIO instruction
+parsing.
+
+
+Hypervisor region
+-----------------
+
+The hypervisor region contains both code and data of the hypervisor. It
+consists of contiguous physical RAM, mapped at a fixed virtual address, both
+in the hypervisor and the Linux address space. This identical mapping is
+required during startup and shutdown of the hypervisor.
+
+Virtual address: JAILHOUSE_BASE
+Size: as defined in the system configuration (see hypervisor_memory.size)
+
+        +--------------------------------------+
+        | Header (see struct jailhouse_header) |
+        +--------------------------------------+
+        | Text Segment                         |
+        |                                      |
+        |                                      |
+        +--------------------------------------+
+        | Read-only Data Segment               |
+        |                                      |
+        +--------------------------------------+
+        | Data Segment                         |
+        |                                      |
+        +--------------------------------------+
+        | BSS Segment                          |
+        |                                      |
+        +--------------------------------------+
+        | Page +-----------------------------+ |
+        | Pool | Per-CPU Data                | |
+        |      |                             | |
+        |      |                             | |
+        |      +-----------------------------+ |
+        |      | System Config               | |
+        |      |                             | |
+        |      +-----------------------------+ |
+        |      | Page Pool Allocation Bitmap | |
+        |      +-----------------------------+ |
+        |      | Dynamic Page Pool           | |
+        :      :                             : :
+        :      :                             : :
+        |      |                             | |
+        |      +-----------------------------+ |
+        +--------------------------------------+
+
+
+Remapping region
+----------------
+
+The remapping region is range of reserved virtual memory in the hypervisor
+address space. It is used to map MMIO, platform configuration memory (ACPI on
+x96) and, temporarily, selected guest pages for hypervisor access.
+
+Virtual address: REMAP_BASE
+Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
+
+        +--------------------------------------+
+        | Per-CPU Temporary Mapping Region     |
+        |                                      |
+        +--------------------------------------+
+        | Dynamic Remapping Page pool          |
+        :                                      :
+        :                                      :
+        |                                      |
+        +--------------------------------------+
