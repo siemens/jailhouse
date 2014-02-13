@@ -74,18 +74,16 @@ static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 
 static void vtd_init_fault_nmi(void)
 {
-	struct per_cpu *cpu_data;
-	unsigned long logical_id;
-	unsigned int apic_id = 0xff;
-	int i;
 	void *reg_base = dmar_reg_base;
+	struct per_cpu *cpu_data;
+	unsigned int apic_id;
+	int i;
 
 	/* Assume that at least one bit is set somewhere as
 	* we don't support configurations when Linux is left with no CPUs */
 	for (i = 0; linux_cell.cpu_set->bitmap[i] == 0; i++)
 		/* Empty loop */;
-	logical_id = ffsl(linux_cell.cpu_set->bitmap[i]);
-	cpu_data = per_cpu(logical_id);
+	cpu_data = per_cpu(ffsl(linux_cell.cpu_set->bitmap[i]));
 	apic_id = cpu_data->apic_id;
 
 	/* Save this value globally to avoid multiple reporting
@@ -93,7 +91,6 @@ static void vtd_init_fault_nmi(void)
 	fault_reporting_cpu_id = cpu_data->cpu_id;
 
 	for (i = 0; i < dmar_units; i++, reg_base += PAGE_SIZE) {
-
 		/* Mask events*/
 		mmio_write32_field(reg_base+VTD_FECTL_REG, VTD_FECTL_IM_MASK,
 				   VTD_FECTL_IM_SET);
@@ -107,7 +104,7 @@ static void vtd_init_fault_nmi(void)
 		* Redirection mode is set to use physical address by default */
 		mmio_write32(reg_base + VTD_FEADDR_REG,
 			((apic_id << APIC_MSI_ADDR_DESTID_SHIFT) &
-			APIC_MSI_ADDR_DESTID_MASK) | APIC_MSI_ADDR_FIXED_VAL);
+			 APIC_MSI_ADDR_DESTID_MASK) | APIC_MSI_ADDR_FIXED_VAL);
 
 		/* APIC ID can exceed 8-bit value for x2APIC mode */
 		if (using_x2apic)
