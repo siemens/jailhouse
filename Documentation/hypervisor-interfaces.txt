@@ -1,0 +1,172 @@
+Jailhouse Interface for Cells
+=============================
+
+The Jailhouse hypervisor provides two kinds of interfaces to interact with its
+cells during runtime. One is a set hypercalls cells can synchronously invoke by
+executing architecture specific instructions that switch to hypervisor mode.
+The interface consists of variables located in a per-cell memory region that is
+shared between hypervisor and that particular cell.
+
+
+Hypercalls
+----------
+
+A hypercall is typically issued via a designated instruction that causes a
+context switch from guest to hypervisor mode. Before causing the mode switch, a
+cell has to prepare potential arguments of the call in predefined registers or
+a known memory location. A return code of the completed hypercall is passed via
+a similar channel. Details of the hypercall ABI are architecture specific and
+will be defined in the following.
+
+
+Intel x86-64 ABI
+- - - - - - - -
+
+Instruction:    vmcall
+Hypercall code: RAX
+1. argument:    RDI
+2. argument:    RSI
+3. argument:    RDX
+4. argument:    RCX
+Return code:    RAX
+
+
+Hypercall "Disable" (code 0)
+- - - - - - - - - - - - - - -
+
+Tries to destroy all non-Linux cells and then shuts down the hypervisor,
+returning full control over the hardware back to Linux.
+
+This hypercall can only be issued on CPUs belonging to the Linux cell.
+
+Arguments: none
+
+Return code: 0 on success, negative error code otherwise; possible errors are
+        -EPERM  (-1) - hypercall was issued over a non-Linux cell or an active
+                       cell rejected the shutdown request
+
+
+Hypercall "Cell Create" (code 1)
+- - - - - - - - - - - - - - - - -
+
+Creates a new cell according to the provided configuration, then set all
+cell CPUs to an architecture-specific reset state. At least one CPU will then
+execute the bootstrap code that must have been loaded into the cell's memory
+at the reset address before invoking this hypercall. See cell-development.txt
+for details on the reset state of cell CPUs.
+
+This hypercall can only be issued on CPUs belonging to the Linux cell.
+
+Arguments: 1. Guest-physical address of cell configuration (see
+              configuration-format.txt for details)
+
+Return code: 0 on success, negative error code otherwise; possible errors are
+        -EPERM  (-1)  - hypercall was issued over a non-Linux cell or an active
+                        cell denied system reconfiguration
+        -E2BIG  (-7)  - configuration data too large to process
+        -ENOMEM (-12) - insufficient hypervisor-internal memory
+        -EBUSY  (-16) - a resource of the new cell is already in use by another
+                        non-Linux cell, or the caller's CPU is supposed to be
+                        given to the new cell
+        -EEXIST (-17) - a cell with the given name already exists
+        -EINVAL (-22) - incorrect or inconsistent configuration data
+
+
+Hypercall "Cell Destroy" (code 2)
+- - - - - - - - - - - - - - - - -
+
+Destroys the cell of the provided name, returning its resources to the Linux
+cell if they are part of the system configuration, i.e. belonged to Linux
+directly after hypervisor start.
+
+This hypercall can only be issued on CPUs belonging to the Linux cell.
+
+Arguments: 1. Guest-physical address of 0-terminated cell name string
+
+Return code: 0 on success, negative error code otherwise; possible errors are
+        -EPERM  (-1)  - hypercall was issued over a non-Linux cell, the target
+                        cell rejected the destruction request or another active
+                        cell denied system reconfiguration
+        -ENOENT (-2)  - cell with provided name does not exist
+        -ENOMEM (-12) - insufficient hypervisor-internal memory for
+                        reconfiguration
+        -EINVAL (-22) - Linux cell specified, which cannot be destroyed
+
+
+Communication Region
+--------------------
+
+The communication region is a per-cell shared memory area that both the
+hypervisor and the particular cell can read from and write to. It is an
+optional communication mechanism. If the region shall be used by a cell, it
+has to be mapped into the cell's address space via the its configuration (see
+configuration-format.txt for details).
+
+
+Communication region layout
+- - - - - - - - - - - - - -
+
+        +------------------------------+ - begin of communication region
+        |   Message to Cell (32 bit)   |   (lower address)
+        +------------------------------+
+        |  Message from Cell (32 bit)  |
+        +------------------------------+
+        |     Cell Status (32 bit)     |
+        +------------------------------+ - higher address
+
+
+Logical Channel "Message"
+- - - - - - - - - - - - -
+
+The first logical channel of the region is formed by the fields "Message to
+Cell" and "Message from Cell". The hypervisor uses this channel to inform the
+cell about specific state changes in the system or request permission to
+perform state changes that the cell can affect.
+
+Before the hypervisor sends a new message, it first sets the "Message from
+Cell" field to 0. It then writes a non-zero message code in the "Message to
+Cell" field. Finally the hypervisor reads from the "Message from Cell" field
+in order to receive the cell's answer.
+
+For answering a message, the cell first has to clear the "Message to Cell"
+field. It then has to write a non-zero reply code into the "Message from Cell"
+field.
+
+Write ordering of all updates has to be ensured by both the hypervisor
+and the cell according to the requirements of the hardware architecture.
+
+The hypervisor may wait for a message reply by spinning until the "Message from
+Cell" becomes non-zero. Therefore, a cell should check for pending messages
+periodically and answer them as soon as possible. The hypervisor will not use
+a CPU assigned to non-Linux cell to wait for message replies, but long message
+responds times may still affect the Linux cell negatively.
+
+The following messages and corresponding replies are defined:
+
+ - Shutdown Requested (code 1):
+        The cell is supposed to be shut down, either to destroy only the cell
+        itself or to disable the hypervisor completely.
+
+  Possible replies: 1 - Shutdown denied
+                    2 - Shutdown OK
+
+Note: The hypervisor does not request shutdown permission from a cell if that
+      cell has the "Unmanaged Exit" flag set in its configuration (see also
+      configuration-format.txt) or if the cell status is set to "Shut Down" or
+      "Failed" (see below).
+
+
+Logical Channel "Cell Status"
+- - - - - - - - - - - - - - -
+
+The cell status field provides the second logical channel. On cell startup, it
+is initialized by the hypervisor to the state "Running". From then on, the
+field becomes conceptually read-only for the hypervisor and will just be
+updated by the cell itself. The following states are defined:
+
+ - Running (code 0)
+ - Shut down (code 1), terminal state
+ - Failed (code 2), terminal state
+
+Terminal states are immutable, thus cannot be left anymore once reached until
+the cell is destroyed.
