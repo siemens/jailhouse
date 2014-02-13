@@ -202,12 +202,12 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	/* shrinking set must be super-set of new cell's cpu set */
 	if (shrinking_set->max_cpu_id < cell->cpu_set->max_cpu_id) {
-		err = -EINVAL;
+		err = -EBUSY;
 		goto err_free_cpu_set;
 	}
 	for_each_cpu(cpu, cell->cpu_set)
 		if (!test_bit(cpu, shrinking_set->bitmap)) {
-			err = -EINVAL;
+			err = -EBUSY;
 			goto err_free_cpu_set;
 		}
 
