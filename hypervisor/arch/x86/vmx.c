@@ -21,6 +21,7 @@
 #include <asm/control.h>
 #include <asm/fault.h>
 #include <asm/vmx.h>
+#include <asm/vtd.h>
 
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
@@ -1046,6 +1047,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			       cpu_data->cpu_id, sipi_vector);
 			vmx_cpu_reset(guest_regs, cpu_data, sipi_vector);
 		}
+		vtd_check_pending_faults(cpu_data);
 		return;
 	case EXIT_REASON_CPUID:
 		vmx_skip_emulated_instruction(X86_INST_LEN_CPUID);

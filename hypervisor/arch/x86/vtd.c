@@ -15,6 +15,8 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
 #include <asm/vtd.h>
+#include <asm/apic.h>
+#include <asm/bitops.h>
 
 /* TODO: Support multiple segments */
 static struct vtd_entry __attribute__((aligned(PAGE_SIZE)))
@@ -24,6 +26,7 @@ static void *dmar_reg_base;
 static unsigned int dmar_units;
 static unsigned int dmar_pt_levels;
 static unsigned int dmar_num_did = ~0U;
+static unsigned int fault_reporting_cpu_id;
 
 static void *vtd_iotlb_reg_base(void *reg_base)
 {
@@ -67,6 +70,130 @@ static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
 	*pte = (next_pt & 0x000ffffffffff000UL) | VTD_PAGE_READ |
 		VTD_PAGE_WRITE;
+}
+
+static void vtd_init_fault_nmi(void)
+{
+	struct per_cpu *cpu_data;
+	unsigned long logical_id;
+	unsigned int apic_id = 0xff;
+	int i;
+	void *reg_base = dmar_reg_base;
+
+	/* Assume that at least one bit is set somewhere as
+	* we don't support configurations when Linux is left with no CPUs */
+	for (i = 0; linux_cell.cpu_set->bitmap[i] == 0; i++)
+		/* Empty loop */;
+	logical_id = ffsl(linux_cell.cpu_set->bitmap[i]);
+	cpu_data = per_cpu(logical_id);
+	apic_id = cpu_data->apic_id;
+
+	/* Save this value globally to avoid multiple reporting
+	 * of the same case from different CPUs*/
+	fault_reporting_cpu_id = cpu_data->cpu_id;
+
+	for (i = 0; i < dmar_units; i++, reg_base += PAGE_SIZE) {
+
+		/* Mask events*/
+		mmio_write32_field(reg_base+VTD_FECTL_REG, VTD_FECTL_IM_MASK,
+				   VTD_FECTL_IM_SET);
+
+		/* We use xAPIC mode. Hence, TRGM and LEVEL aren't required.
+		 Set Delivery Mode to NMI */
+		mmio_write32(reg_base + VTD_FEDATA_REG, APIC_MSI_DATA_DM_NMI);
+
+		/* The vector information is ignored in the case of NMI,
+		* hence there's no need to set that field.
+		* Redirection mode is set to use physical address by default */
+		mmio_write32(reg_base + VTD_FEADDR_REG,
+			((apic_id << APIC_MSI_ADDR_DESTID_SHIFT) &
+			APIC_MSI_ADDR_DESTID_MASK) | APIC_MSI_ADDR_FIXED_VAL);
+
+		/* APIC ID can exceed 8-bit value for x2APIC mode */
+		if (using_x2apic)
+			mmio_write32(reg_base + VTD_FEUADDR_REG, apic_id);
+
+		/* Unmask events */
+		mmio_write32_field(reg_base+VTD_FECTL_REG, VTD_FECTL_IM_MASK,
+				   VTD_FECTL_IM_CLEAR);
+	}
+}
+
+static void *vtd_get_fault_rec_reg_addr(void *reg_base)
+{
+	unsigned int regoffset;
+	void *regaddr;
+
+	regoffset = mmio_read32_field(reg_base + VTD_CAP_REG, VTD_CAP_FRO_MASK);
+	regaddr = reg_base + 16*regoffset;
+
+	return regaddr;
+}
+
+static void vtd_print_fault_record_reg_status(void *reg_base)
+{
+	unsigned int sid = mmio_read64_field(reg_base + VTD_FRCD_HIGH_REG,
+					     VTD_FRCD_HIGH_SID_MASK);
+	unsigned int fr = mmio_read64_field(reg_base + VTD_FRCD_HIGH_REG,
+					    VTD_FRCD_HIGH_FR_MASK);
+	unsigned long fi = mmio_read64_field(reg_base + VTD_FRCD_LOW_REG,
+					     VTD_FRCD_LOW_FI_MASK);
+	unsigned int type = mmio_read64_field(reg_base + VTD_FRCD_HIGH_REG,
+					      VTD_FRCD_HIGH_TYPE_MASK);
+
+	printk("VT-d fault event occurred:\n");
+	printk(" Source Identifier (bus:dev.func): %02x:%02x.%x\n", sid >> 8,
+	       (sid >> 3) & 0x1f, sid & 0x7);
+	printk(" Fault Reason: 0x%x Fault Info: %x Type %d\n", fr, fi, type);
+}
+
+void vtd_check_pending_faults(struct per_cpu *cpu_data)
+{
+	unsigned int fr_index;
+	void *reg_base = dmar_reg_base;
+	unsigned int n;
+	void *fault_reg_addr, *rec_reg_addr;
+
+	if (cpu_data->cpu_id != fault_reporting_cpu_id)
+		return;
+
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+		if (mmio_read32_field(reg_base + VTD_FSTS_REG,
+			VTD_FSTS_PPF_MASK)) {
+			fr_index = mmio_read32_field(reg_base + VTD_FSTS_REG,
+						     VTD_FSTS_FRI_MASK);
+			fault_reg_addr = vtd_get_fault_rec_reg_addr(reg_base);
+			rec_reg_addr = fault_reg_addr + 16*fr_index;
+			vtd_print_fault_record_reg_status(rec_reg_addr);
+
+			/* Clear faults in record registers */
+			mmio_write64_field(rec_reg_addr + VTD_FRCD_HIGH_REG,
+				VTD_FRCD_HIGH_F_MASK, VTD_FRCD_HIGH_F_CLEAR);
+		}
+	}
+}
+
+static int vtd_init_fault_reporting(void *reg_base)
+{
+	int nfr, i;
+	void *fault_reg_addr, *rec_reg_addr;
+
+	nfr = mmio_read64_field(reg_base + VTD_CAP_REG, VTD_CAP_NFR_MASK);
+	fault_reg_addr = vtd_get_fault_rec_reg_addr(reg_base);
+
+	for (i = 0; i < nfr; i++) {
+		rec_reg_addr = fault_reg_addr + 16*i;
+
+		/* Clear record reg fault status */
+		mmio_write64_field(rec_reg_addr + VTD_FRCD_HIGH_REG,
+				VTD_FRCD_HIGH_F_MASK, VTD_FRCD_HIGH_F_CLEAR);
+	}
+
+	/* Clear fault overflow status */
+	mmio_write32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PFO_MASK,
+			VTD_FSTS_PFO_CLEAR);
+
+	return 0;
 }
 
 int vtd_init(void)
@@ -152,8 +279,14 @@ int vtd_init(void)
 		offset += drhd->header.length;
 		drhd = (struct acpi_dmar_drhd *)
 			(((void *)drhd) + drhd->header.length);
+
+		err = vtd_init_fault_reporting(reg_base);
+		if (err)
+			return err;
 	} while (offset < dmar->header.length &&
 		 drhd->header.type == ACPI_DMAR_DRHD);
+
+	vtd_init_fault_nmi();
 
 	/*
 	 * Derive vdt_paging from very similar x86_64_paging,
@@ -195,8 +328,7 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	}
 
 	context_entry = &context_entry_table[device->devfn];
-	context_entry->lo_word = VTD_CTX_PRESENT |
-		VTD_CTX_FPD | VTD_CTX_TTYPE_MLP_UNTRANS |
+	context_entry->lo_word = VTD_CTX_PRESENT | VTD_CTX_TTYPE_MLP_UNTRANS |
 		page_map_hvirt2phys(cell->vtd.pg_structs.root_table);
 	context_entry->hi_word =
 		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
@@ -299,6 +431,8 @@ int vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 		jailhouse_cell_pci_devices(config);
 	unsigned int n;
 	int err = 0;
+
+	vtd_init_fault_nmi();
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
 		if (mem->flags & JAILHOUSE_MEM_DMA) {

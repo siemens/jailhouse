@@ -77,6 +77,8 @@ struct vtd_entry {
 # define VTD_CAP_SAGAW64		0x00001000
 # define VTD_CAP_SLLPS2M		(1UL << 34)
 # define VTD_CAP_SLLPS1G		(1UL << 35)
+#define VTD_CAP_FRO_MASK		(0x3FF << 24)
+#define VTD_CAP_NFR_MASK		(0xFL << 40)
 #define VTD_ECAP_REG			0x10
 # define VTD_ECAP_IRO_MASK		0x0003ff00
 #define VTD_GCMD_REG			0x18
@@ -107,6 +109,31 @@ struct vtd_entry {
 # define VTD_IOTLB_IVT			0x8000000000000000UL
 # define VTD_IOTLB_R_MASK		0x00000000FFFFFFFFUL
 
+#define VTD_FECTL_REG			0x038
+#define VTD_FECTL_IM_MASK		(0x1 << 31)
+#define VTD_FECTL_IM_CLEAR		0x0
+#define VTD_FECTL_IM_SET		0x1
+
+#define VTD_FEDATA_REG			0x03C
+#define VTD_FEADDR_REG			0x040
+#define VTD_FEUADDR_REG			0x044
+
+#define VTD_FRCD_LOW_REG		0x0
+#define VTD_FRCD_HIGH_REG		0x8
+#define VTD_FRCD_LOW_FI_MASK		(0xFFFFFFFFFFFFFL << 12)
+#define VTD_FRCD_HIGH_SID_MASK		(0xFFFFL << (64-64))
+#define VTD_FRCD_HIGH_FR_MASK		(0xFFL << (96-64))
+#define VTD_FRCD_HIGH_TYPE_MASK		(0x1L << (126-64))
+#define VTD_FRCD_HIGH_F_MASK		(0x1L << (127-64))
+#define VTD_FRCD_HIGH_F_CLEAR		0x1
+
+#define VTD_FSTS_REG			0x034
+#define VTD_FSTS_FRI_MASK		(0xFF << 8)
+#define VTD_FSTS_PPF_MASK		(0x1 << 1)
+#define VTD_FSTS_PFO_MASK		(0x1 << 0)
+#define VTD_FSTS_PFO_CLEAR		0x1
+
+
 int vtd_init(void);
 
 int vtd_cell_init(struct cell *cell);
@@ -118,3 +145,5 @@ void vtd_unmap_memory_region(struct cell *cell,
 void vtd_cell_exit(struct cell *cell);
 
 void vtd_shutdown(void);
+
+void vtd_check_pending_faults(struct per_cpu *cpu_data);
