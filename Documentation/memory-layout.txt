@@ -19,7 +19,7 @@ required during startup and shutdown of the hypervisor.
 Virtual address: JAILHOUSE_BASE
 Size: as defined in the system configuration (see hypervisor_memory.size)
 
-        +--------------------------------------+
+        +--------------------------------------+ - lower address
         | Header (see struct jailhouse_header) |
         +--------------------------------------+
         | Text Segment                         |
@@ -50,7 +50,7 @@ Size: as defined in the system configuration (see hypervisor_memory.size)
         :      :                             : :
         |      |                             | |
         |      +-----------------------------+ |
-        +--------------------------------------+
+        +--------------------------------------+ - higher address
 
 
 Remapping region
@@ -58,7 +58,7 @@ Remapping region
 
 The remapping region is range of reserved virtual memory in the hypervisor
 address space. It is used to map MMIO, platform configuration memory (ACPI on
-x96) and, temporarily, selected guest pages for hypervisor access.
+x86) and, temporarily, selected guest pages for hypervisor access.
 
 Virtual address: REMAP_BASE
 Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
