@@ -1,7 +1,6 @@
 Things to be addressed, at some point. Unsorted, unprioritized, incomplete.
 
 o x86 support
- - DMAR error reporting
  - interrupt remapping support
  - PCI resource access control
   - bus scanning?
