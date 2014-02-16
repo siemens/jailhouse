@@ -271,66 +271,71 @@ unlock_out:
 	return err;
 }
 
-static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
+static int load_image(struct jailhouse_cell_desc *config,
+		      struct jailhouse_preload_image __user *uimage)
 {
-	struct {
-		struct jailhouse_new_cell cell;
-		struct jailhouse_preload_image image;
-	} cell_buffer;
-	struct jailhouse_new_cell *cell = &cell_buffer.cell;
-	struct jailhouse_preload_image *image = &cell->image[0];
-	struct jailhouse_cell_desc *config;
+	struct jailhouse_preload_image image;
 	const struct jailhouse_memory *ram;
-	unsigned int cpu;
 	void *cell_mem;
-	int err;
+	int err = 0;
 
-	if (copy_from_user(cell, arg, sizeof(*cell)))
+	if (copy_from_user(&image, uimage, sizeof(image)))
 		return -EFAULT;
-
-	if (cell->num_preload_images != 1)
-		return -EINVAL;
-
-	if (copy_from_user(cell->image, arg->image,
-			   sizeof(*cell->image) * cell->num_preload_images))
-		return -EFAULT;
-
-	config = kmalloc(cell->config_size, GFP_KERNEL | GFP_DMA);
-	if (!config)
-		return -ENOMEM;
-
-	if (copy_from_user(config, (void *)(unsigned long)cell->config_address,
-			   cell->config_size)) {
-		err = -EFAULT;
-		goto kfree_config_out;
-	}
-	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
 	ram = jailhouse_cell_mem_regions(config);
 	if (config->num_memory_regions < 1 || ram->size < 1024 * 1024 ||
-	    image->target_address + image->size > ram->size) {
-		err = -EINVAL;
-		goto kfree_config_out;
-	}
+	    image.target_address + image.size > ram->size)
+		return -EINVAL;
 
 	cell_mem = jailhouse_ioremap(ram->phys_start, 0, ram->size);
 	if (!cell_mem) {
 		pr_err("jailhouse: Unable to map RAM reserved for cell "
 		       "at %08lx\n", (unsigned long)ram->phys_start);
-		err = -EBUSY;
-		goto kfree_config_out;
+		return -EBUSY;
 	}
 
-	if (copy_from_user(cell_mem + image->target_address,
-			   (void *)(unsigned long)image->source_address,
-			   image->size)) {
+	if (copy_from_user(cell_mem + image.target_address,
+			   (void *)(unsigned long)image.source_address,
+			   image.size))
 		err = -EFAULT;
-		goto unmap_out;
+
+	vunmap(cell_mem);
+
+	return err;
+}
+
+static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
+{
+	struct jailhouse_preload_image __user *image = arg->image;
+	struct jailhouse_cell_desc *config;
+	struct jailhouse_new_cell cell;
+	unsigned int cpu;
+	int err;
+
+	if (copy_from_user(&cell, arg, sizeof(cell)))
+		return -EFAULT;
+
+	if (cell.num_preload_images != 1)
+		return -EINVAL;
+
+	config = kmalloc(cell.config_size, GFP_KERNEL | GFP_DMA);
+	if (!config)
+		return -ENOMEM;
+
+	if (copy_from_user(config, (void *)(unsigned long)cell.config_address,
+			   cell.config_size)) {
+		err = -EFAULT;
+		goto kfree_config_out;
 	}
+	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
+
+	err = load_image(config, image);
+	if (err)
+		goto kfree_config_out;
 
 	if (mutex_lock_interruptible(&lock) != 0) {
 		err = -EINTR;
-		goto unmap_out;
+		goto kfree_config_out;
 	}
 
 	if (!enabled) {
@@ -360,9 +365,6 @@ cpu_online_out:
 
 unlock_out:
 	mutex_unlock(&lock);
-
-unmap_out:
-	vunmap(cell_mem);
 
 kfree_config_out:
 	kfree(config);
