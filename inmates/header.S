@@ -62,6 +62,11 @@ start32:
 start64:
 	mov $stack_top,%rsp
 
+	xor %rax,%rax
+	mov $bss_start,%rdi
+	mov $bss_qwords,%rcx
+	rep stosq
+
 	mov $inmate_main,%rax
 	jmpq *%rax
 

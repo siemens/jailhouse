@@ -22,10 +22,15 @@ SECTIONS
 		. = ALIGN(16);
 	}
 
-	/* 32-bit sections */
+	/* 32/64-bit sections */
 	. = 0xe0000;
 	stack_top = .;
-	.bss		: { *(.bss) }
+	bss_start = .;
+	.bss		: {
+		*(.bss)
+		. = ALIGN(8);
+	}
+	bss_qwords = SIZEOF(.bss) / 8;
 
 	. = 0xf0000 + SIZEOF(.startup);
 	.text		: AT (ADDR(.text) & 0xffff) {
