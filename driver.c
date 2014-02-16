@@ -320,7 +320,6 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		err = -EBUSY;
 		goto kfree_config_out;
 	}
-	memset(cell_mem, 0, ram->size);
 
 	if (copy_from_user(cell_mem + image->target_address,
 			   (void *)(unsigned long)image->source_address,
