@@ -322,14 +322,11 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	struct jailhouse_preload_image __user *image = arg->image;
 	struct jailhouse_cell_desc *config;
 	struct jailhouse_new_cell cell;
-	unsigned int cpu;
+	unsigned int cpu, n;
 	int err;
 
 	if (copy_from_user(&cell, arg, sizeof(cell)))
 		return -EFAULT;
-
-	if (cell.num_preload_images != 1)
-		return -EINVAL;
 
 	config = kmalloc(cell.config_size, GFP_KERNEL | GFP_DMA);
 	if (!config)
@@ -342,9 +339,11 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	err = load_image(config, image);
-	if (err)
-		goto kfree_config_out;
+	for (n = cell.num_preload_images; n > 0; n--, image++) {
+		err = load_image(config, image);
+		if (err)
+			goto kfree_config_out;
+	}
 
 	if (mutex_lock_interruptible(&lock) != 0) {
 		err = -EINTR;
