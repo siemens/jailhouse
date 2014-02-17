@@ -28,7 +28,8 @@ static void help(const char *progname)
 	       "\nAvailable commands:\n"
 	       "   enable CONFIGFILE\n"
 	       "   disable\n"
-	       "   cell create CONFIGFILE PRELOADIMAGE [-l ADDRESS]\n"
+	       "   cell create CONFIGFILE IMAGE [-l ADDRESS] "
+			"[IMAGE [-l ADDRESS] ...]\n"
 	       "   cell destroy CONFIGFILE\n",
 	       progname);
 }
@@ -107,47 +108,76 @@ static int enable(int argc, char *argv[])
 
 static int cell_create(int argc, char *argv[])
 {
-	struct {
-		struct jailhouse_new_cell cell;
-		struct jailhouse_preload_image image;
-	} params;
-	struct jailhouse_new_cell *cell = &params.cell;
-	struct jailhouse_preload_image *image = params.cell.image;
+	struct jailhouse_preload_image *image;
+	struct jailhouse_new_cell *cell;
+	unsigned int images, arg_num;
 	size_t size;
 	int err, fd;
 	char *endp;
 
-	if (argc != 5 && argc != 7) {
+	if (argc < 5) {
 		help(argv[0]);
+		exit(1);
+	}
+
+	arg_num = 4;
+	images = 0;
+	while (arg_num < argc) {
+		images++;
+		arg_num++;
+
+		if (arg_num < argc && strcmp(argv[arg_num], "-l") == 0) {
+			if (arg_num + 1 >= argc) {
+				help(argv[0]);
+				exit(1);
+			}
+			arg_num += 2;
+		}
+	}
+
+	cell = malloc(sizeof(*cell) + sizeof(*image) * images);
+	if (!cell) {
+		fprintf(stderr, "insufficient memory\n");
 		exit(1);
 	}
 
 	cell->config_address = (unsigned long)read_file(argv[3], &size);
 	cell->config_size = size;
-	cell->num_preload_images = 1;
+	cell->num_preload_images = images;
 
-	image->source_address = (unsigned long)read_file(argv[4], &size);
-	image->size = size;
-	image->target_address = 0;
+	arg_num = 4;
+	image = cell->image;
 
-	if (argc == 7) {
-		errno = 0;
-		image->target_address = strtoll(argv[6], &endp, 0);
-		if (errno != 0 || *endp != 0 || strcmp(argv[5], "-l") != 0) {
-			help(argv[0]);
-			exit(1);
+	while (images > 0) {
+		image->source_address =
+			(unsigned long)read_file(argv[arg_num++], &size);
+		image->size = size;
+		image->target_address = 0;
+
+		if (arg_num < argc && strcmp(argv[arg_num], "-l") == 0) {
+			errno = 0;
+			image->target_address =
+				strtoll(argv[arg_num + 1], &endp, 0);
+			if (errno != 0 || *endp != 0) {
+				help(argv[0]);
+				exit(1);
+			}
+			arg_num += 2;
 		}
+		image++;
+		images--;
 	}
 
 	fd = open_dev();
 
-	err = ioctl(fd, JAILHOUSE_CELL_CREATE, &params);
+	err = ioctl(fd, JAILHOUSE_CELL_CREATE, cell);
 	if (err)
 		perror("JAILHOUSE_CELL_CREATE");
 
 	close(fd);
 	free((void *)(unsigned long)cell->config_address);
 	free((void *)(unsigned long)image->source_address);
+	free(cell);
 
 	return err;
 }
