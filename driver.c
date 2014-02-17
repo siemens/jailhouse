@@ -278,7 +278,7 @@ static int load_image(struct jailhouse_cell_desc *config,
 	const struct jailhouse_memory *mem;
 	unsigned int regions;
 	u64 image_offset;
-	void *cell_mem;
+	void *image_mem;
 	int err = 0;
 
 	if (copy_from_user(&image, uimage, sizeof(image)))
@@ -298,19 +298,21 @@ static int load_image(struct jailhouse_cell_desc *config,
 	if (regions == 0)
 		return -EINVAL;
 
-	cell_mem = jailhouse_ioremap(mem->phys_start, 0, mem->size);
-	if (!cell_mem) {
-		pr_err("jailhouse: Unable to map RAM reserved for cell "
-		       "at %08lx\n", (unsigned long)mem->phys_start);
+	image_mem = jailhouse_ioremap(mem->phys_start + image_offset, 0,
+				      image.size);
+	if (!image_mem) {
+		pr_err("jailhouse: Unable to map cell RAM at %08llx "
+		       "for image loading\n",
+		       (unsigned long long)(mem->phys_start + image_offset));
 		return -EBUSY;
 	}
 
-	if (copy_from_user(cell_mem + image.target_address,
+	if (copy_from_user(image_mem,
 			   (void *)(unsigned long)image.source_address,
 			   image.size))
 		err = -EFAULT;
 
-	vunmap(cell_mem);
+	vunmap(image_mem);
 
 	return err;
 }
