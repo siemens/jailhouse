@@ -275,22 +275,33 @@ static int load_image(struct jailhouse_cell_desc *config,
 		      struct jailhouse_preload_image __user *uimage)
 {
 	struct jailhouse_preload_image image;
-	const struct jailhouse_memory *ram;
+	const struct jailhouse_memory *mem;
+	unsigned int regions;
+	u64 image_offset;
 	void *cell_mem;
 	int err = 0;
 
 	if (copy_from_user(&image, uimage, sizeof(image)))
 		return -EFAULT;
 
-	ram = jailhouse_cell_mem_regions(config);
-	if (config->num_memory_regions < 1 || ram->size < 1024 * 1024 ||
-	    image.target_address + image.size > ram->size)
+	mem = jailhouse_cell_mem_regions(config);
+	for (regions = config->num_memory_regions; regions > 0; regions--) {
+		image_offset = image.target_address - mem->virt_start;
+		if (image.target_address >= mem->virt_start &&
+		    image_offset < mem->size) {
+			if (image.size > mem->size - image_offset)
+				return -EINVAL;
+			break;
+		}
+		mem++;
+	}
+	if (regions == 0)
 		return -EINVAL;
 
-	cell_mem = jailhouse_ioremap(ram->phys_start, 0, ram->size);
+	cell_mem = jailhouse_ioremap(mem->phys_start, 0, mem->size);
 	if (!cell_mem) {
 		pr_err("jailhouse: Unable to map RAM reserved for cell "
-		       "at %08lx\n", (unsigned long)ram->phys_start);
+		       "at %08lx\n", (unsigned long)mem->phys_start);
 		return -EBUSY;
 	}
 
