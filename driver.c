@@ -42,6 +42,11 @@
 
 #define JAILHOUSE_FW_NAME	"jailhouse.bin"
 
+struct cell {
+	struct kobject kobj;
+	struct list_head entry;
+};
+
 MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
 MODULE_LICENSE("GPL");
 MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
@@ -54,6 +59,8 @@ static unsigned long hv_core_percpu_size;
 static cpumask_t offlined_cpus;
 static atomic_t call_done;
 static int error_code;
+static LIST_HEAD(cells);
+static struct kobject *cells_dir;
 
 static inline unsigned int
 cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
@@ -67,6 +74,58 @@ cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
 	for ((cpu) = -1;					\
 	     (cpu) = cell_cpumask_next((cpu), (config)),	\
 	     (cpu) < (config)->cpu_set_size * 8;)
+
+static void cell_kobj_release(struct kobject *kobj)
+{
+	struct cell *cell = container_of(kobj, struct cell, kobj);
+
+	kfree(cell);
+}
+
+static struct kobj_type cell_type = {
+	.release = cell_kobj_release,
+};
+
+static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
+{
+	struct cell *cell;
+	int err;
+
+	cell = kzalloc(sizeof(*cell), GFP_KERNEL);
+	if (!cell)
+		return ERR_PTR(-ENOMEM);
+
+	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
+				   cell_desc->name);
+	if (err) {
+		kfree(cell);
+		return ERR_PTR(err);
+	}
+
+	return cell;
+}
+
+static void register_cell(struct cell *cell)
+{
+	list_add_tail(&cell->entry, &cells);
+	kobject_uevent(&cell->kobj, KOBJ_ADD);
+}
+
+static struct cell *find_cell(struct jailhouse_cell_desc *cell_desc)
+{
+	struct cell *cell;
+
+	list_for_each_entry(cell, &cells, entry)
+		if (strcmp(kobject_name(&cell->kobj), cell_desc->name) == 0)
+			return cell;
+	return NULL;
+}
+
+static void delete_cell(struct cell *cell)
+{
+	list_del(&cell->entry);
+	kobject_put(&cell->kobj);
+}
 
 static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 			       unsigned long size)
@@ -113,10 +172,12 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
 	unsigned long config_size;
+	struct cell *root_cell;
 	int err;
 
 	if (copy_from_user(&config_header, arg, sizeof(config_header)))
 		return -EFAULT;
+	config_header.system.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
 	if (mutex_lock_interruptible(&lock) != 0)
 		return -EINTR;
@@ -125,11 +186,16 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	if (enabled || !try_module_get(THIS_MODULE))
 		goto error_unlock;
 
+	root_cell = create_cell(&config_header.system);
+	err = -ENOMEM;
+	if (!root_cell)
+		goto error_put_module;
+
 	err = request_firmware(&hypervisor, JAILHOUSE_FW_NAME, jailhouse_dev);
 	if (err) {
 		pr_err("jailhouse: Missing hypervisor image %s\n",
 		       JAILHOUSE_FW_NAME);
-		goto error_put_module;
+		goto error_free_cell;
 	}
 
 	header = (struct jailhouse_header *)hypervisor->data;
@@ -190,6 +256,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	release_firmware(hypervisor);
 
 	enabled = true;
+	register_cell(root_cell);
 
 	mutex_unlock(&lock);
 
@@ -202,6 +269,9 @@ error_unmap:
 
 error_release_fw:
 	release_firmware(hypervisor);
+
+error_free_cell:
+	kobject_put(&root_cell->kobj);
 
 error_put_module:
 	module_put(THIS_MODULE);
@@ -234,6 +304,7 @@ static void leave_hypervisor(void *info)
 
 static int jailhouse_disable(void)
 {
+	struct cell *cell, *tmp;
 	unsigned int cpu;
 	int err;
 
@@ -269,6 +340,8 @@ static int jailhouse_disable(void)
 		cpu_clear(cpu, offlined_cpus);
 	}
 
+	list_for_each_entry_safe(cell, tmp, &cells, entry)
+		delete_cell(cell);
 	enabled = false;
 	module_put(THIS_MODULE);
 
@@ -332,6 +405,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	struct jailhouse_new_cell cell_params;
 	struct jailhouse_cell_desc *config;
 	unsigned int cpu, n;
+	struct cell *cell;
 	int err;
 
 	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
@@ -349,12 +423,6 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	for (n = cell_params.num_preload_images; n > 0; n--, image++) {
-		err = load_image(config, image);
-		if (err)
-			goto kfree_config_out;
-	}
-
 	if (mutex_lock_interruptible(&lock) != 0) {
 		err = -EINTR;
 		goto kfree_config_out;
@@ -362,6 +430,23 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 
 	if (!enabled) {
 		err = -EINVAL;
+		goto unlock_out;
+	}
+
+	if (find_cell(config) != NULL) {
+		err = -EEXIST;
+		goto unlock_out;
+	}
+
+	for (n = cell_params.num_preload_images; n > 0; n--, image++) {
+		err = load_image(config, image);
+		if (err)
+			goto unlock_out;
+	}
+
+	cell = create_cell(config);
+	if (IS_ERR(cell)) {
+		err = PTR_ERR(cell);
 		goto unlock_out;
 	}
 
@@ -377,6 +462,8 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	if (err)
 		goto error_cpu_online;
 
+	register_cell(cell);
+
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
 
 unlock_out:
@@ -391,6 +478,7 @@ error_cpu_online:
 	for_each_cell_cpu(cpu, config)
 		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
 			cpu_clear(cpu, offlined_cpus);
+	kobject_put(&cell->kobj);
 	goto unlock_out;
 }
 
@@ -398,6 +486,7 @@ static int jailhouse_cell_destroy(const char __user *arg)
 {
 	struct jailhouse_cell_desc *config;
 	struct jailhouse_cell cell_params;
+	struct cell *cell;
 	unsigned int cpu;
 	int err;
 
@@ -426,9 +515,17 @@ static int jailhouse_cell_destroy(const char __user *arg)
 		goto unlock_out;
 	}
 
+	cell = find_cell(config);
+	if (!cell) {
+		err = -ENOENT;
+		goto unlock_out;
+	}
+
 	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, __pa(config->name));
 	if (err)
 		goto unlock_out;
+
+	delete_cell(cell);
 
 	for_each_cell_cpu(cpu, config)
 		if (cpu_isset(cpu, offlined_cpus)) {
@@ -537,13 +634,22 @@ static int __init jailhouse_init(void)
 	if (err)
 		goto unreg_dev;
 
+	cells_dir = kobject_create_and_add("cells", &jailhouse_dev->kobj);
+	if (!cells_dir) {
+		err = -ENOMEM;
+		goto remove_attrs;
+	}
+
 	err = misc_register(&jailhouse_misc_dev);
 	if (err)
-		goto remove_attrs;
+		goto remove_cells_dir;
 
 	register_reboot_notifier(&jailhouse_shutdown_nb);
 
 	return 0;
+
+remove_cells_dir:
+	kobject_put(cells_dir);
 
 remove_attrs:
 	sysfs_remove_group(&jailhouse_dev->kobj, &jailhouse_attribute_group);
@@ -557,6 +663,7 @@ static void __exit jailhouse_exit(void)
 {
 	unregister_reboot_notifier(&jailhouse_shutdown_nb);
 	misc_deregister(&jailhouse_misc_dev);
+	kobject_put(cells_dir);
 	sysfs_remove_group(&jailhouse_dev->kobj, &jailhouse_attribute_group);
 	root_device_unregister(jailhouse_dev);
 }
