@@ -31,6 +31,15 @@
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
 
+/* For compatibility with older kernel versions */
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+#define DEVICE_ATTR_RO(_name) \
+	struct device_attribute dev_attr_##_name = __ATTR_RO(_name)
+#endif /* < 3.11 */
+/* End of compatibility section - remove as version become obsolete */
+
 #define JAILHOUSE_FW_NAME	"jailhouse.bin"
 
 MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
@@ -495,6 +504,24 @@ static struct notifier_block jailhouse_shutdown_nb = {
 	.notifier_call = jailhouse_shutdown_notify,
 };
 
+static ssize_t enabled_show(struct device *dev, struct device_attribute *attr,
+			    char *buffer)
+{
+	return sprintf(buffer, "%d\n", enabled);
+}
+
+static DEVICE_ATTR_RO(enabled);
+
+static struct attribute *jailhouse_sysfs_entries[] = {
+	&dev_attr_enabled.attr,
+	NULL
+};
+
+static struct attribute_group jailhouse_attribute_group = {
+	.name = NULL,
+	.attrs = jailhouse_sysfs_entries,
+};
+
 static int __init jailhouse_init(void)
 {
 	int err;
@@ -503,10 +530,24 @@ static int __init jailhouse_init(void)
 	if (IS_ERR(jailhouse_dev))
 		return PTR_ERR(jailhouse_dev);
 
-	err = misc_register(&jailhouse_misc_dev);
-	if (!err)
-		register_reboot_notifier(&jailhouse_shutdown_nb);
+	err = sysfs_create_group(&jailhouse_dev->kobj,
+				 &jailhouse_attribute_group);
+	if (err)
+		goto unreg_dev;
 
+	err = misc_register(&jailhouse_misc_dev);
+	if (err)
+		goto remove_attrs;
+
+	register_reboot_notifier(&jailhouse_shutdown_nb);
+
+	return 0;
+
+remove_attrs:
+	sysfs_remove_group(&jailhouse_dev->kobj, &jailhouse_attribute_group);
+
+unreg_dev:
+	root_device_unregister(jailhouse_dev);
 	return err;
 }
 
@@ -514,6 +555,7 @@ static void __exit jailhouse_exit(void)
 {
 	unregister_reboot_notifier(&jailhouse_shutdown_nb);
 	misc_deregister(&jailhouse_misc_dev);
+	sysfs_remove_group(&jailhouse_dev->kobj, &jailhouse_attribute_group);
 	root_device_unregister(jailhouse_dev);
 }
 
