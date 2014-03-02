@@ -369,21 +369,15 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		if (cpu_online(cpu)) {
 			err = cpu_down(cpu);
 			if (err)
-				goto cpu_online_out;
+				goto error_cpu_online;
 			cpu_set(cpu, offlined_cpus);
 		}
 
 	err = jailhouse_call1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
 	if (err)
-		goto cpu_online_out;
+		goto error_cpu_online;
 
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
-
-cpu_online_out:
-	if (err)
-		for_each_cell_cpu(cpu, config)
-			if (!cpu_online(cpu) && cpu_up(cpu) == 0)
-				cpu_clear(cpu, offlined_cpus);
 
 unlock_out:
 	mutex_unlock(&lock);
@@ -392,6 +386,12 @@ kfree_config_out:
 	kfree(config);
 
 	return err;
+
+error_cpu_online:
+	for_each_cell_cpu(cpu, config)
+		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
+			cpu_clear(cpu, offlined_cpus);
+	goto unlock_out;
 }
 
 static int jailhouse_cell_destroy(const char __user *arg)
