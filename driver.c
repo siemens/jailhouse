@@ -329,26 +329,27 @@ static int load_image(struct jailhouse_cell_desc *config,
 static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 {
 	struct jailhouse_preload_image __user *image = arg->image;
+	struct jailhouse_new_cell cell_params;
 	struct jailhouse_cell_desc *config;
-	struct jailhouse_new_cell cell;
 	unsigned int cpu, n;
 	int err;
 
-	if (copy_from_user(&cell, arg, sizeof(cell)))
+	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
 		return -EFAULT;
 
-	config = kmalloc(cell.config_size, GFP_KERNEL | GFP_DMA);
+	config = kmalloc(cell_params.config_size, GFP_KERNEL | GFP_DMA);
 	if (!config)
 		return -ENOMEM;
 
-	if (copy_from_user(config, (void *)(unsigned long)cell.config_address,
-			   cell.config_size)) {
+	if (copy_from_user(config,
+			   (void *)(unsigned long)cell_params.config_address,
+			   cell_params.config_size)) {
 		err = -EFAULT;
 		goto kfree_config_out;
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	for (n = cell.num_preload_images; n > 0; n--, image++) {
+	for (n = cell_params.num_preload_images; n > 0; n--, image++) {
 		err = load_image(config, image);
 		if (err)
 			goto kfree_config_out;
@@ -396,19 +397,20 @@ kfree_config_out:
 static int jailhouse_cell_destroy(const char __user *arg)
 {
 	struct jailhouse_cell_desc *config;
-	struct jailhouse_cell cell;
+	struct jailhouse_cell cell_params;
 	unsigned int cpu;
 	int err;
 
-	if (copy_from_user(&cell, arg, sizeof(cell)))
+	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
 		return -EFAULT;
 
-	config = kmalloc(cell.config_size, GFP_KERNEL | GFP_DMA);
+	config = kmalloc(cell_params.config_size, GFP_KERNEL | GFP_DMA);
 	if (!config)
 		return -ENOMEM;
 
-	if (copy_from_user(config, (void *)(unsigned long)cell.config_address,
-			   cell.config_size)) {
+	if (copy_from_user(config,
+			   (void *)(unsigned long)cell_params.config_address,
+			   cell_params.config_size)) {
 		err = -EFAULT;
 		goto kfree_config_out;
 	}
