@@ -22,6 +22,8 @@ struct jailhouse_system *system_config;
 
 static DEFINE_SPINLOCK(shutdown_lock);
 
+#define for_each_cell(c)	for (c = &linux_cell; c; c = c->next)
+
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 {
 	do
@@ -54,7 +56,7 @@ static unsigned int get_free_cell_id(void)
 	struct cell *cell;
 
 retry:
-	for (cell = &linux_cell; cell; cell = cell->next)
+	for_each_cell(cell)
 		if (cell->id == id) {
 			id++;
 			goto retry;
@@ -102,7 +104,7 @@ static struct cell *cell_find(const char *name)
 {
 	struct cell *cell;
 
-	for (cell = &linux_cell; cell; cell = cell->next)
+	for_each_cell(cell)
 		if (strcmp(cell->config->name, name) == 0)
 			break;
 	return cell;
