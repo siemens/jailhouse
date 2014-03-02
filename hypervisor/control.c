@@ -153,36 +153,36 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			      cfg_header_size, mapping_addr,
 			      PAGE_READONLY_FLAGS, PAGE_MAP_NON_COHERENT);
 	if (err)
-		goto resume_out;
+		goto err_resume;
 
 	cfg = (struct jailhouse_cell_desc *)(mapping_addr +
 					     (config_address & ~PAGE_MASK));
 	cfg_total_size = jailhouse_cell_config_size(cfg);
 	if (cfg_total_size > NUM_TEMPORARY_PAGES * PAGE_SIZE) {
 		err = -E2BIG;
-		goto resume_out;
+		goto err_resume;
 	}
 
 	if (cell_find(cfg->name)) {
 		err = -EEXIST;
-		goto resume_out;
+		goto err_resume;
 	}
 
 	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
 			      cfg_total_size, mapping_addr,
 			      PAGE_READONLY_FLAGS, PAGE_MAP_NON_COHERENT);
 	if (err)
-		goto resume_out;
+		goto err_resume;
 
 	err = check_mem_regions(cfg);
 	if (err)
-		goto resume_out;
+		goto err_resume;
 
 	cell_pages = PAGE_ALIGN(sizeof(*cell) + cfg_total_size) / PAGE_SIZE;
 	cell = page_alloc(&mem_pool, cell_pages);
 	if (!cell) {
 		err = -ENOMEM;
-		goto resume_out;
+		goto err_resume;
 	}
 
 	cell->data_pages = cell_pages;
@@ -237,10 +237,9 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	for_each_cpu(cpu, cell->cpu_set)
 		arch_reset_cpu(cpu);
 
-resume_out:
 	cell_resume(cpu_data);
 
-	return err;
+	return cell->id;
 
 err_restore_cpu_set:
 	for_each_cpu(cpu, cell->cpu_set)
@@ -249,7 +248,11 @@ err_free_cpu_set:
 	destroy_cpu_set(cell);
 err_free_cell:
 	page_free(&mem_pool, cell, cell_pages);
-	goto resume_out;
+
+err_resume:
+	cell_resume(cpu_data);
+
+	return err;
 }
 
 static bool cell_shutdown_ok(struct cell *cell)
@@ -314,14 +317,11 @@ static void remap_to_linux(const struct jailhouse_memory *mem)
 	}
 }
 
-int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
+int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 {
-	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
 	const struct jailhouse_memory *mem;
 	struct cell *cell, *previous;
-	unsigned long name_size;
 	unsigned int cpu, n;
-	const char *name;
 	int err = 0;
 
 	/* We do not support destruction over non-Linux cells so far. */
@@ -330,17 +330,9 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 
 	cell_suspend(&linux_cell, cpu_data);
 
-	name_size = (name_address & ~PAGE_MASK) + JAILHOUSE_CELL_NAME_MAXLEN;
-
-	err = page_map_create(&hv_paging_structs, name_address & PAGE_MASK,
-			      name_size, mapping_addr, PAGE_READONLY_FLAGS,
-			      PAGE_MAP_NON_COHERENT);
-	if (err)
-		goto resume_out;
-
-	name = (const char *)(mapping_addr + (name_address & ~PAGE_MASK));
-
-	cell = cell_find(name);
+	for_each_cell(cell)
+		if (cell->id == id)
+			break;
 	if (!cell) {
 		err = -ENOENT;
 		goto resume_out;
@@ -359,7 +351,7 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address)
 
 	cell_suspend(cell, cpu_data);
 
-	printk("Closing cell \"%s\"\n", name);
+	printk("Closing cell \"%s\"\n", cell->config->name);
 
 	for_each_cpu(cpu, cell->cpu_set) {
 		printk(" Parking CPU %d\n", cpu);

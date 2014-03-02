@@ -38,7 +38,7 @@ int check_mem_regions(const struct jailhouse_cell_desc *config);
 int cell_init(struct cell *cell, bool copy_cpu_set);
 
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address);
-int cell_destroy(struct per_cpu *cpu_data, unsigned long name_address);
+int cell_destroy(struct per_cpu *cpu_data, unsigned long id);
 
 int shutdown(struct per_cpu *cpu_data);
 

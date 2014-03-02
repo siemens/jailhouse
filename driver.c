@@ -45,6 +45,7 @@
 struct cell {
 	struct kobject kobj;
 	struct list_head entry;
+	unsigned int id;
 };
 
 MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
@@ -256,6 +257,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	release_firmware(hypervisor);
 
 	enabled = true;
+	root_cell->id = 0;
 	register_cell(root_cell);
 
 	mutex_unlock(&lock);
@@ -406,7 +408,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	struct jailhouse_cell_desc *config;
 	unsigned int cpu, n;
 	struct cell *cell;
-	int err;
+	int id, err;
 
 	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
 		return -EFAULT;
@@ -458,10 +460,13 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 			cpu_set(cpu, offlined_cpus);
 		}
 
-	err = jailhouse_call1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
-	if (err)
+	id = jailhouse_call1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
+	if (id < 0) {
+		err = id;
 		goto error_cpu_online;
+	}
 
+	cell->id = id;
 	register_cell(cell);
 
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
@@ -521,7 +526,7 @@ static int jailhouse_cell_destroy(const char __user *arg)
 		goto unlock_out;
 	}
 
-	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, __pa(config->name));
+	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, cell->id);
 	if (err)
 		goto unlock_out;
 
