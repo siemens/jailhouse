@@ -100,16 +100,6 @@ static void destroy_cpu_set(struct cell *cell)
 		page_free(&mem_pool, cell->cpu_set, 1);
 }
 
-static struct cell *cell_find(const char *name)
-{
-	struct cell *cell;
-
-	for_each_cell(cell)
-		if (strcmp(cell->config->name, name) == 0)
-			break;
-	return cell;
-}
-
 int check_mem_regions(const struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
@@ -163,10 +153,11 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_resume;
 	}
 
-	if (cell_find(cfg->name)) {
-		err = -EEXIST;
-		goto err_resume;
-	}
+	for_each_cell(cell)
+		if (strcmp(cell->config->name, cfg->name) == 0) {
+			err = -EEXIST;
+			goto err_resume;
+		}
 
 	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
 			      cfg_total_size, mapping_addr,
