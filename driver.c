@@ -405,9 +405,10 @@ static int jailhouse_cell_destroy(const char __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-
-	if (mutex_lock_interruptible(&lock) != 0)
-		return -EINTR;
+	if (mutex_lock_interruptible(&lock) != 0) {
+		err = -EINTR;
+		goto kfree_config_out;
+	}
 
 	if (!enabled) {
 		err = -EINVAL;
