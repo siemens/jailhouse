@@ -232,8 +232,8 @@ static int jailhouse_disable(void)
 		return -EINTR;
 
 	if (!enabled) {
-		mutex_unlock(&lock);
-		return -EINVAL;
+		err = -EINVAL;
+		goto unlock_out;
 	}
 
 	error_code = 0;
