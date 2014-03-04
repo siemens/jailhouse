@@ -474,7 +474,20 @@ void panic_stop(struct per_cpu *cpu_data)
 
 void panic_halt(struct per_cpu *cpu_data)
 {
+	struct cell *cell = cpu_data->cell;
+	bool cell_failed = true;
+	unsigned int cpu;
+
 	panic_printk("Parking CPU %d\n", cpu_data->cpu_id);
+
+	cpu_data->failed = true;
+	for_each_cpu(cpu, cell->cpu_set)
+		if (!per_cpu(cpu)->failed) {
+			cell_failed = false;
+			break;
+		}
+	if (cell_failed)
+		cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_FAILED;
 
 	arch_panic_halt(cpu_data);
 
