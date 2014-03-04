@@ -38,6 +38,38 @@
 #define DEVICE_ATTR_RO(_name) \
 	struct device_attribute dev_attr_##_name = __ATTR_RO(_name)
 #endif /* < 3.11 */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,14,0)
+static ssize_t kobj_attr_show(struct kobject *kobj, struct attribute *attr,
+			      char *buf)
+{
+	struct kobj_attribute *kattr;
+	ssize_t ret = -EIO;
+
+	kattr = container_of(attr, struct kobj_attribute, attr);
+	if (kattr->show)
+		ret = kattr->show(kobj, kattr, buf);
+	return ret;
+}
+
+static ssize_t kobj_attr_store(struct kobject *kobj, struct attribute *attr,
+			       const char *buf, size_t count)
+{
+	struct kobj_attribute *kattr;
+	ssize_t ret = -EIO;
+
+	kattr = container_of(attr, struct kobj_attribute, attr);
+	if (kattr->store)
+		ret = kattr->store(kobj, kattr, buf, count);
+	return ret;
+}
+
+static const struct sysfs_ops cell_sysfs_ops = {
+	.show	= kobj_attr_show,
+	.store	= kobj_attr_store,
+};
+#define kobj_sysfs_ops cell_sysfs_ops
+#endif /* < 3.14 */
 /* End of compatibility section - remove as version become obsolete */
 
 #define JAILHOUSE_FW_NAME	"jailhouse.bin"
@@ -76,6 +108,21 @@ cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
 	     (cpu) = cell_cpumask_next((cpu), (config)),	\
 	     (cpu) < (config)->cpu_set_size * 8;)
 
+static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
+		       char *buffer)
+{
+	struct cell *cell = container_of(kobj, struct cell, kobj);
+
+	return sprintf(buffer, "%u\n", cell->id);
+}
+
+static struct kobj_attribute cell_id_attr = __ATTR_RO(id);
+
+static struct attribute *cell_attrs[] = {
+	&cell_id_attr.attr,
+	NULL,
+};
+
 static void cell_kobj_release(struct kobject *kobj)
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
@@ -85,6 +132,8 @@ static void cell_kobj_release(struct kobject *kobj)
 
 static struct kobj_type cell_type = {
 	.release = cell_kobj_release,
+	.sysfs_ops = &kobj_sysfs_ops,
+	.default_attrs = cell_attrs,
 };
 
 static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
