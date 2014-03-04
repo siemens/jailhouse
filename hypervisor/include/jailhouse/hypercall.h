@@ -27,7 +27,7 @@
 #define JAILHOUSE_MSG_SHUTDOWN_DENIED		1
 #define JAILHOUSE_MSG_SHUTDOWN_OK		2
 
-/* cell status, initialized by hypervisor, updated by cell */
+/* cell state, initialized by hypervisor, updated by cell */
 #define JAILHOUSE_CELL_RUNNING			0
 #define JAILHOUSE_CELL_SHUT_DOWN		1 /* terminal state */
 #define JAILHOUSE_CELL_FAILED			2 /* terminal state */
@@ -36,7 +36,7 @@ struct jailhouse_comm_region {
 	volatile __u32 msg_to_cell;
 	volatile __u32 reply_from_cell;
 
-	volatile __u32 cell_status;
+	volatile __u32 cell_state;
 
 	/* errors etc. */
 };

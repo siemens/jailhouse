@@ -179,7 +179,7 @@ Communication region layout
         +------------------------------+
         |  Message from Cell (32 bit)  |
         +------------------------------+
-        |     Cell Status (32 bit)     |
+        |     Cell State (32 bit)      |
         +------------------------------+ - higher address
 
 All fields use the native endianness of the system.
@@ -227,10 +227,10 @@ Note: The hypervisor does not request shutdown permission from a cell if that
       "Failed" (see below).
 
 
-Logical Channel "Cell Status"
+Logical Channel "Cell State"
 - - - - - - - - - - - - - - -
 
-The cell status field provides the second logical channel. On cell startup, it
+The cell state field provides the second logical channel. On cell startup, it
 is initialized by the hypervisor to the state "Running". From then on, the
 field becomes conceptually read-only for the hypervisor and will just be
 updated by the cell itself. The following states are defined:

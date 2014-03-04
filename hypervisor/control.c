@@ -249,7 +249,7 @@ err_resume:
 static bool cell_shutdown_ok(struct cell *cell)
 {
 	volatile u32 *reply = &cell->comm_page.comm_region.reply_from_cell;
-	volatile u32 *cell_status = &cell->comm_page.comm_region.cell_status;
+	volatile u32 *cell_state = &cell->comm_page.comm_region.cell_state;
 
 	if (cell->config->flags & JAILHOUSE_CELL_UNMANAGED_EXIT)
 		return true;
@@ -259,8 +259,8 @@ static bool cell_shutdown_ok(struct cell *cell)
 
 	while (*reply != JAILHOUSE_MSG_SHUTDOWN_DENIED) {
 		if (*reply == JAILHOUSE_MSG_SHUTDOWN_OK ||
-		    *cell_status == JAILHOUSE_CELL_SHUT_DOWN ||
-		    *cell_status == JAILHOUSE_CELL_FAILED)
+		    *cell_state == JAILHOUSE_CELL_SHUT_DOWN ||
+		    *cell_state == JAILHOUSE_CELL_FAILED)
 			return true;
 		cpu_relax();
 	}
@@ -384,13 +384,13 @@ int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 
 	for_each_cell(cell)
 		if (cell->id == id) {
-			u32 status = cell->comm_page.comm_region.cell_status;
+			u32 state = cell->comm_page.comm_region.cell_state;
 
-			switch (status) {
+			switch (state) {
 			case JAILHOUSE_CELL_RUNNING:
 			case JAILHOUSE_CELL_SHUT_DOWN:
 			case JAILHOUSE_CELL_FAILED:
-				return status;
+				return state;
 			default:
 				return -EINVAL;
 			}
