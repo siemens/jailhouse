@@ -56,7 +56,7 @@ arch_entry:
 .macro common_exception_entry vector
 	pushq $\vector
 	mov %rsp,%rdi
-	call exception_handler
+	call x86_exception_handler
 1:	jmp 1b
 .endm
 

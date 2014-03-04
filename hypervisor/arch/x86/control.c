@@ -11,10 +11,22 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/printk.h>
+#include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/control.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
+
+struct exception_frame {
+	u64 vector;
+	u64 error;
+	u64 rip;
+	u64 cs;
+	u64 flags;
+	u64 rsp;
+	u64 ss;
+};
 
 /* all cell CPUs (except cpu_data) have to be stopped */
 static void flush_linux_cpu_caches(struct per_cpu *cpu_data)
@@ -217,6 +229,19 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	spin_unlock(&cpu_data->control_lock);
 
 	return sipi_vector;
+}
+
+void x86_exception_handler(struct exception_frame *frame)
+{
+	panic_printk("FATAL: Jailhouse triggered exception #%d\n",
+		     frame->vector);
+	if (frame->error != -1)
+		panic_printk("Error code: %x\n", frame->error);
+	panic_printk("Physical CPU ID: %d\n", phys_processor_id());
+	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", frame->rip, frame->rsp,
+		     frame->flags);
+
+	panic_stop(NULL);
 }
 
 void arch_panic_stop(struct per_cpu *cpu_data)
