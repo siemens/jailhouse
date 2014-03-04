@@ -375,6 +375,29 @@ resume_out:
 	return err;
 }
 
+int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
+{
+	struct cell *cell;
+
+	if (cpu_data->cell != &linux_cell)
+		return -EPERM;
+
+	for_each_cell(cell)
+		if (cell->id == id) {
+			u32 status = cell->comm_page.comm_region.cell_status;
+
+			switch (status) {
+			case JAILHOUSE_CELL_RUNNING:
+			case JAILHOUSE_CELL_SHUT_DOWN:
+			case JAILHOUSE_CELL_FAILED:
+				return status;
+			default:
+				return -EINVAL;
+			}
+		}
+	return -ENOENT;
+}
+
 int shutdown(struct per_cpu *cpu_data)
 {
 	unsigned int this_cpu = cpu_data->cpu_id;

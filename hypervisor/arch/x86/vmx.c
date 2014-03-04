@@ -895,6 +895,9 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 	case JAILHOUSE_HC_CELL_DESTROY:
 		guest_regs->rax = cell_destroy(cpu_data, guest_regs->rdi);
 		break;
+	case JAILHOUSE_HC_CELL_GET_STATE:
+		guest_regs->rax = cell_get_state(cpu_data, guest_regs->rdi);
+		break;
 	default:
 		printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
 		       cpu_data->cpu_id, guest_regs->rax,

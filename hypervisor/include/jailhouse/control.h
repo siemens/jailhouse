@@ -39,6 +39,7 @@ int cell_init(struct cell *cell, bool copy_cpu_set);
 
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address);
 int cell_destroy(struct per_cpu *cpu_data, unsigned long id);
+int cell_get_state(struct per_cpu *cpu_data, unsigned long id);
 
 int shutdown(struct per_cpu *cpu_data);
 
