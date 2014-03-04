@@ -48,6 +48,7 @@ struct per_cpu {
 	bool flush_caches;
 	bool shutdown_cpu;
 	int shutdown_state;
+	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)

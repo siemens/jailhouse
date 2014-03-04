@@ -226,8 +226,10 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	page_map_dump_stats("after cell creation");
 
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, cell->cpu_set) {
+		per_cpu(cpu)->failed = false;
 		arch_reset_cpu(cpu);
+	}
 
 	cell_resume(cpu_data);
 
@@ -351,6 +353,7 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 
 		set_bit(cpu, linux_cell.cpu_set->bitmap);
 		per_cpu(cpu)->cell = &linux_cell;
+		per_cpu(cpu)->failed = false;
 	}
 
 	mem = jailhouse_cell_mem_regions(cell->config);

@@ -82,6 +82,7 @@ struct per_cpu {
 	bool flush_caches;
 	bool shutdown_cpu;
 	int shutdown_state;
+	bool failed;
 
 	struct vmcs vmxon_region __attribute__((aligned(PAGE_SIZE)));
 	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));

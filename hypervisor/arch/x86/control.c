@@ -214,8 +214,10 @@ int x86_handle_events(struct per_cpu *cpu_data)
 		cpu_data->cpu_stopped = false;
 
 		if (cpu_data->sipi_vector >= 0) {
-			cpu_data->wait_for_sipi = false;
-			sipi_vector = cpu_data->sipi_vector;
+			if (!cpu_data->failed) {
+				cpu_data->wait_for_sipi = false;
+				sipi_vector = cpu_data->sipi_vector;
+			}
 			cpu_data->sipi_vector = -1;
 		}
 	} while (cpu_data->init_signaled);
