@@ -116,10 +116,29 @@ static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
 	return sprintf(buffer, "%u\n", cell->id);
 }
 
+static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
+			  char *buffer)
+{
+	struct cell *cell = container_of(kobj, struct cell, kobj);
+
+	switch (jailhouse_call1(JAILHOUSE_HC_CELL_GET_STATE, cell->id)) {
+	case JAILHOUSE_CELL_RUNNING:
+		return sprintf(buffer, "running\n");
+	case JAILHOUSE_CELL_SHUT_DOWN:
+		return sprintf(buffer, "shut down\n");
+	case JAILHOUSE_CELL_FAILED:
+		return sprintf(buffer, "failed\n");
+	default:
+		return sprintf(buffer, "invalid\n");
+	}
+}
+
 static struct kobj_attribute cell_id_attr = __ATTR_RO(id);
+static struct kobj_attribute cell_state_attr = __ATTR_RO(state);
 
 static struct attribute *cell_attrs[] = {
 	&cell_id_attr.attr,
+	&cell_state_attr.attr,
 	NULL,
 };
 
