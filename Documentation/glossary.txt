@@ -1,0 +1,40 @@
+Glossary
+========
+
+Hypervisor
+----------
+System management software that runs at a higher privileged level than any
+operating system or application software. It furthermore defines if software
+at lower privilege levels has direct access to resources, if access should be
+denied or trapped and the hypervisor code invoked on such events.
+
+Hypervisor Mode
+---------------
+Execution mode of a CPU while executing hypervisor code.
+
+Guest Mode
+----------
+Execution mode of a CPU while executing an operating system or application
+software in an isolated environment under the control of the hypervisor.
+
+Cell
+----
+Protection domain for an operating systems with its application software in
+the context of Jailhouse. A cell is granted exclusive or intercepted and
+moderated access to system resources like CPUs, RAM or I/O devices.
+
+Root Cell
+---------
+The cell that contains the Linux system which originally started Jailhouse.
+The root cell cannot be destroyed, thus exists as long as Jailhouse is active.
+
+Non-Root Cell
+-------------
+Any cell started after the root cell under the control of Jailhouse. There can
+be as many non-root cells as required resources are available, Non-root cells
+can be destroyed under certain conditions while Jailhouse is running.
+
+Sysfs
+-----
+Linux filesystem that provides a means to export kernel data structures, their
+attributes, and the linkages between them to userspace.

@@ -1,0 +1,19 @@
+Sysfs Entries
+=============
+
+The following sysfs entries are provided by the Jailhouse Linux driver. These
+can be used for monitoring the state of the hypervisor and its cells.
+
+/sys/devices/jailhouse
+|-- enabled                 - 1 if Jailhouse is enabled, 0 otherwise
+|-- mem_pool_size           - number of pages in hypervisor memory pool
+|-- mem_pool_used           - used pages of hypervisor memory pool
+|-- remap_pool_size         - number of pages in hypervisor remapping pool
+|-- remap_pool_used         - used pages of hypervisor remapping pool
+`-- cells
+    |-- <name of cell>
+    |   |-- id              - unique numerical ID
+    |   |-- state           - "running", "shut down", or "failed"
+    |   |-- cpus_assigned   - bitmask of assigned logical CPUs
+    |   `-- cpus_failed     - bitmask of logical CPUs that caused a failure
+    `-- ...

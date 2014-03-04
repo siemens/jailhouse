@@ -2,10 +2,10 @@ Jailhouse Interface for Cells
 =============================
 
 The Jailhouse hypervisor provides two kinds of interfaces to interact with its
-cells during runtime. One is a set hypercalls cells can synchronously invoke by
-executing architecture specific instructions that switch to hypervisor mode.
-The interface consists of variables located in a per-cell memory region that is
-shared between hypervisor and that particular cell.
+cells during runtime. One is a set of hypercalls cells can synchronously invoke
+by executing architecture specific instructions that switch to hypervisor mode.
+The other interface consists of variables located in a per-cell memory region
+that is shared between hypervisor and that particular cell.
 
 
 Hypercalls
@@ -41,7 +41,9 @@ This hypercall can only be issued on CPUs belonging to the Linux cell.
 
 Arguments: none
 
-Return code: 0 on success, negative error code otherwise; possible errors are
+Return code: 0 on success, negative error code otherwise
+
+    Possible errors are:
         -EPERM  (-1) - hypercall was issued over a non-Linux cell or an active
                        cell rejected the shutdown request
 
@@ -52,7 +54,7 @@ Hypercall "Cell Create" (code 1)
 Creates a new cell according to the provided configuration, then set all
 cell CPUs to an architecture-specific reset state. At least one CPU will then
 execute the bootstrap code that must have been loaded into the cell's memory
-at the reset address before invoking this hypercall. See cell-development.txt
+at the reset address before invoking this hypercall. See cell-environments.txt
 for details on the reset state of cell CPUs.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
@@ -60,13 +62,15 @@ This hypercall can only be issued on CPUs belonging to the Linux cell.
 Arguments: 1. Guest-physical address of cell configuration (see
               configuration-format.txt for details)
 
-Return code: 0 on success, negative error code otherwise; possible errors are
-        -EPERM  (-1)  - hypercall was issued over a non-Linux cell or an active
+Return code: positive cell ID or negative error code
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell or an active
                         cell denied system reconfiguration
         -E2BIG  (-7)  - configuration data too large to process
         -ENOMEM (-12) - insufficient hypervisor-internal memory
         -EBUSY  (-16) - a resource of the new cell is already in use by another
-                        non-Linux cell, or the caller's CPU is supposed to be
+                        non-root cell, or the caller's CPU is supposed to be
                         given to the new cell
         -EEXIST (-17) - a cell with the given name already exists
         -EINVAL (-22) - incorrect or inconsistent configuration data
@@ -75,22 +79,86 @@ Return code: 0 on success, negative error code otherwise; possible errors are
 Hypercall "Cell Destroy" (code 2)
 - - - - - - - - - - - - - - - - -
 
-Destroys the cell of the provided name, returning its resources to the Linux
-cell if they are part of the system configuration, i.e. belonged to Linux
-directly after hypervisor start.
+Destroys the cell of the provided name, returning its resources to the root
+cell if they are part of the system configuration, i.e. belonged to the root
+cell directly after hypervisor start.
 
-This hypercall can only be issued on CPUs belonging to the Linux cell.
+This hypercall can only be issued on CPUs belonging to the root cell.
 
-Arguments: 1. Guest-physical address of 0-terminated cell name string
+Arguments: 1. ID of cell to be destroyed
 
-Return code: 0 on success, negative error code otherwise; possible errors are
-        -EPERM  (-1)  - hypercall was issued over a non-Linux cell, the target
+Return code: 0 on success, negative error code otherwise
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell, the target
                         cell rejected the destruction request or another active
                         cell denied system reconfiguration
-        -ENOENT (-2)  - cell with provided name does not exist
+        -ENOENT (-2)  - cell with provided ID does not exist
         -ENOMEM (-12) - insufficient hypervisor-internal memory for
                         reconfiguration
-        -EINVAL (-22) - Linux cell specified, which cannot be destroyed
+        -EINVAL (-22) - root cell specified, which cannot be destroyed
+
+Note: The root cell uses ID 0. Passing this ID to "Cell Destroy" is illegal.
+
+
+Hypercall "Hypervisor Get Info" (code 3)
+- - - - - - - - - - - - - - - - - - - - -
+
+Obtain information about specific hypervisor states.
+
+This hypercall can only be issued on CPUs belonging to the root cell.
+
+Arguments: 1. Information type:
+        0 - number of pages in hypervisor memory pool
+        1 - used pages of hypervisor memory pool
+        2 - number of pages in hypervisor remapping pool
+        3 - used pages of hypervisor remapping pool
+
+Return code: requested value (>=0) or negative error code
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell
+        -EINVAL (-22) - invalid information type
+
+
+Hypercall "Cell Get State" (code 4)
+- - - - - - - - - - - - - - - - - -
+
+Obtain information about the state of a specific cell.
+
+Arguments: 1. ID of cell to be queried
+
+This hypercall can only be issued on CPUs belonging to the root cell.
+
+Return code: cell state (>=0) or negative error code
+
+    Valid cell states are:
+        0 - Running
+        1 - Shut down
+        2 - Failed
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell
+        -EINVAL (-22) - cell state is invalid
+
+
+Hypercall "CPU Get State" (code 5)
+- - - - - - - - - - - - - - - - - -
+
+Obtain information about the state of a specific CPU.
+
+Arguments: 1. logical ID of CPU to be queried
+
+Return code: CPU state (>=0) or negative error code
+
+    Possible CPU states are:
+        0 - Running
+        2 - Failed
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell and the CPU
+                        does not belong to the issuing cell
+        -EINVAL (-22) - invalid CPU ID
 
 
 Communication Region
@@ -99,7 +167,7 @@ Communication Region
 The communication region is a per-cell shared memory area that both the
 hypervisor and the particular cell can read from and write to. It is an
 optional communication mechanism. If the region shall be used by a cell, it
-has to be mapped into the cell's address space via the its configuration (see
+has to be mapped into the cell's address space via its configuration (see
 configuration-format.txt for details).
 
 
@@ -113,6 +181,8 @@ Communication region layout
         +------------------------------+
         |     Cell Status (32 bit)     |
         +------------------------------+ - higher address
+
+All fields use the native endianness of the system.
 
 
 Logical Channel "Message"
@@ -136,10 +206,10 @@ Write ordering of all updates has to be ensured by both the hypervisor
 and the cell according to the requirements of the hardware architecture.
 
 The hypervisor may wait for a message reply by spinning until the "Message from
-Cell" becomes non-zero. Therefore, a cell should check for pending messages
-periodically and answer them as soon as possible. The hypervisor will not use
-a CPU assigned to non-Linux cell to wait for message replies, but long message
-responds times may still affect the Linux cell negatively.
+Cell" field becomes non-zero. Therefore, a cell should check for pending
+messages periodically and answer them as soon as possible. The hypervisor will
+not use a CPU assigned to non-root cell to wait for message replies, but long
+message responds times may still affect the root cell negatively.
 
 The following messages and corresponding replies are defined:
 
@@ -147,8 +217,9 @@ The following messages and corresponding replies are defined:
         The cell is supposed to be shut down, either to destroy only the cell
         itself or to disable the hypervisor completely.
 
-  Possible replies: 1 - Shutdown denied
-                    2 - Shutdown OK
+   Possible replies:
+        1 - Shutdown denied
+        2 - Shutdown OK
 
 Note: The hypervisor does not request shutdown permission from a cell if that
       cell has the "Unmanaged Exit" flag set in its configuration (see also
