@@ -163,7 +163,7 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 }
 
 /* control_lock has to be held */
-void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
+static void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
 {
 	cpu_data->init_signaled = false;
 	cpu_data->wait_for_sipi = true;
@@ -217,4 +217,17 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	spin_unlock(&cpu_data->control_lock);
 
 	return sipi_vector;
+}
+
+void arch_panic_stop(struct per_cpu *cpu_data)
+{
+	asm volatile("1: hlt; jmp 1b");
+	__builtin_unreachable();
+}
+
+void arch_panic_halt(struct per_cpu *cpu_data)
+{
+	spin_lock(&cpu_data->control_lock);
+	x86_enter_wait_for_sipi(cpu_data);
+	spin_unlock(&cpu_data->control_lock);
 }

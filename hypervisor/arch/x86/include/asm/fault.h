@@ -10,12 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
-
 struct exception_frame;
 
 void __attribute__((noreturn))
 exception_handler(struct exception_frame *frame);
-
-void __attribute__((noreturn)) panic_stop(struct per_cpu *cpu_data);
-void panic_halt(struct per_cpu *cpu_data);

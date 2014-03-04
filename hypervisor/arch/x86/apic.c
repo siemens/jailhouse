@@ -18,7 +18,6 @@
 #include <asm/apic.h>
 #include <asm/bitops.h>
 #include <asm/control.h>
-#include <asm/fault.h>
 #include <asm/vmx.h>
 
 #define XAPIC_REG(x2apic_reg)		((x2apic_reg) << 4)

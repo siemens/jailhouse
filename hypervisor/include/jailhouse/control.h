@@ -43,6 +43,9 @@ int cell_get_state(struct per_cpu *cpu_data, unsigned long id);
 
 int shutdown(struct per_cpu *cpu_data);
 
+void __attribute__((noreturn)) panic_stop(struct per_cpu *cpu_data);
+void panic_halt(struct per_cpu *cpu_data);
+
 void arch_suspend_cpu(unsigned int cpu_id);
 void arch_resume_cpu(unsigned int cpu_id);
 void arch_reset_cpu(unsigned int cpu_id);
@@ -58,3 +61,6 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell);
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell);
 
 void arch_shutdown(void);
+
+void __attribute__((noreturn)) arch_panic_stop(struct per_cpu *cpu_data);
+void arch_panic_halt(struct per_cpu *cpu_data);

@@ -14,6 +14,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
@@ -451,4 +452,29 @@ int shutdown(struct per_cpu *cpu_data)
 	spin_unlock(&shutdown_lock);
 
 	return ret;
+}
+
+void panic_stop(struct per_cpu *cpu_data)
+{
+	panic_printk("Stopping CPU");
+	if (cpu_data) {
+		panic_printk(" %d", cpu_data->cpu_id);
+		cpu_data->cpu_stopped = true;
+	}
+	panic_printk("\n");
+
+	if (phys_processor_id() == panic_cpu)
+		panic_in_progress = 0;
+
+	arch_panic_stop(cpu_data);
+}
+
+void panic_halt(struct per_cpu *cpu_data)
+{
+	panic_printk("Parking CPU %d\n", cpu_data->cpu_id);
+
+	arch_panic_halt(cpu_data);
+
+	if (phys_processor_id() == panic_cpu)
+		panic_in_progress = 0;
 }

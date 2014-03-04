@@ -19,7 +19,6 @@
 #include <jailhouse/hypercall.h>
 #include <asm/apic.h>
 #include <asm/control.h>
-#include <asm/fault.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
