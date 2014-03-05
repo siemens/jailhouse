@@ -894,6 +894,10 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 	case JAILHOUSE_HC_CELL_DESTROY:
 		guest_regs->rax = cell_destroy(cpu_data, guest_regs->rdi);
 		break;
+	case JAILHOUSE_HC_HYPERVISOR_GET_INFO:
+		guest_regs->rax = hypervisor_get_info(cpu_data,
+						      guest_regs->rdi);
+		break;
 	case JAILHOUSE_HC_CELL_GET_STATE:
 		guest_regs->rax = cell_get_state(cpu_data, guest_regs->rdi);
 		break;

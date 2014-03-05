@@ -466,6 +466,25 @@ int shutdown(struct per_cpu *cpu_data)
 	return ret;
 }
 
+long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
+{
+	if (cpu_data->cell != &linux_cell)
+		return -EPERM;
+
+	switch (type) {
+	case JAILHOUSE_INFO_MEM_POOL_SIZE:
+		return mem_pool.pages;
+	case JAILHOUSE_INFO_MEM_POOL_USED:
+		return mem_pool.used_pages;
+	case JAILHOUSE_INFO_REMAP_POOL_SIZE:
+		return remap_pool.pages;
+	case JAILHOUSE_INFO_REMAP_POOL_USED:
+		return remap_pool.used_pages;
+	default:
+		return -EINVAL;
+	}
+}
+
 int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 {
 	if (!cpu_id_valid(cpu_id))

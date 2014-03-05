@@ -45,6 +45,8 @@ int cell_get_state(struct per_cpu *cpu_data, unsigned long id);
 
 int shutdown(struct per_cpu *cpu_data);
 
+long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type);
+
 int cpu_get_state(struct per_cpu *cpu_data, unsigned long id);
 
 void __attribute__((noreturn)) panic_stop(struct per_cpu *cpu_data);
