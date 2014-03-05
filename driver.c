@@ -146,15 +146,41 @@ static ssize_t cpus_assigned_show(struct kobject *kobj,
 	return written;
 }
 
+static ssize_t cpus_failed_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	struct cell *cell = container_of(kobj, struct cell, kobj);
+	cpumask_var_t cpus_failed;
+	unsigned int cpu;
+	int written;
+
+	if (!zalloc_cpumask_var(&cpus_failed, GFP_KERNEL))
+		return -ENOMEM;
+
+	for_each_cpu_mask(cpu, cell->cpus_assigned)
+		if (jailhouse_call1(JAILHOUSE_HC_CPU_GET_STATE, cpu) ==
+		    JAILHOUSE_CPU_FAILED)
+			cpu_set(cpu, *cpus_failed);
+
+	written = cpumask_scnprintf(buf, PAGE_SIZE, cpus_failed);
+	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");
+
+	free_cpumask_var(cpus_failed);
+
+	return written;
+}
+
 static struct kobj_attribute cell_id_attr = __ATTR_RO(id);
 static struct kobj_attribute cell_state_attr = __ATTR_RO(state);
 static struct kobj_attribute cell_cpus_assigned_attr =
 	__ATTR_RO(cpus_assigned);
+static struct kobj_attribute cell_cpus_failed_attr = __ATTR_RO(cpus_failed);
 
 static struct attribute *cell_attrs[] = {
 	&cell_id_attr.attr,
 	&cell_state_attr.attr,
 	&cell_cpus_assigned_attr.attr,
+	&cell_cpus_failed_attr.attr,
 	NULL,
 };
 
