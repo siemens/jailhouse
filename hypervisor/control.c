@@ -34,6 +34,15 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 	return cpu;
 }
 
+bool cpu_id_valid(unsigned long cpu_id)
+{
+	const unsigned long *system_cpu_set =
+		jailhouse_cell_cpu_set(&system_config->system);
+
+	return (cpu_id < system_config->system.cpu_set_size * 8 &&
+		test_bit(cpu_id, system_cpu_set));
+}
+
 static void cell_suspend(struct cell *cell, struct per_cpu *cpu_data)
 {
 	unsigned int cpu;

@@ -32,13 +32,8 @@ static volatile int error;
 
 static int register_linux_cpu(struct per_cpu *cpu_data)
 {
-	const unsigned long *system_cpu_set =
-		jailhouse_cell_cpu_set(&system_config->system);
-
-	if (cpu_data->cpu_id >= system_config->system.cpu_set_size * 8 ||
-	    !test_bit(cpu_data->cpu_id, system_cpu_set))
+	if (!cpu_id_valid(cpu_data->cpu_id))
 		return -EINVAL;
-
 	cpu_data->cell = &linux_cell;
 	set_bit(cpu_data->cpu_id, linux_cell.cpu_set->bitmap);
 	return 0;
