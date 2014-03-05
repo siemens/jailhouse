@@ -733,10 +733,63 @@ static ssize_t enabled_show(struct device *dev, struct device_attribute *attr,
 	return sprintf(buffer, "%d\n", enabled);
 }
 
+static ssize_t info_show(struct device *dev, char *buffer, unsigned int type)
+{
+	ssize_t result;
+	long val = 0;
+
+	if (mutex_lock_interruptible(&lock) != 0)
+		return -EINTR;
+
+	if (enabled)
+		val = jailhouse_call1(JAILHOUSE_HC_HYPERVISOR_GET_INFO, type);
+	if (val >= 0)
+		result = sprintf(buffer, "%ld\n", val);
+	else
+		result = val;
+
+	mutex_unlock(&lock);
+	return result;
+}
+
+static ssize_t mem_pool_size_show(struct device *dev,
+				  struct device_attribute *attr, char *buffer)
+{
+	return info_show(dev, buffer, JAILHOUSE_INFO_MEM_POOL_SIZE);
+}
+
+static ssize_t mem_pool_used_show(struct device *dev,
+				  struct device_attribute *attr, char *buffer)
+{
+	return info_show(dev, buffer, JAILHOUSE_INFO_MEM_POOL_USED);
+}
+
+static ssize_t remap_pool_size_show(struct device *dev,
+				    struct device_attribute *attr,
+				    char *buffer)
+{
+	return info_show(dev, buffer, JAILHOUSE_INFO_REMAP_POOL_SIZE);
+}
+
+static ssize_t remap_pool_used_show(struct device *dev,
+				    struct device_attribute *attr,
+				    char *buffer)
+{
+	return info_show(dev, buffer, JAILHOUSE_INFO_REMAP_POOL_USED);
+}
+
 static DEVICE_ATTR_RO(enabled);
+static DEVICE_ATTR_RO(mem_pool_size);
+static DEVICE_ATTR_RO(mem_pool_used);
+static DEVICE_ATTR_RO(remap_pool_size);
+static DEVICE_ATTR_RO(remap_pool_used);
 
 static struct attribute *jailhouse_sysfs_entries[] = {
 	&dev_attr_enabled.attr,
+	&dev_attr_mem_pool_size.attr,
+	&dev_attr_mem_pool_used.attr,
+	&dev_attr_remap_pool_size.attr,
+	&dev_attr_remap_pool_used.attr,
 	NULL
 };
 
