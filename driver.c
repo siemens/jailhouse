@@ -78,6 +78,7 @@ struct cell {
 	struct kobject kobj;
 	struct list_head entry;
 	unsigned int id;
+	cpumask_t cpus_assigned;
 };
 
 MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
@@ -93,6 +94,7 @@ static cpumask_t offlined_cpus;
 static atomic_t call_done;
 static int error_code;
 static LIST_HEAD(cells);
+static struct cell *root_cell;
 static struct kobject *cells_dir;
 
 static inline unsigned int
@@ -133,12 +135,26 @@ static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
 	}
 }
 
+static ssize_t cpus_assigned_show(struct kobject *kobj,
+				  struct kobj_attribute *attr, char *buf)
+{
+	struct cell *cell = container_of(kobj, struct cell, kobj);
+	int written;
+
+	written = cpumask_scnprintf(buf, PAGE_SIZE, &cell->cpus_assigned);
+	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");
+	return written;
+}
+
 static struct kobj_attribute cell_id_attr = __ATTR_RO(id);
 static struct kobj_attribute cell_state_attr = __ATTR_RO(state);
+static struct kobj_attribute cell_cpus_assigned_attr =
+	__ATTR_RO(cpus_assigned);
 
 static struct attribute *cell_attrs[] = {
 	&cell_id_attr.attr,
 	&cell_state_attr.attr,
+	&cell_cpus_assigned_attr.attr,
 	NULL,
 };
 
@@ -158,11 +174,17 @@ static struct kobj_type cell_type = {
 static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 {
 	struct cell *cell;
+	unsigned int cpu;
 	int err;
 
 	cell = kzalloc(sizeof(*cell), GFP_KERNEL);
 	if (!cell)
 		return ERR_PTR(-ENOMEM);
+
+	for_each_cell_cpu(cpu, cell_desc) {
+		printk("set cpu %d\n", cpu);
+		cpu_set(cpu, cell->cpus_assigned);
+	}
 
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
 				   cell_desc->name);
@@ -238,10 +260,10 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 {
 	const struct firmware *hypervisor;
 	struct jailhouse_system config_header;
+	struct jailhouse_system *config;
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
 	unsigned long config_size;
-	struct cell *root_cell;
 	int err;
 
 	if (copy_from_user(&config_header, arg, sizeof(config_header)))
@@ -255,16 +277,11 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	if (enabled || !try_module_get(THIS_MODULE))
 		goto error_unlock;
 
-	root_cell = create_cell(&config_header.system);
-	err = -ENOMEM;
-	if (!root_cell)
-		goto error_put_module;
-
 	err = request_firmware(&hypervisor, JAILHOUSE_FW_NAME, jailhouse_dev);
 	if (err) {
 		pr_err("jailhouse: Missing hypervisor image %s\n",
 		       JAILHOUSE_FW_NAME);
-		goto error_free_cell;
+		goto error_put_module;
 	}
 
 	header = (struct jailhouse_header *)hypervisor->data;
@@ -298,11 +315,17 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		(unsigned long)hypervisor_mem - hv_mem->phys_start;
 	header->possible_cpus = num_possible_cpus();
 
-	if (copy_from_user(hypervisor_mem + hv_core_percpu_size, arg,
-			   config_size)) {
+	config = (struct jailhouse_system *)
+		(hypervisor_mem + hv_core_percpu_size);
+	if (copy_from_user(config, arg, config_size)) {
 		err = -EFAULT;
 		goto error_unmap;
 	}
+
+	root_cell = create_cell(&config->system);
+	err = -ENOMEM;
+	if (!root_cell)
+		goto error_unmap;
 
 	error_code = 0;
 
@@ -319,7 +342,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 
 	if (error_code) {
 		err = error_code;
-		goto error_unmap;
+		goto error_free_cell;
 	}
 
 	release_firmware(hypervisor);
@@ -334,14 +357,14 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 
 	return 0;
 
+error_free_cell:
+	kobject_put(&root_cell->kobj);
+
 error_unmap:
 	vunmap(hypervisor_mem);
 
 error_release_fw:
 	release_firmware(hypervisor);
-
-error_free_cell:
-	kobject_put(&root_cell->kobj);
 
 error_put_module:
 	module_put(THIS_MODULE);
@@ -526,6 +549,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 			if (err)
 				goto error_cpu_online;
 			cpu_set(cpu, offlined_cpus);
+			cpu_clear(cpu, root_cell->cpus_assigned);
 		}
 
 	id = jailhouse_call1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
@@ -606,6 +630,7 @@ static int jailhouse_cell_destroy(const char __user *arg)
 				pr_err("Jailhouse: failed to bring CPU %d "
 				       "back online\n", cpu);
 			cpu_clear(cpu, offlined_cpus);
+			cpu_set(cpu, root_cell->cpus_assigned);
 		}
 
 	pr_info("Destroyed Jailhouse cell \"%s\"\n", config->name);
