@@ -466,6 +466,20 @@ int shutdown(struct per_cpu *cpu_data)
 	return ret;
 }
 
+int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
+{
+	if (!cpu_id_valid(cpu_id))
+		return -EINVAL;
+
+	if (cpu_data->cell != &linux_cell &&
+	    (cpu_id > cpu_data->cell->cpu_set->max_cpu_id ||
+	     !test_bit(cpu_id, cpu_data->cell->cpu_set->bitmap)))
+		return -EPERM;
+
+	return per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
+		JAILHOUSE_CPU_RUNNING;
+}
+
 void panic_stop(struct per_cpu *cpu_data)
 {
 	panic_printk("Stopping CPU");

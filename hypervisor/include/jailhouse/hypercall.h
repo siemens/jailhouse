@@ -17,6 +17,11 @@
 #define JAILHOUSE_HC_CELL_CREATE		1
 #define JAILHOUSE_HC_CELL_DESTROY		2
 #define JAILHOUSE_HC_CELL_GET_STATE		4
+#define JAILHOUSE_HC_CPU_GET_STATE		5
+
+/* CPU state */
+#define JAILHOUSE_CPU_RUNNING			0
+#define JAILHOUSE_CPU_FAILED			2 /* terminal state */
 
 #define JAILHOUSE_MSG_NONE			0
 
