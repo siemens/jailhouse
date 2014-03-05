@@ -2,10 +2,11 @@ Jailhouse Interface for Cells
 =============================
 
 The Jailhouse hypervisor provides two kinds of interfaces to interact with its
-cells during runtime. One is a set of hypercalls cells can synchronously invoke
-by executing architecture specific instructions that switch to hypervisor mode.
-The other interface consists of variables located in a per-cell memory region
-that is shared between hypervisor and that particular cell.
+cells during runtime. One is a set of hypercalls which cells can be invoked
+synchronously by executing architecture specific instructions that switch to
+hypervisor mode. The other interface consists of variables located in a
+per-cell memory region that is shared between hypervisor and that particular
+cell.
 
 
 Hypercalls
@@ -223,7 +224,7 @@ The following messages and corresponding replies are defined:
 
 Note: The hypervisor does not request shutdown permission from a cell if that
       cell has the "Unmanaged Exit" flag set in its configuration (see also
-      configuration-format.txt) or if the cell status is set to "Shut Down" or
+      configuration-format.txt) or if the cell state is set to "Shut Down" or
       "Failed" (see below).
 
 
