@@ -20,8 +20,8 @@ a similar channel. Details of the hypercall ABI are architecture specific and
 will be defined in the following.
 
 
-Intel x86-64 ABI
-- - - - - - - -
+Intel x86-64 (IA-32e) ABI
+- - - - - - - - - - - - -
 
 Instruction:    vmcall
 Hypercall code: RAX
