@@ -3,7 +3,7 @@ Things to be addressed, at some point. Unsorted, unprioritized, incomplete.
 o x86 support
  - interrupt remapping support
  - PCI resource access control
-  - bus scanning?
+  - enable bus scans, masking out devices of other cells
   - config space
  - AMD (SVM)?
 o ARM support
@@ -15,9 +15,6 @@ o configuration
  - review of format, rework of textual representation
  - platform device assignment
  - create base configuration from knowledge base and running system
-o rework paging mechanism
- - add all required x86 paging modes (32-bit, PAE etc.)
- - adjust MMIO to use correct paging mode
 o setup validation
  - check integrity of configurations
  - check integrity of runtime environment (hypervisor core & page_pool,
@@ -41,3 +38,6 @@ o hardware error handling
  - MCEs
  - PCI AER
  - ...
+o monitoring
+ - report error-triggering devices behind IOMMUs via sysfs
+ - hypervisor console via debugfs?
