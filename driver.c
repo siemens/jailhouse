@@ -207,10 +207,8 @@ static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 	if (!cell)
 		return ERR_PTR(-ENOMEM);
 
-	for_each_cell_cpu(cpu, cell_desc) {
-		printk("set cpu %d\n", cpu);
+	for_each_cell_cpu(cpu, cell_desc)
 		cpu_set(cpu, cell->cpus_assigned);
-	}
 
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
 				   cell_desc->name);
