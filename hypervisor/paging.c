@@ -330,16 +330,17 @@ int paging_init(void)
 	unsigned long n;
 	int err;
 
-	mem_pool.pages = (hypervisor_header.size -
-		(__page_pool - (u8 *)&hypervisor_header)) / PAGE_SIZE;
 	per_cpu_pages = hypervisor_header.possible_cpus *
 		sizeof(struct per_cpu) / PAGE_SIZE;
-	bitmap_pages = (mem_pool.pages + BITS_PER_PAGE - 1) / BITS_PER_PAGE;
 
 	system_config = (struct jailhouse_system *)
 		(__page_pool + per_cpu_pages * PAGE_SIZE);
 	config_pages = (jailhouse_system_config_size(system_config) +
 			PAGE_SIZE - 1) / PAGE_SIZE;
+
+	mem_pool.pages = (system_config->hypervisor_memory.size -
+		(__page_pool - (u8 *)&hypervisor_header)) / PAGE_SIZE;
+	bitmap_pages = (mem_pool.pages + BITS_PER_PAGE - 1) / BITS_PER_PAGE;
 
 	if (mem_pool.pages <= per_cpu_pages + config_pages + bitmap_pages)
 		goto error_nomem;
@@ -369,7 +370,7 @@ int paging_init(void)
 	/* Replicate hypervisor mapping of Linux */
 	err = page_map_create(&hv_paging_structs,
 			      page_map_hvirt2phys(&hypervisor_header),
-			      hypervisor_header.size,
+			      system_config->hypervisor_memory.size,
 			      (unsigned long)&hypervisor_header,
 			      PAGE_DEFAULT_FLAGS, PAGE_MAP_NON_COHERENT);
 	if (err)

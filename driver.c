@@ -335,7 +335,6 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	       hv_mem->size - hypervisor->size);
 
 	header = (struct jailhouse_header *)hypervisor_mem;
-	header->size = hv_mem->size;
 	header->page_offset =
 		(unsigned long)hypervisor_mem - hv_mem->phys_start;
 	header->possible_cpus = num_possible_cpus();
