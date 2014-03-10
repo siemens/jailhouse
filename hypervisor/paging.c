@@ -24,6 +24,8 @@
 
 extern u8 __page_pool[];
 
+unsigned long page_offset;
+
 struct page_pool mem_pool;
 struct page_pool remap_pool = {
 	.base_address = (void *)REMAP_BASE,
@@ -337,6 +339,9 @@ int paging_init(void)
 		(__page_pool + per_cpu_pages * PAGE_SIZE);
 	config_pages = (jailhouse_system_config_size(system_config) +
 			PAGE_SIZE - 1) / PAGE_SIZE;
+
+	page_offset = JAILHOUSE_BASE -
+		system_config->hypervisor_memory.phys_start;
 
 	mem_pool.pages = (system_config->hypervisor_memory.size -
 		(__page_pool - (u8 *)&hypervisor_header)) / PAGE_SIZE;

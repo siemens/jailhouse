@@ -85,6 +85,8 @@ struct guest_paging_structures {
 
 #include <asm/paging_modes.h>
 
+extern unsigned long page_offset;
+
 extern struct page_pool mem_pool;
 extern struct page_pool remap_pool;
 
@@ -97,12 +99,12 @@ void page_free(struct page_pool *pool, void *first_page, unsigned int num);
 
 static inline unsigned long page_map_hvirt2phys(const void *hvirt)
 {
-	return (unsigned long)hvirt - hypervisor_header.page_offset;
+	return (unsigned long)hvirt - page_offset;
 }
 
 static inline void *page_map_phys2hvirt(unsigned long phys)
 {
-	return (void *)phys + hypervisor_header.page_offset;
+	return (void *)phys + page_offset;
 }
 
 unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,

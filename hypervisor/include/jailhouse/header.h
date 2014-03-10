@@ -20,7 +20,6 @@ struct jailhouse_header {
 	int (*entry)(unsigned int);
 
 	/* filled by loader */
-	unsigned long page_offset;
 	unsigned int possible_cpus;
 	unsigned int online_cpus;
 };
