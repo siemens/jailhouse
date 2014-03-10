@@ -102,7 +102,7 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 		ldr = apic_ops.read(APIC_REG_LDR);
 		if (apic_ops.read(APIC_REG_DFR) != 0xffffffff ||
 		    (ldr != 0 && ldr != 1UL << (cpu_id + XAPIC_DEST_SHIFT)))
-			return -EINVAL;
+			return -EIO;
 	}
 
 	apic_to_cpu_id[apic_id] = cpu_id;
