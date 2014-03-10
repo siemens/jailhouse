@@ -1,0 +1,89 @@
+Bootstrap Interface
+===================
+
+The Jailhouse hypervisor is started by performing the following steps:
+
+ - map physical memory region reserved for Jailhouse at fixed virtual address
+   JAILHOUSE_BASE (definition available via jailhouse/hypercall.h)
+
+ - load its binary image at beginning of hypervisor memory region
+
+ - load system configuration [1] at its target address in hypervisor memory
+   region [2]
+
+ - set "Number of Possible CPUs" and "Number of Online CPUs" in hypervisor
+   header according to system state
+
+ - initialize remaining hypervisor memory to zero
+
+ - on each online CPU, call function at address stored in "Initialization
+   Function" hypervisor header field
+
+
+Hypervisor Header
+-----------------
+
+The hypervisor binary image starts with a header structure as defined in the
+following. Its first part is preset during the build process of the hypervisor
+core. The second part needs to be filled by the Linux driver that loads
+Jailhouse.
+
+        +------------------------------+ - begin of hypervisor header
+        |     Signature "JAILHOUS"     |   (lower address)
+        |          (8 bytes)           |
+        +------------------------------+
+        |     Hypervisor Core Size     |
+        |       (unsigned long)        |
+        +------------------------------+
+        | Per-CPU Data Structure Size  |
+        |       (unsigned long)        |
+        +------------------------------+
+        |  Address of Initialization   |
+        |      Function (pointer)      |   preset in binary image
+        +------------------------------+ - - - - - - - - - - - - - - - - -
+        |   Number of Possible CPUs    |   set by driver while loading
+        |        (unsigned int)        |
+        +------------------------------+
+        |    Number of Online CPUs     |
+        |        (unsigned int)        |
+        +------------------------------+ - higher address
+
+All fields use the native endianness of the system.
+
+
+Hypervisor Initialization Function
+----------------------------------
+
+The initialization function has to be called on each online CPU in order to
+hand over the control of the system to Jailhouse. Jailhouse will wait for as
+many CPUs as specified in the "Number of Online CPUs" header field and will not
+return from the function until all started the initialization. CPUs not
+initialized during hypervisor activation cannot be used by any cell until
+Jailhouse is deactivated again.
+
+Prototype: int entry(unsigned int cpu_id)
+
+Calling convention: as used by Linux kernel on target architecture
+
+Arguments: cpu_id - unique logical ID of caller's CPU
+
+Return code: 0 on success, negative error code otherwise
+
+    Possible errors are:
+        -EIO (-5)     - lacking hardware capabilities or unsupported hardware
+                        state (as configured by Linux)
+        -ENOMEM (-12) - insufficient hypervisor-internal memory
+        -EBUSY  (-16) - a required hardware resource is already in use
+        -ENODEV (-19) - CPU or I/O virtualization unit missing
+        -EINVAL (-22) - invalid system configuration
+        -ERANGE (-34) - a resource ID is out of supported range
+
+The initialization function will always return the same code on all CPUs for a
+single initialization attempt.
+
+
+References
+----------
+
+[1] Documentation/configuration-format.txt
+[2] Documentation/memory-layout.txt
