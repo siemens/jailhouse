@@ -468,9 +468,6 @@ int shutdown(struct per_cpu *cpu_data)
 
 long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
 {
-	if (cpu_data->cell != &linux_cell)
-		return -EPERM;
-
 	switch (type) {
 	case JAILHOUSE_INFO_MEM_POOL_SIZE:
 		return mem_pool.pages;

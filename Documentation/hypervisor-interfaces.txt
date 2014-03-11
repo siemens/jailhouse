@@ -1,5 +1,5 @@
-Jailhouse Interface for Cells
-=============================
+Hypervisor Interface for Cells
+==============================
 
 The Jailhouse hypervisor provides two kinds of interfaces to interact with its
 cells during runtime. One is a set of hypercalls which cells can be invoked
@@ -107,8 +107,6 @@ Hypercall "Hypervisor Get Info" (code 3)
 
 Obtain information about specific hypervisor states.
 
-This hypercall can only be issued on CPUs belonging to the root cell.
-
 Arguments: 1. Information type:
         0 - number of pages in hypervisor memory pool
         1 - used pages of hypervisor memory pool
@@ -118,7 +116,6 @@ Arguments: 1. Information type:
 Return code: requested value (>=0) or negative error code
 
     Possible errors are:
-        -EPERM  (-1)  - hypercall was issued over a non-root cell
         -EINVAL (-22) - invalid information type
 
 
