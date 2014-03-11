@@ -28,6 +28,10 @@ following. Its first part is preset during the build process of the hypervisor
 core. The second part needs to be filled by the Linux driver that loads
 Jailhouse.
 
+
+Header Layout
+- - - - - - -
+
         +------------------------------+ - begin of hypervisor header
         |     Signature "JAILHOUS"     |   (lower address)
         |          (8 bytes)           |
@@ -49,6 +53,22 @@ Jailhouse.
         +------------------------------+ - higher address
 
 All fields use the native endianness of the system.
+
+
+Field Descriptions
+- - - - - - - - - -
+
+Hypervisor Core Size               - size of hypervisor core, starting with its
+                                     header, ending after its bss section [2]
+Per-CPU Data Structure Size        - size of data structure used for a single
+                                     CPU
+Address of Initialization Function - virtual address of initialization
+                                     function, see below
+Number of Possible CPUs            - 0 to possible CPUs - 1 defines the range
+                                     of CPU ID that can be passed as argument
+                                     to the initialization function
+Number of Online CPUs              - defines the number of CPUs the
+                                     initialization function will expect
 
 
 Hypervisor Initialization Function
