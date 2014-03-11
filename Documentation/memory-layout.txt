@@ -17,10 +17,10 @@ in the hypervisor and the Linux address space. This identical mapping is
 required during startup and shutdown of the hypervisor.
 
 Virtual address: JAILHOUSE_BASE
-Size: as defined in the system configuration (see hypervisor_memory.size)
+Size: as defined in the system configuration (see hypervisor_memory.size) [1]
 
         +--------------------------------------+ - lower address
-        | Header (see struct jailhouse_header) |
+        | Header [2]                           |
         +--------------------------------------+
         | Text Segment                         |
         |                                      |
@@ -72,3 +72,10 @@ Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
         :                                      :
         |                                      |
         +--------------------------------------+
+
+
+References
+----------
+
+[1] Documentation/configuration-format.txt
+[2] Documentation/bootstrap-interface.txt
