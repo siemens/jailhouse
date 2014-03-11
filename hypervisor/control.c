@@ -22,6 +22,7 @@
 struct jailhouse_system *system_config;
 
 static DEFINE_SPINLOCK(shutdown_lock);
+static unsigned int num_cells = 1;
 
 #define for_each_cell(c)	for (c = &linux_cell; c; c = c->next)
 
@@ -225,6 +226,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	while (last->next)
 		last = last->next;
 	last->next = cell;
+	num_cells++;
 
 	/* update cell references and clean up before releasing the cpus of
 	 * the new cell */
@@ -378,6 +380,7 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	while (previous->next != cell)
 		previous = previous->next;
 	previous->next = cell->next;
+	num_cells--;
 
 	page_free(&mem_pool, cell, cell->data_pages);
 	page_map_dump_stats("after cell destruction");
@@ -477,6 +480,8 @@ long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
 		return remap_pool.pages;
 	case JAILHOUSE_INFO_REMAP_POOL_USED:
 		return remap_pool.used_pages;
+	case JAILHOUSE_INFO_NUM_CELLS:
+		return num_cells;
 	default:
 		return -EINVAL;
 	}

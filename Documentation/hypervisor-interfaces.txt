@@ -112,6 +112,7 @@ Arguments: 1. Information type:
         1 - used pages of hypervisor memory pool
         2 - number of pages in hypervisor remapping pool
         3 - used pages of hypervisor remapping pool
+        4 - number of registered cells
 
 Return code: requested value (>=0) or negative error code
 
