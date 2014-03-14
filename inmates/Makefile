@@ -22,9 +22,10 @@ KBUILD_CFLAGS += -include $(src)/../hypervisor/include/jailhouse/config.h
 endif
 
 OBJCOPYFLAGS := -O binary
-LDFLAGS := -T
+LDFLAGS += -T
 
 ifeq ($(SRCARCH), x86)
+KBUILD_CFLAGS += -m64
 always := tiny-demo.bin apic-demo.bin
 endif
 

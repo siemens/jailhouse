@@ -18,6 +18,7 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 
 ifeq ($(SRCARCH),x86)
 KBUILD_CFLAGS += -mcmodel=kernel
+KBUILD_CPPFLAGS += -m64
 endif
 
 ifneq ($(wildcard $(src)/include/jailhouse/config.h),)
