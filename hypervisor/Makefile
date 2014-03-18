@@ -25,7 +25,8 @@ ifneq ($(wildcard $(src)/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(src)/include/jailhouse/config.h
 endif
 
-subdir-y := arch/$(SRCARCH)
+$(obj)/arch/$(SRCARCH)/built-in.o:
+	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
 
 always := jailhouse.bin
 
