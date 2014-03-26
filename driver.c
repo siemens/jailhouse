@@ -583,6 +583,10 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto error_cpu_online;
 	}
 
+	err = jailhouse_call_arg(JAILHOUSE_HC_CELL_START, id);
+	if (err)
+		goto error_cell_destroy;
+
 	cell->id = id;
 	register_cell(cell);
 
@@ -595,6 +599,12 @@ kfree_config_out:
 	kfree(config);
 
 	return err;
+
+error_cell_destroy:
+	if (jailhouse_call_arg(JAILHOUSE_HC_CELL_DESTROY, id) < 0) {
+		pr_crit("Cleanup after incomplete cell creation failed");
+		goto error_cell_put;
+	}
 
 error_cpu_online:
 	for_each_cpu(cpu, &cell->cpus_assigned) {

@@ -49,11 +49,9 @@ Return code: 0 on success, negative error code otherwise
 Hypercall "Cell Create" (code 1)
 - - - - - - - - - - - - - - - - -
 
-Creates a new cell according to the provided configuration, then set all
-cell CPUs to an architecture-specific reset state. At least one CPU will then
-execute the bootstrap code that must have been loaded into the cell's memory
-at the reset address before invoking this hypercall. See [1] for details on the
-reset state of cell CPUs.
+Creates a new cell according to the provided configuration. The cell's memory
+content will not be initialized, and the cell will be put in suspended state,
+i.e. no code is executed on its CPUs after this hypercall completed.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
@@ -73,7 +71,29 @@ Return code: positive cell ID or negative error code
         -EINVAL (-22) - incorrect or inconsistent configuration data
 
 
-Hypercall "Cell Destroy" (code 2)
+Hypercall "Cell Start" (code 2)
+- - - - - - - - - - - - - - - -
+
+Sets all cell CPUs to an architecture-specific start state and resumes
+execution of the cell if it was previously suspended. At least one CPU will
+then execute the bootstrap code that must have been loaded into the cell's
+memory at the reset address before invoking this hypercall. See [1] for details
+on the start state of cell CPUs.
+
+This hypercall can only be issued on CPUs belonging to the Linux cell.
+
+Argument: ID of target cell
+
+Return code: 0 on success or negative error code
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell or the target
+                        cell rejected the reset request
+        -ENOENT (-2)  - cell with provided ID does not exist
+        -EINVAL (-22) - root cell specified, which cannot be started
+
+
+Hypercall "Cell Destroy" (code 4)
 - - - - - - - - - - - - - - - - -
 
 Destroys the cell of the provided name, returning its resources to the root
@@ -98,7 +118,7 @@ Return code: 0 on success, negative error code otherwise
 Note: The root cell uses ID 0. Passing this ID to "Cell Destroy" is illegal.
 
 
-Hypercall "Hypervisor Get Info" (code 3)
+Hypercall "Hypervisor Get Info" (code 5)
 - - - - - - - - - - - - - - - - - - - - -
 
 Obtain information about specific hypervisor states.
@@ -116,7 +136,7 @@ Return code: requested value (>=0) or negative error code
         -EINVAL (-22) - invalid information type
 
 
-Hypercall "Cell Get State" (code 4)
+Hypercall "Cell Get State" (code 6)
 - - - - - - - - - - - - - - - - - -
 
 Obtain information about the state of a specific cell.
@@ -137,7 +157,7 @@ Return code: cell state (>=0) or negative error code
         -EINVAL (-22) - cell state is invalid
 
 
-Hypercall "CPU Get State" (code 5)
+Hypercall "CPU Get State" (code 7)
 - - - - - - - - - - - - - - - - - -
 
 Obtain information about the state of a specific CPU.
@@ -226,15 +246,17 @@ Logical Channel "Cell State"
 
 The cell state field provides the second logical channel. On cell startup, it
 is initialized by the hypervisor to the state "Running". From then on, the
-field becomes conceptually read-only for the hypervisor and will just be
-updated by the cell itself. The following states are defined:
+field becomes conceptually read-only for the hypervisor and will only be
+updated by the cell until a terminal state is reached. The following states are
+defined:
 
  - Running (code 0)
  - Shut down (code 1), terminal state
  - Failed (code 2), terminal state
 
-Terminal states are immutable, thus cannot be left anymore once reached until
-the cell is destroyed.
+Once a cell declared to have reached a terminal state, the hypervisor is free
+to destroy or restart that cell. On restart, it will also reset the state field
+to "Running".
 
 
 References

@@ -288,25 +288,22 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_restore_root;
 
+	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
+
 	last = &root_cell;
 	while (last->next)
 		last = last->next;
 	last->next = cell;
 	num_cells++;
 
-	/* update cell references and clean up before releasing the cpus of
-	 * the new cell */
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, cell->cpu_set) {
 		per_cpu(cpu)->cell = cell;
+		arch_park_cpu(cpu);
+	}
 
 	printk("Created cell \"%s\"\n", cell->config->name);
 
 	page_map_dump_stats("after cell creation");
-
-	for_each_cpu(cpu, cell->cpu_set) {
-		per_cpu(cpu)->failed = false;
-		arch_reset_cpu(cpu);
-	}
 
 	cell_resume(cpu_data);
 
@@ -380,6 +377,32 @@ static int cell_management_prologue(struct per_cpu *cpu_data, unsigned long id,
 	}
 
 	cell_suspend(*cell_ptr, cpu_data);
+
+	return 0;
+}
+
+static int cell_start(struct per_cpu *cpu_data, unsigned long id)
+{
+	struct cell *cell;
+	unsigned int cpu;
+	int err;
+
+	err = cell_management_prologue(cpu_data, id, &cell);
+	if (err)
+		return err;
+
+	/* present a consistent Communication Region state to the cell */
+	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_RUNNING;
+	cell->comm_page.comm_region.msg_to_cell = JAILHOUSE_MSG_NONE;
+
+	for_each_cpu(cpu, cell->cpu_set) {
+		per_cpu(cpu)->failed = false;
+		arch_reset_cpu(cpu);
+	}
+
+	printk("Started cell \"%s\"\n", cell->config->name);
+
+	cell_resume(cpu_data);
 
 	return 0;
 }
@@ -559,6 +582,8 @@ long hypercall(struct per_cpu *cpu_data, unsigned long code, unsigned long arg)
 		return shutdown(cpu_data);
 	case JAILHOUSE_HC_CELL_CREATE:
 		return cell_create(cpu_data, arg);
+	case JAILHOUSE_HC_CELL_START:
+		return cell_start(cpu_data, arg);
 	case JAILHOUSE_HC_CELL_DESTROY:
 		return cell_destroy(cpu_data, arg);
 	case JAILHOUSE_HC_HYPERVISOR_GET_INFO:
