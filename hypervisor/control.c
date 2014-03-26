@@ -52,7 +52,6 @@ static void cell_suspend(struct cell *cell, struct per_cpu *cpu_data)
 
 	for_each_cpu_except(cpu, cell->cpu_set, cpu_data->cpu_id)
 		arch_suspend_cpu(cpu);
-	printk("Suspended cell \"%s\"\n", cell->config->name);
 }
 
 static void cell_resume(struct per_cpu *cpu_data)
