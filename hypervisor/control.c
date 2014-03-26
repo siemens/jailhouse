@@ -350,39 +350,50 @@ static bool cell_shutdown_ok(struct cell *cell)
 	return false;
 }
 
-static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
+static int cell_management_prologue(struct per_cpu *cpu_data, unsigned long id,
+				    struct cell **cell_ptr)
 {
-	const struct jailhouse_memory *mem;
-	struct cell *cell, *previous;
-	unsigned int cpu, n;
-	int err = 0;
-
-	/* We do not support destruction over non-root cells. */
+	/* We do not support management commands over non-root cells. */
 	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
 	cell_suspend(&root_cell, cpu_data);
 
-	for_each_cell(cell)
-		if (cell->id == id)
+	for_each_cell(*cell_ptr)
+		if ((*cell_ptr)->id == id)
 			break;
-	if (!cell) {
-		err = -ENOENT;
-		goto resume_out;
+
+	if (!*cell_ptr) {
+		cell_resume(cpu_data);
+		return -ENOENT;
 	}
 
-	/* root cell cannot be destroyed */
-	if (cell == &root_cell) {
-		err = -EINVAL;
-		goto resume_out;
+	/* root cell cannot be managed */
+	if (*cell_ptr == &root_cell) {
+		cell_resume(cpu_data);
+		return -EINVAL;
 	}
 
-	if (!cell_shutdown_ok(cell)) {
-		err = -EPERM;
-		goto resume_out;
+	if (!cell_shutdown_ok(*cell_ptr)) {
+		cell_resume(cpu_data);
+		return -EPERM;
 	}
 
-	cell_suspend(cell, cpu_data);
+	cell_suspend(*cell_ptr, cpu_data);
+
+	return 0;
+}
+
+static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
+{
+	const struct jailhouse_memory *mem;
+	struct cell *cell, *previous;
+	unsigned int cpu, n;
+	int err;
+
+	err = cell_management_prologue(cpu_data, id, &cell);
+	if (err)
+		return err;
 
 	printk("Closing cell \"%s\"\n", cell->config->name);
 
@@ -416,10 +427,9 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	page_free(&mem_pool, cell, cell->data_pages);
 	page_map_dump_stats("after cell destruction");
 
-resume_out:
 	cell_resume(cpu_data);
 
-	return err;
+	return 0;
 }
 
 static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
