@@ -55,13 +55,13 @@ Hypercall "Cell Create" (code 1)
 Creates a new cell according to the provided configuration, then set all
 cell CPUs to an architecture-specific reset state. At least one CPU will then
 execute the bootstrap code that must have been loaded into the cell's memory
-at the reset address before invoking this hypercall. See cell-environments.txt
-for details on the reset state of cell CPUs.
+at the reset address before invoking this hypercall. See [1] for details on the
+reset state of cell CPUs.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
-Arguments: 1. Guest-physical address of cell configuration (see
-              configuration-format.txt for details)
+Arguments: 1. Guest-physical address of cell configuration (see [2] for
+              details)
 
 Return code: positive cell ID or negative error code
 
@@ -166,8 +166,8 @@ Communication Region
 The communication region is a per-cell shared memory area that both the
 hypervisor and the particular cell can read from and write to. It is an
 optional communication mechanism. If the region shall be used by a cell, it
-has to be mapped into the cell's address space via its configuration (see
-configuration-format.txt for details).
+has to be mapped into the cell's address space via its configuration (see [2]
+for details).
 
 
 Communication region layout
@@ -222,8 +222,7 @@ The following messages and corresponding replies are defined:
 
 Note: The hypervisor does not request shutdown permission from a cell if that
       cell has the "Unmanaged Exit" flag set in its configuration (see also
-      configuration-format.txt) or if the cell state is set to "Shut Down" or
-      "Failed" (see below).
+      [2]) or if the cell state is set to "Shut Down" or "Failed" (see below).
 
 
 Logical Channel "Cell State"
@@ -240,3 +239,10 @@ updated by the cell itself. The following states are defined:
 
 Terminal states are immutable, thus cannot be left anymore once reached until
 the cell is destroyed.
+
+
+References
+----------
+
+[1] Documentation/cell-environments.txt
+[2] Documentation/configuration-format.txt
