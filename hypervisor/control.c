@@ -134,6 +134,7 @@ int check_mem_regions(const struct jailhouse_cell_desc *config)
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
+	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
 	unsigned long cfg_header_size, cfg_total_size;
 	struct jailhouse_cell_desc *cfg;
 	struct cpu_set *shrinking_set;
@@ -156,10 +157,9 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_resume;
 
-	cfg = (struct jailhouse_cell_desc *)(mapping_addr +
-					     (config_address & ~PAGE_MASK));
+	cfg = (struct jailhouse_cell_desc *)(mapping_addr + cfg_page_offs);
 	cfg_total_size = jailhouse_cell_config_size(cfg);
-	if (cfg_total_size > NUM_TEMPORARY_PAGES * PAGE_SIZE) {
+	if (cfg_total_size + cfg_page_offs > NUM_TEMPORARY_PAGES * PAGE_SIZE) {
 		err = -E2BIG;
 		goto err_resume;
 	}
@@ -171,7 +171,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		}
 
 	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
-			      cfg_total_size, mapping_addr,
+			      cfg_total_size + cfg_page_offs, mapping_addr,
 			      PAGE_READONLY_FLAGS, PAGE_MAP_NON_COHERENT);
 	if (err)
 		goto err_resume;
