@@ -237,8 +237,9 @@ The following messages and corresponding replies are defined:
         2 - Shutdown OK
 
 Note: The hypervisor does not request shutdown permission from a cell if that
-      cell has the "Unmanaged Exit" flag set in its configuration (see also
-      [2]) or if the cell state is set to "Shut Down" or "Failed" (see below).
+      cell has the "Passive Communication Region" flag set in its configuration
+      (see also [2]) or if the cell state is set to "Shut Down" or "Failed"
+      (see below).
 
 
 Logical Channel "Cell State"

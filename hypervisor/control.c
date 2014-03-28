@@ -331,7 +331,7 @@ static bool cell_shutdown_ok(struct cell *cell)
 	volatile u32 *reply = &cell->comm_page.comm_region.reply_from_cell;
 	volatile u32 *cell_state = &cell->comm_page.comm_region.cell_state;
 
-	if (cell->config->flags & JAILHOUSE_CELL_UNMANAGED_EXIT)
+	if (cell->config->flags & JAILHOUSE_CELL_PASSIVE_COMMREG)
 		return true;
 
 	jailhouse_send_msg_to_cell(&cell->comm_page.comm_region,
