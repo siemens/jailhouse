@@ -132,6 +132,7 @@ static void init_apic(void)
 
 void inmate_main(void)
 {
+	bool terminate = false;
 	unsigned int n;
 
 	printk_uart_base = UART_BASE;
@@ -144,12 +145,23 @@ void inmate_main(void)
 	if (init_pm_timer())
 		init_apic();
 
-	while (comm_region->msg_to_cell != JAILHOUSE_MSG_SHUTDOWN_REQUESTED)
+	while (!terminate) {
 		asm volatile("hlt");
 
-	printk("Rejecting first shutdown - try again!\n");
-	jailhouse_send_reply_from_cell(comm_region,
-				       JAILHOUSE_MSG_SHUTDOWN_DENIED);
+		switch (comm_region->msg_to_cell) {
+		case JAILHOUSE_MSG_SHUTDOWN_REQUEST:
+			printk("Rejecting first shutdown request - "
+			       "try again!\n");
+			jailhouse_send_reply_from_cell(comm_region,
+					JAILHOUSE_MSG_REQUEST_DENIED);
+			terminate = true;
+			break;
+		default:
+			jailhouse_send_reply_from_cell(comm_region,
+					JAILHOUSE_MSG_UNKNOWN);
+			break;
+		}
+	}
 
 	for (n = 0; n < 10; n++)
 		asm volatile("hlt");

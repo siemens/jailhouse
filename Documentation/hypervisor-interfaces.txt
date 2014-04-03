@@ -215,7 +215,8 @@ in order to receive the cell's answer.
 
 For answering a message, the cell first has to clear the "Message to Cell"
 field. It then has to write a non-zero reply code into the "Message from Cell"
-field.
+field. If a cell receives an unknown message code, it has to send the reply
+"Message unknown" (code 1).
 
 Write ordering of all updates has to be ensured by both the hypervisor
 and the cell according to the requirements of the hardware architecture.
@@ -228,18 +229,18 @@ message responds times may still affect the root cell negatively.
 
 The following messages and corresponding replies are defined:
 
- - Shutdown Requested (code 1):
+ - Shutdown Request (code 1):
         The cell is supposed to be shut down, either to destroy only the cell
         itself or to disable the hypervisor completely.
 
    Possible replies:
-        1 - Shutdown denied
-        2 - Shutdown OK
+        2 - Request denied
+        3 - Request approved
 
-Note: The hypervisor does not request shutdown permission from a cell if that
-      cell has the "Passive Communication Region" flag set in its configuration
-      (see also [2]) or if the cell state is set to "Shut Down" or "Failed"
-      (see below).
+   Note: The hypervisor does not request shutdown permission from a cell if
+         that cell has the "Passive Communication Region" flag set in its
+         configuration (see also [2]) or if the cell state is set to "Shut
+         Down" or "Failed" (see below).
 
 
 Logical Channel "Cell State"

@@ -19,6 +19,8 @@
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
 
+enum msg_type {MSG_REQUEST, MSG_INFORMATION};
+
 struct jailhouse_system *system_config;
 
 static DEFINE_SPINLOCK(shutdown_lock);
@@ -60,6 +62,46 @@ static void cell_resume(struct per_cpu *cpu_data)
 
 	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id)
 		arch_resume_cpu(cpu);
+}
+
+/**
+ * cell_send_message - Deliver a message to cell and wait for the reply
+ * @cell: target cell
+ * @message: message code to be sent (JAILHOUSE_MSG_*)
+ * @type: message type, defines the valid replies
+ *
+ * Returns true if a request message was approved or reception of an
+ * information message was acknowledged by the target cell. It also return true
+ * of the target cell does not support a communication region, is shut down or
+ * in failed state. Return false on request denial or invalid replies.
+ */
+static bool cell_send_message(struct cell *cell, u32 message,
+			      enum msg_type type)
+{
+	if (cell->config->flags & JAILHOUSE_CELL_PASSIVE_COMMREG)
+		return true;
+
+	jailhouse_send_msg_to_cell(&cell->comm_page.comm_region, message);
+
+	while (1) {
+		u32 reply = cell->comm_page.comm_region.reply_from_cell;
+		u32 cell_state = cell->comm_page.comm_region.cell_state;
+
+		if (cell_state == JAILHOUSE_CELL_SHUT_DOWN ||
+		    cell_state == JAILHOUSE_CELL_FAILED)
+			return true;
+
+		if ((type == MSG_REQUEST &&
+		     reply == JAILHOUSE_MSG_REQUEST_APPROVED) ||
+		    (type == MSG_INFORMATION &&
+		     reply == JAILHOUSE_MSG_RECEIVED))
+			return true;
+
+		if (reply != JAILHOUSE_MSG_NONE)
+			return false;
+
+		cpu_relax();
+	}
 }
 
 static unsigned int get_free_cell_id(void)
@@ -328,23 +370,8 @@ err_resume:
 
 static bool cell_shutdown_ok(struct cell *cell)
 {
-	volatile u32 *reply = &cell->comm_page.comm_region.reply_from_cell;
-	volatile u32 *cell_state = &cell->comm_page.comm_region.cell_state;
-
-	if (cell->config->flags & JAILHOUSE_CELL_PASSIVE_COMMREG)
-		return true;
-
-	jailhouse_send_msg_to_cell(&cell->comm_page.comm_region,
-				   JAILHOUSE_MSG_SHUTDOWN_REQUESTED);
-
-	while (*reply != JAILHOUSE_MSG_SHUTDOWN_DENIED) {
-		if (*reply == JAILHOUSE_MSG_SHUTDOWN_OK ||
-		    *cell_state == JAILHOUSE_CELL_SHUT_DOWN ||
-		    *cell_state == JAILHOUSE_CELL_FAILED)
-			return true;
-		cpu_relax();
-	}
-	return false;
+	return cell_send_message(cell, JAILHOUSE_MSG_SHUTDOWN_REQUEST,
+				 MSG_REQUEST);
 }
 
 static int cell_management_prologue(struct per_cpu *cpu_data, unsigned long id,

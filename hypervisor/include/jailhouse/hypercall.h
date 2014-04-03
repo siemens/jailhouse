@@ -35,11 +35,13 @@
 #define JAILHOUSE_MSG_NONE			0
 
 /* messages to cell */
-#define JAILHOUSE_MSG_SHUTDOWN_REQUESTED	1
+#define JAILHOUSE_MSG_SHUTDOWN_REQUEST		1
 
 /* replies from cell */
-#define JAILHOUSE_MSG_SHUTDOWN_DENIED		1
-#define JAILHOUSE_MSG_SHUTDOWN_OK		2
+#define JAILHOUSE_MSG_UNKNOWN			1
+#define JAILHOUSE_MSG_REQUEST_DENIED		2
+#define JAILHOUSE_MSG_REQUEST_APPROVED		3
+#define JAILHOUSE_MSG_RECEIVED			4
 
 /* cell state, initialized by hypervisor, updated by cell */
 #define JAILHOUSE_CELL_RUNNING			0
