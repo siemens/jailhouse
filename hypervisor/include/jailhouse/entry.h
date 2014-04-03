@@ -41,9 +41,9 @@ void vm_exit(void);
 
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data);
 
-int arch_init_early(struct cell *linux_cell);
+int arch_init_early(struct cell *root_cell);
 int arch_cpu_init(struct per_cpu *cpu_data);
-int arch_init_late(struct cell *linux_cell);
+int arch_init_late(struct cell *root_cell);
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data);
 void arch_cpu_restore(struct per_cpu *cpu_data);
 

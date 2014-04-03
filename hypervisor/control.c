@@ -24,7 +24,7 @@ struct jailhouse_system *system_config;
 static DEFINE_SPINLOCK(shutdown_lock);
 static unsigned int num_cells = 1;
 
-#define for_each_cell(c)	for (c = &linux_cell; c; c = c->next)
+#define for_each_cell(c)	for (c = &root_cell; c; c = c->next)
 
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 {
@@ -142,11 +142,11 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	struct cell *cell, *last;
 	int err;
 
-	/* We do not support creation over non-Linux cells so far. */
-	if (cpu_data->cell != &linux_cell)
+	/* We do not support creation over non-root cells. */
+	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
-	cell_suspend(&linux_cell, cpu_data);
+	cell_suspend(&root_cell, cpu_data);
 
 	cfg_header_size = (config_address & ~PAGE_MASK) +
 		sizeof(struct jailhouse_cell_desc);
@@ -222,7 +222,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_restore_cpu_set;
 
-	last = &linux_cell;
+	last = &root_cell;
 	while (last->next)
 		last = last->next;
 	last->next = cell;
@@ -288,37 +288,37 @@ static bool address_in_region(unsigned long addr,
 	       addr < (region->phys_start + region->size);
 }
 
-static void remap_to_linux(const struct jailhouse_memory *mem)
+static void remap_to_root_cell(const struct jailhouse_memory *mem)
 {
-	const struct jailhouse_memory *linux_mem =
-		jailhouse_cell_mem_regions(linux_cell.config);
+	const struct jailhouse_memory *root_mem =
+		jailhouse_cell_mem_regions(root_cell.config);
 	struct jailhouse_memory overlap;
 	int n;
 
-	for (n = 0; n < linux_cell.config->num_memory_regions;
-	     n++, linux_mem++) {
-		if (address_in_region(mem->phys_start, linux_mem)) {
+	for (n = 0; n < root_cell.config->num_memory_regions;
+	     n++, root_mem++) {
+		if (address_in_region(mem->phys_start, root_mem)) {
 			overlap.phys_start = mem->phys_start;
-			overlap.size = linux_mem->size -
-				(overlap.phys_start - linux_mem->phys_start);
+			overlap.size = root_mem->size -
+				(overlap.phys_start - root_mem->phys_start);
 			if (overlap.size > mem->size)
 				overlap.size = mem->size;
-		} else if (address_in_region(linux_mem->phys_start, mem)) {
-			overlap.phys_start = linux_mem->phys_start;
+		} else if (address_in_region(root_mem->phys_start, mem)) {
+			overlap.phys_start = root_mem->phys_start;
 			overlap.size = mem->size -
 				(overlap.phys_start - mem->phys_start);
-			if (overlap.size > linux_mem->size)
-				overlap.size = linux_mem->size;
+			if (overlap.size > root_mem->size)
+				overlap.size = root_mem->size;
 		} else
 			continue;
 
-		overlap.virt_start = linux_mem->virt_start +
-			overlap.phys_start - linux_mem->phys_start;
-		overlap.flags = linux_mem->flags;
+		overlap.virt_start = root_mem->virt_start +
+			overlap.phys_start - root_mem->phys_start;
+		overlap.flags = root_mem->flags;
 
-		if (arch_map_memory_region(&linux_cell, &overlap) != 0)
+		if (arch_map_memory_region(&root_cell, &overlap) != 0)
 			printk("WARNING: Failed to re-assign memory region "
-			       "to Linux cell\n");
+			       "to root cell\n");
 	}
 }
 
@@ -329,11 +329,11 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	unsigned int cpu, n;
 	int err = 0;
 
-	/* We do not support destruction over non-Linux cells so far. */
-	if (cpu_data->cell != &linux_cell)
+	/* We do not support destruction over non-root cells. */
+	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
-	cell_suspend(&linux_cell, cpu_data);
+	cell_suspend(&root_cell, cpu_data);
 
 	for_each_cell(cell)
 		if (cell->id == id)
@@ -343,8 +343,8 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 		goto resume_out;
 	}
 
-	/* Linux cell cannot be destroyed */
-	if (cell == &linux_cell) {
+	/* root cell cannot be destroyed */
+	if (cell == &root_cell) {
 		err = -EINVAL;
 		goto resume_out;
 	}
@@ -362,8 +362,8 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 		printk(" Parking CPU %d\n", cpu);
 		arch_park_cpu(cpu);
 
-		set_bit(cpu, linux_cell.cpu_set->bitmap);
-		per_cpu(cpu)->cell = &linux_cell;
+		set_bit(cpu, root_cell.cpu_set->bitmap);
+		per_cpu(cpu)->cell = &root_cell;
 		per_cpu(cpu)->failed = false;
 	}
 
@@ -371,12 +371,12 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
 		arch_unmap_memory_region(cell, mem);
 		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
-			remap_to_linux(mem);
+			remap_to_root_cell(mem);
 	}
 
 	arch_cell_destroy(cpu_data, cell);
 
-	previous = &linux_cell;
+	previous = &root_cell;
 	while (previous->next != cell)
 		previous = previous->next;
 	previous->next = cell->next;
@@ -395,7 +395,7 @@ int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 {
 	struct cell *cell;
 
-	if (cpu_data->cell != &linux_cell)
+	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
 	for_each_cell(cell)
@@ -421,22 +421,22 @@ int shutdown(struct per_cpu *cpu_data)
 	unsigned int cpu;
 	int state, ret;
 
-	/* We do not support shutdown over non-Linux cells so far. */
-	if (cpu_data->cell != &linux_cell)
+	/* We do not support shutdown over non-root cells. */
+	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
 	spin_lock(&shutdown_lock);
 
 	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
 		state = SHUTDOWN_STARTED;
-		for (cell = linux_cell.next; cell; cell = cell->next)
+		for (cell = root_cell.next; cell; cell = cell->next)
 			if (!cell_shutdown_ok(cell))
 				state = -EPERM;
 
 		if (state == SHUTDOWN_STARTED) {
 			printk("Shutting down hypervisor\n");
 
-			for (cell = linux_cell.next; cell; cell = cell->next) {
+			for (cell = root_cell.next; cell; cell = cell->next) {
 				cell_suspend(cell, cpu_data);
 
 				printk("Closing cell \"%s\"\n",
@@ -448,12 +448,12 @@ int shutdown(struct per_cpu *cpu_data)
 				}
 			}
 
-			printk("Closing Linux cell \"%s\"\n",
-			       linux_cell.config->name);
+			printk("Closing root cell \"%s\"\n",
+			       root_cell.config->name);
 			arch_shutdown();
 		}
 
-		for_each_cpu(cpu, linux_cell.cpu_set)
+		for_each_cpu(cpu, root_cell.cpu_set)
 			per_cpu(cpu)->shutdown_state = state;
 	}
 
@@ -492,7 +492,7 @@ int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 	if (!cpu_id_valid(cpu_id))
 		return -EINVAL;
 
-	if (cpu_data->cell != &linux_cell &&
+	if (cpu_data->cell != &root_cell &&
 	    (cpu_id > cpu_data->cell->cpu_set->max_cpu_id ||
 	     !test_bit(cpu_id, cpu_data->cell->cpu_set->bitmap)))
 		return -EPERM;

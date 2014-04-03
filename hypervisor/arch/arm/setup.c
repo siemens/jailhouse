@@ -12,7 +12,7 @@
 
 #include <jailhouse/entry.h>
 
-int arch_init_early(struct cell *linux_cell)
+int arch_init_early(struct cell *root_cell)
 {
 	return -ENOSYS;
 }
@@ -22,7 +22,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	return -ENOSYS;
 }
 
-int arch_init_late(struct cell *linux_cell)
+int arch_init_late(struct cell *root_cell)
 {
 	return -ENOSYS;
 }

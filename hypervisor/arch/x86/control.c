@@ -29,11 +29,11 @@ struct exception_frame {
 };
 
 /* all cell CPUs (except cpu_data) have to be stopped */
-static void flush_linux_cpu_caches(struct per_cpu *cpu_data)
+static void flush_root_cell_cpu_caches(struct per_cpu *cpu_data)
 {
 	unsigned int cpu;
 
-	for_each_cpu_except(cpu, linux_cell.cpu_set, cpu_data->cpu_id)
+	for_each_cpu_except(cpu, root_cell.cpu_set, cpu_data->cpu_id)
 		per_cpu(cpu)->flush_caches = true;
 }
 
@@ -43,15 +43,15 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 
 	/* TODO: Implement proper roll-backs on errors */
 
-	err = vmx_linux_cell_shrink(cell->config);
+	err = vmx_root_cell_shrink(cell->config);
 	if (err)
 		return err;
-	flush_linux_cpu_caches(cpu_data);
+	flush_root_cell_cpu_caches(cpu_data);
 	err = vmx_cell_init(cell);
 	if (err)
 		return err;
 
-	err = vtd_linux_cell_shrink(cell->config);
+	err = vtd_root_cell_shrink(cell->config);
 	if (!err)
 		err = vtd_cell_init(cell);
 	if (err)
@@ -85,7 +85,7 @@ void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
 {
 	vtd_cell_exit(cell);
 	vmx_cell_exit(cell);
-	flush_linux_cpu_caches(cpu_data);
+	flush_root_cell_cpu_caches(cpu_data);
 }
 
 void arch_shutdown(void)

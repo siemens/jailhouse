@@ -23,19 +23,19 @@ extern u8 __text_start[], __hv_core_end[];
 static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
 
 void *config_memory;
-struct cell linux_cell;
+struct cell root_cell;
 
 static DEFINE_SPINLOCK(init_lock);
 static unsigned int master_cpu_id = -1;
 static volatile unsigned int initialized_cpus;
 static volatile int error;
 
-static int register_linux_cpu(struct per_cpu *cpu_data)
+static int register_root_cpu(struct per_cpu *cpu_data)
 {
 	if (!cpu_id_valid(cpu_data->cpu_id))
 		return -EINVAL;
-	cpu_data->cell = &linux_cell;
-	set_bit(cpu_data->cpu_id, linux_cell.cpu_set->bitmap);
+	cpu_data->cell = &root_cell;
+	set_bit(cpu_data->cpu_id, root_cell.cpu_set->bitmap);
 	return 0;
 }
 
@@ -56,7 +56,7 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
-	linux_cell.config = &system_config->system;
+	root_cell.config = &system_config->system;
 
 	if (system_config->config_memory.size > 0) {
 		size = PAGE_ALIGN(system_config->config_memory.size);
@@ -79,12 +79,12 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
-	error = arch_init_early(&linux_cell);
+	error = arch_init_early(&root_cell);
 	if (error)
 		return;
 
-	linux_cell.id = -1;
-	error = cell_init(&linux_cell, false);
+	root_cell.id = -1;
+	error = cell_init(&root_cell, false);
 	if (error)
 		return;
 
@@ -100,7 +100,7 @@ static void init_early(unsigned int cpu_id)
 	core_percpu_size = PAGE_ALIGN(hypervisor_header.core_size) +
 		hypervisor_header.possible_cpus * sizeof(struct per_cpu);
 	while (core_percpu_size > 0) {
-		error = arch_map_memory_region(&linux_cell, &hv_page);
+		error = arch_map_memory_region(&root_cell, &hv_page);
 		if (error)
 			return;
 		core_percpu_size -= PAGE_SIZE;
@@ -117,7 +117,7 @@ static void cpu_init(struct per_cpu *cpu_data)
 
 	printk(" CPU %d... ", cpu_data->cpu_id);
 
-	err = register_linux_cpu(cpu_data);
+	err = register_root_cpu(cpu_data);
 	if (err)
 		goto failed;
 
@@ -142,7 +142,7 @@ failed:
 
 static void init_late(void)
 {
-	error = arch_init_late(&linux_cell);
+	error = arch_init_late(&root_cell);
 	if (error)
 		return;
 

@@ -35,6 +35,6 @@ struct cell {
 	} __attribute__((aligned(PAGE_SIZE))) comm_page;
 };
 
-extern struct cell linux_cell;
+extern struct cell root_cell;
 
 #endif /* !_JAILHOUSE_ASM_CELL_H */

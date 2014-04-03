@@ -81,9 +81,9 @@ static void vtd_init_fault_nmi(void)
 
 	/* Assume that at least one bit is set somewhere as
 	* we don't support configurations when Linux is left with no CPUs */
-	for (i = 0; linux_cell.cpu_set->bitmap[i] == 0; i++)
+	for (i = 0; root_cell.cpu_set->bitmap[i] == 0; i++)
 		/* Empty loop */;
-	cpu_data = per_cpu(ffsl(linux_cell.cpu_set->bitmap[i]));
+	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[i]));
 	apic_id = cpu_data->apic_id;
 
 	/* Save this value globally to avoid multiple reporting
@@ -420,7 +420,7 @@ vtd_remove_device_from_cell(struct cell *cell,
 	page_free(&mem_pool, context_entry_table, 1);
 }
 
-int vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
+int vtd_root_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
@@ -433,7 +433,7 @@ int vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
 		if (mem->flags & JAILHOUSE_MEM_DMA) {
-			err = page_map_destroy(&linux_cell.vtd.pg_structs,
+			err = page_map_destroy(&root_cell.vtd.pg_structs,
 					       mem->phys_start, mem->size,
 					       PAGE_MAP_COHERENT);
 			if (err)
@@ -441,10 +441,10 @@ int vtd_linux_cell_shrink(struct jailhouse_cell_desc *config)
 		}
 
 	for (n = 0; n < config->num_pci_devices; n++)
-		vtd_remove_device_from_cell(&linux_cell, &dev[n]);
+		vtd_remove_device_from_cell(&root_cell, &dev[n]);
 
 out:
-	vtd_flush_domain_caches(linux_cell.id);
+	vtd_flush_domain_caches(root_cell.id);
 	return err;
 }
 
@@ -484,18 +484,19 @@ void vtd_unmap_memory_region(struct cell *cell,
 				 mem->size, PAGE_MAP_COHERENT);
 }
 
-static bool vtd_return_device_to_linux(const struct jailhouse_pci_device *dev)
+static bool
+vtd_return_device_to_root_cell(const struct jailhouse_pci_device *dev)
 {
-	const struct jailhouse_pci_device *linux_dev =
-		jailhouse_cell_pci_devices(linux_cell.config);
+	const struct jailhouse_pci_device *root_cell_dev =
+		jailhouse_cell_pci_devices(root_cell.config);
 	unsigned int n;
 
-	for (n = 0; n < linux_cell.config->num_pci_devices; n++)
-		if (linux_dev[n].domain == dev->domain &&
-		    linux_dev[n].bus == dev->bus &&
-		    linux_dev[n].devfn == dev->devfn)
-			return vtd_add_device_to_cell(&linux_cell,
-						      &linux_dev[n]);
+	for (n = 0; n < root_cell.config->num_pci_devices; n++)
+		if (root_cell_dev[n].domain == dev->domain &&
+		    root_cell_dev[n].bus == dev->bus &&
+		    root_cell_dev[n].devfn == dev->devfn)
+			return vtd_add_device_to_cell(&root_cell,
+						      &root_cell_dev[n]);
 	return true;
 }
 
@@ -507,13 +508,13 @@ void vtd_cell_exit(struct cell *cell)
 
 	for (n = 0; n < cell->config->num_pci_devices; n++) {
 		vtd_remove_device_from_cell(cell, &dev[n]);
-		if (!vtd_return_device_to_linux(&dev[n]))
+		if (!vtd_return_device_to_root_cell(&dev[n]))
 			printk("WARNING: Failed to re-assign PCI device to "
-			       "Linux cell\n");
+			       "root cell\n");
 	}
 
 	vtd_flush_domain_caches(cell->id);
-	vtd_flush_domain_caches(linux_cell.id);
+	vtd_flush_domain_caches(root_cell.id);
 
 	page_free(&mem_pool, cell->vtd.pg_structs.root_table, 1);
 }

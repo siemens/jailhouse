@@ -50,7 +50,7 @@ static void set_idt_int_gate(unsigned int vector, unsigned long entry)
 	idt[vector * 4 + 2] = entry >> 32;
 }
 
-int arch_init_early(struct cell *linux_cell)
+int arch_init_early(struct cell *root_cell)
 {
 	unsigned long entry;
 	unsigned int vector;
@@ -79,7 +79,7 @@ int arch_init_early(struct cell *linux_cell)
 	if (err)
 		return err;
 
-	err = vmx_cell_init(linux_cell);
+	err = vmx_cell_init(root_cell);
 	if (err)
 		return err;
 
@@ -211,7 +211,7 @@ error_out:
 	return err;
 }
 
-int arch_init_late(struct cell *linux_cell)
+int arch_init_late(struct cell *root_cell)
 {
 	int err;
 
@@ -219,7 +219,7 @@ int arch_init_late(struct cell *linux_cell)
 	if (err)
 		return err;
 
-	err = vtd_cell_init(linux_cell);
+	err = vtd_cell_init(root_cell);
 	if (err)
 		return err;
 

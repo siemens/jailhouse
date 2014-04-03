@@ -318,7 +318,7 @@ int vmx_cell_init(struct cell *cell)
 	return 0;
 }
 
-int vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
+int vmx_root_cell_shrink(struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(config);
@@ -330,14 +330,14 @@ int vmx_linux_cell_shrink(struct jailhouse_cell_desc *config)
 
 	for (n = 0; n < config->num_memory_regions; n++, mem++)
 		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION)) {
-			err = page_map_destroy(&linux_cell.vmx.ept_structs,
+			err = page_map_destroy(&root_cell.vmx.ept_structs,
 					       mem->phys_start, mem->size,
 					       PAGE_MAP_NON_COHERENT);
 			if (err)
 				goto out;
 		}
 
-	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
+	for (b = root_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 	     b++, pio_bitmap++, pio_bitmap_size--)
 		*b |= ~*pio_bitmap;
 
@@ -348,8 +348,8 @@ out:
 
 void vmx_cell_exit(struct cell *cell)
 {
-	const u8 *linux_pio_bitmap =
-		jailhouse_cell_pio_bitmap(linux_cell.config);
+	const u8 *root_pio_bitmap =
+		jailhouse_cell_pio_bitmap(root_cell.config);
 	struct jailhouse_cell_desc *config = cell->config;
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
 	u32 pio_bitmap_size = config->pio_bitmap_size;
@@ -358,12 +358,12 @@ void vmx_cell_exit(struct cell *cell)
 	page_map_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
 			 PAGE_MAP_NON_COHERENT);
 
-	if (linux_cell.config->pio_bitmap_size < pio_bitmap_size)
-		pio_bitmap_size = linux_cell.config->pio_bitmap_size;
+	if (root_cell.config->pio_bitmap_size < pio_bitmap_size)
+		pio_bitmap_size = root_cell.config->pio_bitmap_size;
 
-	for (b = linux_cell.vmx.io_bitmap; pio_bitmap_size > 0;
-	     b++, pio_bitmap++, linux_pio_bitmap++, pio_bitmap_size--)
-		*b &= *pio_bitmap | *linux_pio_bitmap;
+	for (b = root_cell.vmx.io_bitmap; pio_bitmap_size > 0;
+	     b++, pio_bitmap++, root_pio_bitmap++, pio_bitmap_size--)
+		*b &= *pio_bitmap | *root_pio_bitmap;
 
 	page_free(&mem_pool, cell->vmx.ept_structs.root_table, 1);
 }
