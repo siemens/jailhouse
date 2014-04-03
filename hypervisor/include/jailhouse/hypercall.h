@@ -45,8 +45,9 @@
 
 /* cell state, initialized by hypervisor, updated by cell */
 #define JAILHOUSE_CELL_RUNNING			0
-#define JAILHOUSE_CELL_SHUT_DOWN		1 /* terminal state */
-#define JAILHOUSE_CELL_FAILED			2 /* terminal state */
+#define JAILHOUSE_CELL_RUNNING_LOCKED		1
+#define JAILHOUSE_CELL_SHUT_DOWN		2 /* terminal state */
+#define JAILHOUSE_CELL_FAILED			3 /* terminal state */
 
 struct jailhouse_comm_region {
 	volatile __u32 msg_to_cell;

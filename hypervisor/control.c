@@ -20,6 +20,7 @@
 #include <asm/spinlock.h>
 
 enum msg_type {MSG_REQUEST, MSG_INFORMATION};
+enum management_task {CELL_START, CELL_DESTROY};
 
 struct jailhouse_system *system_config;
 
@@ -102,6 +103,18 @@ static bool cell_send_message(struct cell *cell, u32 message,
 
 		cpu_relax();
 	}
+}
+
+static bool cell_reconfig_ok(struct cell *excluded_cell)
+{
+	struct cell *cell;
+
+	for_each_non_root_cell(cell)
+		if (cell != excluded_cell &&
+		    cell->comm_page.comm_region.cell_state ==
+				JAILHOUSE_CELL_RUNNING_LOCKED)
+			return false;
+	return true;
 }
 
 static unsigned int get_free_cell_id(void)
@@ -234,6 +247,11 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		return -EPERM;
 
 	cell_suspend(&root_cell, cpu_data);
+
+	if (!cell_reconfig_ok(NULL)) {
+		err = -EPERM;
+		goto err_resume;
+	}
 
 	cfg_header_size = (config_address & ~PAGE_MASK) +
 		sizeof(struct jailhouse_cell_desc);
@@ -374,7 +392,8 @@ static bool cell_shutdown_ok(struct cell *cell)
 				 MSG_REQUEST);
 }
 
-static int cell_management_prologue(struct per_cpu *cpu_data, unsigned long id,
+static int cell_management_prologue(enum management_task task,
+				    struct per_cpu *cpu_data, unsigned long id,
 				    struct cell **cell_ptr)
 {
 	/* We do not support management commands over non-root cells. */
@@ -398,7 +417,8 @@ static int cell_management_prologue(struct per_cpu *cpu_data, unsigned long id,
 		return -EINVAL;
 	}
 
-	if (!cell_shutdown_ok(*cell_ptr)) {
+	if ((task == CELL_DESTROY && !cell_reconfig_ok(*cell_ptr)) ||
+	    !cell_shutdown_ok(*cell_ptr)) {
 		cell_resume(cpu_data);
 		return -EPERM;
 	}
@@ -414,7 +434,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	unsigned int cpu;
 	int err;
 
-	err = cell_management_prologue(cpu_data, id, &cell);
+	err = cell_management_prologue(CELL_START, cpu_data, id, &cell);
 	if (err)
 		return err;
 
@@ -441,7 +461,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	unsigned int cpu, n;
 	int err;
 
-	err = cell_management_prologue(cpu_data, id, &cell);
+	err = cell_management_prologue(CELL_DESTROY, cpu_data, id, &cell);
 	if (err)
 		return err;
 
@@ -500,6 +520,7 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 
 			switch (state) {
 			case JAILHOUSE_CELL_RUNNING:
+			case JAILHOUSE_CELL_RUNNING_LOCKED:
 			case JAILHOUSE_CELL_SHUT_DOWN:
 			case JAILHOUSE_CELL_FAILED:
 				return state;

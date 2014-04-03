@@ -115,6 +115,8 @@ static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
 	switch (jailhouse_call_arg(JAILHOUSE_HC_CELL_GET_STATE, cell->id)) {
 	case JAILHOUSE_CELL_RUNNING:
 		return sprintf(buffer, "running\n");
+	case JAILHOUSE_CELL_RUNNING_LOCKED:
+		return sprintf(buffer, "running/locked\n");
 	case JAILHOUSE_CELL_SHUT_DOWN:
 		return sprintf(buffer, "shut down\n");
 	case JAILHOUSE_CELL_FAILED:

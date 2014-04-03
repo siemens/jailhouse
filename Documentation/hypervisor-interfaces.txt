@@ -61,7 +61,7 @@ Return code: positive cell ID or negative error code
 
     Possible errors are:
         -EPERM  (-1)  - hypercall was issued over a non-root cell or an active
-                        cell denied system reconfiguration
+                        cell locked the cell configurations
         -E2BIG  (-7)  - configuration data too large to process
         -ENOMEM (-12) - insufficient hypervisor-internal memory
         -EBUSY  (-16) - a resource of the new cell is already in use by another
@@ -109,7 +109,7 @@ Return code: 0 on success, negative error code otherwise
     Possible errors are:
         -EPERM  (-1)  - hypercall was issued over a non-root cell, the target
                         cell rejected the destruction request or another active
-                        cell denied system reconfiguration
+                        cell locked the cell configurations
         -ENOENT (-2)  - cell with provided ID does not exist
         -ENOMEM (-12) - insufficient hypervisor-internal memory for
                         reconfiguration
@@ -253,8 +253,9 @@ updated by the cell until a terminal state is reached. The following states are
 defined:
 
  - Running (code 0)
- - Shut down (code 1), terminal state
- - Failed (code 2), terminal state
+ - Running, cell configurations locked (code 1)
+ - Shut down (code 2), terminal state
+ - Failed (code 3), terminal state
 
 Once a cell declared to have reached a terminal state, the hypervisor is free
 to destroy or restart that cell. On restart, it will also reset the state field
