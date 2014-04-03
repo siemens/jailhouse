@@ -24,7 +24,9 @@ struct jailhouse_system *system_config;
 static DEFINE_SPINLOCK(shutdown_lock);
 static unsigned int num_cells = 1;
 
-#define for_each_cell(c)	for (c = &root_cell; c; c = c->next)
+#define for_each_cell(c)	for ((c) = &root_cell; (c); (c) = (c)->next)
+#define for_each_non_root_cell(c) \
+	for ((c) = root_cell.next; (c); (c) = (c)->next)
 
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 {
@@ -465,14 +467,14 @@ static int shutdown(struct per_cpu *cpu_data)
 
 	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
 		state = SHUTDOWN_STARTED;
-		for (cell = root_cell.next; cell; cell = cell->next)
+		for_each_non_root_cell(cell)
 			if (!cell_shutdown_ok(cell))
 				state = -EPERM;
 
 		if (state == SHUTDOWN_STARTED) {
 			printk("Shutting down hypervisor\n");
 
-			for (cell = root_cell.next; cell; cell = cell->next) {
+			for_each_non_root_cell(cell) {
 				cell_suspend(cell, cpu_data);
 
 				printk("Closing cell \"%s\"\n",
