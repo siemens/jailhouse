@@ -11,3 +11,5 @@
  */
 
 #define ARRAY_SIZE(array)	sizeof(array) / sizeof((array)[0])
+
+#define BYTE_MASK(size)		(0xFFFFFFFFFFFFFFFFULL >> ((8 - size) * 8))
