@@ -67,9 +67,9 @@ struct {
 			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* PCI */ {
-			.phys_start = 0x80000000,
-			.virt_start = 0x80000000,
-			.size = 0x7ec00000,
+			.phys_start = 0x40000000,
+			.virt_start = 0x40000000,
+			.size = 0xbec00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* yeah, that's not really safe... */
@@ -115,9 +115,9 @@ struct {
 		[ 0xcf8/8 ...  0xcff/8] = 0, /* HACK: PCI, PIIX3 RCR */
 		[ 0xd00/8 ... 0x5657/8] = -1,
 		[0x5658/8 ... 0x565f/8] = 0xf0, /* vmport */
-		[0x5660/8 ... 0xc03f/8] = -1,
-		[0xc000/8 ... 0xc03f/8] = 0, /* virtio-9p-pci */
-		[0xc040/8 ... 0xc07f/8] = 0, /* e1000 */
+		[0x5660/8 ... 0xbfff/8] = -1,
+		[0xc000/8 ... 0xc03f/8] = 0, /* e1000 */
+		[0xc040/8 ... 0xc07f/8] = 0, /* virtio-9p-pci */
 		[0xc080/8 ... 0xc08f/8] = 0, /* piix bmdma */
 		[0xc090/8 ... 0xffff/8] = -1,
 	},
