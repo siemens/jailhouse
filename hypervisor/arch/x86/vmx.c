@@ -239,32 +239,6 @@ int vmx_init(void)
 	return 0;
 }
 
-int vmx_map_memory_region(struct cell *cell,
-			  const struct jailhouse_memory *mem)
-{
-	u64 phys_start = mem->phys_start;
-	u32 flags = EPT_FLAG_WB_TYPE;
-
-	if (mem->flags & JAILHOUSE_MEM_READ)
-		flags |= EPT_FLAG_READ;
-	if (mem->flags & JAILHOUSE_MEM_WRITE)
-		flags |= EPT_FLAG_WRITE;
-	if (mem->flags & JAILHOUSE_MEM_EXECUTE)
-		flags |= EPT_FLAG_EXECUTE;
-	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
-		phys_start = page_map_hvirt2phys(&cell->comm_page);
-
-	return page_map_create(&cell->vmx.ept_structs, phys_start, mem->size,
-			       mem->virt_start, flags, PAGE_MAP_NON_COHERENT);
-}
-
-int vmx_unmap_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem)
-{
-	return page_map_destroy(&cell->vmx.ept_structs, mem->virt_start,
-				mem->size, PAGE_MAP_NON_COHERENT);
-}
-
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 				       unsigned long gphys)
 {
@@ -327,6 +301,32 @@ void vmx_root_cell_shrink(struct jailhouse_cell_desc *config)
 		*b |= ~*pio_bitmap;
 
 	vmx_invept();
+}
+
+int vmx_map_memory_region(struct cell *cell,
+			  const struct jailhouse_memory *mem)
+{
+	u64 phys_start = mem->phys_start;
+	u32 flags = EPT_FLAG_WB_TYPE;
+
+	if (mem->flags & JAILHOUSE_MEM_READ)
+		flags |= EPT_FLAG_READ;
+	if (mem->flags & JAILHOUSE_MEM_WRITE)
+		flags |= EPT_FLAG_WRITE;
+	if (mem->flags & JAILHOUSE_MEM_EXECUTE)
+		flags |= EPT_FLAG_EXECUTE;
+	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
+		phys_start = page_map_hvirt2phys(&cell->comm_page);
+
+	return page_map_create(&cell->vmx.ept_structs, phys_start, mem->size,
+			       mem->virt_start, flags, PAGE_MAP_NON_COHERENT);
+}
+
+int vmx_unmap_memory_region(struct cell *cell,
+			    const struct jailhouse_memory *mem)
+{
+	return page_map_destroy(&cell->vmx.ept_structs, mem->virt_start,
+				mem->size, PAGE_MAP_NON_COHERENT);
 }
 
 void vmx_cell_exit(struct cell *cell)
