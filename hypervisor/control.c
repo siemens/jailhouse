@@ -143,7 +143,7 @@ static void remap_to_root_cell(const struct jailhouse_memory *mem)
 	const struct jailhouse_memory *root_mem =
 		jailhouse_cell_mem_regions(root_cell.config);
 	struct jailhouse_memory overlap;
-	int n;
+	unsigned int n;
 
 	for (n = 0; n < root_cell.config->num_memory_regions;
 	     n++, root_mem++) {
