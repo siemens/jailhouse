@@ -18,6 +18,9 @@
 #else
 #define UART_BASE		0x3f8
 #endif
+#define UART_LSR		0x5
+#define UART_LSR_THRE		0x20
+#define UART_IDLE_LOOPS		100
 
 #define NS_PER_MSEC		1000000UL
 #define NS_PER_SEC		1000000000UL
@@ -132,6 +135,11 @@ void inmate_main(void)
 	unsigned int n;
 
 	printk_uart_base = UART_BASE;
+	do {
+		for (n = 0; n < UART_IDLE_LOOPS; n++)
+			if (!(inb(UART_BASE + UART_LSR) & UART_LSR_THRE))
+				break;
+	} while (n < UART_IDLE_LOOPS);
 
 	if (init_pm_timer())
 		init_apic();
