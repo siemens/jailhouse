@@ -117,6 +117,15 @@ static bool cell_reconfig_ok(struct cell *excluded_cell)
 	return true;
 }
 
+static void cell_reconfig_completed(void)
+{
+	struct cell *cell;
+
+	for_each_non_root_cell(cell)
+		cell_send_message(cell, JAILHOUSE_MSG_RECONFIG_COMPLETED,
+				  MSG_INFORMATION);
+}
+
 static unsigned int get_free_cell_id(void)
 {
 	unsigned int id = 0;
@@ -361,6 +370,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		arch_park_cpu(cpu);
 	}
 
+	cell_reconfig_completed();
+
 	printk("Created cell \"%s\"\n", cell->config->name);
 
 	page_map_dump_stats("after cell creation");
@@ -496,6 +507,8 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 
 	page_free(&mem_pool, cell, cell->data_pages);
 	page_map_dump_stats("after cell destruction");
+
+	cell_reconfig_completed();
 
 	cell_resume(cpu_data);
 

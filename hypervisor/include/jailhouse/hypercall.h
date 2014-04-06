@@ -36,6 +36,7 @@
 
 /* messages to cell */
 #define JAILHOUSE_MSG_SHUTDOWN_REQUEST		1
+#define JAILHOUSE_MSG_RECONFIG_COMPLETED	2
 
 /* replies from cell */
 #define JAILHOUSE_MSG_UNKNOWN			1

@@ -242,6 +242,18 @@ The following messages and corresponding replies are defined:
          configuration (see also [2]) or if the cell state is set to "Shut
          Down" or "Failed" (see below).
 
+ - Reconfiguration Completed (code 2):
+        A cell configuration was changed. This message is for information only
+        but has to be confirmed on reception nevertheless.
+
+   Possible replies:
+        4 - Message received
+
+   Note: The hypervisor does not expect reception confirmation from a cell if
+         that cell has the "Passive Communication Region" flag set in its
+         configuration (see also [2]) or if the cell state is set to "Shut
+         Down" or "Failed" (see below).
+
 
 Logical Channel "Cell State"
 - - - - - - - - - - - - - - -
