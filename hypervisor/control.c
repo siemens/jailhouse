@@ -131,6 +131,47 @@ int check_mem_regions(const struct jailhouse_cell_desc *config)
 	return 0;
 }
 
+static bool address_in_region(unsigned long addr,
+			      const struct jailhouse_memory *region)
+{
+	return addr >= region->phys_start &&
+	       addr < (region->phys_start + region->size);
+}
+
+static void remap_to_root_cell(const struct jailhouse_memory *mem)
+{
+	const struct jailhouse_memory *root_mem =
+		jailhouse_cell_mem_regions(root_cell.config);
+	struct jailhouse_memory overlap;
+	int n;
+
+	for (n = 0; n < root_cell.config->num_memory_regions;
+	     n++, root_mem++) {
+		if (address_in_region(mem->phys_start, root_mem)) {
+			overlap.phys_start = mem->phys_start;
+			overlap.size = root_mem->size -
+				(overlap.phys_start - root_mem->phys_start);
+			if (overlap.size > mem->size)
+				overlap.size = mem->size;
+		} else if (address_in_region(root_mem->phys_start, mem)) {
+			overlap.phys_start = root_mem->phys_start;
+			overlap.size = mem->size -
+				(overlap.phys_start - mem->phys_start);
+			if (overlap.size > root_mem->size)
+				overlap.size = root_mem->size;
+		} else
+			continue;
+
+		overlap.virt_start = root_mem->virt_start +
+			overlap.phys_start - root_mem->phys_start;
+		overlap.flags = root_mem->flags;
+
+		if (arch_map_memory_region(&root_cell, &overlap) != 0)
+			printk("WARNING: Failed to re-assign memory region "
+			       "to root cell\n");
+	}
+}
+
 int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
@@ -279,47 +320,6 @@ static bool cell_shutdown_ok(struct cell *cell)
 		cpu_relax();
 	}
 	return false;
-}
-
-static bool address_in_region(unsigned long addr,
-			      const struct jailhouse_memory *region)
-{
-	return addr >= region->phys_start &&
-	       addr < (region->phys_start + region->size);
-}
-
-static void remap_to_root_cell(const struct jailhouse_memory *mem)
-{
-	const struct jailhouse_memory *root_mem =
-		jailhouse_cell_mem_regions(root_cell.config);
-	struct jailhouse_memory overlap;
-	int n;
-
-	for (n = 0; n < root_cell.config->num_memory_regions;
-	     n++, root_mem++) {
-		if (address_in_region(mem->phys_start, root_mem)) {
-			overlap.phys_start = mem->phys_start;
-			overlap.size = root_mem->size -
-				(overlap.phys_start - root_mem->phys_start);
-			if (overlap.size > mem->size)
-				overlap.size = mem->size;
-		} else if (address_in_region(root_mem->phys_start, mem)) {
-			overlap.phys_start = root_mem->phys_start;
-			overlap.size = mem->size -
-				(overlap.phys_start - mem->phys_start);
-			if (overlap.size > root_mem->size)
-				overlap.size = root_mem->size;
-		} else
-			continue;
-
-		overlap.virt_start = root_mem->virt_start +
-			overlap.phys_start - root_mem->phys_start;
-		overlap.flags = root_mem->flags;
-
-		if (arch_map_memory_region(&root_cell, &overlap) != 0)
-			printk("WARNING: Failed to re-assign memory region "
-			       "to root cell\n");
-	}
 }
 
 int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
