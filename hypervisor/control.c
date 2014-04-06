@@ -204,6 +204,19 @@ static bool address_in_region(unsigned long addr,
 	       addr < (region->phys_start + region->size);
 }
 
+static int unmap_from_root_cell(const struct jailhouse_memory *mem)
+{
+	/*
+	 * arch_unmap_memory_region uses the virtual address of the memory
+	 * region. As only the root cell has a guaranteed 1:1 mapping, make a
+	 * copy where we ensure this.
+	 */
+	struct jailhouse_memory tmp = *mem;
+
+	tmp.virt_start = tmp.phys_start;
+	return arch_unmap_memory_region(&root_cell, &tmp);
+}
+
 static void remap_to_root_cell(const struct jailhouse_memory *mem)
 {
 	const struct jailhouse_memory *root_mem =
@@ -247,7 +260,6 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	struct jailhouse_cell_desc *cfg;
 	unsigned int cell_pages, cpu, n;
 	struct cpu_set *shrinking_set;
-	struct jailhouse_memory tmp;
 	struct cell *cell, *last;
 	int err;
 
@@ -340,15 +352,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		 *  - the communication region is not backed by root memory
 		 */
 		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION)) {
-			/*
-			 * arch_unmap_memory_region uses the virtual address of
-			 * the memory region. As only the root cell has a
-			 * guaranteed 1:1 mapping, make a copy where we ensure
-			 * this.
-			 */
-			tmp = *mem;
-			tmp.virt_start = tmp.phys_start;
-			err = arch_unmap_memory_region(&root_cell, &tmp);
+			err = unmap_from_root_cell(mem);
 			if (err)
 				goto err_restore_root;
 		}
