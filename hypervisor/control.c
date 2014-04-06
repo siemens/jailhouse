@@ -276,7 +276,7 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			 * this.
 			 */
 			tmp = *mem;
-			tmp.phys_start = tmp.virt_start;
+			tmp.virt_start = tmp.phys_start;
 			err = arch_unmap_memory_region(&root_cell, &tmp);
 			if (err)
 				goto err_restore_root;

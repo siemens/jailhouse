@@ -76,7 +76,7 @@ int arch_unmap_memory_region(struct cell *cell,
 	int err;
 
 	err = vtd_unmap_memory_region(cell, mem);
-	if (!err)
+	if (err)
 		return err;
 
 	return vmx_unmap_memory_region(cell, mem);
