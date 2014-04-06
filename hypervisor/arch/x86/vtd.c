@@ -470,18 +470,18 @@ int vtd_map_memory_region(struct cell *cell,
 			       PAGE_MAP_COHERENT);
 }
 
-void vtd_unmap_memory_region(struct cell *cell,
-			     const struct jailhouse_memory *mem)
+int vtd_unmap_memory_region(struct cell *cell,
+			    const struct jailhouse_memory *mem)
 {
 	// HACK for QEMU
 	if (dmar_units == 0)
-		return;
+		return 0;
 
-	if (mem->flags & JAILHOUSE_MEM_DMA)
-		/* This cannot fail. The region was mapped as a whole before,
-		 * thus no hugepages need to be broken up to unmap it. */
-		page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
-				 mem->size, PAGE_MAP_COHERENT);
+	if (!(mem->flags & JAILHOUSE_MEM_DMA))
+		return 0;
+
+	return page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
+				mem->size, PAGE_MAP_COHERENT);
 }
 
 static bool

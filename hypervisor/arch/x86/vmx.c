@@ -258,13 +258,11 @@ int vmx_map_memory_region(struct cell *cell,
 			       mem->virt_start, flags, PAGE_MAP_NON_COHERENT);
 }
 
-void vmx_unmap_memory_region(struct cell *cell,
-			     const struct jailhouse_memory *mem)
+int vmx_unmap_memory_region(struct cell *cell,
+			    const struct jailhouse_memory *mem)
 {
-	/* This cannot fail. The region was mapped as a whole before, thus no
-	 * hugepages need to be broken up to unmap it. */
-	page_map_destroy(&cell->vmx.ept_structs, mem->virt_start, mem->size,
-			 PAGE_MAP_NON_COHERENT);
+	return page_map_destroy(&cell->vmx.ept_structs, mem->virt_start,
+				mem->size, PAGE_MAP_NON_COHERENT);
 }
 
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,

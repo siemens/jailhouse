@@ -369,6 +369,10 @@ int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 
 	mem = jailhouse_cell_mem_regions(cell->config);
 	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
+		/*
+		 * This cannot fail. The region was mapped as a whole before,
+		 * thus no hugepages need to be broken up to unmap it.
+		 */
 		arch_unmap_memory_region(cell, mem);
 		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
 			remap_to_root_cell(mem);

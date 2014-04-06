@@ -140,8 +140,8 @@ int vtd_cell_init(struct cell *cell);
 int vtd_root_cell_shrink(struct jailhouse_cell_desc *config);
 int vtd_map_memory_region(struct cell *cell,
 			  const struct jailhouse_memory *mem);
-void vtd_unmap_memory_region(struct cell *cell,
-			     const struct jailhouse_memory *mem);
+int vtd_unmap_memory_region(struct cell *cell,
+			    const struct jailhouse_memory *mem);
 void vtd_cell_exit(struct cell *cell);
 
 void vtd_shutdown(void);
