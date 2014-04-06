@@ -137,7 +137,7 @@ struct vtd_entry {
 int vtd_init(void);
 
 int vtd_cell_init(struct cell *cell);
-int vtd_root_cell_shrink(struct jailhouse_cell_desc *config);
+void vtd_root_cell_shrink(struct jailhouse_cell_desc *config);
 int vtd_map_memory_region(struct cell *cell,
 			  const struct jailhouse_memory *mem);
 int vtd_unmap_memory_region(struct cell *cell,

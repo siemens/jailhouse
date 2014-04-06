@@ -43,17 +43,14 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 
 	/* TODO: Implement proper roll-backs on errors */
 
-	err = vmx_root_cell_shrink(cell->config);
-	if (err)
-		return err;
+	vmx_root_cell_shrink(cell->config);
 	flush_root_cell_cpu_caches(cpu_data);
 	err = vmx_cell_init(cell);
 	if (err)
 		return err;
 
-	err = vtd_root_cell_shrink(cell->config);
-	if (!err)
-		err = vtd_cell_init(cell);
+	vtd_root_cell_shrink(cell->config);
+	err = vtd_cell_init(cell);
 	if (err)
 		vmx_cell_exit(cell);
 	return err;

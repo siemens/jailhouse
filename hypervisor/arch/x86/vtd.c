@@ -420,32 +420,18 @@ vtd_remove_device_from_cell(struct cell *cell,
 	page_free(&mem_pool, context_entry_table, 1);
 }
 
-int vtd_root_cell_shrink(struct jailhouse_cell_desc *config)
+void vtd_root_cell_shrink(struct jailhouse_cell_desc *config)
 {
-	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(config);
 	const struct jailhouse_pci_device *dev =
 		jailhouse_cell_pci_devices(config);
 	unsigned int n;
-	int err = 0;
 
 	vtd_init_fault_nmi();
-
-	for (n = 0; n < config->num_memory_regions; n++, mem++)
-		if (mem->flags & JAILHOUSE_MEM_DMA) {
-			err = page_map_destroy(&root_cell.vtd.pg_structs,
-					       mem->phys_start, mem->size,
-					       PAGE_MAP_COHERENT);
-			if (err)
-				goto out;
-		}
 
 	for (n = 0; n < config->num_pci_devices; n++)
 		vtd_remove_device_from_cell(&root_cell, &dev[n]);
 
-out:
 	vtd_flush_domain_caches(root_cell.id);
-	return err;
 }
 
 int vtd_map_memory_region(struct cell *cell,

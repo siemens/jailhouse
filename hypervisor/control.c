@@ -177,9 +177,11 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
 	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
 	unsigned long cfg_header_size, cfg_total_size;
+	const struct jailhouse_memory *mem;
 	struct jailhouse_cell_desc *cfg;
+	unsigned int cell_pages, cpu, n;
 	struct cpu_set *shrinking_set;
-	unsigned int cell_pages, cpu;
+	struct jailhouse_memory tmp;
 	struct cell *cell, *last;
 	int err;
 
@@ -259,9 +261,30 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	for_each_cpu(cpu, cell->cpu_set)
 		clear_bit(cpu, shrinking_set->bitmap);
 
+	/* unmap the new cell's memory regions from the root cell */
+	mem = jailhouse_cell_mem_regions(cell->config);
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+		/*
+		 * Exceptions:
+		 *  - the communication region is not backed by root memory
+		 */
+		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION)) {
+			/*
+			 * arch_unmap_memory_region uses the virtual address of
+			 * the memory region. As only the root cell has a
+			 * guaranteed 1:1 mapping, make a copy where we ensure
+			 * this.
+			 */
+			tmp = *mem;
+			tmp.phys_start = tmp.virt_start;
+			err = arch_unmap_memory_region(&root_cell, &tmp);
+			if (err)
+				goto err_restore_root;
+		}
+
 	err = arch_cell_create(cpu_data, cell);
 	if (err)
-		goto err_restore_cpu_set;
+		goto err_restore_root;
 
 	last = &root_cell;
 	while (last->next)
@@ -287,7 +310,10 @@ int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	return cell->id;
 
-err_restore_cpu_set:
+err_restore_root:
+	mem = jailhouse_cell_mem_regions(cell->config);
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+		remap_to_root_cell(mem);
 	for_each_cpu(cpu, cell->cpu_set)
 		set_bit(cpu, shrinking_set->bitmap);
 err_free_cpu_set:

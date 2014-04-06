@@ -287,7 +287,7 @@ enum vmcs_field {
 int vmx_init(void);
 
 int vmx_cell_init(struct cell *cell);
-int vmx_root_cell_shrink(struct jailhouse_cell_desc *config);
+void vmx_root_cell_shrink(struct jailhouse_cell_desc *config);
 int vmx_map_memory_region(struct cell *cell,
 			  const struct jailhouse_memory *mem);
 int vmx_unmap_memory_region(struct cell *cell,
