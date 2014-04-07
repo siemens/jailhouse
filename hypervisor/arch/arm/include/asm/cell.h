@@ -27,6 +27,8 @@ struct cell {
 	struct cpu_set *cpu_set;
 	struct cpu_set small_cpu_set;
 
+	bool loadable;
+
 	struct cell *next;
 
 	union {

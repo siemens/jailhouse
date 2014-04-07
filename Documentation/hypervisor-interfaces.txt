@@ -78,7 +78,8 @@ Sets all cell CPUs to an architecture-specific start state and resumes
 execution of the cell if it was previously suspended. At least one CPU will
 then execute the bootstrap code that must have been loaded into the cell's
 memory at the reset address before invoking this hypercall. See [1] for details
-on the start state of cell CPUs.
+on the start state of cell CPUs. In addition, access from the root cell to
+memory regions of this cell that are marked "loadable" [2] is revoked.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
@@ -91,6 +92,24 @@ Return code: 0 on success or negative error code
                         cell rejected the reset request
         -ENOENT (-2)  - cell with provided ID does not exist
         -EINVAL (-22) - root cell specified, which cannot be started
+
+
+Hypercall "Cell Set Loadable" (code 3)
+- - - - - - - - - - - - - - - - - - - -
+
+Shuts down a running cell and enables (re-)loading of their memory regions that
+are marked "loadable" in the cell's configuration. This is achieved by mapping
+the marked regions into the root cell.
+
+Argument: ID of target cell
+
+Return code: 0 on success or negative error code
+
+    Possible errors are:
+        -EPERM  (-1)  - hypercall was issued over a non-root cell or the target
+                        cell rejected the shutdown request
+        -ENOENT (-2)  - cell with provided ID does not exist
+        -EINVAL (-22) - root cell specified, which cannot be set loadable
 
 
 Hypercall "Cell Destroy" (code 4)

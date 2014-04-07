@@ -21,7 +21,7 @@
 
 enum msg_type {MSG_REQUEST, MSG_INFORMATION};
 enum failure_mode {ABORT_ON_ERROR, WARN_ON_ERROR};
-enum management_task {CELL_START, CELL_DESTROY};
+enum management_task {CELL_START, CELL_SET_LOADABLE, CELL_DESTROY};
 
 struct jailhouse_system *system_config;
 
@@ -453,13 +453,26 @@ static int cell_management_prologue(enum management_task task,
 
 static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 {
+	const struct jailhouse_memory *mem;
+	unsigned int cpu, n;
 	struct cell *cell;
-	unsigned int cpu;
 	int err;
 
 	err = cell_management_prologue(CELL_START, cpu_data, id, &cell);
 	if (err)
 		return err;
+
+	if (cell->loadable) {
+		/* unmap all loadable memory regions from the root cell */
+		mem = jailhouse_cell_mem_regions(cell->config);
+		for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+			if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
+				err = unmap_from_root_cell(mem);
+				if (err)
+					goto out_resume;
+			}
+		cell->loadable = false;
+	}
 
 	/* present a consistent Communication Region state to the cell */
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_RUNNING;
@@ -472,9 +485,49 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 
 	printk("Started cell \"%s\"\n", cell->config->name);
 
+out_resume:
 	cell_resume(cpu_data);
 
-	return 0;
+	return err;
+}
+
+static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
+{
+	const struct jailhouse_memory *mem;
+	unsigned int cpu, n;
+	struct cell *cell;
+	int err;
+
+	err = cell_management_prologue(CELL_SET_LOADABLE, cpu_data, id, &cell);
+	if (err)
+		return err;
+
+	for_each_cpu(cpu, cell->cpu_set) {
+		per_cpu(cpu)->failed = false;
+		arch_park_cpu(cpu);
+	}
+
+	if (cell->loadable)
+		goto out_resume;
+
+	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
+	cell->loadable = true;
+
+	/* map all loadable memory regions into the root cell */
+	mem = jailhouse_cell_mem_regions(cell->config);
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+		if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
+			err = remap_to_root_cell(mem, ABORT_ON_ERROR);
+			if (err)
+				goto out_resume;
+		}
+
+	printk("Cell \"%s\" can be loaded\n", cell->config->name);
+
+out_resume:
+	cell_resume(cpu_data);
+
+	return err;
 }
 
 static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
@@ -657,6 +710,8 @@ long hypercall(struct per_cpu *cpu_data, unsigned long code, unsigned long arg)
 		return cell_create(cpu_data, arg);
 	case JAILHOUSE_HC_CELL_START:
 		return cell_start(cpu_data, arg);
+	case JAILHOUSE_HC_CELL_SET_LOADABLE:
+		return cell_set_loadable(cpu_data, arg);
 	case JAILHOUSE_HC_CELL_DESTROY:
 		return cell_destroy(cpu_data, arg);
 	case JAILHOUSE_HC_HYPERVISOR_GET_INFO:
