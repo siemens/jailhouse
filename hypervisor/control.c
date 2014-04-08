@@ -20,6 +20,7 @@
 #include <asm/spinlock.h>
 
 enum msg_type {MSG_REQUEST, MSG_INFORMATION};
+enum failure_mode {ABORT_ON_ERROR, WARN_ON_ERROR};
 enum management_task {CELL_START, CELL_DESTROY};
 
 struct jailhouse_system *system_config;
@@ -217,12 +218,14 @@ static int unmap_from_root_cell(const struct jailhouse_memory *mem)
 	return arch_unmap_memory_region(&root_cell, &tmp);
 }
 
-static void remap_to_root_cell(const struct jailhouse_memory *mem)
+static int remap_to_root_cell(const struct jailhouse_memory *mem,
+			      enum failure_mode mode)
 {
 	const struct jailhouse_memory *root_mem =
 		jailhouse_cell_mem_regions(root_cell.config);
 	struct jailhouse_memory overlap;
 	unsigned int n;
+	int err = 0;
 
 	for (n = 0; n < root_cell.config->num_memory_regions;
 	     n++, root_mem++) {
@@ -245,10 +248,15 @@ static void remap_to_root_cell(const struct jailhouse_memory *mem)
 			overlap.phys_start - root_mem->phys_start;
 		overlap.flags = root_mem->flags;
 
-		if (arch_map_memory_region(&root_cell, &overlap) != 0)
+		err = arch_map_memory_region(&root_cell, &overlap);
+		if (err) {
+			if (mode == ABORT_ON_ERROR)
+				break;
 			printk("WARNING: Failed to re-assign memory region "
 			       "to root cell\n");
+		}
 	}
+	return err;
 }
 
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
@@ -387,7 +395,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 err_restore_root:
 	mem = jailhouse_cell_mem_regions(cell->config);
 	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
-		remap_to_root_cell(mem);
+		remap_to_root_cell(mem, WARN_ON_ERROR);
 	for_each_cpu(cpu, cell->cpu_set)
 		set_bit(cpu, shrinking_set->bitmap);
 err_free_cpu_set:
@@ -498,7 +506,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 		 */
 		arch_unmap_memory_region(cell, mem);
 		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
-			remap_to_root_cell(mem);
+			remap_to_root_cell(mem, WARN_ON_ERROR);
 	}
 
 	arch_cell_destroy(cpu_data, cell);
