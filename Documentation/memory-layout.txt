@@ -56,14 +56,14 @@ Size: as defined in the system configuration (see hypervisor_memory.size) [1]
 Remapping region
 ----------------
 
-The remapping region is range of reserved virtual memory in the hypervisor
+The remapping region is a range of reserved virtual memory in the hypervisor
 address space. It is used to map MMIO, platform configuration memory (ACPI on
 x86) and, temporarily, selected guest pages for hypervisor access.
 
 Virtual address: REMAP_BASE
 Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
 
-        +--------------------------------------+
+        +--------------------------------------+ - lower address
         | Per-CPU Temporary Mapping Region     |
         |                                      |
         +--------------------------------------+
@@ -71,7 +71,7 @@ Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
         :                                      :
         :                                      :
         |                                      |
-        +--------------------------------------+
+        +--------------------------------------+ - higher address
 
 
 References
