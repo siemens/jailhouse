@@ -42,12 +42,18 @@ unsigned long page_map_get_phys_invalid(pt_entry_t pte, unsigned long virt)
 static unsigned long find_next_free_page(struct page_pool *pool,
 					 unsigned long start)
 {
-	unsigned long start_mask =
-		~0UL >> (BITS_PER_LONG - (start % BITS_PER_LONG));
 	unsigned long bmp_pos, bmp_val, page_nr;
+	unsigned long start_mask = 0;
 
 	if (start >= pool->pages)
 		return INVALID_PAGE_NR;
+
+	/*
+	 * If we don't start on the beginning of a bitmap word, create a mask
+	 * to mark the pages before the start page as (virtually) used.
+	 */
+	if (start % BITS_PER_LONG > 0)
+		start_mask = ~0UL >> (BITS_PER_LONG - (start % BITS_PER_LONG));
 
 	for (bmp_pos = start / BITS_PER_LONG;
 	     bmp_pos < pool->pages / BITS_PER_LONG; bmp_pos++) {
