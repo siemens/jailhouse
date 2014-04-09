@@ -524,14 +524,13 @@ static int load_image(struct cell *cell,
 	return err;
 }
 
-static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
+static int jailhouse_cell_create(struct jailhouse_cell_create __user *arg)
 {
-	struct jailhouse_preload_image __user *image = arg->image;
-	struct jailhouse_new_cell cell_params;
+	struct jailhouse_cell_create cell_params;
 	struct jailhouse_cell_desc *config;
 	struct jailhouse_cell_id cell_id;
-	unsigned int cpu, n;
 	struct cell *cell;
+	unsigned int cpu;
 	int id, err;
 
 	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
@@ -572,12 +571,6 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
-	for (n = cell_params.num_preload_images; n > 0; n--, image++) {
-		err = load_image(cell, image);
-		if (err)
-			goto error_cell_put;
-	}
-
 	if (!cpumask_subset(&cell->cpus_assigned, &root_cell->cpus_assigned)) {
 		err = -EBUSY;
 		goto error_cell_put;
@@ -599,10 +592,6 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto error_cpu_online;
 	}
 
-	err = jailhouse_call_arg(JAILHOUSE_HC_CELL_START, id);
-	if (err)
-		goto error_cell_destroy;
-
 	cell->id = id;
 	register_cell(cell);
 
@@ -615,12 +604,6 @@ kfree_config_out:
 	kfree(config);
 
 	return err;
-
-error_cell_destroy:
-	if (jailhouse_call_arg(JAILHOUSE_HC_CELL_DESTROY, id) < 0) {
-		pr_crit("Cleanup after incomplete cell creation failed");
-		goto error_cell_put;
-	}
 
 error_cpu_online:
 	for_each_cpu(cpu, &cell->cpus_assigned) {
@@ -760,7 +743,7 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 		break;
 	case JAILHOUSE_CELL_CREATE:
 		err = jailhouse_cell_create(
-			(struct jailhouse_new_cell __user *)arg);
+			(struct jailhouse_cell_create __user *)arg);
 		break;
 	case JAILHOUSE_CELL_LOAD:
 		err = jailhouse_cell_load(

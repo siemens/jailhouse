@@ -14,18 +14,17 @@
 #include <linux/types.h>
 #include <jailhouse/cell-config.h>
 
+struct jailhouse_cell_create {
+	__u64 config_address;
+	__u32 config_size;
+	__u32 padding;
+};
+
 struct jailhouse_preload_image {
 	__u64 source_address;
 	__u64 size;
 	__u64 target_address;
 	__u64 padding;
-};
-
-struct jailhouse_new_cell {
-	__u64 config_address;
-	__u32 config_size;
-	__u32 num_preload_images;
-	struct jailhouse_preload_image image[];
 };
 
 struct jailhouse_cell_id {
@@ -45,7 +44,7 @@ struct jailhouse_cell_load {
 
 #define JAILHOUSE_ENABLE		_IOW(0, 0, struct jailhouse_system)
 #define JAILHOUSE_DISABLE		_IO(0, 1)
-#define JAILHOUSE_CELL_CREATE		_IOW(0, 2, struct jailhouse_new_cell)
+#define JAILHOUSE_CELL_CREATE		_IOW(0, 2, struct jailhouse_cell_create)
 #define JAILHOUSE_CELL_LOAD		_IOW(0, 3, struct jailhouse_cell_load)
 #define JAILHOUSE_CELL_START		_IOW(0, 4, struct jailhouse_cell_id)
 #define JAILHOUSE_CELL_DESTROY		_IOW(0, 5, struct jailhouse_cell_id)

@@ -28,10 +28,12 @@ help(const char *progname, int exit_status)
 {
 	printf("%s { COMMAND | --help }\n"
 	       "\nAvailable commands:\n"
-	       "   enable CONFIGFILE\n"
+	       "   enable SYSCONFIG\n"
 	       "   disable\n"
-	       "   cell create CONFIGFILE IMAGE [-l ADDRESS] "
-			"[IMAGE [-l ADDRESS] ...]\n"
+	       "   cell create CELLCONFIG\n"
+	       "   cell load { ID | [--name] NAME } IMAGE "
+			"[ -a | --address ADDRESS] ...\n"
+	       "   cell start { ID | [--name] NAME }\n"
 	       "   cell destroy { ID | [--name] NAME }\n",
 	       progname);
 	exit(exit_status);
@@ -107,6 +109,29 @@ static int enable(int argc, char *argv[])
 	return err;
 }
 
+static int cell_create(int argc, char *argv[])
+{
+	struct jailhouse_cell_create cell_create;
+	size_t size;
+	int err, fd;
+
+	if (argc != 4)
+		help(argv[0], 1);
+
+	cell_create.config_address = (unsigned long)read_file(argv[3], &size);
+	cell_create.config_size = size;
+
+	fd = open_dev();
+
+	err = ioctl(fd, JAILHOUSE_CELL_CREATE, &cell_create);
+	if (err)
+		perror("JAILHOUSE_CELL_CREATE");
+
+	close(fd);
+
+	return err;
+}
+
 static int parse_cell_id(struct jailhouse_cell_id *cell_id, int argc,
 			 char *argv[])
 {
@@ -138,50 +163,59 @@ static int parse_cell_id(struct jailhouse_cell_id *cell_id, int argc,
 	return arg_pos + 1;
 }
 
-static int cell_create(int argc, char *argv[])
+static bool match_opt(const char *argv, const char *short_opt,
+		      const char *long_opt)
 {
+	return strcmp(argv, short_opt) == 0 ||
+		strcmp(argv, long_opt) == 0;
+}
+
+static int cell_load(int argc, char *argv[])
+{
+	unsigned int images, id_args, arg_num, n;
 	struct jailhouse_preload_image *image;
-	struct jailhouse_new_cell *cell;
-	unsigned int images, arg_num, n;
+	struct jailhouse_cell_load *cell_load;
+	struct jailhouse_cell_id cell_id;
 	size_t size;
 	int err, fd;
 	char *endp;
 
-	if (argc < 5)
+	id_args = parse_cell_id(&cell_id, argc - 3, &argv[3]);
+	arg_num = 3 + id_args;
+	if (id_args == 0 || arg_num == argc)
 		help(argv[0], 1);
 
-	arg_num = 4;
 	images = 0;
 	while (arg_num < argc) {
 		images++;
 		arg_num++;
 
-		if (arg_num < argc && strcmp(argv[arg_num], "-l") == 0) {
+		if (arg_num < argc &&
+		    match_opt(argv[arg_num], "-a", "--address")) {
 			if (arg_num + 1 >= argc)
 				help(argv[0], 1);
 			arg_num += 2;
 		}
 	}
 
-	cell = malloc(sizeof(*cell) + sizeof(*image) * images);
-	if (!cell) {
+	cell_load = malloc(sizeof(*cell_load) + sizeof(*image) * images);
+	if (!cell_load) {
 		fprintf(stderr, "insufficient memory\n");
 		exit(1);
 	}
+	cell_load->cell_id = cell_id;
+	cell_load->num_preload_images = images;
 
-	cell->config_address = (unsigned long)read_file(argv[3], &size);
-	cell->config_size = size;
-	cell->num_preload_images = images;
+	arg_num = 3 + id_args;
 
-	arg_num = 4;
-
-	for (n = 0, image = cell->image; n < images; n++, image++) {
+	for (n = 0, image = cell_load->image; n < images; n++, image++) {
 		image->source_address =
 			(unsigned long)read_file(argv[arg_num++], &size);
 		image->size = size;
 		image->target_address = 0;
 
-		if (arg_num < argc && strcmp(argv[arg_num], "-l") == 0) {
+		if (arg_num < argc &&
+		    match_opt(argv[arg_num], "-a", "--address")) {
 			errno = 0;
 			image->target_address =
 				strtoll(argv[arg_num + 1], &endp, 0);
@@ -194,20 +228,19 @@ static int cell_create(int argc, char *argv[])
 
 	fd = open_dev();
 
-	err = ioctl(fd, JAILHOUSE_CELL_CREATE, cell);
+	err = ioctl(fd, JAILHOUSE_CELL_LOAD, cell_load);
 	if (err)
-		perror("JAILHOUSE_CELL_CREATE");
+		perror("JAILHOUSE_CELL_LOAD");
 
 	close(fd);
-	free((void *)(unsigned long)cell->config_address);
-	for (n = 0, image = cell->image; n < images; n++, image++)
+	for (n = 0, image = cell_load->image; n < images; n++, image++)
 		free((void *)(unsigned long)image->source_address);
-	free(cell);
+	free(cell_load);
 
 	return err;
 }
 
-static int cell_destroy(int argc, char *argv[])
+static int cell_simple_cmd(int argc, char *argv[], unsigned int command)
 {
 	struct jailhouse_cell_id cell_id;
 	int id_args, err, fd;
@@ -218,9 +251,13 @@ static int cell_destroy(int argc, char *argv[])
 
 	fd = open_dev();
 
-	err = ioctl(fd, JAILHOUSE_CELL_DESTROY, &cell_id);
+	err = ioctl(fd, command, &cell_id);
 	if (err)
-		perror("JAILHOUSE_CELL_DESTROY");
+		perror(command == JAILHOUSE_CELL_START ?
+		       "JAILHOUSE_CELL_START" :
+		       command == JAILHOUSE_CELL_DESTROY ?
+		       "JAILHOUSE_CELL_DESTROY" :
+		       "<unknown command>");
 
 	close(fd);
 
@@ -236,8 +273,12 @@ static int cell_management(int argc, char *argv[])
 
 	if (strcmp(argv[2], "create") == 0)
 		err = cell_create(argc, argv);
+	else if (strcmp(argv[2], "load") == 0)
+		err = cell_load(argc, argv);
+	else if (strcmp(argv[2], "start") == 0)
+		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_START);
 	else if (strcmp(argv[2], "destroy") == 0)
-		err = cell_destroy(argc, argv);
+		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_DESTROY);
 	else
 		help(argv[0], 1);
 
