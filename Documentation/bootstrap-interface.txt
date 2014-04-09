@@ -75,8 +75,8 @@ Hypervisor Initialization Function
 ----------------------------------
 
 The initialization function has to be called on each online CPU in order to
-hand over the control of the system to Jailhouse. Jailhouse will wait for as
-many CPUs as specified in the "Number of Online CPUs" header field and will not
+hand over control of the system to Jailhouse. Jailhouse will wait for as many
+CPUs as specified in the "Number of Online CPUs" header field and will not
 return from the function until all started the initialization. CPUs not
 initialized during hypervisor activation cannot be used by any cell until
 Jailhouse is deactivated again.

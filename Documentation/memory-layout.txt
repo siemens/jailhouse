@@ -3,8 +3,8 @@ Memory Layout of the Jailhouse Hypervisor
 
 While the hypervisor is running, two memory regions are visible it its address
 space: the hypervisor region and the remapping region. Jailhouse cells are not
-mapped into hypervisor's address space, with the exception of explicitly shared
-pages and pages that are temporarily mapped, e.g. during MMIO instruction
+mapped into the hypervisor's address space, with the exception of explicitly
+shared pages and pages that are temporarily mapped, e.g. during MMIO instruction
 parsing.
 
 
