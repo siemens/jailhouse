@@ -110,7 +110,7 @@ static int cell_create(int argc, char *argv[])
 {
 	struct jailhouse_preload_image *image;
 	struct jailhouse_new_cell *cell;
-	unsigned int images, arg_num;
+	unsigned int images, arg_num, n;
 	size_t size;
 	int err, fd;
 	char *endp;
@@ -146,9 +146,8 @@ static int cell_create(int argc, char *argv[])
 	cell->num_preload_images = images;
 
 	arg_num = 4;
-	image = cell->image;
 
-	while (images > 0) {
+	for (n = 0, image = cell->image; n < images; n++, image++) {
 		image->source_address =
 			(unsigned long)read_file(argv[arg_num++], &size);
 		image->size = size;
@@ -165,7 +164,6 @@ static int cell_create(int argc, char *argv[])
 			arg_num += 2;
 		}
 		image++;
-		images--;
 	}
 
 	fd = open_dev();
@@ -176,7 +174,8 @@ static int cell_create(int argc, char *argv[])
 
 	close(fd);
 	free((void *)(unsigned long)cell->config_address);
-	free((void *)(unsigned long)image->source_address);
+	for (n = 0, image = cell->image; n < images; n++, image++)
+		free((void *)(unsigned long)image->source_address);
 	free(cell);
 
 	return err;
