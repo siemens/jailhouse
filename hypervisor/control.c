@@ -428,6 +428,11 @@ int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
+	/*
+	 * We do not need explicit synchronization with cell_create/destroy
+	 * because their cell_suspend(root_cell) will not return before we left
+	 * this hypercall.
+	 */
 	for_each_cell(cell)
 		if (cell->id == id) {
 			u32 state = cell->comm_page.comm_region.cell_state;
@@ -522,6 +527,11 @@ int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 	if (!cpu_id_valid(cpu_id))
 		return -EINVAL;
 
+	/*
+	 * We do not need explicit synchronization with cell_destroy because
+	 * its cell_suspend(root_cell + this_cell) will not return before we
+	 * left this hypercall.
+	 */
 	if (cpu_data->cell != &root_cell &&
 	    (cpu_id > cpu_data->cell->cpu_set->max_cpu_id ||
 	     !test_bit(cpu_id, cpu_data->cell->cpu_set->bitmap)))
