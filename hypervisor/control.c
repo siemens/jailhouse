@@ -173,7 +173,7 @@ static void remap_to_root_cell(const struct jailhouse_memory *mem)
 	}
 }
 
-int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
+static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
 	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
@@ -349,7 +349,7 @@ static bool cell_shutdown_ok(struct cell *cell)
 	return false;
 }
 
-int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
+static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 {
 	const struct jailhouse_memory *mem;
 	struct cell *cell, *previous;
@@ -422,7 +422,7 @@ resume_out:
 	return err;
 }
 
-int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
+static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 {
 	struct cell *cell;
 
@@ -450,7 +450,7 @@ int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 	return -ENOENT;
 }
 
-int shutdown(struct per_cpu *cpu_data)
+static int shutdown(struct per_cpu *cpu_data)
 {
 	unsigned int this_cpu = cpu_data->cpu_id;
 	struct cell *cell;
@@ -505,7 +505,7 @@ int shutdown(struct per_cpu *cpu_data)
 	return ret;
 }
 
-long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
+static long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
 {
 	switch (type) {
 	case JAILHOUSE_INFO_MEM_POOL_SIZE:
@@ -523,7 +523,7 @@ long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
 	}
 }
 
-int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
+static int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 {
 	if (!cpu_id_valid(cpu_id))
 		return -EINVAL;
@@ -540,6 +540,26 @@ int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 
 	return per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
 		JAILHOUSE_CPU_RUNNING;
+}
+
+long hypercall(struct per_cpu *cpu_data, unsigned long code, unsigned long arg)
+{
+	switch (code) {
+	case JAILHOUSE_HC_DISABLE:
+		return shutdown(cpu_data);
+	case JAILHOUSE_HC_CELL_CREATE:
+		return cell_create(cpu_data, arg);
+	case JAILHOUSE_HC_CELL_DESTROY:
+		return cell_destroy(cpu_data, arg);
+	case JAILHOUSE_HC_HYPERVISOR_GET_INFO:
+		return hypervisor_get_info(cpu_data, arg);
+	case JAILHOUSE_HC_CELL_GET_STATE:
+		return cell_get_state(cpu_data, arg);
+	case JAILHOUSE_HC_CPU_GET_STATE:
+		return cpu_get_state(cpu_data, arg);
+	default:
+		return -ENOSYS;
+	}
 }
 
 void panic_stop(struct per_cpu *cpu_data)

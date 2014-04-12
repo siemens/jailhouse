@@ -858,6 +858,8 @@ static void update_efer(void)
 static void vmx_handle_hypercall(struct registers *guest_regs,
 				 struct per_cpu *cpu_data)
 {
+	unsigned long code = guest_regs->rax;
+
 	vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
 
 	if ((!(vmcs_read64(GUEST_IA32_EFER) & EFER_LMA) &&
@@ -867,35 +869,14 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 		return;
 	}
 
-	switch (guest_regs->rax) {
-	case JAILHOUSE_HC_DISABLE:
-		guest_regs->rax = shutdown(cpu_data);
-		if (guest_regs->rax == 0)
-			vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
-		break;
-	case JAILHOUSE_HC_CELL_CREATE:
-		guest_regs->rax = cell_create(cpu_data, guest_regs->rdi);
-		break;
-	case JAILHOUSE_HC_CELL_DESTROY:
-		guest_regs->rax = cell_destroy(cpu_data, guest_regs->rdi);
-		break;
-	case JAILHOUSE_HC_HYPERVISOR_GET_INFO:
-		guest_regs->rax = hypervisor_get_info(cpu_data,
-						      guest_regs->rdi);
-		break;
-	case JAILHOUSE_HC_CELL_GET_STATE:
-		guest_regs->rax = cell_get_state(cpu_data, guest_regs->rdi);
-		break;
-	case JAILHOUSE_HC_CPU_GET_STATE:
-		guest_regs->rax = cpu_get_state(cpu_data, guest_regs->rdi);
-		break;
-	default:
+	guest_regs->rax = hypercall(cpu_data, code, guest_regs->rdi);
+	if (guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
-		       cpu_data->cpu_id, guest_regs->rax,
+		       cpu_data->cpu_id, code,
 		       vmcs_read64(GUEST_RIP) - X86_INST_LEN_VMCALL);
-		guest_regs->rax = -ENOSYS;
-		break;
-	}
+
+	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
+		vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
 }
 
 static bool vmx_handle_cr(struct registers *guest_regs,

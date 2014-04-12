@@ -39,15 +39,8 @@ bool cpu_id_valid(unsigned long cpu_id);
 int check_mem_regions(const struct jailhouse_cell_desc *config);
 int cell_init(struct cell *cell, bool copy_cpu_set);
 
-int cell_create(struct per_cpu *cpu_data, unsigned long config_address);
-int cell_destroy(struct per_cpu *cpu_data, unsigned long id);
-int cell_get_state(struct per_cpu *cpu_data, unsigned long id);
-
-int shutdown(struct per_cpu *cpu_data);
-
-long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type);
-
-int cpu_get_state(struct per_cpu *cpu_data, unsigned long id);
+long hypercall(struct per_cpu *cpu_data, unsigned long code,
+	       unsigned long arg);
 
 void __attribute__((noreturn)) panic_stop(struct per_cpu *cpu_data);
 void panic_halt(struct per_cpu *cpu_data);
