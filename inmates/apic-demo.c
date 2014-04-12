@@ -142,6 +142,8 @@ void inmate_main(void)
 				break;
 	} while (n < UART_IDLE_LOOPS);
 
+	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
+
 	if (init_pm_timer())
 		init_apic();
 
