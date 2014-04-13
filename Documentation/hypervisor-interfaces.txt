@@ -25,10 +25,7 @@ Intel x86-64 (IA-32e) ABI
 
 Instruction:    vmcall
 Hypercall code: RAX
-1. argument:    RDI
-2. argument:    RSI
-3. argument:    RDX
-4. argument:    RCX
+Argument:       RDI
 Return code:    RAX
 
 
@@ -40,7 +37,7 @@ returning full control over the hardware back to Linux.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
-Arguments: none
+Argument: none
 
 Return code: 0 on success, negative error code otherwise
 
@@ -60,8 +57,7 @@ reset state of cell CPUs.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
-Arguments: 1. Guest-physical address of cell configuration (see [2] for
-              details)
+Argument: guest-physical address of cell configuration (see [2] for details)
 
 Return code: positive cell ID or negative error code
 
@@ -86,7 +82,7 @@ cell directly after hypervisor start.
 
 This hypercall can only be issued on CPUs belonging to the root cell.
 
-Arguments: 1. ID of cell to be destroyed
+Argument: ID of cell to be destroyed
 
 Return code: 0 on success, negative error code otherwise
 
@@ -107,7 +103,7 @@ Hypercall "Hypervisor Get Info" (code 3)
 
 Obtain information about specific hypervisor states.
 
-Arguments: 1. Information type:
+Argument: Information type:
         0 - number of pages in hypervisor memory pool
         1 - used pages of hypervisor memory pool
         2 - number of pages in hypervisor remapping pool
@@ -125,7 +121,7 @@ Hypercall "Cell Get State" (code 4)
 
 Obtain information about the state of a specific cell.
 
-Arguments: 1. ID of cell to be queried
+Argument: ID of cell to be queried
 
 This hypercall can only be issued on CPUs belonging to the root cell.
 
@@ -146,7 +142,7 @@ Hypercall "CPU Get State" (code 5)
 
 Obtain information about the state of a specific CPU.
 
-Arguments: 1. logical ID of CPU to be queried
+Argument: logical ID of CPU to be queried
 
 Return code: CPU state (>=0) or negative error code
 

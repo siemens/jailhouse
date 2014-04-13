@@ -123,7 +123,7 @@ static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
 
-	switch (jailhouse_call1(JAILHOUSE_HC_CELL_GET_STATE, cell->id)) {
+	switch (jailhouse_call_arg(JAILHOUSE_HC_CELL_GET_STATE, cell->id)) {
 	case JAILHOUSE_CELL_RUNNING:
 		return sprintf(buffer, "running\n");
 	case JAILHOUSE_CELL_SHUT_DOWN:
@@ -158,7 +158,7 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 		return -ENOMEM;
 
 	for_each_cpu_mask(cpu, cell->cpus_assigned)
-		if (jailhouse_call1(JAILHOUSE_HC_CPU_GET_STATE, cpu) ==
+		if (jailhouse_call_arg(JAILHOUSE_HC_CPU_GET_STATE, cpu) ==
 		    JAILHOUSE_CPU_FAILED)
 			cpu_set(cpu, *cpus_failed);
 
@@ -410,7 +410,7 @@ static void leave_hypervisor(void *info)
 		readl(page);
 
 	/* either returns 0 or the same error code across all CPUs */
-	err = jailhouse_call0(JAILHOUSE_HC_DISABLE);
+	err = jailhouse_call(JAILHOUSE_HC_DISABLE);
 	if (err)
 		error_code = err;
 
@@ -574,7 +574,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 			cpu_clear(cpu, root_cell->cpus_assigned);
 		}
 
-	id = jailhouse_call1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
+	id = jailhouse_call_arg(JAILHOUSE_HC_CELL_CREATE, __pa(config));
 	if (id < 0) {
 		err = id;
 		goto error_cpu_online;
@@ -640,7 +640,7 @@ static int jailhouse_cell_destroy(const char __user *arg)
 		goto unlock_out;
 	}
 
-	err = jailhouse_call1(JAILHOUSE_HC_CELL_DESTROY, cell->id);
+	err = jailhouse_call_arg(JAILHOUSE_HC_CELL_DESTROY, cell->id);
 	if (err)
 		goto unlock_out;
 
@@ -738,7 +738,8 @@ static ssize_t info_show(struct device *dev, char *buffer, unsigned int type)
 		return -EINTR;
 
 	if (enabled)
-		val = jailhouse_call1(JAILHOUSE_HC_HYPERVISOR_GET_INFO, type);
+		val = jailhouse_call_arg(JAILHOUSE_HC_HYPERVISOR_GET_INFO,
+					 type);
 	if (val >= 0)
 		result = sprintf(buffer, "%ld\n", val);
 	else
