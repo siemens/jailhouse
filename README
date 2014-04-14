@@ -122,21 +122,44 @@ the jitter against the PM timer and displaying the result on the
 console. Given that this demonstration runs in a virtual machine, obviously
 no decent latencies should be expected.
 
-To demonstrate the execution of a second non-Linux cell, issue the following
-command:
+To demonstrate the execution of a second, non-Linux cell, issue the following
+commands:
 
-    jailhouse cell create /path/to/tiny-demo.cell /path/to/tiny-demo.bin \
-        -l 0xf0000
+    jailhouse cell create /path/to/tiny-demo.cell
+    jailhouse cell load tiny-demo /path/to/tiny-demo.bin -a 0xf0000
+    jailhouse cell start tiny-demo
 
 The tiny-demo will use the second serial port provided by QEMU. You will find
 its output in a virtual console of the QEMU window.
 
+After creation, cells are addressed via the command line tool by providing
+their names or their runtime-assigned IDs. You can obtain information about
+active cells this way:
+
+    jailhouse cell list
+
 Cell destruction is performed by specifying the configuration file of the
 desired cell. This command will destroy the apic-demo:
 
-    jailhouse cell destroy /path/to/apic-demo.cell
+    jailhouse cell destroy apic-demo
 
-Jailhouse is can also be stopped completely again:
+Note that the first destruction or shutdown request on the apic-demo cell will
+fail. The reason is that this cell contains logic to demonstrate an ordered
+shutdown as well as the ability of a cell to reject shutdown requests.
+
+The apic-demo cell has another special property for demonstration purposes: As
+long as it is running, no cell reconfigurations can be performed - the
+apic-demo locks the hypervisor in this regard. In order to destroy another cell
+or create an additional one, shut down the apic-demo first.
+
+While cell configurations are locked, it is still possible, though, to reload
+the content of existing cell (provided they accept their shutdown first). To
+reload and restart the tiny-demo, issue the following commands:
+
+    jailhouse cell load tiny-demo /path/to/tiny-demo.bin -a 0xf0000
+    jailhouse cell start tiny-demo
+
+Finally, Jailhouse is can be stopped completely again:
 
     jailhouse disable
 
