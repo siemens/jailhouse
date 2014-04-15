@@ -21,6 +21,8 @@
 #include <asm/control.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
+#include <asm/io.h>
+#include <asm/pci.h>
 
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
@@ -1015,6 +1017,32 @@ static void dump_guest_regs(struct registers *guest_regs)
 	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
+static bool vmx_handle_io_access(struct registers *guest_regs,
+				 struct per_cpu *cpu_data)
+{
+	/* parse exit qualification for I/O instructions (see SDM, 27.2.1 ) */
+	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
+	u16 port = (exitq >> 16) & 0xFFFF;
+	bool dir_in = (exitq & 0x8) >> 3;
+	unsigned int size = (exitq & 0x3) + 1;
+
+	vmx_skip_emulated_instruction(vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
+
+	/* string and REP-prefixed instructions are not supported */
+	if (exitq & 0x30)
+		return false;
+
+	if (x86_pci_config_handler(guest_regs, cpu_data->cell, port, dir_in,
+				   size) == 1)
+		return true;
+
+	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
+		     dir_in ? "read" : "write", port, size);
+	panic_printk("PCI address port: %x\n",
+		     cpu_data->cell->pci_addr_port_val);
+	return false;
+}
+
 void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
@@ -1101,6 +1129,10 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		panic_printk("FATAL: Invalid xsetbv parameters: "
 			     "xcr[%d] = %08x:%08x\n", guest_regs->rcx,
 			     guest_regs->rdx, guest_regs->rax);
+		break;
+	case EXIT_REASON_IO_INSTRUCTION:
+		if (vmx_handle_io_access(guest_regs, cpu_data))
+			return;
 		break;
 	default:
 		panic_printk("FATAL: Unhandled VM-Exit, reason %d, ",

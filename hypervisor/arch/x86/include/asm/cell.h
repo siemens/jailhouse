@@ -18,6 +18,13 @@
 #include <jailhouse/cell-config.h>
 #include <jailhouse/hypercall.h>
 
+/**
+ * struct cell - cell-related state information
+ * ...
+ * @pci_addr_port_val: virtual address port for PCI config space
+ * ...
+ */
+/* TODO: factor out arch-independent bits, define struct arch_cell */
 struct cell {
 	struct {
 		/* should be first as it requires page alignment */
@@ -37,6 +44,8 @@ struct cell {
 	struct cpu_set small_cpu_set;
 
 	struct cell *next;
+
+	u32 pci_addr_port_val;
 
 	union {
 		struct jailhouse_comm_region comm_region;

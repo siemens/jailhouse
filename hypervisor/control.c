@@ -76,6 +76,7 @@ retry:
 	return id;
 }
 
+/* cell must be zero-initialized */
 int cell_init(struct cell *cell, bool copy_cpu_set)
 {
 	const unsigned long *config_cpu_set =
