@@ -964,7 +964,7 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 	case APIC_ACCESS_TYPE_LINEAR_READ:
 	case APIC_ACCESS_TYPE_LINEAR_WRITE:
 		is_write = !!(qualification & APIC_ACCESS_TYPE_LINEAR_WRITE);
-		offset = qualification & APIC_ACCESS_OFFET_MASK;
+		offset = qualification & APIC_ACCESS_OFFSET_MASK;
 		if (offset & 0x00f)
 			break;
 
