@@ -126,8 +126,8 @@ struct {
 		[  0x80/8 ...   0x8f/8] = 0, /* dma */
 		[  0x90/8 ...  0x3af/8] = -1,
 		[ 0x3b0/8 ...  0x3df/8] = 0, /* VGA */
-		[ 0x3e0/8 ...  0xcf7/8] = -1,
-		[ 0xcf8/8 ... 0xffff/8] = 0, /* HACK: full PCI */
+		[ 0x3e0/8 ...  0xcff/8] = -1,
+		[ 0xd00/8 ... 0xffff/8] = 0, /* HACK: full PCI */
 	},
 
 	.pci_devices = {

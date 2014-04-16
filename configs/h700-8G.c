@@ -137,8 +137,8 @@ struct {
 		[ 0x3e0/8 ...  0x3f7/8] = -1,
 		[ 0x3f8/8 ...  0x3ff/8] = 0, /* serial 1 */
 		[ 0x400/8 ...  0x47f/8] = 0, /* ACPI...? */
-		[ 0x480/8 ...  0xcf7/8] = -1,
-		[ 0xcf8/8 ... 0xffff/8] = 0, /* HACK: full PCI */
+		[ 0x480/8 ...  0xcff/8] = -1,
+		[ 0xd00/8 ... 0xffff/8] = 0, /* HACK: full PCI */
 	},
 
 	.pci_devices = {
