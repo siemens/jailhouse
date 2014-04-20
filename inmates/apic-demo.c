@@ -26,6 +26,7 @@
 #define APIC_TIMER_VECTOR	32
 
 #define X2APIC_EOI		0x80b
+#define X2APIC_SPIV		0x80f
 #define X2APIC_LVTT		0x832
 #define X2APIC_TMICT		0x838
 #define X2APIC_TMCCT		0x839
@@ -92,6 +93,8 @@ static void init_apic(void)
 	struct desc_table_reg dtr;
 	unsigned long start, end;
 	unsigned long tmr;
+
+	write_msr(X2APIC_SPIV, 0x1ff);
 
 	write_msr(X2APIC_TDCR, 3);
 
