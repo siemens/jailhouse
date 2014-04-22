@@ -10,8 +10,24 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/acpi.h>
 #include <jailhouse/pci.h>
+#include <jailhouse/printk.h>
 #include <jailhouse/utils.h>
+
+struct acpi_mcfg_alloc {
+	u64 base_addr;
+	u16 segment_num;
+	u8 start_bus;
+	u8 end_bus;
+	u32 reserved;
+} __attribute__((packed));
+
+struct acpi_mcfg_table {
+	struct acpi_table_header header;
+	u8 reserved[8];
+	struct acpi_mcfg_alloc alloc_structs[];
+} __attribute__((packed));
 
 /* entry for PCI config space whitelist (granting access) */
 struct pci_cfg_access {
@@ -32,6 +48,10 @@ static const struct pci_cfg_access bridge_write_access[] = {
 	{ 0x0c, 0xff000000 }, /* BIST */
 	{ 0x3c, 0xffff00ff }, /* Int Line, Bridge Control */
 };
+
+static void *pci_space;
+static u64 pci_mmcfg_addr;
+static u32 pci_mmcfg_size;
 
 /**
  * pci_get_assigned_device() - Look up device owned by a cell
@@ -84,4 +104,82 @@ bool pci_cfg_write_allowed(u32 type, u8 reg_num, unsigned int reg_bias,
 				 BYTE_MASK(size)) == BYTE_MASK(size);
 
 	return false;
+}
+
+/**
+ * pci_init() - Initialization of PCI module
+ *
+ * Return: 0 - success, error code - if error.
+ */
+int pci_init(void)
+{
+	struct acpi_mcfg_table *mcfg;
+
+	mcfg = (struct acpi_mcfg_table *)acpi_find_table("MCFG", NULL);
+	if (!mcfg)
+		return 0;
+
+	if (mcfg->header.length !=
+	    sizeof(struct acpi_mcfg_table) + sizeof(struct acpi_mcfg_alloc))
+		return -EIO;
+
+	pci_mmcfg_addr = mcfg->alloc_structs[0].base_addr;
+	pci_mmcfg_size = (mcfg->alloc_structs[0].end_bus -
+			  mcfg->alloc_structs[0].start_bus) * 256 * 4096;
+	pci_space = page_alloc(&remap_pool, pci_mmcfg_size / PAGE_SIZE);
+	if (pci_space)
+		page_map_create(&hv_paging_structs,
+				mcfg->alloc_structs[0].base_addr,
+				pci_mmcfg_size, (unsigned long)pci_space,
+				PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				PAGE_MAP_NON_COHERENT);
+
+	return 0;
+}
+
+/**
+ * pci_mmio_access_handler() - Handler for MMIO-accesses to PCI config space
+ * @cell:	Request issuing cell
+ * @is_write:	True if write access
+ * @addr:	Address accessed
+ * @value:	Value to write (for write operations only)
+ *
+ * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
+ */
+int pci_mmio_access_handler(struct registers *guest_regs,
+			    const struct cell *cell, bool is_write,
+			    u64 addr, u32 reg)
+{
+	const struct jailhouse_pci_device *device;
+	u32 mmcfg_offset;
+	u32 reg_num;
+	u32 reg_bias;
+
+	if (addr < pci_mmcfg_addr ||
+	    addr >= (pci_mmcfg_addr + pci_mmcfg_size - 4))
+		return 0;
+
+	mmcfg_offset = addr - pci_mmcfg_addr;
+	reg_bias = mmcfg_offset % 4;
+	reg_num = mmcfg_offset & 0xfff;
+	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
+
+	if (is_write) {
+		if (!device)
+			return 1;
+
+		if (reg_num < PCI_CONFIG_HEADER_SIZE)
+			if (pci_cfg_write_allowed(device->type,
+						  (reg_num - reg_bias),
+						  reg_bias, 4))
+				*(volatile u32 *)(pci_space + mmcfg_offset) =
+					((u64 *)guest_regs)[reg];
+	} else
+		if (device)
+			((u64 *)guest_regs)[reg] =
+				*(volatile u32 *)(pci_space + mmcfg_offset);
+		else
+			((u64 *)guest_regs)[reg] = BYTE_MASK(4);
+
+	return 1;
 }

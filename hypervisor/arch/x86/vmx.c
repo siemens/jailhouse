@@ -17,6 +17,8 @@
 #include <jailhouse/string.h>
 #include <jailhouse/control.h>
 #include <jailhouse/hypercall.h>
+#include <jailhouse/mmio.h>
+#include <jailhouse/pci.h>
 #include <asm/apic.h>
 #include <asm/control.h>
 #include <asm/vmx.h>
@@ -1024,6 +1026,40 @@ static bool vmx_handle_io_access(struct registers *guest_regs,
 	return false;
 }
 
+static bool vmx_handle_ept_violation(struct registers *guest_regs,
+				     struct per_cpu *cpu_data)
+{
+	u64 phys_addr = vmcs_read64(GUEST_PHYSICAL_ADDRESS);
+	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
+	struct guest_paging_structures pg_structs;
+	struct mmio_access access;
+	bool is_write;
+
+	/* We don't enable dirty/accessed bit updated in EPTP, so only read
+	 * of write flags can be set, not both. */
+	is_write = !!(exitq & 0x2);
+
+	if (!vmx_get_guest_paging_structs(&pg_structs))
+		return false;
+	access = mmio_parse(cpu_data, vmcs_read64(GUEST_RIP),
+			    &pg_structs, is_write);
+	if (!access.inst_len || access.size != 4)
+		return false;
+
+	/* Filter out requests to PCI configuration space */
+	if (pci_mmio_access_handler(guest_regs, cpu_data->cell,
+				    is_write, phys_addr, access.reg) == 1) {
+		vmx_skip_emulated_instruction(
+				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
+		return true;
+	}
+
+	panic_printk("FATAL: Invalid EPT %s, addr: %p\n",
+		     is_write ? "read" : "write", phys_addr);
+
+	return false;
+}
+
 void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
@@ -1113,6 +1149,10 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
 		if (vmx_handle_io_access(guest_regs, cpu_data))
+			return;
+		break;
+	case EXIT_REASON_EPT_VIOLATION:
+		if (vmx_handle_ept_violation(guest_regs, cpu_data))
 			return;
 		break;
 	default:
