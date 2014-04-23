@@ -92,19 +92,21 @@ static int data_port_out_handler(struct registers *guest_regs, u16 port,
 	reg_data = get_rax_reg(guest_regs, size);
 
 	if (reg_num < PCI_CONFIG_HEADER_SIZE) {
-		if (pci_cfg_write_allowed(device->type, reg_num,
-					  port - PCI_REG_DATA_PORT, size)) {
-			if (size == 1)
-				outb(reg_data, port);
-			else if (size == 2)
-				outw(reg_data, port);
-			else if (size == 4)
-				outl(reg_data, port);
-			return 1;
-		}
+		if (!pci_cfg_write_allowed(device->type, reg_num,
+					   port - PCI_REG_DATA_PORT, size))
+			return -1;
+	} else {
+		// HACK: permit capability access until we properly filter it
+		// return -1;
 	}
 
-	return -1;
+	if (size == 1)
+		outb(reg_data, port);
+	else if (size == 2)
+		outw(reg_data, port);
+	else if (size == 4)
+		outl(reg_data, port);
+	return 1;
 }
 
 /**
