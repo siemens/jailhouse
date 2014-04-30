@@ -20,7 +20,8 @@ always := $(CONFIGS:.c=.cell)
 
 targets += $(CONFIGS:.c=.o) $(CONFIGS:.c=.cell)
 
-dummy: $(addprefix $(obj)/,$(CONFIGS:.c=.o))
+# prevent deleting intermediate files which would cause rebuilds
+.SECONDARY: $(addprefix $(obj)/,$(CONFIGS:.c=.o))
 
 $(obj)/%.cell: $(obj)/%.o
 	$(call if_changed,objcopy)
