@@ -24,31 +24,30 @@ endif
 OBJCOPYFLAGS := -O binary
 LDFLAGS += -T
 
+
 ifeq ($(SRCARCH), x86)
 KBUILD_CFLAGS += -m64
-always := tiny-demo.bin apic-demo.bin
+INMATES := tiny-demo.bin apic-demo.bin
 endif
 
 tiny-demo-y := tiny-demo.o header.o printk.o pm-timer.o
-targets += $(tiny-demo-y)
-
-TINY_DEMO_OBJS = $(addprefix $(obj)/,$(tiny-demo-y))
-
-target += tiny-demo-linked.o
-$(obj)/tiny-demo-linked.o: $(src)/inmate.lds $(TINY_DEMO_OBJS)
-	$(call if_changed,ld)
-
 
 apic-demo-y := apic-demo.o header.o printk.o pm-timer.o
-targets += $(apic-demo-y)
 
-APIC_DEMO_OBJS = $(addprefix $(obj)/,$(apic-demo-y))
 
-target += apic-demo-linked.o
-$(obj)/apic-demo-linked.o: $(src)/inmate.lds $(APIC_DEMO_OBJS)
+always := $(INMATES)
+
+# $(NAME-y) NAME-linked.o NAME.bin
+targets += $(foreach t,$(INMATES:.bin=-y),$($t)) $(INMATES:.bin=-linked.o) \
+		$(INMATES)
+
+# prevent deleting intermediate files which would cause rebuilds
+.SECONDARY: $(addprefix $(obj)/,$(targets))
+
+# obj/NAME-linked.o: ... obj/$(NAME-y)
+.SECONDEXPANSION:
+$(obj)/%-linked.o: $(src)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y))
 	$(call if_changed,ld)
 
-
-targets += tiny-demo.bin apic-demo.bin
 $(obj)/%.bin: $(obj)/%-linked.o
 	$(call if_changed,objcopy)
