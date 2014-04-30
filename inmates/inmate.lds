@@ -30,6 +30,7 @@ SECTIONS
 		*(.bss)
 		. = ALIGN(8);
 	}
+	bss_dwords = SIZEOF(.bss) / 4;
 	bss_qwords = SIZEOF(.bss) / 8;
 
 	. = 0xf0000 + SIZEOF(.startup);

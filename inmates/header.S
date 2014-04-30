@@ -36,7 +36,7 @@ start16:
 	or $X86_CR0_PE,%al
 	mov %eax,%cr0
 
-	ljmpl $LOADER_CS32,$start32 + FSEGMENT_BASE
+	ljmpl $INMATE_CS32,$start32 + FSEGMENT_BASE
 
 
 	.code32
@@ -56,7 +56,7 @@ start32:
 	mov $(X86_CR0_PG | X86_CR0_WP | X86_CR0_PE),%eax
 	mov %eax,%cr0
 
-	ljmpl $INMATE_CS,$start64 + FSEGMENT_BASE
+	ljmpl $INMATE_CS64,$start64 + FSEGMENT_BASE
 
 	.code64
 start64:

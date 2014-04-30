@@ -26,8 +26,17 @@ LDFLAGS += -T
 
 
 ifeq ($(SRCARCH), x86)
+
 KBUILD_CFLAGS += -m64
+
 INMATES := tiny-demo.bin apic-demo.bin
+
+AFLAGS_header-32.o := -m32
+CFLAGS_printk-32.o := -m32
+
+$(obj)/printk-32.o: $(obj)/printk.c
+	$(call if_changed_rule,cc_o_c)
+
 endif
 
 tiny-demo-y := tiny-demo.o header.o printk.o pm-timer.o

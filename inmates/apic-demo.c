@@ -112,7 +112,7 @@ static void init_apic(void)
 	printk("Calibrated APIC frequency: %lu kHz\n",
 	       (apic_frequency * 16 + 500) / 1000);
 
-	idt[APIC_TIMER_VECTOR * 4] = (entry & 0xffff) | (INMATE_CS << 16);
+	idt[APIC_TIMER_VECTOR * 4] = (entry & 0xffff) | (INMATE_CS64 << 16);
 	idt[APIC_TIMER_VECTOR * 4 + 1] = 0x8e00 | (entry & 0xffff0000);
 	idt[APIC_TIMER_VECTOR * 4 + 2] = entry >> 32;
 
