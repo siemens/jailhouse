@@ -595,9 +595,11 @@ kfree_config_out:
 	return err;
 
 error_cpu_online:
-	for_each_cell_cpu(cpu, config)
+	for_each_cell_cpu(cpu, config) {
 		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
 			cpu_clear(cpu, offlined_cpus);
+		cpu_set(cpu, root_cell->cpus_assigned);
+	}
 	kobject_put(&cell->kobj);
 	goto unlock_out;
 }
