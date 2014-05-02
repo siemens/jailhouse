@@ -97,18 +97,7 @@ static LIST_HEAD(cells);
 static struct cell *root_cell;
 static struct kobject *cells_dir;
 
-static inline unsigned int
-cell_cpumask_next(int n, const struct jailhouse_cell_desc *config)
-{
-	const unsigned long *cpu_mask = jailhouse_cell_cpu_set(config);
-
-	return find_next_bit(cpu_mask, config->cpu_set_size * 8, n + 1);
-}
-
-#define for_each_cell_cpu(cpu, config)				\
-	for ((cpu) = -1;					\
-	     (cpu) = cell_cpumask_next((cpu), (config)),	\
-	     (cpu) < (config)->cpu_set_size * 8;)
+#define MIN(a, b)	((a) < (b) ? (a) : (b))
 
 static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
 		       char *buffer)
@@ -200,15 +189,15 @@ static struct kobj_type cell_type = {
 static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 {
 	struct cell *cell;
-	unsigned int cpu;
 	int err;
 
 	cell = kzalloc(sizeof(*cell), GFP_KERNEL);
 	if (!cell)
 		return ERR_PTR(-ENOMEM);
 
-	for_each_cell_cpu(cpu, cell_desc)
-		cpu_set(cpu, cell->cpus_assigned);
+	bitmap_copy(cpumask_bits(&cell->cpus_assigned),
+		    jailhouse_cell_cpu_set(cell_desc),
+		    MIN(nr_cpumask_bits, cell_desc->cpu_set_size * 8));
 
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
 				   cell_desc->name);
@@ -565,7 +554,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
-	for_each_cell_cpu(cpu, config) {
+	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (cpu_online(cpu)) {
 			err = cpu_down(cpu);
 			if (err)
@@ -595,7 +584,7 @@ kfree_config_out:
 	return err;
 
 error_cpu_online:
-	for_each_cell_cpu(cpu, config) {
+	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
 			cpu_clear(cpu, offlined_cpus);
 		cpu_set(cpu, root_cell->cpus_assigned);
@@ -647,9 +636,7 @@ static int jailhouse_cell_destroy(const char __user *arg)
 	if (err)
 		goto unlock_out;
 
-	delete_cell(cell);
-
-	for_each_cell_cpu(cpu, config) {
+	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (cpu_isset(cpu, offlined_cpus)) {
 			if (cpu_up(cpu) != 0)
 				pr_err("Jailhouse: failed to bring CPU %d "
@@ -658,6 +645,8 @@ static int jailhouse_cell_destroy(const char __user *arg)
 		}
 		cpu_set(cpu, root_cell->cpus_assigned);
 	}
+
+	delete_cell(cell);
 
 	pr_info("Destroyed Jailhouse cell \"%s\"\n", config->name);
 
