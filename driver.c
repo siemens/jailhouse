@@ -338,6 +338,9 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	if (!root_cell)
 		goto error_unmap;
 
+	cpumask_and(&root_cell->cpus_assigned, &root_cell->cpus_assigned,
+		    cpu_online_mask);
+
 	error_code = 0;
 
 	preempt_disable();
