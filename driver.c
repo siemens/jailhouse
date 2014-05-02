@@ -565,14 +565,15 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
-	for_each_cell_cpu(cpu, config)
+	for_each_cell_cpu(cpu, config) {
 		if (cpu_online(cpu)) {
 			err = cpu_down(cpu);
 			if (err)
 				goto error_cpu_online;
 			cpu_set(cpu, offlined_cpus);
-			cpu_clear(cpu, root_cell->cpus_assigned);
 		}
+		cpu_clear(cpu, root_cell->cpus_assigned);
+	}
 
 	id = jailhouse_call_arg(JAILHOUSE_HC_CELL_CREATE, __pa(config));
 	if (id < 0) {
@@ -646,14 +647,15 @@ static int jailhouse_cell_destroy(const char __user *arg)
 
 	delete_cell(cell);
 
-	for_each_cell_cpu(cpu, config)
+	for_each_cell_cpu(cpu, config) {
 		if (cpu_isset(cpu, offlined_cpus)) {
 			if (cpu_up(cpu) != 0)
 				pr_err("Jailhouse: failed to bring CPU %d "
 				       "back online\n", cpu);
 			cpu_clear(cpu, offlined_cpus);
-			cpu_set(cpu, root_cell->cpus_assigned);
 		}
+		cpu_set(cpu, root_cell->cpus_assigned);
+	}
 
 	pr_info("Destroyed Jailhouse cell \"%s\"\n", config->name);
 
