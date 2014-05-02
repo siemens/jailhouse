@@ -146,7 +146,7 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 	if (!zalloc_cpumask_var(&cpus_failed, GFP_KERNEL))
 		return -ENOMEM;
 
-	for_each_cpu_mask(cpu, cell->cpus_assigned)
+	for_each_cpu(cpu, &cell->cpus_assigned)
 		if (jailhouse_call_arg(JAILHOUSE_HC_CPU_GET_STATE, cpu) ==
 		    JAILHOUSE_CPU_FAILED)
 			cpu_set(cpu, *cpus_failed);
@@ -440,7 +440,7 @@ static int jailhouse_disable(void)
 
 	vunmap(hypervisor_mem);
 
-	for_each_cpu_mask(cpu, offlined_cpus) {
+	for_each_cpu(cpu, &offlined_cpus) {
 		if (cpu_up(cpu) != 0)
 			pr_err("Jailhouse: failed to bring CPU %d back "
 			       "online\n", cpu);
