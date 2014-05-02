@@ -557,6 +557,11 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
+	if (!cpumask_subset(&cell->cpus_assigned, &root_cell->cpus_assigned)) {
+		err = -EBUSY;
+		goto error_cell_put;
+	}
+
 	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (cpu_online(cpu)) {
 			err = cpu_down(cpu);
@@ -592,6 +597,8 @@ error_cpu_online:
 			cpu_clear(cpu, offlined_cpus);
 		cpu_set(cpu, root_cell->cpus_assigned);
 	}
+
+error_cell_put:
 	kobject_put(&cell->kobj);
 	goto unlock_out;
 }
