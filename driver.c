@@ -655,6 +655,37 @@ static int cell_management_prologue(struct jailhouse_cell_id *cell_id,
 	return 0;
 }
 
+static int jailhouse_cell_load(struct jailhouse_cell_load __user *arg)
+{
+	struct jailhouse_preload_image __user *image = arg->image;
+	struct jailhouse_cell_load cell_load;
+	struct cell *cell;
+	unsigned int n;
+	int err;
+
+	if (copy_from_user(&cell_load, arg, sizeof(cell_load)))
+		return -EFAULT;
+
+	err = cell_management_prologue(&cell_load.cell_id, &cell);
+	if (err)
+		return err;
+
+	err = jailhouse_call_arg(JAILHOUSE_HC_CELL_SET_LOADABLE, cell->id);
+	if (err)
+		goto unlock_out;
+
+	for (n = cell_load.num_preload_images; n > 0; n--, image++) {
+		err = load_image(cell, image);
+		if (err)
+			break;
+	}
+
+unlock_out:
+	mutex_unlock(&lock);
+
+	return err;
+}
+
 static int jailhouse_cell_destroy(const char __user *arg)
 {
 	struct jailhouse_cell_id cell_id;
@@ -710,6 +741,10 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 	case JAILHOUSE_CELL_CREATE:
 		err = jailhouse_cell_create(
 			(struct jailhouse_new_cell __user *)arg);
+		break;
+	case JAILHOUSE_CELL_LOAD:
+		err = jailhouse_cell_load(
+			(struct jailhouse_cell_load __user *)arg);
 		break;
 	case JAILHOUSE_CELL_DESTROY:
 		err = jailhouse_cell_destroy((const char __user *)arg);
