@@ -387,7 +387,6 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	printk("Closing cell \"%s\"\n", cell->config->name);
 
 	for_each_cpu(cpu, cell->cpu_set) {
-		printk(" Parking CPU %d\n", cpu);
 		arch_park_cpu(cpu);
 
 		set_bit(cpu, root_cell.cpu_set->bitmap);
