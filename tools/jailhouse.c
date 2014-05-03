@@ -22,9 +22,10 @@
 
 #include <jailhouse.h>
 
-static void help(const char *progname)
+static void __attribute__((noreturn))
+help(const char *progname, int exit_status)
 {
-	printf("%s <command> <args>\n"
+	printf("%s { COMMAND | --help }\n"
 	       "\nAvailable commands:\n"
 	       "   enable CONFIGFILE\n"
 	       "   disable\n"
@@ -32,6 +33,7 @@ static void help(const char *progname)
 			"[IMAGE [-l ADDRESS] ...]\n"
 	       "   cell destroy CONFIGFILE\n",
 	       progname);
+	exit(exit_status);
 }
 
 static int open_dev()
@@ -87,10 +89,8 @@ static int enable(int argc, char *argv[])
 	void *config;
 	int err, fd;
 
-	if (argc != 3) {
-		help(argv[0]);
-		exit(1);
-	}
+	if (argc != 3)
+		help(argv[0], 1);
 
 	config = read_file(argv[2], NULL);
 
@@ -115,10 +115,8 @@ static int cell_create(int argc, char *argv[])
 	int err, fd;
 	char *endp;
 
-	if (argc < 5) {
-		help(argv[0]);
-		exit(1);
-	}
+	if (argc < 5)
+		help(argv[0], 1);
 
 	arg_num = 4;
 	images = 0;
@@ -127,10 +125,8 @@ static int cell_create(int argc, char *argv[])
 		arg_num++;
 
 		if (arg_num < argc && strcmp(argv[arg_num], "-l") == 0) {
-			if (arg_num + 1 >= argc) {
-				help(argv[0]);
-				exit(1);
-			}
+			if (arg_num + 1 >= argc)
+				help(argv[0], 1);
 			arg_num += 2;
 		}
 	}
@@ -157,10 +153,8 @@ static int cell_create(int argc, char *argv[])
 			errno = 0;
 			image->target_address =
 				strtoll(argv[arg_num + 1], &endp, 0);
-			if (errno != 0 || *endp != 0) {
-				help(argv[0]);
-				exit(1);
-			}
+			if (errno != 0 || *endp != 0)
+				help(argv[0], 1);
 			arg_num += 2;
 		}
 		image++;
@@ -187,10 +181,8 @@ static int cell_destroy(int argc, char *argv[])
 	size_t size;
 	int err, fd;
 
-	if (argc != 4) {
-		help(argv[0]);
-		exit(1);
-	}
+	if (argc != 4)
+		help(argv[0], 1);
 
 	cell.config_address = (unsigned long)read_file(argv[3], &size);
 	cell.config_size = size;
@@ -211,19 +203,15 @@ static int cell_management(int argc, char *argv[])
 {
 	int err;
 
-	if (argc < 3) {
-		help(argv[0]);
-		exit(1);
-	}
+	if (argc < 3)
+		help(argv[0], 1);
 
 	if (strcmp(argv[2], "create") == 0)
 		err = cell_create(argc, argv);
 	else if (strcmp(argv[2], "destroy") == 0)
 		err = cell_destroy(argc, argv);
-	else {
-		help(argv[0]);
-		exit(1);
-	}
+	else
+		help(argv[0], 1);
 
 	return err;
 }
@@ -233,10 +221,8 @@ int main(int argc, char *argv[])
 	int fd;
 	int err;
 
-	if (argc < 2) {
-		help(argv[0]);
-		exit(1);
-	}
+	if (argc < 2)
+		help(argv[0], 1);
 
 	if (strcmp(argv[1], "enable") == 0) {
 		err = enable(argc, argv);
@@ -248,10 +234,10 @@ int main(int argc, char *argv[])
 		close(fd);
 	} else if (strcmp(argv[1], "cell") == 0) {
 		err = cell_management(argc, argv);
-	} else {
-		help(argv[0]);
-		exit(1);
-	}
+	} else if (strcmp(argv[1], "--help") == 0) {
+		help(argv[0], 0);
+	} else
+		help(argv[0], 1);
 
 	return err ? 1 : 0;
 }
