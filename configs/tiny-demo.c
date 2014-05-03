@@ -25,7 +25,7 @@ struct {
 	__u8 ALIGN pio_bitmap[0x2000];
 } ALIGN config = {
 	.cell = {
-		.name = "Tiny Demo",
+		.name = "tiny-demo",
 		.flags = JAILHOUSE_CELL_UNMANAGED_EXIT,
 
 		.cpu_set_size = sizeof(config.cpus),

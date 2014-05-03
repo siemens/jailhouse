@@ -25,7 +25,7 @@ struct {
 	__u8 ALIGN pio_bitmap[0x2000];
 } ALIGN config = {
 	.cell = {
-		.name = "APIC Demo",
+		.name = "apic-demo",
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
