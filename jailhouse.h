@@ -47,4 +47,5 @@ struct jailhouse_cell_load {
 #define JAILHOUSE_DISABLE		_IO(0, 1)
 #define JAILHOUSE_CELL_CREATE		_IOW(0, 2, struct jailhouse_new_cell)
 #define JAILHOUSE_CELL_LOAD		_IOW(0, 3, struct jailhouse_cell_load)
+#define JAILHOUSE_CELL_START		_IOW(0, 4, struct jailhouse_cell_id)
 #define JAILHOUSE_CELL_DESTROY		_IOW(0, 5, struct jailhouse_cell_id)

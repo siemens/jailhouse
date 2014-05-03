@@ -686,6 +686,26 @@ unlock_out:
 	return err;
 }
 
+static int jailhouse_cell_start(const char __user *arg)
+{
+	struct jailhouse_cell_id cell_id;
+	struct cell *cell;
+	int err;
+
+	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
+		return -EFAULT;
+
+	err = cell_management_prologue(&cell_id, &cell);
+	if (err)
+		return err;
+
+	err = jailhouse_call_arg(JAILHOUSE_HC_CELL_START, cell->id);
+
+	mutex_unlock(&lock);
+
+	return err;
+}
+
 static int jailhouse_cell_destroy(const char __user *arg)
 {
 	struct jailhouse_cell_id cell_id;
@@ -745,6 +765,9 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 	case JAILHOUSE_CELL_LOAD:
 		err = jailhouse_cell_load(
 			(struct jailhouse_cell_load __user *)arg);
+		break;
+	case JAILHOUSE_CELL_START:
+		err = jailhouse_cell_start((const char __user *)arg);
 		break;
 	case JAILHOUSE_CELL_DESTROY:
 		err = jailhouse_cell_destroy((const char __user *)arg);
