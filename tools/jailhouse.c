@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -37,7 +39,8 @@ help(const char *progname, int exit_status)
 			"[ -a | --address ADDRESS] ...\n"
 	       "   cell start { ID | [--name] NAME }\n"
 	       "   cell shutdown { ID | [--name] NAME }\n"
-	       "   cell destroy { ID | [--name] NAME }\n",
+	       "   cell destroy { ID | [--name] NAME }\n"
+	       "   cell list\n",
 	       progname);
 	exit(exit_status);
 }
@@ -269,6 +272,25 @@ static int cell_simple_cmd(int argc, char *argv[], unsigned int command)
 	return err;
 }
 
+static int cell_list(int argc, char *argv[])
+{
+	static const char *cell_list_cmd = "jailhouse-cell-list";
+	char new_path[PATH_MAX];
+	int err;
+
+	if (argc != 3)
+		help(argv[0], 1);
+
+	snprintf(new_path, sizeof(new_path), "PATH=%s:%s",
+		 getenv("PATH") ? : "", dirname(argv[0]));
+	putenv(new_path);
+
+	err = execvp(cell_list_cmd, argv);
+
+	perror(cell_list_cmd);
+	return err;
+}
+
 static int cell_management(int argc, char *argv[])
 {
 	int err;
@@ -286,6 +308,8 @@ static int cell_management(int argc, char *argv[])
 		err = cell_shutdown_load(argc, argv, SHUTDOWN);
 	else if (strcmp(argv[2], "destroy") == 0)
 		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_DESTROY);
+	else if (strcmp(argv[2], "list") == 0)
+		err = cell_list(argc, argv);
 	else
 		help(argv[0], 1);
 

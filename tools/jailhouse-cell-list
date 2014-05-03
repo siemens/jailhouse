@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2014
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+
+import glob
+import os
+
+
+def read_cpus(path):
+    return int(file(path).read().strip().replace(",", ""), 16)
+
+
+def finish_cpu_list(last_cpu, cpu):
+    if last_cpu is not None and cpu-last_cpu > 1:
+        return "%s%d," % ("-" if cpu-last_cpu > 2 else ",", cpu-1)
+    else:
+        return ""
+
+
+def print_cpus(mask):
+    last_cpu = None
+    cpu = 0
+    output = ""
+    while mask > 0:
+        if mask & 1:
+            if last_cpu is None:
+                last_cpu = cpu
+                output += str(cpu)
+        else:
+            output += finish_cpu_list(last_cpu, cpu)
+            last_cpu = None
+        mask >>= 1
+        cpu += 1
+    output += finish_cpu_list(last_cpu, cpu)
+    return output.strip(",")
+
+
+cells = []
+for cell_path in glob.glob('/sys/devices/jailhouse/cells/*'):
+    cells.append({
+        'name': os.path.basename(cell_path),
+        'id': file(cell_path + "/id").read().strip(),
+        'state': file(cell_path + "/state").read().strip(),
+        'cpus_assigned': read_cpus(cell_path + "/cpus_assigned"),
+        'cpus_failed': read_cpus(cell_path + "/cpus_failed")
+        })
+
+line_format = "%-8s%-24s%-16s%-24s%-24s"
+if not cells == []:
+    print(line_format % ("ID", "Name", "State",
+                         "Assigned CPUs", "Failed CPUs"))
+for cell in sorted(cells, key=lambda cell: cell['id']):
+    print(line_format % (cell['id'], cell['name'], cell['state'],
+                         print_cpus(cell['cpus_assigned']),
+                         print_cpus(cell['cpus_failed'])))
