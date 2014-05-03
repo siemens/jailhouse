@@ -215,12 +215,14 @@ static void register_cell(struct cell *cell)
 	kobject_uevent(&cell->kobj, KOBJ_ADD);
 }
 
-static struct cell *find_cell(struct jailhouse_cell_desc *cell_desc)
+static struct cell *find_cell(struct jailhouse_cell_id *cell_id)
 {
 	struct cell *cell;
 
 	list_for_each_entry(cell, &cells, entry)
-		if (strcmp(kobject_name(&cell->kobj), cell_desc->name) == 0)
+		if (cell_id->id == cell->id ||
+		    (cell_id->id == JAILHOUSE_CELL_ID_UNUSED &&
+		     strcmp(kobject_name(&cell->kobj), cell_id->name) == 0))
 			return cell;
 	return NULL;
 }
@@ -511,6 +513,7 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 	struct jailhouse_preload_image __user *image = arg->image;
 	struct jailhouse_new_cell cell_params;
 	struct jailhouse_cell_desc *config;
+	struct jailhouse_cell_id cell_id;
 	unsigned int cpu, n;
 	struct cell *cell;
 	int id, err;
@@ -540,7 +543,9 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
-	if (find_cell(config) != NULL) {
+	cell_id.id = JAILHOUSE_CELL_ID_UNUSED;
+	memcpy(cell_id.name, config->name, sizeof(cell_id.name));
+	if (find_cell(&cell_id) != NULL) {
 		err = -EEXIST;
 		goto unlock_out;
 	}
@@ -605,38 +610,25 @@ error_cell_put:
 
 static int jailhouse_cell_destroy(const char __user *arg)
 {
-	struct jailhouse_cell_desc *config;
-	struct jailhouse_cell cell_params;
+	struct jailhouse_cell_id cell_id;
 	struct cell *cell;
 	unsigned int cpu;
 	int err;
 
-	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
+	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
 		return -EFAULT;
 
-	config = kmalloc(cell_params.config_size, GFP_KERNEL | GFP_DMA);
-	if (!config)
-		return -ENOMEM;
+	cell_id.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	if (copy_from_user(config,
-			   (void *)(unsigned long)cell_params.config_address,
-			   cell_params.config_size)) {
-		err = -EFAULT;
-		goto kfree_config_out;
-	}
-	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
-
-	if (mutex_lock_interruptible(&lock) != 0) {
-		err = -EINTR;
-		goto kfree_config_out;
-	}
+	if (mutex_lock_interruptible(&lock) != 0)
+		return -EINTR;
 
 	if (!enabled) {
 		err = -EINVAL;
 		goto unlock_out;
 	}
 
-	cell = find_cell(config);
+	cell = find_cell(&cell_id);
 	if (!cell) {
 		err = -ENOENT;
 		goto unlock_out;
@@ -656,15 +648,13 @@ static int jailhouse_cell_destroy(const char __user *arg)
 		cpu_set(cpu, root_cell->cpus_assigned);
 	}
 
-	delete_cell(cell);
+	pr_info("Destroyed Jailhouse cell \"%s\"\n",
+		kobject_name(&cell->kobj));
 
-	pr_info("Destroyed Jailhouse cell \"%s\"\n", config->name);
+	delete_cell(cell);
 
 unlock_out:
 	mutex_unlock(&lock);
-
-kfree_config_out:
-	kfree(config);
 
 	return err;
 }

@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +32,7 @@ help(const char *progname, int exit_status)
 	       "   disable\n"
 	       "   cell create CONFIGFILE IMAGE [-l ADDRESS] "
 			"[IMAGE [-l ADDRESS] ...]\n"
-	       "   cell destroy CONFIGFILE\n",
+	       "   cell destroy { ID | [--name] NAME }\n",
 	       progname);
 	exit(exit_status);
 }
@@ -106,6 +107,37 @@ static int enable(int argc, char *argv[])
 	return err;
 }
 
+static int parse_cell_id(struct jailhouse_cell_id *cell_id, int argc,
+			 char *argv[])
+{
+	bool use_name = false;
+	int arg_pos = 0;
+	char *endp;
+
+	if (argc < 1)
+		return 0;
+
+	if (strcmp(argv[0], "--name") == 0) {
+		if (argc < 2)
+			return 0;
+		arg_pos++;
+		use_name = true;
+	} else {
+		errno = 0;
+		cell_id->id = strtoll(argv[0], &endp, 0);
+		if (errno != 0 || *endp != 0 || cell_id->id < 0)
+			use_name = true;
+	}
+
+	if (use_name) {
+		cell_id->id = JAILHOUSE_CELL_ID_UNUSED;
+		strncpy(cell_id->name, argv[arg_pos], sizeof(cell_id->name));
+		cell_id->name[sizeof(cell_id->name) - 1] = 0;
+	}
+
+	return arg_pos + 1;
+}
+
 static int cell_create(int argc, char *argv[])
 {
 	struct jailhouse_preload_image *image;
@@ -177,24 +209,20 @@ static int cell_create(int argc, char *argv[])
 
 static int cell_destroy(int argc, char *argv[])
 {
-	struct jailhouse_cell cell;
-	size_t size;
-	int err, fd;
+	struct jailhouse_cell_id cell_id;
+	int id_args, err, fd;
 
-	if (argc != 4)
+	id_args = parse_cell_id(&cell_id, argc - 3, &argv[3]);
+	if (id_args == 0 || 3 + id_args != argc)
 		help(argv[0], 1);
-
-	cell.config_address = (unsigned long)read_file(argv[3], &size);
-	cell.config_size = size;
 
 	fd = open_dev();
 
-	err = ioctl(fd, JAILHOUSE_CELL_DESTROY, &cell);
+	err = ioctl(fd, JAILHOUSE_CELL_DESTROY, &cell_id);
 	if (err)
 		perror("JAILHOUSE_CELL_DESTROY");
 
 	close(fd);
-	free((void *)(unsigned long)cell.config_address);
 
 	return err;
 }
