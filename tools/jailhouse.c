@@ -23,6 +23,8 @@
 
 #include <jailhouse.h>
 
+enum shutdown_load_mode {LOAD, SHUTDOWN};
+
 static void __attribute__((noreturn))
 help(const char *progname, int exit_status)
 {
@@ -34,6 +36,7 @@ help(const char *progname, int exit_status)
 	       "   cell load { ID | [--name] NAME } IMAGE "
 			"[ -a | --address ADDRESS] ...\n"
 	       "   cell start { ID | [--name] NAME }\n"
+	       "   cell shutdown { ID | [--name] NAME }\n"
 	       "   cell destroy { ID | [--name] NAME }\n",
 	       progname);
 	exit(exit_status);
@@ -170,7 +173,8 @@ static bool match_opt(const char *argv, const char *short_opt,
 		strcmp(argv, long_opt) == 0;
 }
 
-static int cell_load(int argc, char *argv[])
+static int cell_shutdown_load(int argc, char *argv[],
+			      enum shutdown_load_mode mode)
 {
 	unsigned int images, id_args, arg_num, n;
 	struct jailhouse_preload_image *image;
@@ -182,7 +186,8 @@ static int cell_load(int argc, char *argv[])
 
 	id_args = parse_cell_id(&cell_id, argc - 3, &argv[3]);
 	arg_num = 3 + id_args;
-	if (id_args == 0 || arg_num == argc)
+	if (id_args == 0 || (mode == SHUTDOWN && arg_num != argc) ||
+	    (mode == LOAD && arg_num == argc))
 		help(argv[0], 1);
 
 	images = 0;
@@ -274,9 +279,11 @@ static int cell_management(int argc, char *argv[])
 	if (strcmp(argv[2], "create") == 0)
 		err = cell_create(argc, argv);
 	else if (strcmp(argv[2], "load") == 0)
-		err = cell_load(argc, argv);
+		err = cell_shutdown_load(argc, argv, LOAD);
 	else if (strcmp(argv[2], "start") == 0)
 		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_START);
+	else if (strcmp(argv[2], "shutdown") == 0)
+		err = cell_shutdown_load(argc, argv, SHUTDOWN);
 	else if (strcmp(argv[2], "destroy") == 0)
 		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_DESTROY);
 	else
