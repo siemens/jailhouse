@@ -79,6 +79,8 @@ struct cell {
 	struct list_head entry;
 	unsigned int id;
 	cpumask_t cpus_assigned;
+	u32 num_memory_regions;
+	struct jailhouse_memory *memory_regions;
 };
 
 MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
@@ -179,6 +181,7 @@ static void cell_kobj_release(struct kobject *kobj)
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
 
+	vfree(cell->memory_regions);
 	kfree(cell);
 }
 
@@ -201,10 +204,21 @@ static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 		    jailhouse_cell_cpu_set(cell_desc),
 		    MIN(nr_cpumask_bits, cell_desc->cpu_set_size * 8));
 
+	cell->num_memory_regions = cell_desc->num_memory_regions;
+	cell->memory_regions = vmalloc(sizeof(struct jailhouse_memory) *
+				       cell->num_memory_regions);
+	if (!cell->memory_regions) {
+		kfree(cell);
+		return ERR_PTR(-ENOMEM);
+	}
+
+	memcpy(cell->memory_regions, jailhouse_cell_mem_regions(cell_desc),
+	       sizeof(struct jailhouse_memory) * cell->num_memory_regions);
+
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
 				   cell_desc->name);
 	if (err) {
-		kfree(cell);
+		cell_kobj_release(&cell->kobj);
 		return ERR_PTR(err);
 	}
 
@@ -464,7 +478,7 @@ unlock_out:
 	return err;
 }
 
-static int load_image(struct jailhouse_cell_desc *config,
+static int load_image(struct cell *cell,
 		      struct jailhouse_preload_image __user *uimage)
 {
 	struct jailhouse_preload_image image;
@@ -477,8 +491,8 @@ static int load_image(struct jailhouse_cell_desc *config,
 	if (copy_from_user(&image, uimage, sizeof(image)))
 		return -EFAULT;
 
-	mem = jailhouse_cell_mem_regions(config);
-	for (regions = config->num_memory_regions; regions > 0; regions--) {
+	mem = cell->memory_regions;
+	for (regions = cell->num_memory_regions; regions > 0; regions--) {
 		image_offset = image.target_address - mem->virt_start;
 		if (image.target_address >= mem->virt_start &&
 		    image_offset < mem->size) {
@@ -552,16 +566,16 @@ static int jailhouse_cell_create(struct jailhouse_new_cell __user *arg)
 		goto unlock_out;
 	}
 
-	for (n = cell_params.num_preload_images; n > 0; n--, image++) {
-		err = load_image(config, image);
-		if (err)
-			goto unlock_out;
-	}
-
 	cell = create_cell(config);
 	if (IS_ERR(cell)) {
 		err = PTR_ERR(cell);
 		goto unlock_out;
+	}
+
+	for (n = cell_params.num_preload_images; n > 0; n--, image++) {
+		err = load_image(cell, image);
+		if (err)
+			goto error_cell_put;
 	}
 
 	if (!cpumask_subset(&cell->cpus_assigned, &root_cell->cpus_assigned)) {
