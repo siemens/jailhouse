@@ -634,6 +634,27 @@ error_cell_put:
 	goto unlock_out;
 }
 
+static int cell_management_prologue(struct jailhouse_cell_id *cell_id,
+				    struct cell **cell_ptr)
+{
+	cell_id->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
+
+	if (mutex_lock_interruptible(&lock) != 0)
+		return -EINTR;
+
+	if (!enabled) {
+		mutex_unlock(&lock);
+		return -EINVAL;
+	}
+
+	*cell_ptr = find_cell(cell_id);
+	if (*cell_ptr == NULL) {
+		mutex_unlock(&lock);
+		return -ENOENT;
+	}
+	return 0;
+}
+
 static int jailhouse_cell_destroy(const char __user *arg)
 {
 	struct jailhouse_cell_id cell_id;
@@ -644,21 +665,9 @@ static int jailhouse_cell_destroy(const char __user *arg)
 	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
 		return -EFAULT;
 
-	cell_id.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
-
-	if (mutex_lock_interruptible(&lock) != 0)
-		return -EINTR;
-
-	if (!enabled) {
-		err = -EINVAL;
-		goto unlock_out;
-	}
-
-	cell = find_cell(&cell_id);
-	if (!cell) {
-		err = -ENOENT;
-		goto unlock_out;
-	}
+	err = cell_management_prologue(&cell_id, &cell);
+	if (err)
+		return err;
 
 	err = jailhouse_call_arg(JAILHOUSE_HC_CELL_DESTROY, cell->id);
 	if (err)
