@@ -49,7 +49,6 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 	struct sib sib;
 	u8 *page = NULL;
 
-	access.inst_len = 0;
 	has_regr = false;
 
 restart:
