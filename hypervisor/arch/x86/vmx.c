@@ -1009,15 +1009,16 @@ static bool vmx_handle_io_access(struct registers *guest_regs,
 	bool dir_in = (exitq & 0x8) >> 3;
 	unsigned int size = (exitq & 0x3) + 1;
 
-	vmx_skip_emulated_instruction(vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
-
 	/* string and REP-prefixed instructions are not supported */
 	if (exitq & 0x30)
 		return false;
 
 	if (x86_pci_config_handler(guest_regs, cpu_data->cell, port, dir_in,
-				   size) == 1)
+				   size) == 1) {
+		vmx_skip_emulated_instruction(
+				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
 		return true;
+	}
 
 	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
 		     dir_in ? "read" : "write", port, size);
@@ -1110,9 +1111,9 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
-		vmx_skip_emulated_instruction(X86_INST_LEN_RDMSR);
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
+			vmx_skip_emulated_instruction(X86_INST_LEN_RDMSR);
 			x2apic_handle_read(guest_regs);
 			return;
 		}
@@ -1120,16 +1121,17 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			     guest_regs->rcx);
 		break;
 	case EXIT_REASON_MSR_WRITE:
-		vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 		if (guest_regs->rcx == MSR_X2APIC_ICR) {
 			if (!apic_handle_icr_write(cpu_data, guest_regs->rax,
 						   guest_regs->rdx))
 				break;
+			vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
 		}
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
 			x2apic_handle_write(guest_regs);
+			vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
 		}
 		panic_printk("FATAL: Unhandled MSR write: %08x\n",
@@ -1140,10 +1142,10 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_XSETBV:
-		vmx_skip_emulated_instruction(X86_INST_LEN_XSETBV);
 		if (guest_regs->rax & X86_XCR0_FP &&
 		    (guest_regs->rax & ~cpuid_eax(0x0d)) == 0 &&
 		    guest_regs->rcx == 0 && guest_regs->rdx == 0) {
+			vmx_skip_emulated_instruction(X86_INST_LEN_XSETBV);
 			asm volatile(
 				"xsetbv"
 				: /* no output */
