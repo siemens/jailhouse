@@ -14,17 +14,19 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 
-struct modrm {
-	u8 rm:3;
-	u8 reg:3;
-	u8 mod:2;
-} __attribute__((packed));
-
-struct sib {
-	u8 reg:3;
-	u8 index:3;
-	u8 ss:2;
-} __attribute__((packed));
+union opcode {
+	u8 raw;
+	struct {
+		u8 rm:3;
+		u8 reg:3;
+		u8 mod:2;
+	} __attribute__((packed)) modrm;
+	struct {
+		u8 reg:3;
+		u8 index:3;
+		u8 ss:2;
+	} __attribute__((packed)) sib;
+};
 
 /* If current_page is non-NULL, pc must have been increased exactly by 1. */
 static u8 *map_code_page(struct per_cpu *cpu_data,
@@ -45,8 +47,7 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 {
 	struct mmio_access access = { .inst_len = 0 };
 	bool has_regr, does_write;
-	struct modrm modrm;
-	struct sib sib;
+	union opcode op[3];
 	u8 *page = NULL;
 
 	has_regr = false;
@@ -56,7 +57,8 @@ restart:
 	if (!page)
 		goto error_nopage;
 
-	switch (page[pc & PAGE_OFFS_MASK]) {
+	op[0].raw = page[pc & PAGE_OFFS_MASK];
+	switch (op[0].raw) {
 	case X86_OP_REGR_PREFIX:
 		if (has_regr)
 			goto error_unsupported;
@@ -83,10 +85,10 @@ restart:
 	if (!page)
 		goto error_nopage;
 
-	modrm = *(struct modrm *)&page[pc & PAGE_OFFS_MASK];
-	switch (modrm.mod) {
+	op[1].raw = page[pc & PAGE_OFFS_MASK];
+	switch (op[1].modrm.mod) {
 	case 0:
-		if (modrm.rm != 4)
+		if (op[1].modrm.rm != 4)
 			goto error_unsupported;
 
 		pc++;
@@ -94,8 +96,9 @@ restart:
 		if (!page)
 			goto error_nopage;
 
-		sib = *(struct sib *)&page[pc & PAGE_OFFS_MASK];
-		if (sib.ss != 0 || sib.index != 4 || sib.reg != 5)
+		op[2].raw = page[pc & PAGE_OFFS_MASK];
+		if (op[2].sib.ss != 0 || op[2].sib.index != 4 ||
+		    op[2].sib.reg != 5)
 			goto error_unsupported;
 		access.inst_len += 5;
 		break;
@@ -106,11 +109,11 @@ restart:
 		goto error_unsupported;
 	}
 	if (has_regr)
-		access.reg = 7 - modrm.reg;
-	else if (modrm.reg == 4)
+		access.reg = 7 - op[1].modrm.reg;
+	else if (op[1].modrm.reg == 4)
 		goto error_unsupported;
 	else
-		access.reg = 15 - modrm.reg;
+		access.reg = 15 - op[1].modrm.reg;
 
 	if (does_write != is_write)
 		goto error_inconsitent;
