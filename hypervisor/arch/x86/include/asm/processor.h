@@ -80,7 +80,8 @@
 #define X86_INST_LEN_MOV_TO_CR				3
 #define X86_INST_LEN_XSETBV				3
 
-#define X86_OP_REGR_PREFIX				0x44
+#define X86_REX_CODE					4
+
 #define X86_OP_MOV_TO_MEM				0x89
 #define X86_OP_MOV_FROM_MEM				0x8b
 

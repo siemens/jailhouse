@@ -16,6 +16,10 @@
 
 union opcode {
 	u8 raw;
+	struct { /* REX */
+		u8 b:1, x:1, r:1, w:1;
+		u8 code:4;
+	} __attribute__((packed)) rex;
 	struct {
 		u8 rm:3;
 		u8 reg:3;
@@ -46,11 +50,10 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 			      bool is_write)
 {
 	struct mmio_access access = { .inst_len = 0 };
-	bool has_regr, does_write;
+	bool has_rex_r = false;
+	bool does_write;
 	union opcode op[3];
 	u8 *page = NULL;
-
-	has_regr = false;
 
 restart:
 	page = map_code_page(cpu_data, pg_structs, pc, page);
@@ -58,14 +61,20 @@ restart:
 		goto error_nopage;
 
 	op[0].raw = page[pc & PAGE_OFFS_MASK];
-	switch (op[0].raw) {
-	case X86_OP_REGR_PREFIX:
-		if (has_regr)
+	if (op[0].rex.code == X86_REX_CODE) {
+		/* REX.W is simply over-read since it is only affects the
+		 * memory address in our supported modes which we get from the
+		 * virtualization support. */
+		if (op[0].rex.r)
+			has_rex_r = true;
+		if (op[0].rex.x || op[0].rex.b)
 			goto error_unsupported;
-		has_regr = true;
+
 		pc++;
 		access.inst_len++;
 		goto restart;
+	}
+	switch (op[0].raw) {
 	case X86_OP_MOV_TO_MEM:
 		access.inst_len += 2;
 		access.size = 4;
@@ -108,7 +117,7 @@ restart:
 	default:
 		goto error_unsupported;
 	}
-	if (has_regr)
+	if (has_rex_r)
 		access.reg = 7 - op[1].modrm.reg;
 	else if (op[1].modrm.reg == 4)
 		goto error_unsupported;
