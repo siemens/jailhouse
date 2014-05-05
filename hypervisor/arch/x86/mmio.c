@@ -97,8 +97,10 @@ restart:
 	op[1].raw = page[pc & PAGE_OFFS_MASK];
 	switch (op[1].modrm.mod) {
 	case 0:
-		if (op[1].modrm.rm != 4)
+		if (op[1].modrm.rm == 5) /* 32-bit displacement */
 			goto error_unsupported;
+		else if (op[1].modrm.rm != 4) /* no SIB */
+			break;
 
 		pc++;
 		page = map_code_page(cpu_data, pg_structs, pc, page);
