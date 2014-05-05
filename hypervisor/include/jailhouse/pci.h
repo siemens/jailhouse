@@ -25,8 +25,7 @@ pci_get_assigned_device(const struct cell *cell, u16 bdf);
 bool pci_cfg_write_allowed(u32 type, u8 reg_num, unsigned int reg_bias,
 			   unsigned int size);
 
-int pci_mmio_access_handler(struct registers *guest_regs,
-			    const struct cell *cell, bool is_write,
-			    u64 addr, u32 reg);
+int pci_mmio_access_handler(const struct cell *cell, bool is_write, u64 addr,
+			    u32 *value);
 
 #endif /* !_JAILHOUSE_PCI_H */

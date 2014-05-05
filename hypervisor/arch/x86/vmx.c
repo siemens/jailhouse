@@ -1034,6 +1034,7 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	struct guest_paging_structures pg_structs;
 	struct mmio_access access;
 	bool is_write;
+	u32 val;
 
 	/* We don't enable dirty/accessed bit updated in EPTP, so only read
 	 * of write flags can be set, not both. */
@@ -1041,14 +1042,20 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 
 	if (!vmx_get_guest_paging_structs(&pg_structs))
 		return false;
+
 	access = mmio_parse(cpu_data, vmcs_read64(GUEST_RIP),
 			    &pg_structs, is_write);
 	if (!access.inst_len || access.size != 4)
 		return false;
 
+	if (is_write)
+		val = ((unsigned long *)guest_regs)[access.reg];
+
 	/* Filter out requests to PCI configuration space */
-	if (pci_mmio_access_handler(guest_regs, cpu_data->cell,
-				    is_write, phys_addr, access.reg) == 1) {
+	if (pci_mmio_access_handler(cpu_data->cell, is_write,
+				    phys_addr, &val) == 1) {
+		if (!is_write)
+			((unsigned long *)guest_regs)[access.reg] = val;
 		vmx_skip_emulated_instruction(
 				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
 		return true;

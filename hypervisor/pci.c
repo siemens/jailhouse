@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/acpi.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/utils.h>
@@ -142,13 +143,12 @@ int pci_init(void)
  * @cell:	Request issuing cell
  * @is_write:	True if write access
  * @addr:	Address accessed
- * @value:	Value to write (for write operations only)
+ * @value:	Pointer to value for reading/writing
  *
  * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
  */
-int pci_mmio_access_handler(struct registers *guest_regs,
-			    const struct cell *cell, bool is_write,
-			    u64 addr, u32 reg)
+int pci_mmio_access_handler(const struct cell *cell, bool is_write,
+			    u64 addr, u32 *value)
 {
 	const struct jailhouse_pci_device *device;
 	u32 mmcfg_offset;
@@ -172,14 +172,12 @@ int pci_mmio_access_handler(struct registers *guest_regs,
 			if (pci_cfg_write_allowed(device->type,
 						  (reg_num - reg_bias),
 						  reg_bias, 4))
-				*(volatile u32 *)(pci_space + mmcfg_offset) =
-					((u64 *)guest_regs)[reg];
+				mmio_write32(pci_space + mmcfg_offset, *value);
 	} else
 		if (device)
-			((u64 *)guest_regs)[reg] =
-				*(volatile u32 *)(pci_space + mmcfg_offset);
+			*value = mmio_read32(pci_space + mmcfg_offset);
 		else
-			((u64 *)guest_regs)[reg] = BYTE_MASK(4);
+			*value = -1;
 
 	return 1;
 }
