@@ -166,13 +166,17 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 
 	if (is_write) {
 		if (!device)
-			return 1;
-
-		if (reg_num < PCI_CONFIG_HEADER_SIZE)
-			if (pci_cfg_write_allowed(device->type,
-						  (reg_num - reg_bias),
-						  reg_bias, 4))
-				mmio_write32(pci_space + mmcfg_offset, *value);
+			return -1;
+		if (reg_num < PCI_CONFIG_HEADER_SIZE) {
+			if (!pci_cfg_write_allowed(device->type,
+						   (reg_num - reg_bias),
+						   reg_bias, 4))
+				return -1;
+		} else {
+			// TODO: moderate capability access
+			return -1;
+		}
+		mmio_write32(pci_space + mmcfg_offset, *value);
 	} else
 		if (device)
 			*value = mmio_read32(pci_space + mmcfg_offset);
