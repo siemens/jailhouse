@@ -177,6 +177,8 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 
 	if (error) {
 		arch_cpu_restore(cpu_data);
+		if (master)
+			arch_shutdown();
 		return error;
 	}
 
