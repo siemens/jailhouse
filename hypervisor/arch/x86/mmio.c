@@ -114,6 +114,8 @@ restart:
 		access.inst_len += 5;
 		break;
 	case 2:
+		if (op[1].modrm.rm == 4) /* SIB */
+			goto error_unsupported;
 		access.inst_len += 4;
 		break;
 	default:
