@@ -44,7 +44,7 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 			      bool is_write)
 {
 	struct mmio_access access = { .inst_len = 0 };
-	bool has_regr, has_modrm, does_write;
+	bool has_regr, does_write;
 	struct modrm modrm;
 	struct sib sib;
 	u8 *page = NULL;
@@ -57,7 +57,6 @@ restart:
 	if (!page)
 		goto error_nopage;
 
-	has_modrm = false;
 	switch (page[pc & PAGE_OFFS_MASK]) {
 	case X86_OP_REGR_PREFIX:
 		if (has_regr)
@@ -69,54 +68,50 @@ restart:
 	case X86_OP_MOV_TO_MEM:
 		access.inst_len += 2;
 		access.size = 4;
-		has_modrm = true;
 		does_write = true;
 		break;
 	case X86_OP_MOV_FROM_MEM:
 		access.inst_len += 2;
 		access.size = 4;
-		has_modrm = true;
 		does_write = false;
 		break;
 	default:
 		goto error_unsupported;
 	}
 
-	if (has_modrm) {
+	pc++;
+	page = map_code_page(cpu_data, pg_structs, pc, page);
+	if (!page)
+		goto error_nopage;
+
+	modrm = *(struct modrm *)&page[pc & PAGE_OFFS_MASK];
+	switch (modrm.mod) {
+	case 0:
+		if (modrm.rm != 4)
+			goto error_unsupported;
+
 		pc++;
 		page = map_code_page(cpu_data, pg_structs, pc, page);
 		if (!page)
 			goto error_nopage;
 
-		modrm = *(struct modrm *)&page[pc & PAGE_OFFS_MASK];
-		switch (modrm.mod) {
-		case 0:
-			if (modrm.rm != 4)
-				goto error_unsupported;
-
-			pc++;
-			page = map_code_page(cpu_data, pg_structs, pc, page);
-			if (!page)
-				goto error_nopage;
-
-			sib = *(struct sib *)&page[pc & PAGE_OFFS_MASK];
-			if (sib.ss != 0 || sib.index != 4 || sib.reg != 5)
-				goto error_unsupported;
-			access.inst_len += 5;
-			break;
-		case 2:
-			access.inst_len += 4;
-			break;
-		default:
+		sib = *(struct sib *)&page[pc & PAGE_OFFS_MASK];
+		if (sib.ss != 0 || sib.index != 4 || sib.reg != 5)
 			goto error_unsupported;
-		}
-		if (has_regr)
-			access.reg = 7 - modrm.reg;
-		else if (modrm.reg == 4)
-			goto error_unsupported;
-		else
-			access.reg = 15 - modrm.reg;
+		access.inst_len += 5;
+		break;
+	case 2:
+		access.inst_len += 4;
+		break;
+	default:
+		goto error_unsupported;
 	}
+	if (has_regr)
+		access.reg = 7 - modrm.reg;
+	else if (modrm.reg == 4)
+		goto error_unsupported;
+	else
+		access.reg = 15 - modrm.reg;
 
 	if (does_write != is_write)
 		goto error_inconsitent;
