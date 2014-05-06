@@ -592,6 +592,8 @@ static int cell_management_prologue(struct jailhouse_cell_id *cell_id,
 	return 0;
 }
 
+#define MEM_REQ_FLAGS	(JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_LOADABLE)
+
 static int load_image(struct cell *cell,
 		      struct jailhouse_preload_image __user *uimage)
 {
@@ -610,7 +612,8 @@ static int load_image(struct cell *cell,
 		image_offset = image.target_address - mem->virt_start;
 		if (image.target_address >= mem->virt_start &&
 		    image_offset < mem->size) {
-			if (image.size > mem->size - image_offset)
+			if (image.size > mem->size - image_offset ||
+			    (mem->flags & MEM_REQ_FLAGS) != MEM_REQ_FLAGS)
 				return -EINVAL;
 			break;
 		}
