@@ -7,8 +7,6 @@ o x86 support
   - config space
  - AMD (SVM)?
 o ARM support
-o access control to management interface
- - prevent reconfigurations / overlaps with existing cells when adding new ones
 o configuration
  - add official support to assign resources to multiple cells
    (shared pages, read-only PIO ports)
