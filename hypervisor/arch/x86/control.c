@@ -181,7 +181,7 @@ static void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
 	cpu_data->init_signaled = false;
 	cpu_data->wait_for_sipi = true;
 	apic_clear();
-	vmx_cpu_park();
+	vmx_cpu_park(cpu_data);
 }
 
 int x86_handle_events(struct per_cpu *cpu_data)

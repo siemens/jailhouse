@@ -304,4 +304,4 @@ void vmx_entry_failure(struct per_cpu *cpu_data);
 void vmx_invept(void);
 
 void vmx_schedule_vmexit(struct per_cpu *cpu_data);
-void vmx_cpu_park(void);
+void vmx_cpu_park(struct per_cpu *cpu_data);

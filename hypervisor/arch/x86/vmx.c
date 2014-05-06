@@ -822,9 +822,9 @@ void vmx_schedule_vmexit(struct per_cpu *cpu_data)
 	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
 }
 
-void vmx_cpu_park(void)
+void vmx_cpu_park(struct per_cpu *cpu_data)
 {
-	vmcs_write64(GUEST_RFLAGS, 0x02);
+	vmx_cpu_reset(cpu_data, 0);
 	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
 }
 
