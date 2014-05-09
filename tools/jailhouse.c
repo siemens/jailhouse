@@ -231,7 +231,6 @@ static int cell_shutdown_load(int argc, char *argv[],
 				help(argv[0], 1);
 			arg_num += 2;
 		}
-		image++;
 	}
 
 	fd = open_dev();
