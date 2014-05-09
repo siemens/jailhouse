@@ -26,7 +26,10 @@ KERNELDIR = /lib/modules/`uname -r`/build
 modules modules_install clean:
 	$(MAKE) -C $(KERNELDIR) SUBDIRS=`pwd` $@
 
-install: modules_install
+firmware_install:
+	cp hypervisor/jailhouse.bin /lib/firmware/
+
+install: modules_install firmware_install
 	depmod -aq
 
-.PHONY: modules_install install clean
+.PHONY: modules_install install clean firmware_install
