@@ -352,9 +352,10 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	}
 
 	root_cell = create_cell(&config->system);
-	err = -ENOMEM;
-	if (!root_cell)
+	if (IS_ERR(root_cell)) {
+		err = PTR_ERR(root_cell);
 		goto error_unmap;
+	}
 
 	cpumask_and(&root_cell->cpus_assigned, &root_cell->cpus_assigned,
 		    cpu_online_mask);
