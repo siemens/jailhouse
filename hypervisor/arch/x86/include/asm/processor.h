@@ -231,7 +231,7 @@ static inline void read_gdtr(struct desc_table_reg *val)
 
 static inline void write_gdtr(struct desc_table_reg *val)
 {
-	asm volatile("lgdtq %0" : "=m" (*val));
+	asm volatile("lgdtq %0" : : "m" (*val));
 }
 
 static inline void read_idtr(struct desc_table_reg *val)
@@ -241,7 +241,7 @@ static inline void read_idtr(struct desc_table_reg *val)
 
 static inline void write_idtr(struct desc_table_reg *val)
 {
-	asm volatile("lidtq %0" : "=m" (*val));
+	asm volatile("lidtq %0" : : "m" (*val));
 }
 
 static inline void enable_irq(void)
