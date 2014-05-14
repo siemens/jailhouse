@@ -1039,12 +1039,12 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	is_write = !!(exitq & 0x2);
 
 	if (!vmx_get_guest_paging_structs(&pg_structs))
-		return false;
+		goto invalid_access;
 
 	access = mmio_parse(cpu_data, vmcs_read64(GUEST_RIP),
 			    &pg_structs, is_write);
 	if (!access.inst_len || access.size != 4)
-		return false;
+		goto invalid_access;
 
 	if (is_write)
 		val = ((unsigned long *)guest_regs)[access.reg];
@@ -1059,7 +1059,8 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 		return true;
 	}
 
-	panic_printk("FATAL: Invalid EPT %s, addr: %p\n",
+invalid_access:
+	panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
 		     is_write ? "read" : "write", phys_addr);
 
 	return false;
