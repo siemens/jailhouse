@@ -15,8 +15,8 @@
 #include <jailhouse/printk.h>
 #include <asm/apic.h>
 #include <asm/ioapic.h>
+#include <asm/iommu.h>
 #include <asm/spinlock.h>
-#include <asm/vtd.h>
 
 #include <jailhouse/cell-config.h>
 
@@ -73,16 +73,16 @@ ioapic_translate_redir_entry(struct cell *cell, unsigned int pin,
 
 		idx = entry.remap.int_index | (entry.remap.int_index15 << 15);
 
-		return vtd_get_remapped_root_int(root_cell.ioapic_iommu,
-						 root_cell.ioapic_id, pin,
-						 idx);
+		return iommu_get_remapped_root_int(root_cell.ioapic_iommu,
+						   root_cell.ioapic_id, pin,
+						   idx);
 	}
 
 	irq_msg.vector = entry.native.vector;
 	irq_msg.delivery_mode = entry.native.delivery_mode;
 	irq_msg.level_triggered = entry.native.level_triggered;
 	irq_msg.dest_logical = entry.native.dest_logical;
-	/* align redir_hint and dest_logical - required by vtd_map_interrupt */
+	/* align redir_hint and dest_logical - required by iommu_map_interrupt */
 	irq_msg.redir_hint = irq_msg.dest_logical;
 	irq_msg.valid = 1;
 	irq_msg.destination = entry.native.destination;
@@ -115,7 +115,7 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 
 	irq_msg = ioapic_translate_redir_entry(cell, pin, entry);
 
-	result = vtd_map_interrupt(cell, cell->ioapic_id, pin, irq_msg);
+	result = iommu_map_interrupt(cell, cell->ioapic_id, pin, irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {
 		ioapic_reg_write(reg, entry.raw[reg & 1]);

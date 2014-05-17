@@ -13,11 +13,7 @@
 #ifndef _JAILHOUSE_ASM_VMX_H
 #define _JAILHOUSE_ASM_VMX_H
 
-#include <asm/cell.h>
 #include <asm/paging.h>
-#include <asm/processor.h>
-
-#include <jailhouse/cell-config.h>
 
 struct per_cpu;
 
@@ -301,26 +297,7 @@ enum vmx_state { VMXOFF = 0, VMXON, VMCS_READY };
 #define APIC_ACCESS_TYPE_LINEAR_READ		0x00000000
 #define APIC_ACCESS_TYPE_LINEAR_WRITE		0x00001000
 
-int vmx_init(void);
-
-int vmx_cell_init(struct cell *cell);
-int vmx_map_memory_region(struct cell *cell,
-			  const struct jailhouse_memory *mem);
-int vmx_unmap_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem);
-void vmx_cell_exit(struct cell *cell);
-
-int vmx_cpu_init(struct per_cpu *cpu_data);
-void vmx_cpu_exit(struct per_cpu *cpu_data);
-
-void __attribute__((noreturn)) vmx_cpu_activate_vmm(struct per_cpu *cpu_data);
-void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data);
-void vmx_entry_failure(struct per_cpu *cpu_data);
-
-void vmx_invept(void);
-
 void vmx_schedule_vmexit(struct per_cpu *cpu_data);
-void vmx_cpu_park(struct per_cpu *cpu_data);
 
 void vmx_vmexit(void);
 

@@ -10,6 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef _JAILHOUSE_ASM_VTD_H
+#define _JAILHOUSE_ASM_VTD_H
+
 #include <jailhouse/pci.h>
 #include <jailhouse/utils.h>
 #include <asm/apic.h>
@@ -160,26 +163,4 @@ union vtd_irte {
 #define VTD_IRTE_SQ_VERIFY_FULL_SID	0x0
 #define VTD_IRTE_SVT_VERIFY_SID_SQ	0x1
 
-int vtd_init(void);
-
-int vtd_cell_init(struct cell *cell);
-int vtd_map_memory_region(struct cell *cell,
-			  const struct jailhouse_memory *mem);
-int vtd_unmap_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem);
-int vtd_add_pci_device(struct cell *cell, struct pci_device *device);
-void vtd_remove_pci_device(struct pci_device *device);
-struct apic_irq_message
-vtd_get_remapped_root_int(unsigned int iommu, u16 device_id,
-			  unsigned int vector, unsigned int remap_index);
-int vtd_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
-		      struct apic_irq_message irq_msg);
-void vtd_cell_exit(struct cell *cell);
-
-void vtd_config_commit(struct cell *cell_added_removed);
-
-void vtd_shutdown(void);
-
-void vtd_check_pending_faults(struct per_cpu *cpu_data);
-
-int vtd_mmio_access_handler(bool is_write, u64 addr, u32 *value);
+#endif

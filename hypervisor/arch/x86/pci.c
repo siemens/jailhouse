@@ -18,8 +18,8 @@
 #include <jailhouse/utils.h>
 #include <asm/apic.h>
 #include <asm/io.h>
+#include <asm/iommu.h>
 #include <asm/pci.h>
-#include <asm/vtd.h>
 
 /** Protects the root bridge's PIO interface to the PCI config space. */
 static DEFINE_SPINLOCK(pci_lock);
@@ -221,12 +221,12 @@ invalid_access:
 
 int arch_pci_add_device(struct cell *cell, struct pci_device *device)
 {
-	return vtd_add_pci_device(cell, device);
+	return iommu_add_pci_device(cell, device);
 }
 
 void arch_pci_remove_device(struct pci_device *device)
 {
-	vtd_remove_pci_device(device);
+	iommu_remove_pci_device(device);
 }
 
 static union x86_msi_vector pci_get_x86_msi_vector(struct pci_device *device)
@@ -255,9 +255,9 @@ pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
 		idx = msi.remap.int_index | (msi.remap.int_index15 << 15);
 		if (msi.remap.shv)
 			idx += msi.remap.subhandle;
-		return vtd_get_remapped_root_int(device->info->iommu,
-						 device->info->bdf,
-						 vector, idx);
+		return iommu_get_remapped_root_int(device->info->iommu,
+						   device->info->bdf,
+						   vector, idx);
 	}
 
 	irq_msg.vector = msi.native.vector;
@@ -337,7 +337,7 @@ int arch_pci_update_msi(struct pci_device *device,
 
 	for (n = 0; n < vectors; n++) {
 		irq_msg = pci_translate_msi_vector(device, n, vectors, msi);
-		result = vtd_map_interrupt(device->cell, bdf, n, irq_msg);
+		result = iommu_map_interrupt(device->cell, bdf, n, irq_msg);
 		// HACK for QEMU
 		if (result == -ENOSYS) {
 			for (n = 1; n < (info->msi_64bits ? 4 : 3); n++)
@@ -375,7 +375,7 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 		return 0;
 
 	irq_msg = pci_translate_msi_vector(device, index, 0, msi);
-	result = vtd_map_interrupt(device->cell, device->info->bdf, index,
+	result = iommu_map_interrupt(device->cell, device->info->bdf, index,
 				   irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {

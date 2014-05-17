@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -16,6 +18,9 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <asm/vtd.h>
+#include <asm/apic.h>
+#include <asm/iommu.h>
 #include <asm/bitops.h>
 #include <asm/ioapic.h>
 #include <asm/spinlock.h>
@@ -206,7 +211,7 @@ static void vtd_print_fault_record_reg_status(void *reg_base)
 	printk(" Fault Reason: 0x%x Fault Info: %lx Type %d\n", fr, fi, type);
 }
 
-void vtd_check_pending_faults(struct per_cpu *cpu_data)
+void iommu_check_pending_faults(struct per_cpu *cpu_data)
 {
 	unsigned int fr_index;
 	void *reg_base = dmar_reg_base;
@@ -241,9 +246,9 @@ static int vtd_emulate_inv_int(unsigned int unit_no, unsigned int index)
 	if (!irte_usage->used)
 		return 0;
 
-	irq_msg = vtd_get_remapped_root_int(unit_no, irte_usage->device_id,
+	irq_msg = iommu_get_remapped_root_int(unit_no, irte_usage->device_id,
 					    irte_usage->vector, index);
-	return vtd_map_interrupt(&root_cell, irte_usage->device_id,
+	return iommu_map_interrupt(&root_cell, irte_usage->device_id,
 				 irte_usage->vector, irq_msg);
 }
 
@@ -333,7 +338,7 @@ invalid_iq_entry:
 	return -1;
 }
 
-int vtd_mmio_access_handler(bool is_write, u64 addr, u32 *value)
+int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value)
 {
 	unsigned int n;
 	u64 base_addr;
@@ -430,7 +435,7 @@ static int vtd_init_ir_emulation(void *reg_base, unsigned int unit_no)
 	return 0;
 }
 
-int vtd_init(void)
+int iommu_init(void)
 {
 	unsigned long version, caps, ecaps, ctrls, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
@@ -538,7 +543,7 @@ int vtd_init(void)
 	if (!(sllps_caps & VTD_CAP_SLLPS2M))
 		vtd_paging[dmar_pt_levels - 2].page_size = 0;
 
-	return vtd_cell_init(&root_cell);
+	return iommu_cell_init(&root_cell);
 }
 
 static void vtd_update_irte(unsigned int index, union vtd_irte content)
@@ -631,7 +636,7 @@ static void vtd_free_int_remap_region(u16 device_id, unsigned int length)
 	}
 }
 
-int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
+int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 {
 	unsigned int max_vectors = MAX(device->info->num_msi_vectors,
 				       device->info->num_msix_vectors);
@@ -675,7 +680,7 @@ error_nomem:
 	return -ENOMEM;
 }
 
-void vtd_remove_pci_device(struct pci_device *device)
+void iommu_remove_pci_device(struct pci_device *device)
 {
 	u16 bdf = device->info->bdf;
 	u64 *root_entry_lo = &root_entry_table[PCI_BUS(bdf)].lo_word;
@@ -705,7 +710,7 @@ void vtd_remove_pci_device(struct pci_device *device)
 	page_free(&mem_pool, context_entry_table, 1);
 }
 
-int vtd_cell_init(struct cell *cell)
+int iommu_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *irqchip =
 		jailhouse_cell_irqchips(cell->config);
@@ -729,7 +734,7 @@ int vtd_cell_init(struct cell *cell)
 		result = vtd_reserve_int_remap_region(irqchip->id,
 						      IOAPIC_NUM_PINS);
 		if (result < 0) {
-			vtd_cell_exit(cell);
+			iommu_cell_exit(cell);
 			return result;
 		}
 	}
@@ -739,7 +744,7 @@ int vtd_cell_init(struct cell *cell)
 	return 0;
 }
 
-int vtd_map_memory_region(struct cell *cell,
+int iommu_map_memory_region(struct cell *cell,
 			  const struct jailhouse_memory *mem)
 {
 	u32 flags = 0;
@@ -761,7 +766,7 @@ int vtd_map_memory_region(struct cell *cell,
 			     PAGING_COHERENT);
 }
 
-int vtd_unmap_memory_region(struct cell *cell,
+int iommu_unmap_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem)
 {
 	// HACK for QEMU
@@ -776,7 +781,7 @@ int vtd_unmap_memory_region(struct cell *cell,
 }
 
 struct apic_irq_message
-vtd_get_remapped_root_int(unsigned int iommu, u16 device_id,
+iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
 			  unsigned int vector, unsigned int remap_index)
 {
 	struct vtd_emulation *unit = &root_cell_units[iommu];
@@ -826,7 +831,7 @@ vtd_get_remapped_root_int(unsigned int iommu, u16 device_id,
 	return irq_msg;
 }
 
-int vtd_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
+int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 		      struct apic_irq_message irq_msg)
 {
 	u32 dest = irq_msg.destination;
@@ -901,7 +906,7 @@ update_irte:
 	return base_index + vector;
 }
 
-void vtd_cell_exit(struct cell *cell)
+void iommu_cell_exit(struct cell *cell)
 {
 	// HACK for QEMU
 	if (dmar_units == 0)
@@ -915,7 +920,7 @@ void vtd_cell_exit(struct cell *cell)
 	 */
 }
 
-void vtd_config_commit(struct cell *cell_added_removed)
+void iommu_config_commit(struct cell *cell_added_removed)
 {
 	void *inv_queue = unit_inv_queue;
 	void *reg_base = dmar_reg_base;
@@ -975,7 +980,7 @@ static void vtd_restore_ir(unsigned int unit_no, void *reg_base)
 	mmio_write32(reg_base + VTD_FECTL_REG, unit->fectl);
 }
 
-void vtd_shutdown(void)
+void iommu_shutdown(void)
 {
 	void *reg_base = dmar_reg_base;
 	unsigned int n;

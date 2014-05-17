@@ -159,7 +159,7 @@ vmx_vmexit:
 
 	mov %rsp,%rdi
 	lea -PERCPU_STACK_END+16*8(%rsp),%rsi
-	call vmx_handle_exit
+	call vcpu_handle_exit
 
 	pop %r15
 	pop %r14
@@ -181,4 +181,4 @@ vmx_vmexit:
 	vmresume
 
 	lea -PERCPU_STACK_END(%rsp),%rdi
-	jmp vmx_entry_failure
+	jmp vcpu_entry_failure
