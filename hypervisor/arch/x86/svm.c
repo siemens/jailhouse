@@ -272,8 +272,41 @@ int vcpu_vendor_init(void)
 
 int vcpu_vendor_cell_init(struct cell *cell)
 {
-	/* TODO: Implement */
-	return 0;
+	u64 flags;
+	int err;
+
+	/* allocate iopm (two 4-K pages + 3 bits) */
+	cell->svm.iopm = page_alloc(&mem_pool, 3);
+	if (!cell->svm.iopm)
+		return -ENOMEM;
+
+	/* build root NPT of cell */
+	cell->svm.npt_structs.root_paging = npt_paging;
+	cell->svm.npt_structs.root_table = page_alloc(&mem_pool, 1);
+	if (!cell->svm.npt_structs.root_table)
+		return -ENOMEM;
+
+	if (!has_avic) {
+		/*
+		 * Map xAPIC as is; reads are passed, writes are trapped.
+		 */
+		flags = PAGE_READONLY_FLAGS |
+			PAGE_FLAG_US |
+			PAGE_FLAG_UNCACHED;
+		err = paging_create(&cell->svm.npt_structs, XAPIC_BASE,
+				    PAGE_SIZE, XAPIC_BASE,
+				    flags,
+				    PAGING_NON_COHERENT);
+	} else {
+		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED;
+		err = paging_create(&cell->svm.npt_structs,
+				    paging_hvirt2phys(avic_page),
+				    PAGE_SIZE, XAPIC_BASE,
+				    flags,
+				    PAGING_NON_COHERENT);
+	}
+
+	return err;
 }
 
 int vcpu_map_memory_region(struct cell *cell,
@@ -304,7 +337,9 @@ int vcpu_unmap_memory_region(struct cell *cell,
 
 void vcpu_vendor_cell_exit(struct cell *cell)
 {
-	/* TODO: Implement */
+	paging_destroy(&cell->svm.npt_structs, XAPIC_BASE, PAGE_SIZE,
+		       PAGING_NON_COHERENT);
+	page_free(&mem_pool, cell->svm.npt_structs.root_table, 1);
 }
 
 int vcpu_init(struct per_cpu *cpu_data)
@@ -438,9 +473,10 @@ const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 }
 
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
-		                    struct vcpu_io_bitmap *out)
+		                    struct vcpu_io_bitmap *iobm)
 {
-	/* TODO: Implement */
+	iobm->data = cell->svm.iopm;
+	iobm->size = sizeof(cell->svm.iopm);
 }
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
