@@ -17,6 +17,7 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/string.h>
 #include <asm/apic.h>
 #include <asm/cell.h>
 #include <asm/paging.h>
@@ -24,6 +25,163 @@
 #include <asm/processor.h>
 #include <asm/svm.h>
 #include <asm/vcpu.h>
+
+/*
+ * NW bit is ignored by all modern processors, however some
+ * combinations of NW and CD bits are prohibited by SVM (see APMv2,
+ * Sect. 15.5). To handle this, we always keep the NW bit off.
+ */
+#define SVM_CR0_CLEARED_BITS	~X86_CR0_NW
+
+static const struct segment invalid_seg;
+
+static u8 __attribute__((aligned(PAGE_SIZE))) msrpm[][0x2000/4] = {
+	[ SVM_MSRPM_0000 ] = {
+		[      0/4 ...  0x017/4 ] = 0,
+		[  0x018/4 ...  0x01b/4 ] = 0x80, /* 0x01b (w) */
+		[  0x01c/4 ...  0x7ff/4 ] = 0,
+		/* x2APIC MSRs - emulated if not present */
+		[  0x800/4 ...  0x803/4 ] = 0x90, /* 0x802 (r), 0x803 (r) */
+		[  0x804/4 ...  0x807/4 ] = 0,
+		[  0x808/4 ...  0x80b/4 ] = 0x93, /* 0x808 (rw), 0x80a (r), 0x80b (w) */
+		[  0x80c/4 ...  0x80f/4 ] = 0xc8, /* 0x80d (w), 0x80f (rw) */
+		[  0x810/4 ...  0x813/4 ] = 0x55, /* 0x810 - 0x813 (r) */
+		[  0x814/4 ...  0x817/4 ] = 0x55, /* 0x814 - 0x817 (r) */
+		[  0x818/4 ...  0x81b/4 ] = 0x55, /* 0x818 - 0x81b (r) */
+		[  0x81c/4 ...  0x81f/4 ] = 0x55, /* 0x81c - 0x81f (r) */
+		[  0x820/4 ...  0x823/4 ] = 0x55, /* 0x820 - 0x823 (r) */
+		[  0x824/4 ...  0x827/4 ] = 0x55, /* 0x823 - 0x827 (r) */
+		[  0x828/4 ...  0x82b/4 ] = 0x03, /* 0x828 (rw) */
+		[  0x82c/4 ...  0x82f/4 ] = 0xc0, /* 0x82f (rw) */
+		[  0x830/4 ...  0x833/4 ] = 0xf3, /* 0x830 (rw), 0x832 (rw), 0x833 (rw) */
+		[  0x834/4 ...  0x837/4 ] = 0xff, /* 0x834 - 0x837 (rw) */
+		[  0x838/4 ...  0x83b/4 ] = 0x07, /* 0x838 (rw), 0x839 (r) */
+		[  0x83c/4 ...  0x83f/4 ] = 0x70, /* 0x83e (rw), 0x83f (r) */
+		[  0x840/4 ... 0x1fff/4 ] = 0,
+	},
+	[ SVM_MSRPM_C000 ] = {
+		[      0/4 ...  0x07f/4 ] = 0,
+		[  0x080/4 ...  0x083/4 ] = 0x02, /* 0x080 (w) */
+		[  0x084/4 ... 0x1fff/4 ] = 0
+	},
+	[ SVM_MSRPM_C001 ] = {
+		[      0/4 ... 0x1fff/4 ] = 0,
+	},
+	[ SVM_MSRPM_RESV ] = {
+		[      0/4 ... 0x1fff/4 ] = 0,
+	}
+};
+
+static void set_svm_segment_from_dtr(struct svm_segment *svm_segment,
+				     const struct desc_table_reg *dtr)
+{
+	struct svm_segment tmp = { 0 };
+
+	if (dtr) {
+		tmp.base = dtr->base;
+		tmp.limit = dtr->limit & 0xffff;
+	}
+
+	*svm_segment = tmp;
+}
+
+/* TODO: struct segment needs to be x86 generic, not VMX-specific one here */
+static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
+					 const struct segment *segment)
+{
+	u32 ar;
+
+	svm_segment->selector = segment->selector;
+
+	if (segment->access_rights == 0x10000) {
+		svm_segment->access_rights = 0;
+	} else {
+		ar = segment->access_rights;
+		svm_segment->access_rights =
+			((ar & 0xf000) >> 4) | (ar & 0x00ff);
+	}
+
+	svm_segment->limit = segment->limit;
+	svm_segment->base = segment->base;
+}
+
+static bool vcpu_set_cell_config(struct cell *cell, struct vmcb *vmcb)
+{
+	/* No real need for this function; used for consistency with vmx.c */
+	vmcb->iopm_base_pa = paging_hvirt2phys(cell->svm.iopm);
+	vmcb->n_cr3 = paging_hvirt2phys(cell->svm.npt_structs.root_table);
+
+	return true;
+}
+
+static int vmcb_setup(struct per_cpu *cpu_data)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+
+	memset(vmcb, 0, sizeof(struct vmcb));
+
+	vmcb->cr0 = read_cr0() & SVM_CR0_CLEARED_BITS;
+	vmcb->cr3 = cpu_data->linux_cr3;
+	vmcb->cr4 = read_cr4();
+
+	set_svm_segment_from_segment(&vmcb->cs, &cpu_data->linux_cs);
+	set_svm_segment_from_segment(&vmcb->ds, &cpu_data->linux_ds);
+	set_svm_segment_from_segment(&vmcb->es, &cpu_data->linux_es);
+	set_svm_segment_from_segment(&vmcb->fs, &cpu_data->linux_fs);
+	set_svm_segment_from_segment(&vmcb->gs, &cpu_data->linux_gs);
+	set_svm_segment_from_segment(&vmcb->ss, &invalid_seg);
+	set_svm_segment_from_segment(&vmcb->tr, &cpu_data->linux_tss);
+
+	set_svm_segment_from_dtr(&vmcb->ldtr, NULL);
+	set_svm_segment_from_dtr(&vmcb->gdtr, &cpu_data->linux_gdtr);
+	set_svm_segment_from_dtr(&vmcb->idtr, &cpu_data->linux_idtr);
+
+	vmcb->cpl = 0; /* Linux runs in ring 0 before migration */
+
+	vmcb->rflags = 0x02;
+	vmcb->rsp = cpu_data->linux_sp +
+		(NUM_ENTRY_REGS + 1) * sizeof(unsigned long);
+	vmcb->rip = cpu_data->linux_ip;
+
+	vmcb->sysenter_cs = read_msr(MSR_IA32_SYSENTER_CS);
+	vmcb->sysenter_eip = read_msr(MSR_IA32_SYSENTER_EIP);
+	vmcb->sysenter_esp = read_msr(MSR_IA32_SYSENTER_ESP);
+	vmcb->star = read_msr(MSR_STAR);
+	vmcb->lstar = read_msr(MSR_LSTAR);
+	vmcb->cstar = read_msr(MSR_CSTAR);
+	vmcb->sfmask = read_msr(MSR_SFMASK);
+	vmcb->kerngsbase = read_msr(MSR_KERNGS_BASE);
+
+	vmcb->dr6 = 0x00000ff0;
+	vmcb->dr7 = 0x00000400;
+
+	/* Make the hypervisor visible */
+	vmcb->efer = (cpu_data->linux_efer | EFER_SVME);
+
+	/* Linux uses custom PAT setting */
+	vmcb->g_pat = read_msr(MSR_IA32_PAT);
+
+	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_NMI;
+	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CR0_SEL_WRITE;
+	/* TODO: Do we need this for SVM ? */
+	/* vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CPUID; */
+	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_IOIO_PROT;
+	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_MSR_PROT;
+	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_SHUTDOWN_EVT;
+
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMRUN; /* Required */
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMMCALL;
+
+	vmcb->msrpm_base_pa = paging_hvirt2phys(msrpm);
+
+	vmcb->np_enable = 1;
+	/* No more than one guest owns the CPU */
+	vmcb->guest_asid = 1;
+
+	/* TODO: Setup AVIC */
+
+	return vcpu_set_cell_config(cpu_data->cell, vmcb);
+}
 
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys,

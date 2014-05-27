@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -35,6 +37,7 @@
 
 #define MSR_IA32_APICBASE				0x0000001b
 #define MSR_IA32_FEATURE_CONTROL			0x0000003a
+#define MSR_IA32_PAT					0x00000277
 #define MSR_IA32_SYSENTER_CS				0x00000174
 #define MSR_IA32_SYSENTER_ESP				0x00000175
 #define MSR_IA32_SYSENTER_EIP				0x00000176
@@ -55,8 +58,13 @@
 #define MSR_X2APIC_ICR					0x00000830
 #define MSR_X2APIC_END					0x0000083f
 #define MSR_EFER					0xc0000080
+#define MSR_STAR					0xc0000081
+#define MSR_LSTAR					0xc0000082
+#define MSR_CSTAR					0xc0000083
+#define MSR_SFMASK					0xc0000084
 #define MSR_FS_BASE					0xc0000100
 #define MSR_GS_BASE					0xc0000101
+#define MSR_KERNGS_BASE					0xc0000102
 
 #define FEATURE_CONTROL_LOCKED				(1 << 0)
 #define FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX	(1 << 2)
