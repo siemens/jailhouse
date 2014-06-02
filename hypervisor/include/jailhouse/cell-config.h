@@ -23,7 +23,7 @@ struct jailhouse_cell_desc {
 
 	__u32 cpu_set_size;
 	__u32 num_memory_regions;
-	__u32 num_irq_lines;
+	__u32 num_irqchips;
 	__u32 pio_bitmap_size;
 	__u32 num_pci_devices;
 } __attribute__((packed));
@@ -49,9 +49,10 @@ struct jailhouse_memory {
 	__u64 flags;
 } __attribute__((packed));
 
-struct jailhouse_irq_line {
-	__u32 num;
-	__u32 irqchip;
+struct jailhouse_irqchip {
+	__u64 address;
+	__u64 id;
+	__u64 pin_bitmap;
 } __attribute__((packed));
 
 #define JAILHOUSE_PCI_TYPE_DEVICE	0x01
@@ -76,7 +77,7 @@ jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)
 	return sizeof(struct jailhouse_cell_desc) +
 		cell->cpu_set_size +
 		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
-		cell->num_irq_lines * sizeof(struct jailhouse_irq_line) +
+		cell->num_irqchips * sizeof(struct jailhouse_irqchip) +
 		cell->pio_bitmap_size +
 		cell->num_pci_devices * sizeof(struct jailhouse_pci_device);
 }
@@ -103,13 +104,21 @@ jailhouse_cell_mem_regions(const struct jailhouse_cell_desc *cell)
 		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size);
 }
 
+static inline const struct jailhouse_irqchip *
+jailhouse_cell_irqchips(const struct jailhouse_cell_desc *cell)
+{
+	return (const struct jailhouse_irqchip *)((void *)cell +
+		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size +
+		cell->num_memory_regions * sizeof(struct jailhouse_memory));
+}
+
 static inline const __u8 *
 jailhouse_cell_pio_bitmap(const struct jailhouse_cell_desc *cell)
 {
 	return (const __u8 *)((void *)cell +
 		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size +
 		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
-		cell->num_irq_lines * sizeof(struct jailhouse_irq_line));
+		cell->num_irqchips * sizeof(struct jailhouse_irqchip));
 }
 
 static inline const struct jailhouse_pci_device *
@@ -118,7 +127,7 @@ jailhouse_cell_pci_devices(const struct jailhouse_cell_desc *cell)
 	return (const struct jailhouse_pci_device *)((void *)cell +
 		sizeof(struct jailhouse_cell_desc) + cell->cpu_set_size +
 		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
-		cell->num_irq_lines * sizeof(struct jailhouse_irq_line) +
+		cell->num_irqchips * sizeof(struct jailhouse_irqchip) +
 		cell->pio_bitmap_size);
 }
 
