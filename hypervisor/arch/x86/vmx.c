@@ -1031,6 +1031,7 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
 	struct guest_paging_structures pg_structs;
 	struct mmio_access access;
+	int result = 0;
 	bool is_write;
 	u32 val;
 
@@ -1049,9 +1050,10 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	if (is_write)
 		val = ((unsigned long *)guest_regs)[access.reg];
 
-	/* Filter out requests to PCI configuration space */
-	if (pci_mmio_access_handler(cpu_data->cell, is_write,
-				    phys_addr, &val) == 1) {
+	result = pci_mmio_access_handler(cpu_data->cell, is_write, phys_addr,
+					 &val);
+
+	if (result == 1) {
 		if (!is_write)
 			((unsigned long *)guest_regs)[access.reg] = val;
 		vmx_skip_emulated_instruction(
@@ -1060,9 +1062,10 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	}
 
 invalid_access:
-	panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
-		     is_write ? "read" : "write", phys_addr);
-
+	/* report only unhandled access failures */
+	if (result == 0)
+		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
+			     is_write ? "write" : "read", phys_addr);
 	return false;
 }
 
