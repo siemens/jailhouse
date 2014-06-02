@@ -49,6 +49,9 @@ struct cell {
 
 	u32 pci_addr_port_val;
 
+	u32 ioapic_index_reg_val;
+	u64 ioapic_pin_bitmap;
+
 	union {
 		struct jailhouse_comm_region comm_region;
 		u8 padding[PAGE_SIZE];

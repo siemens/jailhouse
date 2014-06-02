@@ -21,10 +21,11 @@
 #include <jailhouse/pci.h>
 #include <asm/apic.h>
 #include <asm/control.h>
+#include <asm/io.h>
+#include <asm/ioapic.h>
+#include <asm/pci.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
-#include <asm/io.h>
-#include <asm/pci.h>
 
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
@@ -1043,8 +1044,11 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	if (is_write)
 		val = ((unsigned long *)guest_regs)[access.reg];
 
-	result = pci_mmio_access_handler(cpu_data->cell, is_write, phys_addr,
-					 &val);
+	result = ioapic_access_handler(cpu_data->cell, is_write, phys_addr,
+				       &val);
+	if (result == 0)
+		result = pci_mmio_access_handler(cpu_data->cell, is_write,
+						 phys_addr, &val);
 
 	if (result == 1) {
 		if (!is_write)

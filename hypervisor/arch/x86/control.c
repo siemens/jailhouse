@@ -15,6 +15,7 @@
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/control.h>
+#include <asm/ioapic.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
@@ -39,6 +40,9 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 	err = vtd_cell_init(cell);
 	if (err)
 		vmx_cell_exit(cell);
+
+	ioapic_cell_init(cell);
+	ioapic_root_cell_shrink(cell->config);
 
 	return 0;
 }
@@ -72,6 +76,7 @@ int arch_unmap_memory_region(struct cell *cell,
 
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
 {
+	ioapic_cell_exit(cell);
 	vtd_cell_exit(cell);
 	vmx_cell_exit(cell);
 }

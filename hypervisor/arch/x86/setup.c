@@ -16,6 +16,7 @@
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
+#include <asm/ioapic.h>
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
@@ -217,6 +218,10 @@ int arch_init_late()
 		return err;
 
 	err = pci_init();
+	if (err)
+		return err;
+
+	err = ioapic_init();
 	if (err)
 		return err;
 
