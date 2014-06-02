@@ -2,17 +2,26 @@ Things to be addressed, at some point. Unsorted, unprioritized, incomplete.
 
 o x86 support
  - interrupt remapping support
+  - IOAPIC virtualization [WIP]
+  - MSI virtualization (for PCI and HPET)
+  - VT-d setup
  - PCI resource access control
-  - enable bus scans, masking out devices of other cells
-  - config space
- - AMD (SVM)?
+  - config space access moderation [WIP]
+ - AMD64 (SVM) [WIP]
+ - share PM timer across all cells (r/o), advertise in comm region
+ - power management
+  - block
+  - allow per cell (managing inter-core/inter-cell impacts)
 o ARM support
+ - v7 (32-bit)
+ - v8 (64-bit)
 o configuration
  - add official support to assign resources to multiple cells
-   (shared pages, read-only PIO ports)
+   (shared pages, read-only PIO ports)?
  - review of format, rework of textual representation
  - platform device assignment
  - create base configuration from knowledge base and running system
+   [WIP: python script, optional shell script for data collection on target]
 o setup validation
  - check integrity of configurations
  - check integrity of runtime environment (hypervisor core & page_pool,
@@ -27,14 +36,18 @@ o testing
  - build tests for x86 and ARM
  - unit tests?
  - system tests, also in QEMU/KVM
-  - VT-d emulation for QEMU?
+  - VT-d emulation for QEMU [WIP: GSoC project]
 o inmates
  - reusable runtime environment for cell inmates
- - port free small-footprint RTOS to Jailhouse bare-metal environment?
-   candidates could be: RTEMS, eCos, FreeRTOS
+  - skeleton in separate directory
+  - hw access libraries (x86: APIC, TSC calibration, PCI, IOAPIC, ...)
+  - inter-cell communication library
+ - port free small-footprint RTOS to Jailhouse bare-metal environment
+   [WIP: RTEMS]
 o hardware error handling
  - MCEs
  - PCI AER
+ - APEI
  - ...
 o monitoring
  - report error-triggering devices behind IOMMUs via sysfs
