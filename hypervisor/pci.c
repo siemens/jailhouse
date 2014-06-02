@@ -166,15 +166,15 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 
 	if (is_write) {
 		if (!device)
-			return -1;
+			goto invalid_access;
 		if (reg_num < PCI_CONFIG_HEADER_SIZE) {
 			if (!pci_cfg_write_allowed(device->type,
-						   (reg_num - reg_bias),
+						   reg_num - reg_bias,
 						   reg_bias, 4))
-				return -1;
+				goto invalid_access;
 		} else {
 			// TODO: moderate capability access
-			return -1;
+			goto invalid_access;
 		}
 		mmio_write32(pci_space + mmcfg_offset, *value);
 	} else
@@ -184,4 +184,11 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			*value = -1;
 
 	return 1;
+
+invalid_access:
+	panic_printk("FATAL: Invalid PCI MMCONFIG write, device %02x:%02x.%x, "
+		     "reg: %\n", mmcfg_offset >> 20, (mmcfg_offset >> 15) & 31,
+		     (mmcfg_offset >> 12) & 7, reg_num);
+	return -1;
+
 }
