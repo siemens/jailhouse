@@ -426,6 +426,10 @@ void vtd_root_cell_shrink(struct jailhouse_cell_desc *config)
 		jailhouse_cell_pci_devices(config);
 	unsigned int n;
 
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return;
+
 	vtd_init_fault_nmi();
 
 	for (n = 0; n < config->num_pci_devices; n++)
@@ -491,6 +495,10 @@ void vtd_cell_exit(struct cell *cell)
 	const struct jailhouse_pci_device *dev =
 		jailhouse_cell_pci_devices(cell->config);
 	unsigned int n;
+
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return;
 
 	for (n = 0; n < cell->config->num_pci_devices; n++) {
 		vtd_remove_device_from_cell(cell, &dev[n]);
