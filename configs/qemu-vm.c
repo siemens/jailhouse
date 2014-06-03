@@ -25,6 +25,7 @@ struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[5];
+	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[7];
 } __attribute__((packed)) config = {
@@ -42,7 +43,7 @@ struct {
 
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
-			.num_irqchips = 0,
+			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
 		},
@@ -72,19 +73,19 @@ struct {
 			.size = 0xbec00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* yeah, that's not really safe... */
-		/* IOAPIC */ {
-			.phys_start = 0xfec00000,
-			.virt_start = 0xfec00000,
-			.size = 0x1000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
-		/* the same here until we catch MSIs via interrupt remapping */
+		/* not safe until we catch MSIs via interrupt remapping */
 		/* HPET */ {
 			.phys_start = 0xfed00000,
 			.virt_start = 0xfed00000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+	},
+
+	.irqchips = {
+		/* IOAPIC */ {
+			.address = 0xfec00000,
+			.pin_bitmap = 0xffffff,
 		},
 	},
 
