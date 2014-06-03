@@ -113,10 +113,11 @@ restart:
 			goto error_unsupported;
 		access.inst_len += 5;
 		break;
+	case 1:
 	case 2:
 		if (op[1].modrm.rm == 4) /* SIB */
 			goto error_unsupported;
-		access.inst_len += 4;
+		access.inst_len += op[1].modrm.mod == 1 ? 1 : 4;
 		break;
 	default:
 		goto error_unsupported;
