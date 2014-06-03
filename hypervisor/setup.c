@@ -79,7 +79,7 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
-	error = arch_init_early(&root_cell);
+	error = arch_init_early();
 	if (error)
 		return;
 
@@ -142,7 +142,7 @@ failed:
 
 static void init_late(void)
 {
-	error = arch_init_late(&root_cell);
+	error = arch_init_late();
 	if (error)
 		return;
 
