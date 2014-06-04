@@ -1008,7 +1008,7 @@ static bool vmx_handle_io_access(struct registers *guest_regs,
 
 	/* string and REP-prefixed instructions are not supported */
 	if (exitq & 0x30)
-		return false;
+		goto invalid_access;
 
 	if (x86_pci_config_handler(guest_regs, cpu_data->cell, port, dir_in,
 				   size) == 1) {
@@ -1017,6 +1017,7 @@ static bool vmx_handle_io_access(struct registers *guest_regs,
 		return true;
 	}
 
+invalid_access:
 	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
 		     dir_in ? "read" : "write", port, size);
 	panic_printk("PCI address port: %x\n",
