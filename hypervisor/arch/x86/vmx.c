@@ -956,7 +956,7 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 					    &pg_structs, offset >> 4,
 					    is_write);
 		if (!inst_len)
-			return false;
+			break;
 
 		vmx_skip_emulated_instruction(inst_len);
 		return true;
