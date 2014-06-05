@@ -248,8 +248,6 @@ unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 
 int vmx_cell_init(struct cell *cell)
 {
-	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(cell->config);
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
 	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
 	int n, err;
@@ -262,21 +260,15 @@ int vmx_cell_init(struct cell *cell)
 	if (!cell->vmx.ept_structs.root_table)
 		return -ENOMEM;
 
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
-		err = vmx_map_memory_region(cell, mem);
-		if (err)
-			/* FIXME: release vmx.ept_structs.root_table */
-			return err;
-	}
-
 	err = page_map_create(&cell->vmx.ept_structs,
 			      page_map_hvirt2phys(apic_access_page),
 			      PAGE_SIZE, XAPIC_BASE,
 			      EPT_FLAG_READ|EPT_FLAG_WRITE|EPT_FLAG_WB_TYPE,
 			      PAGE_MAP_NON_COHERENT);
-	if (err)
-		/* FIXME: release vmx.ept_structs.root_table */
+	if (err) {
+		vmx_cell_exit(cell);
 		return err;
+	}
 
 	memset(cell->vmx.io_bitmap, -1, sizeof(cell->vmx.io_bitmap));
 

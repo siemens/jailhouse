@@ -142,9 +142,19 @@ failed:
 
 static void init_late(struct per_cpu *cpu_data)
 {
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(root_cell.config);
+	unsigned int n;
+
 	error = arch_init_late();
 	if (error)
 		return;
+
+	for (n = 0; n < root_cell.config->num_memory_regions; n++, mem++) {
+		error = arch_map_memory_region(&root_cell, mem);
+		if (error)
+			return;
+	}
 
 	arch_config_commit(cpu_data, NULL);
 

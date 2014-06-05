@@ -375,25 +375,37 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			goto err_free_cpu_set;
 		}
 
-	for_each_cpu(cpu, cell->cpu_set)
-		clear_bit(cpu, root_cell.cpu_set->bitmap);
+	err = arch_cell_create(cpu_data, cell);
+	if (err)
+		goto err_free_cpu_set;
 
-	/* unmap the new cell's memory regions from the root cell */
+	for_each_cpu(cpu, cell->cpu_set) {
+		arch_park_cpu(cpu);
+
+		clear_bit(cpu, root_cell.cpu_set->bitmap);
+		per_cpu(cpu)->cell = cell;
+	}
+
+	/*
+	 * Unmap the cell's memory regions from the root cell and map them to
+	 * the new cell instead.
+	 */
 	mem = jailhouse_cell_mem_regions(cell->config);
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
 		/*
-		 * Exceptions:
+		 * Unmap exceptions:
 		 *  - the communication region is not backed by root memory
 		 */
 		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION)) {
 			err = unmap_from_root_cell(mem);
 			if (err)
-				goto err_restore_root;
+				goto err_destroy_cell;
 		}
 
-	err = arch_cell_create(cpu_data, cell);
-	if (err)
-		goto err_restore_root;
+		err = arch_map_memory_region(cell, mem);
+		if (err)
+			goto err_destroy_cell;
+	}
 
 	arch_config_commit(cpu_data, cell);
 
@@ -405,11 +417,6 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	last->next = cell;
 	num_cells++;
 
-	for_each_cpu(cpu, cell->cpu_set) {
-		per_cpu(cpu)->cell = cell;
-		arch_park_cpu(cpu);
-	}
-
 	cell_reconfig_completed();
 
 	printk("Created cell \"%s\"\n", cell->config->name);
@@ -420,13 +427,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	return cell->id;
 
-err_restore_root:
-	mem = jailhouse_cell_mem_regions(cell->config);
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
-		remap_to_root_cell(mem, WARN_ON_ERROR);
-	for_each_cpu(cpu, cell->cpu_set)
-		set_bit(cpu, root_cell.cpu_set->bitmap);
-	arch_config_commit(cpu_data, NULL);
+err_destroy_cell:
+	cell_destroy_internal(cpu_data, cell);
 err_free_cpu_set:
 	destroy_cpu_set(cell);
 err_free_cell:
