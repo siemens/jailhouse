@@ -308,10 +308,6 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;
 
-	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
-	       device->bus, device->devfn >> 3, device->devfn & 7,
-	       cell->config->name);
-
 	if (root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
 			page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
@@ -326,6 +322,13 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	}
 
 	context_entry = &context_entry_table[device->devfn];
+	if (context_entry->lo_word & VTD_CTX_PRESENT)
+		return true;
+
+	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
+	       device->bus, device->devfn >> 3, device->devfn & 7,
+	       cell->config->name);
+
 	context_entry->lo_word = VTD_CTX_PRESENT | VTD_CTX_TTYPE_MLP_UNTRANS |
 		page_map_hvirt2phys(cell->vtd.pg_structs.root_table);
 	context_entry->hi_word =
