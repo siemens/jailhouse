@@ -259,6 +259,33 @@ static int remap_to_root_cell(const struct jailhouse_memory *mem,
 	return err;
 }
 
+static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
+{
+	const struct jailhouse_memory *mem =
+		jailhouse_cell_mem_regions(cell->config);
+	unsigned int cpu, n;
+
+	for_each_cpu(cpu, cell->cpu_set) {
+		arch_park_cpu(cpu);
+
+		set_bit(cpu, root_cell.cpu_set->bitmap);
+		per_cpu(cpu)->cell = &root_cell;
+		per_cpu(cpu)->failed = false;
+	}
+
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
+		/*
+		 * This cannot fail. The region was mapped as a whole before,
+		 * thus no hugepages need to be broken up to unmap it.
+		 */
+		arch_unmap_memory_region(cell, mem);
+		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
+			remap_to_root_cell(mem, WARN_ON_ERROR);
+	}
+
+	arch_cell_destroy(cpu_data, cell);
+}
+
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
@@ -529,9 +556,7 @@ out_resume:
 
 static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 {
-	const struct jailhouse_memory *mem;
 	struct cell *cell, *previous;
-	unsigned int cpu, n;
 	int err;
 
 	err = cell_management_prologue(CELL_DESTROY, cpu_data, id, &cell);
@@ -540,26 +565,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 
 	printk("Closing cell \"%s\"\n", cell->config->name);
 
-	for_each_cpu(cpu, cell->cpu_set) {
-		arch_park_cpu(cpu);
-
-		set_bit(cpu, root_cell.cpu_set->bitmap);
-		per_cpu(cpu)->cell = &root_cell;
-		per_cpu(cpu)->failed = false;
-	}
-
-	mem = jailhouse_cell_mem_regions(cell->config);
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
-		/*
-		 * This cannot fail. The region was mapped as a whole before,
-		 * thus no hugepages need to be broken up to unmap it.
-		 */
-		arch_unmap_memory_region(cell, mem);
-		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
-			remap_to_root_cell(mem, WARN_ON_ERROR);
-	}
-
-	arch_cell_destroy(cpu_data, cell);
+	cell_destroy_internal(cpu_data, cell);
 
 	previous = &root_cell;
 	while (previous->next != cell)
