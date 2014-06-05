@@ -26,9 +26,7 @@ struct jailhouse_cell_desc {
 	__u32 num_irq_lines;
 	__u32 pio_bitmap_size;
 	__u32 num_pci_devices;
-
-	__u32 padding[2];
-};
+} __attribute__((packed));
 
 #define JAILHOUSE_MEM_READ		0x0001
 #define JAILHOUSE_MEM_WRITE		0x0002
@@ -49,12 +47,12 @@ struct jailhouse_memory {
 	__u64 virt_start;
 	__u64 size;
 	__u64 flags;
-};
+} __attribute__((packed));
 
 struct jailhouse_irq_line {
 	__u32 num;
 	__u32 irqchip;
-};
+} __attribute__((packed));
 
 #define JAILHOUSE_PCI_TYPE_DEVICE	0x01
 #define JAILHOUSE_PCI_TYPE_BRIDGE	0x02
@@ -70,7 +68,7 @@ struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory config_memory;
 	struct jailhouse_cell_desc system;
-};
+} __attribute__((packed));
 
 static inline __u32
 jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)

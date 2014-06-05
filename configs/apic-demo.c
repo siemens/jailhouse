@@ -15,15 +15,14 @@
 #include <linux/types.h>
 #include <jailhouse/cell-config.h>
 
-#define ALIGN __attribute__((aligned(1)))
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
 
 struct {
-	struct jailhouse_cell_desc ALIGN cell;
-	__u64 ALIGN cpus[1];
-	struct jailhouse_memory ALIGN mem_regions[2];
-	__u8 ALIGN pio_bitmap[0x2000];
-} ALIGN config = {
+	struct jailhouse_cell_desc cell;
+	__u64 cpus[1];
+	struct jailhouse_memory mem_regions[2];
+	__u8 pio_bitmap[0x2000];
+} __attribute__((packed)) config = {
 	.cell = {
 		.name = "apic-demo",
 

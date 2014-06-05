@@ -15,14 +15,13 @@
 #include <linux/types.h>
 #include <jailhouse/cell-config.h>
 
-#define ALIGN __attribute__((aligned(1)))
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
 
 struct {
-	struct jailhouse_system ALIGN header;
-	__u64 ALIGN cpus[1];
-	struct jailhouse_memory ALIGN mem_regions[1];
-} ALIGN config = {
+	struct jailhouse_system header;
+	__u64 cpus[1];
+	struct jailhouse_memory mem_regions[1];
+} __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
 			.phys_start = 0xbc000000,
