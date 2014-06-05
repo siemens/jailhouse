@@ -375,9 +375,8 @@ vtd_remove_device_from_cell(struct cell *cell,
 
 int vtd_cell_init(struct cell *cell)
 {
-	struct jailhouse_cell_desc *config = cell->config;
 	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(config);
+		jailhouse_cell_mem_regions(cell->config);
 	const struct jailhouse_pci_device *dev =
 		jailhouse_cell_pci_devices(cell->config);
 	void *reg_base = dmar_reg_base;
@@ -395,14 +394,14 @@ int vtd_cell_init(struct cell *cell)
 	if (!cell->vtd.pg_structs.root_table)
 		return -ENOMEM;
 
-	for (n = 0; n < config->num_memory_regions; n++, mem++) {
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
 		err = vtd_map_memory_region(cell, mem);
 		if (err)
 			/* FIXME: release vtd.pg_structs.root_table */
 			return err;
 	}
 
-	for (n = 0; n < config->num_pci_devices; n++) {
+	for (n = 0; n < cell->config->num_pci_devices; n++) {
 		vtd_remove_device_from_cell(&root_cell, &dev[n]);
 		if (!vtd_add_device_to_cell(cell, &dev[n]))
 			/* FIXME: release vtd.pg_structs.root_table,

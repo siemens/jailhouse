@@ -249,11 +249,10 @@ unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
 
 int vmx_cell_init(struct cell *cell)
 {
-	struct jailhouse_cell_desc *config = cell->config;
 	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(config);
-	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
-	u32 pio_bitmap_size = config->pio_bitmap_size;
+		jailhouse_cell_mem_regions(cell->config);
+	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
+	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
 	int n, err;
 	u32 size;
 	u8 *b;
@@ -264,7 +263,7 @@ int vmx_cell_init(struct cell *cell)
 	if (!cell->vmx.ept_structs.root_table)
 		return -ENOMEM;
 
-	for (n = 0; n < config->num_memory_regions; n++, mem++) {
+	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
 		err = vmx_map_memory_region(cell, mem);
 		if (err)
 			/* FIXME: release vmx.ept_structs.root_table */
@@ -337,9 +336,8 @@ void vmx_cell_exit(struct cell *cell)
 {
 	const u8 *root_pio_bitmap =
 		jailhouse_cell_pio_bitmap(root_cell.config);
-	struct jailhouse_cell_desc *config = cell->config;
-	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
-	u32 pio_bitmap_size = config->pio_bitmap_size;
+	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
+	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
 	u8 *b;
 
 	page_map_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
