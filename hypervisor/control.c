@@ -267,7 +267,6 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	const struct jailhouse_memory *mem;
 	struct jailhouse_cell_desc *cfg;
 	unsigned int cell_pages, cpu, n;
-	struct cpu_set *shrinking_set;
 	struct cell *cell, *last;
 	int err;
 
@@ -336,21 +335,19 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_free_cpu_set;
 	}
 
-	shrinking_set = cpu_data->cell->cpu_set;
-
-	/* shrinking set must be super-set of new cell's cpu set */
-	if (shrinking_set->max_cpu_id < cell->cpu_set->max_cpu_id) {
+	/* the root cell's cpu set must be super-set of new cell's set */
+	if (root_cell.cpu_set->max_cpu_id < cell->cpu_set->max_cpu_id) {
 		err = -EBUSY;
 		goto err_free_cpu_set;
 	}
 	for_each_cpu(cpu, cell->cpu_set)
-		if (!test_bit(cpu, shrinking_set->bitmap)) {
+		if (!test_bit(cpu, root_cell.cpu_set->bitmap)) {
 			err = -EBUSY;
 			goto err_free_cpu_set;
 		}
 
 	for_each_cpu(cpu, cell->cpu_set)
-		clear_bit(cpu, shrinking_set->bitmap);
+		clear_bit(cpu, root_cell.cpu_set->bitmap);
 
 	/* unmap the new cell's memory regions from the root cell */
 	mem = jailhouse_cell_mem_regions(cell->config);
@@ -397,7 +394,7 @@ err_restore_root:
 	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
 		remap_to_root_cell(mem, WARN_ON_ERROR);
 	for_each_cpu(cpu, cell->cpu_set)
-		set_bit(cpu, shrinking_set->bitmap);
+		set_bit(cpu, root_cell.cpu_set->bitmap);
 err_free_cpu_set:
 	destroy_cpu_set(cell);
 err_free_cell:
