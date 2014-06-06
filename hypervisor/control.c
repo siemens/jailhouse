@@ -284,6 +284,8 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 	}
 
 	arch_cell_destroy(cpu_data, cell);
+
+	arch_config_commit(cpu_data, cell);
 }
 
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
@@ -393,6 +395,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_restore_root;
 
+	arch_config_commit(cpu_data, cell);
+
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 
 	last = &root_cell;
@@ -422,6 +426,7 @@ err_restore_root:
 		remap_to_root_cell(mem, WARN_ON_ERROR);
 	for_each_cpu(cpu, cell->cpu_set)
 		set_bit(cpu, root_cell.cpu_set->bitmap);
+	arch_config_commit(cpu_data, NULL);
 err_free_cpu_set:
 	destroy_cpu_set(cell);
 err_free_cell:
@@ -495,6 +500,9 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 				if (err)
 					goto out_resume;
 			}
+
+		arch_config_commit(cpu_data, NULL);
+
 		cell->loadable = false;
 	}
 
@@ -545,6 +553,8 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 			if (err)
 				goto out_resume;
 		}
+
+	arch_config_commit(cpu_data, NULL);
 
 	printk("Cell \"%s\" can be loaded\n", cell->config->name);
 

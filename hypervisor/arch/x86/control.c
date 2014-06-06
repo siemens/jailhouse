@@ -28,15 +28,6 @@ struct exception_frame {
 	u64 ss;
 };
 
-/* all cell CPUs (except cpu_data) have to be stopped */
-static void flush_root_cell_cpu_caches(struct per_cpu *cpu_data)
-{
-	unsigned int cpu;
-
-	for_each_cpu_except(cpu, root_cell.cpu_set, cpu_data->cpu_id)
-		per_cpu(cpu)->flush_caches = true;
-}
-
 int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 {
 	int err;
@@ -44,7 +35,6 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 	err = vmx_cell_init(cell);
 	if (err)
 		return err;
-	flush_root_cell_cpu_caches(cpu_data);
 
 	err = vtd_cell_init(cell);
 	if (err)
@@ -84,7 +74,26 @@ void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
 {
 	vtd_cell_exit(cell);
 	vmx_cell_exit(cell);
-	flush_root_cell_cpu_caches(cpu_data);
+}
+
+/* all root cell CPUs (except cpu_data) have to be stopped */
+void arch_config_commit(struct per_cpu *cpu_data,
+			struct cell *cell_added_removed)
+{
+	unsigned int cpu;
+
+	for_each_cpu_except(cpu, root_cell.cpu_set, cpu_data->cpu_id)
+		per_cpu(cpu)->flush_caches = true;
+
+	if (cell_added_removed)
+		for_each_cpu_except(cpu, cell_added_removed->cpu_set,
+				    cpu_data->cpu_id)
+			per_cpu(cpu)->flush_caches = true;
+
+	x86_tlb_flush_all();
+	vmx_invept();
+
+	vtd_config_commit(cell_added_removed);
 }
 
 void arch_shutdown(void)

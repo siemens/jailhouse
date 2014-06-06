@@ -143,6 +143,8 @@ int vtd_unmap_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem);
 void vtd_cell_exit(struct cell *cell);
 
+void vtd_config_commit(struct cell *cell_added_removed);
+
 void vtd_shutdown(void);
 
 void vtd_check_pending_faults(struct per_cpu *cpu_data);

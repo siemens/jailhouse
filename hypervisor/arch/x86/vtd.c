@@ -379,7 +379,6 @@ int vtd_cell_init(struct cell *cell)
 		jailhouse_cell_mem_regions(cell->config);
 	const struct jailhouse_pci_device *dev =
 		jailhouse_cell_pci_devices(cell->config);
-	void *reg_base = dmar_reg_base;
 	int n, err;
 
 	// HACK for QEMU
@@ -409,27 +408,7 @@ int vtd_cell_init(struct cell *cell)
 			return -ENOMEM;
 	}
 
-	vtd_flush_domain_caches(root_cell.id);
-
 	vtd_init_fault_nmi();
-
-	if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
-		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-			mmio_write64(reg_base + VTD_RTADDR_REG,
-				     page_map_hvirt2phys(root_entry_table));
-			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
-			while (!(mmio_read32(reg_base + VTD_GSTS_REG) &
-				 VTD_GSTS_SRTP))
-				cpu_relax();
-
-			vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
-					      VTD_IOTLB_IIRG_GLOBAL);
-
-			mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
-			while (!(mmio_read32(reg_base + VTD_GSTS_REG) &
-				 VTD_GSTS_TES))
-				cpu_relax();
-		}
 
 	return 0;
 }
@@ -503,10 +482,39 @@ void vtd_cell_exit(struct cell *cell)
 			       "root cell\n");
 	}
 
-	vtd_flush_domain_caches(cell->id);
+	page_free(&mem_pool, cell->vtd.pg_structs.root_table, 1);
+}
+
+void vtd_config_commit(struct cell *cell_added_removed)
+{
+	void *reg_base = dmar_reg_base;
+	int n;
+
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return;
+
+	if (cell_added_removed)
+		vtd_flush_domain_caches(cell_added_removed->id);
 	vtd_flush_domain_caches(root_cell.id);
 
-	page_free(&mem_pool, cell->vtd.pg_structs.root_table, 1);
+	if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
+		return;
+
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+		mmio_write64(reg_base + VTD_RTADDR_REG,
+			     page_map_hvirt2phys(root_entry_table));
+		mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
+		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_SRTP))
+			cpu_relax();
+
+		vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
+				      VTD_IOTLB_IIRG_GLOBAL);
+
+		mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
+		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
+			cpu_relax();
+	}
 }
 
 void vtd_shutdown(void)

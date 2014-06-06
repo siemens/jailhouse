@@ -140,11 +140,13 @@ failed:
 		error = err;
 }
 
-static void init_late(void)
+static void init_late(struct per_cpu *cpu_data)
 {
 	error = arch_init_late();
 	if (error)
 		return;
+
+	arch_config_commit(cpu_data, NULL);
 
 	page_map_dump_stats("after late setup");
 	printk("Initializing remaining processors:\n");
@@ -167,7 +169,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 		cpu_init(cpu_data);
 
 		if (master && !error)
-			init_late();
+			init_late(cpu_data);
 	}
 
 	spin_unlock(&init_lock);
