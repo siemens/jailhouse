@@ -397,10 +397,15 @@ vtd_remove_device_from_cell(struct cell *cell,
 			    const struct jailhouse_pci_device *device)
 {
 	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
-	struct vtd_entry *context_entry_table =
-		page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
-	struct vtd_entry *context_entry = &context_entry_table[device->devfn];
+	struct vtd_entry *context_entry_table;
+	struct vtd_entry *context_entry;
 	unsigned int n;
+
+	if (!(root_entry_lo & VTD_ROOT_PRESENT))
+		return;
+
+	context_entry_table = page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
+	context_entry = &context_entry_table[device->devfn];
 
 	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
 		return;
