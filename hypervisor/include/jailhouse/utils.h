@@ -12,4 +12,9 @@
 
 #define ARRAY_SIZE(array)	sizeof(array) / sizeof((array)[0])
 
-#define BYTE_MASK(size)		(0xFFFFFFFFFFFFFFFFULL >> ((8 - size) * 8))
+/* create 64-bit mask with bytes 0 to size-1 set to 0xff */
+#define BYTE_MASK(size)		(0xffffffffffffffffULL >> ((8 - (size)) * 8))
+
+/* create 64-bit mask with all bits in [last:first] set */
+#define BIT_MASK(last, first) \
+	((0xffffffffffffffffULL >> (64 - ((last) + 1 - (first)))) << (first))
