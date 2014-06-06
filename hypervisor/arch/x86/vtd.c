@@ -399,11 +399,17 @@ int vtd_cell_init(struct cell *cell)
 			return err;
 	}
 
-	for (n = 0; n < config->num_pci_devices; n++)
+	for (n = 0; n < config->num_pci_devices; n++) {
+		vtd_remove_device_from_cell(&root_cell, &dev[n]);
 		if (!vtd_add_device_to_cell(cell, &dev[n]))
 			/* FIXME: release vtd.pg_structs.root_table,
 			 * revert device additions*/
 			return -ENOMEM;
+	}
+
+	vtd_flush_domain_caches(root_cell.id);
+
+	vtd_init_fault_nmi();
 
 	if (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
 		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
@@ -424,24 +430,6 @@ int vtd_cell_init(struct cell *cell)
 		}
 
 	return 0;
-}
-
-void vtd_root_cell_shrink(struct jailhouse_cell_desc *config)
-{
-	const struct jailhouse_pci_device *dev =
-		jailhouse_cell_pci_devices(config);
-	unsigned int n;
-
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return;
-
-	vtd_init_fault_nmi();
-
-	for (n = 0; n < config->num_pci_devices; n++)
-		vtd_remove_device_from_cell(&root_cell, &dev[n]);
-
-	vtd_flush_domain_caches(root_cell.id);
 }
 
 int vtd_map_memory_region(struct cell *cell,

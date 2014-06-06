@@ -44,13 +44,11 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 	err = vmx_cell_init(cell);
 	if (err)
 		return err;
-	vmx_root_cell_shrink(cell->config);
 	flush_root_cell_cpu_caches(cpu_data);
 
 	err = vtd_cell_init(cell);
 	if (err)
 		vmx_cell_exit(cell);
-	vtd_root_cell_shrink(cell->config);
 
 	return 0;
 }

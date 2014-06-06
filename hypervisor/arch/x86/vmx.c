@@ -256,8 +256,9 @@ int vmx_cell_init(struct cell *cell)
 	u32 pio_bitmap_size = config->pio_bitmap_size;
 	int n, err;
 	u32 size;
+	u8 *b;
 
-	/* build root cell EPT */
+	/* build root EPT of cell */
 	cell->vmx.ept_structs.root_paging = ept_paging;
 	cell->vmx.ept_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!cell->vmx.ept_structs.root_table)
@@ -289,20 +290,21 @@ int vmx_cell_init(struct cell *cell)
 		pio_bitmap_size -= size;
 	}
 
+	if (cell != &root_cell) {
+		/*
+		 * Shrink PIO access of root cell corresponding to new cell's
+		 * access rights.
+		 */
+		pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
+		pio_bitmap_size = cell->config->pio_bitmap_size;
+		for (b = root_cell.vmx.io_bitmap; pio_bitmap_size > 0;
+		     b++, pio_bitmap++, pio_bitmap_size--)
+			*b |= ~*pio_bitmap;
+
+		vmx_invept();
+	}
+
 	return 0;
-}
-
-void vmx_root_cell_shrink(struct jailhouse_cell_desc *config)
-{
-	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
-	u32 pio_bitmap_size = config->pio_bitmap_size;
-	u8 *b;
-
-	for (b = root_cell.vmx.io_bitmap; pio_bitmap_size > 0;
-	     b++, pio_bitmap++, pio_bitmap_size--)
-		*b |= ~*pio_bitmap;
-
-	vmx_invept();
 }
 
 int vmx_map_memory_region(struct cell *cell,
