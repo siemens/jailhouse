@@ -299,7 +299,7 @@ int vtd_init(void)
 	if (!(sllps_caps & VTD_CAP_SLLPS2M))
 		vtd_paging[dmar_pt_levels - 2].page_size = 0;
 
-	return 0;
+	return vtd_cell_init(&root_cell);
 }
 
 static bool vtd_add_device_to_cell(struct cell *cell,

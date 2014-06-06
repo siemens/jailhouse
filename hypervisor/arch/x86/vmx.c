@@ -31,7 +31,7 @@ static const struct segment invalid_seg = {
 };
 
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
-	[ VMX_MSR_BITMAP_0000_READ ] = {
+	[ VMX_MSR_BMP_0000_READ ] = {
 		[      0/8 ...  0x7ff/8 ] = 0,
 		[  0x800/8 ...  0x807/8 ] = 0x0c, /* 0x802, 0x803 */
 		[  0x808/8 ...  0x80f/8 ] = 0xa5, /* 0x808, 0x80a, 0x80d */
@@ -43,10 +43,10 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 		[  0x838/8 ...  0x83f/8 ] = 0x43, /* 0x838, 0x839, 0x83e */
 		[  0x840/8 ... 0x1fff/8 ] = 0,
 	},
-	[ VMX_MSR_BITMAP_C000_READ ] = {
+	[ VMX_MSR_BMP_C000_READ ] = {
 		[      0/8 ... 0x1fff/8 ] = 0,
 	},
-	[ VMX_MSR_BITMAP_0000_WRITE ] = {
+	[ VMX_MSR_BMP_0000_WRITE ] = {
 		[      0/8 ...  0x807/8 ] = 0,
 		[  0x808/8 ...  0x80f/8 ] = 0x89, /* 0x808, 0x80b, 0x80f */
 		[  0x810/8 ...  0x827/8 ] = 0,
@@ -55,7 +55,7 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 		[  0x838/8 ...  0x83f/8 ] = 0xc1, /* 0x838, 0x83e, 0x83f */
 		[  0x840/8 ... 0x1fff/8 ] = 0,
 	},
-	[ VMX_MSR_BITMAP_C000_WRITE ] = {
+	[ VMX_MSR_BMP_C000_WRITE ] = {
 		[      0/8 ... 0x1fff/8 ] = 0,
 	},
 };
@@ -228,17 +228,16 @@ int vmx_init(void)
 	if (!(read_msr(MSR_IA32_VMX_EPT_VPID_CAP) & EPT_2M_PAGES))
 		ept_paging[2].page_size = 0;
 
-	if (!using_x2apic)
-		return 0;
+	if (using_x2apic) {
+		/* allow direct x2APIC access except for ICR writes */
+		memset(&msr_bitmap[VMX_MSR_BMP_0000_READ][MSR_X2APIC_BASE/8],
+		       0, (MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/8);
+		memset(&msr_bitmap[VMX_MSR_BMP_0000_WRITE][MSR_X2APIC_BASE/8],
+		       0, (MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/8);
+		msr_bitmap[VMX_MSR_BMP_0000_WRITE][MSR_X2APIC_ICR/8] = 0x01;
+	}
 
-	/* allow direct x2APIC access except for ICR writes */
-	memset(&msr_bitmap[VMX_MSR_BITMAP_0000_READ][MSR_X2APIC_BASE/8], 0,
-	       (MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/8);
-	memset(&msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_BASE/8], 0,
-	       (MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/8);
-	msr_bitmap[VMX_MSR_BITMAP_0000_WRITE][MSR_X2APIC_ICR/8] = 0x01;
-
-	return 0;
+	return vmx_cell_init(&root_cell);
 }
 
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,

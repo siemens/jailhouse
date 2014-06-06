@@ -80,10 +80,6 @@ int arch_init_early(void)
 	if (err)
 		return err;
 
-	err = vmx_cell_init(&root_cell);
-	if (err)
-		return err;
-
 	return 0;
 }
 
@@ -221,10 +217,6 @@ int arch_init_late()
 		return err;
 
 	err = pci_init();
-	if (err)
-		return err;
-
-	err = vtd_cell_init(&root_cell);
 	if (err)
 		return err;
 
