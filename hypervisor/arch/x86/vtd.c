@@ -336,6 +336,40 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	return true;
 }
 
+static void
+vtd_remove_device_from_cell(struct cell *cell,
+			    const struct jailhouse_pci_device *device)
+{
+	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
+	struct vtd_entry *context_entry_table;
+	struct vtd_entry *context_entry;
+	unsigned int n;
+
+	if (!(root_entry_lo & VTD_ROOT_PRESENT))
+		return;
+
+	context_entry_table = page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
+	context_entry = &context_entry_table[device->devfn];
+
+	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
+		return;
+
+	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
+	       device->bus, device->devfn >> 3, device->devfn & 7,
+	       cell->config->name);
+
+	context_entry->lo_word &= ~VTD_CTX_PRESENT;
+	flush_cache(&context_entry->lo_word, sizeof(u64));
+
+	for (n = 0; n < 256; n++)
+		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)
+			return;
+
+	root_entry_table[device->bus].lo_word &= ~VTD_ROOT_PRESENT;
+	flush_cache(&root_entry_table[device->bus].lo_word, sizeof(u64));
+	page_free(&mem_pool, context_entry_table, 1);
+}
+
 int vtd_cell_init(struct cell *cell)
 {
 	struct jailhouse_cell_desc *config = cell->config;
@@ -390,40 +424,6 @@ int vtd_cell_init(struct cell *cell)
 		}
 
 	return 0;
-}
-
-static void
-vtd_remove_device_from_cell(struct cell *cell,
-			    const struct jailhouse_pci_device *device)
-{
-	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
-	struct vtd_entry *context_entry_table;
-	struct vtd_entry *context_entry;
-	unsigned int n;
-
-	if (!(root_entry_lo & VTD_ROOT_PRESENT))
-		return;
-
-	context_entry_table = page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
-	context_entry = &context_entry_table[device->devfn];
-
-	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
-		return;
-
-	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
-	       device->bus, device->devfn >> 3, device->devfn & 7,
-	       cell->config->name);
-
-	context_entry->lo_word &= ~VTD_CTX_PRESENT;
-	flush_cache(&context_entry->lo_word, sizeof(u64));
-
-	for (n = 0; n < 256; n++)
-		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)
-			return;
-
-	root_entry_table[device->bus].lo_word &= ~VTD_ROOT_PRESENT;
-	flush_cache(&root_entry_table[device->bus].lo_word, sizeof(u64));
-	page_free(&mem_pool, context_entry_table, 1);
 }
 
 void vtd_root_cell_shrink(struct jailhouse_cell_desc *config)
