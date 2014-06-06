@@ -119,13 +119,8 @@ static void vtd_init_fault_nmi(void)
 
 static void *vtd_get_fault_rec_reg_addr(void *reg_base)
 {
-	unsigned int regoffset;
-	void *regaddr;
-
-	regoffset = mmio_read64_field(reg_base + VTD_CAP_REG, VTD_CAP_FRO_MASK);
-	regaddr = reg_base + 16*regoffset;
-
-	return regaddr;
+	return reg_base + 16 *
+		mmio_read64_field(reg_base + VTD_CAP_REG, VTD_CAP_FRO_MASK);
 }
 
 static void vtd_print_fault_record_reg_status(void *reg_base)
