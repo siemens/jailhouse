@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/acpi.h>
+#include <jailhouse/utils.h>
 #include <asm/cell.h>
 
 #include <jailhouse/cell-config.h>
@@ -68,71 +69,60 @@ struct vtd_entry {
 #define VTD_MAX_PAGE_DIR_LEVELS		4
 
 #define VTD_CAP_REG			0x08
-# define VTD_CAP_NUM_DID_MASK		0x00000007
-# define VTD_CAP_CM			0x00000080
-# define VTD_CAP_SAGAW30		0x00000100
-# define VTD_CAP_SAGAW39		0x00000200
-# define VTD_CAP_SAGAW48		0x00000400
-# define VTD_CAP_SAGAW57		0x00000800
-# define VTD_CAP_SAGAW64		0x00001000
+# define VTD_CAP_NUM_DID_MASK		BIT_MASK(2, 0)
+# define VTD_CAP_CM			(1UL << 7)
+# define VTD_CAP_SAGAW39		(1UL << 9)
+# define VTD_CAP_SAGAW48		(1UL << 10)
 # define VTD_CAP_SLLPS2M		(1UL << 34)
 # define VTD_CAP_SLLPS1G		(1UL << 35)
-#define VTD_CAP_FRO_MASK		(0x3FF << 24)
-#define VTD_CAP_NFR_MASK		(0xFL << 40)
+# define VTD_CAP_FRO_MASK		BIT_MASK(33, 24)
+#define  VTD_CAP_NFR_MASK		BIT_MASK(47, 40)
 #define VTD_ECAP_REG			0x10
-# define VTD_ECAP_IRO_MASK		0x0003ff00
+# define VTD_ECAP_IRO_MASK		BIT_MASK(17, 8)
 #define VTD_GCMD_REG			0x18
-# define VTD_GCMD_SRTP			0x40000000
-# define VTD_GCMD_TE			0x80000000
-#define VTD_GSTS_REG			0x1C
-# define VTD_GSTS_SRTP			0x40000000
-# define VTD_GSTS_TES			0x80000000
+# define VTD_GCMD_SRTP			(1UL << 30)
+# define VTD_GCMD_TE			(1UL << 31)
+#define VTD_GSTS_REG			0x1c
+# define VTD_GSTS_RTPS			(1UL << 30)
+# define VTD_GSTS_TES			(1UL << 31)
 #define VTD_RTADDR_REG			0x20
 #define VTD_CCMD_REG			0x28
-# define VTD_CCMD_CIRG_GLOBAL		0x2000000000000000UL
-# define VTD_CCMD_CIRG_DOMAIN		0x4000000000000000UL
-# define VTD_CCMD_CIRG_DEVICE		0x6000000000000000UL
-# define VTD_CCMD_ICC			0x8000000000000000UL
+# define VTD_CCMD_CIRG_GLOBAL		(1UL << 60)
+# define VTD_CCMD_CIRG_DOMAIN		(2UL << 60)
+# define VTD_CCMD_ICC			(1UL << 63)
+#define VTD_FSTS_REG			0x34
+# define VTD_FSTS_PFO			(1UL << 0)
+# define VTD_FSTS_PFO_CLEAR		1
+# define VTD_FSTS_PPF			(1UL << 1)
+# define VTD_FSTS_FRI_MASK		BIT_MASK(15, 8)
+#define VTD_FECTL_REG			0x38
+#define  VTD_FECTL_IM			(1UL << 31)
+#define VTD_FEDATA_REG			0x3c
+#define VTD_FEADDR_REG			0x40
+#define VTD_FEUADDR_REG			0x44
 #define VTD_PMEN_REG			0x64
 #define VTD_PLMBASE_REG			0x68
-#define VTD_PLMLIMIT_REG		0x6C
+#define VTD_PLMLIMIT_REG		0x6c
 #define VTD_PHMBASE_REG			0x70
 #define VTD_PHMLIMIT_REG		0x78
 
-#define VTD_IOTLB_REG			0x08
+#define VTD_IOTLB_REG			0x8
 # define VTD_IOTLB_DID_SHIFT		32
-# define VTD_IOTLB_DW			0x0001000000000000UL
-# define VTD_IOTLB_DR			0x0002000000000000UL
-# define VTD_IOTLB_IIRG_GLOBAL		0x2000000000000000UL
-# define VTD_IOTLB_IIRG_DOMAIN		0x4000000000000000UL
-# define VTD_IOTLB_IIRG_PAGE		0x6000000000000000UL
-# define VTD_IOTLB_IVT			0x8000000000000000UL
-# define VTD_IOTLB_R_MASK		0x00000000FFFFFFFFUL
+# define VTD_IOTLB_DW			(1UL << 48)
+# define VTD_IOTLB_DR			(1UL << 49)
+# define VTD_IOTLB_IIRG_GLOBAL		(1UL << 57)
+# define VTD_IOTLB_IIRG_DOMAIN		(2UL << 57)
+# define VTD_IOTLB_IVT			(1UL << 63)
+# define VTD_IOTLB_R_MASK		BIT_MASK(31, 0)
 
-#define VTD_FECTL_REG			0x038
-#define VTD_FECTL_IM_MASK		(0x1 << 31)
-#define VTD_FECTL_IM_CLEAR		0x0
-#define VTD_FECTL_IM_SET		0x1
-
-#define VTD_FEDATA_REG			0x03C
-#define VTD_FEADDR_REG			0x040
-#define VTD_FEUADDR_REG			0x044
-
-#define VTD_FRCD_LOW_REG		0x0
-#define VTD_FRCD_HIGH_REG		0x8
-#define VTD_FRCD_LOW_FI_MASK		(0xFFFFFFFFFFFFFL << 12)
-#define VTD_FRCD_HIGH_SID_MASK		(0xFFFFL << (64-64))
-#define VTD_FRCD_HIGH_FR_MASK		(0xFFL << (96-64))
-#define VTD_FRCD_HIGH_TYPE_MASK		(0x1L << (126-64))
-#define VTD_FRCD_HIGH_F_MASK		(0x1L << (127-64))
-#define VTD_FRCD_HIGH_F_CLEAR		0x1
-
-#define VTD_FSTS_REG			0x034
-#define VTD_FSTS_FRI_MASK		(0xFF << 8)
-#define VTD_FSTS_PPF_MASK		(0x1 << 1)
-#define VTD_FSTS_PFO_MASK		(0x1 << 0)
-#define VTD_FSTS_PFO_CLEAR		0x1
-
+#define VTD_FRCD_LO_REG			0x0
+#define  VTD_FRCD_LO_FI_MASK		BIT_MASK(63, 12)
+#define VTD_FRCD_HI_REG			0x8
+#define  VTD_FRCD_HI_SID_MASK		BIT_MASK(79-64, 64-64)
+#define  VTD_FRCD_HI_FR_MASK		BIT_MASK(103-64, 96-64)
+#define  VTD_FRCD_HI_TYPE		(1L << (126-64))
+#define  VTD_FRCD_HI_F			(1L << (127-64))
+#define  VTD_FRCD_HI_F_CLEAR		1
 
 int vtd_init(void);
 

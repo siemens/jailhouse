@@ -92,8 +92,7 @@ static void vtd_init_fault_nmi(void)
 
 	for (i = 0; i < dmar_units; i++, reg_base += PAGE_SIZE) {
 		/* Mask events*/
-		mmio_write32_field(reg_base+VTD_FECTL_REG, VTD_FECTL_IM_MASK,
-				   VTD_FECTL_IM_SET);
+		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
 
 		/* We use xAPIC mode. Hence, TRGM and LEVEL aren't required.
 		 Set Delivery Mode to NMI */
@@ -112,8 +111,7 @@ static void vtd_init_fault_nmi(void)
 				     apic_id & APIC_MSI_UADDR_DESTID_MASK);
 
 		/* Unmask events */
-		mmio_write32_field(reg_base+VTD_FECTL_REG, VTD_FECTL_IM_MASK,
-				   VTD_FECTL_IM_CLEAR);
+		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 0);
 	}
 }
 
@@ -125,14 +123,14 @@ static void *vtd_get_fault_rec_reg_addr(void *reg_base)
 
 static void vtd_print_fault_record_reg_status(void *reg_base)
 {
-	unsigned int sid = mmio_read64_field(reg_base + VTD_FRCD_HIGH_REG,
-					     VTD_FRCD_HIGH_SID_MASK);
-	unsigned int fr = mmio_read64_field(reg_base + VTD_FRCD_HIGH_REG,
-					    VTD_FRCD_HIGH_FR_MASK);
-	unsigned long fi = mmio_read64_field(reg_base + VTD_FRCD_LOW_REG,
-					     VTD_FRCD_LOW_FI_MASK);
-	unsigned int type = mmio_read64_field(reg_base + VTD_FRCD_HIGH_REG,
-					      VTD_FRCD_HIGH_TYPE_MASK);
+	unsigned int sid = mmio_read64_field(reg_base + VTD_FRCD_HI_REG,
+					     VTD_FRCD_HI_SID_MASK);
+	unsigned int fr = mmio_read64_field(reg_base + VTD_FRCD_HI_REG,
+					    VTD_FRCD_HI_FR_MASK);
+	unsigned long fi = mmio_read64_field(reg_base + VTD_FRCD_LO_REG,
+					     VTD_FRCD_LO_FI_MASK);
+	unsigned int type = mmio_read64_field(reg_base + VTD_FRCD_HI_REG,
+					      VTD_FRCD_HI_TYPE);
 
 	printk("VT-d fault event occurred:\n");
 	printk(" Source Identifier (bus:dev.func): %02x:%02x.%x\n", sid >> 8,
@@ -151,17 +149,16 @@ void vtd_check_pending_faults(struct per_cpu *cpu_data)
 		return;
 
 	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		if (mmio_read32_field(reg_base + VTD_FSTS_REG,
-			VTD_FSTS_PPF_MASK)) {
+		if (mmio_read32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PPF)) {
 			fr_index = mmio_read32_field(reg_base + VTD_FSTS_REG,
 						     VTD_FSTS_FRI_MASK);
 			fault_reg_addr = vtd_get_fault_rec_reg_addr(reg_base);
-			rec_reg_addr = fault_reg_addr + 16*fr_index;
+			rec_reg_addr = fault_reg_addr + 16 * fr_index;
 			vtd_print_fault_record_reg_status(rec_reg_addr);
 
 			/* Clear faults in record registers */
-			mmio_write64_field(rec_reg_addr + VTD_FRCD_HIGH_REG,
-				VTD_FRCD_HIGH_F_MASK, VTD_FRCD_HIGH_F_CLEAR);
+			mmio_write64_field(rec_reg_addr + VTD_FRCD_HI_REG,
+					   VTD_FRCD_HI_F, VTD_FRCD_HI_F_CLEAR);
 		}
 	}
 }
@@ -178,13 +175,13 @@ static int vtd_init_fault_reporting(void *reg_base)
 		rec_reg_addr = fault_reg_addr + 16*i;
 
 		/* Clear record reg fault status */
-		mmio_write64_field(rec_reg_addr + VTD_FRCD_HIGH_REG,
-				VTD_FRCD_HIGH_F_MASK, VTD_FRCD_HIGH_F_CLEAR);
+		mmio_write64_field(rec_reg_addr + VTD_FRCD_HI_REG,
+				   VTD_FRCD_HI_F, VTD_FRCD_HI_F_CLEAR);
 	}
 
 	/* Clear fault overflow status */
-	mmio_write32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PFO_MASK,
-			VTD_FSTS_PFO_CLEAR);
+	mmio_write32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PFO,
+			   VTD_FSTS_PFO_CLEAR);
 
 	return 0;
 }
@@ -491,7 +488,7 @@ void vtd_config_commit(struct cell *cell_added_removed)
 		mmio_write64(reg_base + VTD_RTADDR_REG,
 			     page_map_hvirt2phys(root_entry_table));
 		mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
-		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_SRTP))
+		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_RTPS))
 			cpu_relax();
 
 		vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
