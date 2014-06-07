@@ -97,7 +97,7 @@ unsigned long page_map_get_phys_invalid(pt_entry_t pte, unsigned long virt);
 void *page_alloc(struct page_pool *pool, unsigned int num);
 void page_free(struct page_pool *pool, void *first_page, unsigned int num);
 
-static inline unsigned long page_map_hvirt2phys(const void *hvirt)
+static inline unsigned long page_map_hvirt2phys(const volatile void *hvirt)
 {
 	return (unsigned long)hvirt - page_offset;
 }
