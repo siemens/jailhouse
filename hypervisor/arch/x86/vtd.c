@@ -163,7 +163,7 @@ void vtd_check_pending_faults(struct per_cpu *cpu_data)
 	}
 }
 
-static void vtd_init_fault_reporting(void *reg_base)
+static void vtd_init_unit(void *reg_base)
 {
 	void *fault_reg_base;
 	unsigned int nfr, n;
@@ -179,6 +179,16 @@ static void vtd_init_fault_reporting(void *reg_base)
 	/* Clear fault overflow status */
 	mmio_write32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PFO,
 			   VTD_FSTS_PFO_CLEAR);
+
+	/* Set root entry table pointer */
+	mmio_write64(reg_base + VTD_RTADDR_REG,
+		     page_map_hvirt2phys(root_entry_table));
+	mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
+	while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_RTPS))
+		cpu_relax();
+
+	vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
+			      VTD_IOTLB_IIRG_GLOBAL);
 }
 
 int vtd_init(void)
@@ -261,7 +271,7 @@ int vtd_init(void)
 
 		dmar_units++;
 
-		vtd_init_fault_reporting(reg_base);
+		vtd_init_unit(reg_base);
 
 		offset += drhd->header.length;
 		drhd = (struct acpi_dmar_drhd *)
@@ -476,15 +486,6 @@ void vtd_config_commit(struct cell *cell_added_removed)
 		return;
 
 	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		mmio_write64(reg_base + VTD_RTADDR_REG,
-			     page_map_hvirt2phys(root_entry_table));
-		mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
-		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_RTPS))
-			cpu_relax();
-
-		vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
-				      VTD_IOTLB_IIRG_GLOBAL);
-
 		mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
 		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
 			cpu_relax();
