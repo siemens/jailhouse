@@ -16,56 +16,89 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
-#include <asm/vtd.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
+#include <asm/spinlock.h>
+#include <asm/vtd.h>
+
+static const struct vtd_entry inv_global_context = {
+	.lo_word = VTD_REQ_INV_CONTEXT | VTD_INV_CONTEXT_GLOBAL,
+};
+static const struct vtd_entry inv_global_iotlb = {
+	.lo_word = VTD_REQ_INV_IOTLB | VTD_INV_IOTLB_GLOBAL |
+		VTD_INV_IOTLB_DW | VTD_INV_IOTLB_DR,
+};
 
 /* TODO: Support multiple segments */
 static struct vtd_entry __attribute__((aligned(PAGE_SIZE)))
 	root_entry_table[256];
 static struct paging vtd_paging[VTD_MAX_PAGE_DIR_LEVELS];
 static void *dmar_reg_base;
+static void *unit_inv_queue;
 static unsigned int dmar_units;
 static unsigned int dmar_pt_levels;
 static unsigned int dmar_num_did = ~0U;
 static unsigned int fault_reporting_cpu_id;
+static DEFINE_SPINLOCK(inv_queue_lock);
 
-static void *vtd_iotlb_reg_base(void *reg_base)
+static unsigned int inv_queue_write(void *inv_queue, unsigned int index,
+				    struct vtd_entry content)
 {
-	return reg_base + mmio_read64_field(reg_base + VTD_ECAP_REG,
-					    VTD_ECAP_IRO_MASK) * 16;
+	struct vtd_entry *entry = inv_queue;
+
+	entry[index] = content;
+	flush_cache(&entry[index], sizeof(*entry));
+
+	return (index + 1) % (PAGE_SIZE / sizeof(*entry));
 }
 
-static void vtd_flush_dmar_caches(void *reg_base, u64 ctx_scope,
-				  u64 iotlb_scope)
+static void vtd_submit_iq_request(void *reg_base, void *inv_queue,
+				  const struct vtd_entry *inv_request)
 {
-	void *iotlb_reg_base;
+	volatile u32 completed = 0;
+	struct vtd_entry inv_wait = {
+		.lo_word = VTD_REQ_INV_WAIT | VTD_INV_WAIT_SW |
+			VTD_INV_WAIT_FN | (1UL << VTD_INV_WAIT_SDATA_SHIFT),
+		.hi_word = page_map_hvirt2phys(&completed),
+	};
+	unsigned int index;
 
-	mmio_write64(reg_base + VTD_CCMD_REG, ctx_scope | VTD_CCMD_ICC);
-	while (mmio_read64(reg_base + VTD_CCMD_REG) & VTD_CCMD_ICC)
+	spin_lock(&inv_queue_lock);
+
+	index = mmio_read64_field(reg_base + VTD_IQT_REG, VTD_IQT_QT_MASK);
+
+	index = inv_queue_write(inv_queue, index, *inv_request);
+	index = inv_queue_write(inv_queue, index, inv_wait);
+
+	mmio_write64_field(reg_base + VTD_IQT_REG, VTD_IQT_QT_MASK, index);
+
+	while (!completed)
 		cpu_relax();
 
-	iotlb_reg_base = vtd_iotlb_reg_base(reg_base);
-
-	mmio_write64(iotlb_reg_base + VTD_IOTLB_REG,
-		iotlb_scope | VTD_IOTLB_DW | VTD_IOTLB_DR | VTD_IOTLB_IVT |
-		mmio_read64_field(iotlb_reg_base + VTD_IOTLB_REG,
-				  VTD_IOTLB_R_MASK));
-
-	while (mmio_read64(iotlb_reg_base + VTD_IOTLB_REG) & VTD_IOTLB_IVT)
-		cpu_relax();
+	spin_unlock(&inv_queue_lock);
 }
 
 static void vtd_flush_domain_caches(unsigned int did)
 {
-	u64 iotlb_scope = VTD_IOTLB_IIRG_DOMAIN |
-		((unsigned long)did << VTD_IOTLB_DID_SHIFT);
+	const struct vtd_entry inv_context = {
+		.lo_word = VTD_REQ_INV_CONTEXT | VTD_INV_CONTEXT_DOMAIN |
+			(did << VTD_INV_CONTEXT_DOMAIN_SHIFT),
+	};
+	const struct vtd_entry inv_iotlb = {
+		.lo_word = VTD_REQ_INV_IOTLB | VTD_INV_IOTLB_DOMAIN |
+			VTD_INV_IOTLB_DW | VTD_INV_IOTLB_DR |
+			(did << VTD_INV_IOTLB_DOMAIN_SHIFT),
+	};
+	void *inv_queue = unit_inv_queue;
 	void *reg_base = dmar_reg_base;
 	unsigned int n;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE)
-		vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_DOMAIN | did,
-				      iotlb_scope);
+	for (n = 0; n < dmar_units; n++) {
+		vtd_submit_iq_request(reg_base, inv_queue, &inv_context);
+		vtd_submit_iq_request(reg_base, inv_queue, &inv_iotlb);
+		reg_base += PAGE_SIZE;
+		inv_queue += PAGE_SIZE;
+	}
 }
 
 static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
@@ -155,7 +188,7 @@ void vtd_check_pending_faults(struct per_cpu *cpu_data)
 		}
 }
 
-static void vtd_init_unit(void *reg_base)
+static void vtd_init_unit(void *reg_base, void *inv_queue)
 {
 	void *fault_reg_base;
 	unsigned int nfr, n;
@@ -179,15 +212,22 @@ static void vtd_init_unit(void *reg_base)
 	while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_RTPS))
 		cpu_relax();
 
-	vtd_flush_dmar_caches(reg_base, VTD_CCMD_CIRG_GLOBAL,
-			      VTD_IOTLB_IIRG_GLOBAL);
+	/* Setup and activate invalidation queue */
+	mmio_write64(reg_base + VTD_IQT_REG, 0);
+	mmio_write64(reg_base + VTD_IQA_REG, page_map_hvirt2phys(inv_queue));
+	mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_QIE);
+	while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_QIES))
+		cpu_relax();
+
+	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_context);
+	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_iotlb);
 }
 
 int vtd_init(void)
 {
 	unsigned long caps, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
-	void *reg_base = NULL;
+	void *reg_base, *inv_queue;
 	u64 base_addr;
 	int err;
 
@@ -204,12 +244,16 @@ int vtd_init(void)
 		printk("Found DMAR @%p\n", base_addr);
 
 		reg_base = page_alloc(&remap_pool, 1);
-		if (!reg_base)
+		inv_queue = page_alloc(&mem_pool, 1);
+		if (!reg_base || !inv_queue)
 			return -ENOMEM;
 
-		if (dmar_units == 0)
+		if (dmar_units == 0) {
 			dmar_reg_base = reg_base;
-		else if (reg_base != dmar_reg_base + dmar_units * PAGE_SIZE)
+			unit_inv_queue = inv_queue;
+		}
+		if (reg_base != dmar_reg_base + dmar_units * PAGE_SIZE ||
+		    inv_queue != unit_inv_queue + dmar_units * PAGE_SIZE)
 			return -ENOMEM;
 
 		err = page_map_create(&hv_paging_structs, base_addr, PAGE_SIZE,
@@ -235,8 +279,7 @@ int vtd_init(void)
 		if (caps & VTD_CAP_CM)
 			return -EIO;
 
-		/* We only support IOTLB registers withing the first page. */
-		if (vtd_iotlb_reg_base(reg_base) >= reg_base + PAGE_SIZE)
+		if (!(mmio_read64(reg_base + VTD_ECAP_REG) & VTD_ECAP_QI))
 			return -EIO;
 
 		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
@@ -248,7 +291,7 @@ int vtd_init(void)
 
 		dmar_units++;
 
-		vtd_init_unit(reg_base);
+		vtd_init_unit(reg_base, inv_queue);
 	}
 
 	/*
@@ -408,7 +451,8 @@ void vtd_config_commit(struct cell *cell_added_removed)
 		return;
 
 	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_TE);
+		mmio_write32(reg_base + VTD_GCMD_REG,
+			     VTD_GCMD_TE | VTD_GCMD_QIE);
 		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
 			cpu_relax();
 	}

@@ -51,18 +51,16 @@ struct vtd_entry {
 # define VTD_CAP_FRO_MASK		BIT_MASK(33, 24)
 #define  VTD_CAP_NFR_MASK		BIT_MASK(47, 40)
 #define VTD_ECAP_REG			0x10
-# define VTD_ECAP_IRO_MASK		BIT_MASK(17, 8)
+# define VTD_ECAP_QI			(1UL << 1)
 #define VTD_GCMD_REG			0x18
+# define VTD_GCMD_QIE			(1UL << 26)
 # define VTD_GCMD_SRTP			(1UL << 30)
 # define VTD_GCMD_TE			(1UL << 31)
 #define VTD_GSTS_REG			0x1c
+# define VTD_GSTS_QIES			(1UL << 26)
 # define VTD_GSTS_RTPS			(1UL << 30)
 # define VTD_GSTS_TES			(1UL << 31)
 #define VTD_RTADDR_REG			0x20
-#define VTD_CCMD_REG			0x28
-# define VTD_CCMD_CIRG_GLOBAL		(1UL << 61)
-# define VTD_CCMD_CIRG_DOMAIN		(2UL << 61)
-# define VTD_CCMD_ICC			(1UL << 63)
 #define VTD_FSTS_REG			0x34
 # define VTD_FSTS_PFO			(1UL << 0)
 # define VTD_FSTS_PFO_CLEAR		1
@@ -78,15 +76,26 @@ struct vtd_entry {
 #define VTD_PLMLIMIT_REG		0x6c
 #define VTD_PHMBASE_REG			0x70
 #define VTD_PHMLIMIT_REG		0x78
+#define VTD_IQT_REG			0x88
+# define VTD_IQT_QT_MASK		BIT_MASK(18, 4)
+#define VTD_IQA_REG			0x90
 
-#define VTD_IOTLB_REG			0x8
-# define VTD_IOTLB_DID_SHIFT		32
-# define VTD_IOTLB_DW			(1UL << 48)
-# define VTD_IOTLB_DR			(1UL << 49)
-# define VTD_IOTLB_IIRG_GLOBAL		(1UL << 60)
-# define VTD_IOTLB_IIRG_DOMAIN		(2UL << 60)
-# define VTD_IOTLB_IVT			(1UL << 63)
-# define VTD_IOTLB_R_MASK		BIT_MASK(31, 0)
+#define VTD_REQ_INV_CONTEXT		0x01
+# define VTD_INV_CONTEXT_GLOBAL		(1UL << 4)
+# define VTD_INV_CONTEXT_DOMAIN		(2UL << 4)
+# define VTD_INV_CONTEXT_DOMAIN_SHIFT	16
+
+#define VTD_REQ_INV_IOTLB		0x02
+# define VTD_INV_IOTLB_GLOBAL		(1UL << 4)
+# define VTD_INV_IOTLB_DOMAIN		(2UL << 4)
+# define VTD_INV_IOTLB_DW		(1UL << 6)
+# define VTD_INV_IOTLB_DR		(1UL << 7)
+# define VTD_INV_IOTLB_DOMAIN_SHIFT	16
+
+#define VTD_REQ_INV_WAIT		0x05
+#define  VTD_INV_WAIT_SW		(1UL << 5)
+#define  VTD_INV_WAIT_FN		(1UL << 6)
+#define  VTD_INV_WAIT_SDATA_SHIFT	32
 
 #define VTD_FRCD_LO_REG			0x0
 #define  VTD_FRCD_LO_FI_MASK		BIT_MASK(63, 12)
