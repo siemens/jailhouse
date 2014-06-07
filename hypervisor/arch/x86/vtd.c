@@ -108,7 +108,8 @@ static void vtd_init_fault_nmi(void)
 
 		/* APIC ID can exceed 8-bit value for x2APIC mode */
 		if (using_x2apic)
-			mmio_write32(reg_base + VTD_FEUADDR_REG, apic_id);
+			mmio_write32(reg_base + VTD_FEUADDR_REG,
+				     apic_id & APIC_MSI_UADDR_DESTID_MASK);
 
 		/* Unmask events */
 		mmio_write32_field(reg_base+VTD_FECTL_REG, VTD_FECTL_IM_MASK,

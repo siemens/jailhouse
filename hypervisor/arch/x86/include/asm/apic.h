@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/paging.h>
+#include <jailhouse/utils.h>
 #include <asm/percpu.h>
 
 /* currently our limit due to fixed-size APID ID map */
@@ -86,6 +87,8 @@
 
 /* FIXED: fixed value for interrupt messages */
 #define APIC_MSI_ADDR_FIXED_VAL		(0x0FEE << 20)
+
+#define APIC_MSI_UADDR_DESTID_MASK	BIT_MASK(31, 8)
 
 extern bool using_x2apic;
 
