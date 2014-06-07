@@ -163,27 +163,22 @@ void vtd_check_pending_faults(struct per_cpu *cpu_data)
 	}
 }
 
-static int vtd_init_fault_reporting(void *reg_base)
+static void vtd_init_fault_reporting(void *reg_base)
 {
-	int nfr, i;
-	void *fault_reg_addr, *rec_reg_addr;
+	void *fault_reg_base;
+	unsigned int nfr, n;
 
 	nfr = mmio_read64_field(reg_base + VTD_CAP_REG, VTD_CAP_NFR_MASK);
-	fault_reg_addr = vtd_get_fault_rec_reg_addr(reg_base);
+	fault_reg_base = vtd_get_fault_rec_reg_addr(reg_base);
 
-	for (i = 0; i < nfr; i++) {
-		rec_reg_addr = fault_reg_addr + 16*i;
-
-		/* Clear record reg fault status */
-		mmio_write64_field(rec_reg_addr + VTD_FRCD_HI_REG,
+	for (n = 0; n < nfr; n++)
+		/* Clear fault recording register status */
+		mmio_write64_field(fault_reg_base + 16 * n + VTD_FRCD_HI_REG,
 				   VTD_FRCD_HI_F, VTD_FRCD_HI_F_CLEAR);
-	}
 
 	/* Clear fault overflow status */
 	mmio_write32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PFO,
 			   VTD_FSTS_PFO_CLEAR);
-
-	return 0;
 }
 
 int vtd_init(void)
@@ -266,13 +261,11 @@ int vtd_init(void)
 
 		dmar_units++;
 
+		vtd_init_fault_reporting(reg_base);
+
 		offset += drhd->header.length;
 		drhd = (struct acpi_dmar_drhd *)
 			(((void *)drhd) + drhd->header.length);
-
-		err = vtd_init_fault_reporting(reg_base);
-		if (err)
-			return err;
 	} while (offset < dmar->header.length &&
 		 drhd->header.type == ACPI_DMAR_DRHD);
 
