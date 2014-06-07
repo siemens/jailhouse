@@ -53,6 +53,7 @@ struct cell {
 	u32 pci_addr_port_val;
 
 	u32 ioapic_index_reg_val;
+	u16 ioapic_id;
 	u64 ioapic_pin_bitmap;
 
 	union {
