@@ -80,32 +80,27 @@ static void vtd_init_fault_nmi(void)
 	int i;
 
 	/* Assume that at least one bit is set somewhere as
-	* we don't support configurations when Linux is left with no CPUs */
+	 * we don't support configurations when Linux is left with no CPUs */
 	for (i = 0; root_cell.cpu_set->bitmap[i] == 0; i++)
 		/* Empty loop */;
 	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[i]));
 	apic_id = cpu_data->apic_id;
 
-	/* Save this value globally to avoid multiple reporting
-	 * of the same case from different CPUs*/
+	/* Save this value globally to avoid multiple reports of the same
+	 * case from different CPUs */
 	fault_reporting_cpu_id = cpu_data->cpu_id;
 
 	for (i = 0; i < dmar_units; i++, reg_base += PAGE_SIZE) {
-		/* Mask events*/
+		/* Mask events */
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
 
-		/* We use xAPIC mode. Hence, TRGM and LEVEL aren't required.
-		 Set Delivery Mode to NMI */
+		/* Program MSI message to send NMIs to the target CPU */
 		mmio_write32(reg_base + VTD_FEDATA_REG, APIC_MSI_DATA_DM_NMI);
-
-		/* The vector information is ignored in the case of NMI,
-		* hence there's no need to set that field.
-		* Redirection mode is set to use physical address by default */
 		mmio_write32(reg_base + VTD_FEADDR_REG,
 			((apic_id << APIC_MSI_ADDR_DESTID_SHIFT) &
 			 APIC_MSI_ADDR_DESTID_MASK) | APIC_MSI_ADDR_FIXED_VAL);
 
-		/* APIC ID can exceed 8-bit value for x2APIC mode */
+		/* Write upper APIC ID bits for x2APIC mode */
 		if (using_x2apic)
 			mmio_write32(reg_base + VTD_FEUADDR_REG,
 				     apic_id & APIC_MSI_UADDR_DESTID_MASK);
@@ -148,7 +143,7 @@ void vtd_check_pending_faults(struct per_cpu *cpu_data)
 	if (cpu_data->cpu_id != fault_reporting_cpu_id)
 		return;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE)
 		if (mmio_read32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PPF)) {
 			fr_index = mmio_read32_field(reg_base + VTD_FSTS_REG,
 						     VTD_FSTS_FRI_MASK);
@@ -160,7 +155,6 @@ void vtd_check_pending_faults(struct per_cpu *cpu_data)
 			mmio_write64_field(rec_reg_addr + VTD_FRCD_HI_REG,
 					   VTD_FRCD_HI_F, VTD_FRCD_HI_F_CLEAR);
 		}
-	}
 }
 
 static void vtd_init_unit(void *reg_base)

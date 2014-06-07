@@ -77,16 +77,16 @@
 
 #define APIC_BSP_PSEUDO_SIPI		0x100
 
-/* Message signalled interrupts (MSI) */
+/* Message signaled interrupts (MSI) */
 /* DM: Delivery Mode */
 #define APIC_MSI_DATA_DM_NMI		(0x4 << 8)
 
 /* DESTID: destination ID */
-#define APIC_MSI_ADDR_DESTID_MASK	(0xFF << 12)
+#define APIC_MSI_ADDR_DESTID_MASK	BIT_MASK(19, 12)
 #define APIC_MSI_ADDR_DESTID_SHIFT	12
 
 /* FIXED: fixed value for interrupt messages */
-#define APIC_MSI_ADDR_FIXED_VAL		(0x0FEE << 20)
+#define APIC_MSI_ADDR_FIXED_VAL		(0xfee << 20)
 
 #define APIC_MSI_UADDR_DESTID_MASK	BIT_MASK(31, 8)
 
