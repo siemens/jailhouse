@@ -276,8 +276,6 @@ int vtd_init(void)
 	} while (offset < dmar->header.length &&
 		 drhd->header.type == ACPI_DMAR_DRHD);
 
-	vtd_init_fault_nmi();
-
 	/*
 	 * Derive vdt_paging from very similar x86_64_paging,
 	 * replicating 0..3 for 4 levels and 1..3 for 3 levels.
