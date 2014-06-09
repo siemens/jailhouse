@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -109,16 +111,13 @@ static void read_descriptor(struct per_cpu *cpu_data, struct segment *seg)
 
 static void set_cs(u16 cs)
 {
-	struct farptr jmp_target;
-	unsigned long tmp;
-
-	jmp_target.seg = cs;
 	asm volatile(
-		"lea 1f(%%rip),%0\n\t"
-		"mov %0,%1\n\t"
-		"rex64/ljmp *%2\n\t"
+		"lea 1f(%%rip),%%rax\n\t"
+		"push %0\n\t"
+		"push %%rax\n\t"
+		"lretq\n\t"
 		"1:"
-		: "=r" (tmp) : "m" (jmp_target.offs), "m" (jmp_target));
+		: : "m" (cs) : "rax");
 }
 
 int arch_cpu_init(struct per_cpu *cpu_data)
