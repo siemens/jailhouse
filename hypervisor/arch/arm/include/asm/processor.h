@@ -20,12 +20,22 @@
 struct registers {
 };
 
+#define dmb(domain)	asm volatile("dmb " #domain "\n" ::: "memory")
+#define dsb(domain)	asm volatile("dsb " #domain "\n" ::: "memory")
+#define isb()		asm volatile("isb\n")
+
+#define wfe()		asm volatile("wfe\n")
+#define wfi()		asm volatile("wfi\n")
+#define sev()		asm volatile("sev\n")
+
 static inline void cpu_relax(void)
 {
+	asm volatile("" : : : "memory");
 }
 
 static inline void memory_barrier(void)
 {
+	dmb(ish);
 }
 
 static inline void memory_load_barrier(void)
