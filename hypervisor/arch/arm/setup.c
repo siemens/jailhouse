@@ -42,7 +42,6 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
 #include <jailhouse/paging.h>
-void arch_dbg_write_init(void) {}
 void arch_suspend_cpu(unsigned int cpu_id) {}
 void arch_resume_cpu(unsigned int cpu_id) {}
 void arch_reset_cpu(unsigned int cpu_id) {}
@@ -59,7 +58,6 @@ int arch_unmap_memory_region(struct cell *cell,
 void arch_flush_cell_vcpu_caches(struct cell *cell) {}
 void arch_cell_destroy(struct cell *new_cell) {}
 void arch_config_commit(struct cell *cell_added_removed) {}
-void arch_dbg_write(const char *msg) {}
 void arch_shutdown(void) {}
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys, unsigned long flags)

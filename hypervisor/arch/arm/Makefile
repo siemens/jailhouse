@@ -10,8 +10,11 @@
 # the COPYING file in the top-level directory.
 #
 
+include $(CONFIG_MK)
+
 KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
 
 always := built-in.o
 
-obj-y := entry.o setup.o lib.o
+obj-y := entry.o dbg-write.o setup.o lib.o
+obj-$(CONFIG_SERIAL_AMBA_PL011) += dbg-write-pl011.o
