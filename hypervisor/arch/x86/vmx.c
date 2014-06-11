@@ -1067,13 +1067,6 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	int sipi_vector;
 
-	if (reason & EXIT_REASONS_FAILED_VMENTRY) {
-		panic_printk("FATAL: VM-Entry failure, reason %d\n",
-			     (u16)reason);
-		dump_guest_regs(guest_regs);
-		panic_stop(cpu_data);
-	}
-
 	switch (reason) {
 	case EXIT_REASON_EXCEPTION_NMI:
 		asm volatile("int %0" : : "i" (NMI_VECTOR));
@@ -1160,7 +1153,9 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			return;
 		break;
 	default:
-		panic_printk("FATAL: Unhandled VM-Exit, reason %d, ",
+		panic_printk("FATAL: %s, reason %d\n",
+			     (reason & EXIT_REASONS_FAILED_VMENTRY) ?
+			     "VM-Entry failure" : "Unhandled VM-Exit",
 			     (u16)reason);
 		dump_vm_exit_details(reason);
 		break;
