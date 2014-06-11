@@ -13,6 +13,8 @@
 #ifndef _JAILHOUSE_ASM_PROCESSOR_H
 #define _JAILHOUSE_ASM_PROCESSOR_H
 
+#define MPIDR_CPUID_MASK	0x00ffffff
+
 #ifndef __ASSEMBLY__
 
 struct registers {

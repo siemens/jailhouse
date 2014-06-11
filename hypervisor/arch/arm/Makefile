@@ -14,4 +14,4 @@ KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
 
 always := built-in.o
 
-obj-y := entry.o setup.o
+obj-y := entry.o setup.o lib.o

@@ -25,6 +25,11 @@
  * - arm_read_sysreg(SYSREG_NAME, reg)
  */
 
+/*
+ * 32bit sysregs definitions
+ * (Use the AArch64 names to ease the compatibility work)
+ */
+#define MPIDR_EL1	SYSREG_32(0, c0, c0, 5)
 
 #define SYSREG_32(...) 32, __VA_ARGS__
 #define SYSREG_64(...) 64, __VA_ARGS__
