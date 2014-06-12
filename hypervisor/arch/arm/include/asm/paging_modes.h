@@ -10,8 +10,13 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef __ASSEMBLY__
+
 #include <jailhouse/paging.h>
 
+/* Long-descriptor paging */
 extern const struct paging arm_paging[];
 
 #define hv_paging	arm_paging
+
+#endif /* !__ASSEMBLY__ */

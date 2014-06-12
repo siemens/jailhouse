@@ -86,9 +86,5 @@ void arch_shutdown(void) {}
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys, unsigned long flags)
 { return INVALID_PHYS_ADDR; }
-void arch_paging_init(void) { }
-
-const struct paging arm_paging[1];
-
 void arch_panic_stop(void) {__builtin_unreachable();}
 void arch_panic_park(void) {}

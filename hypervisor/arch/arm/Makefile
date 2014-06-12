@@ -17,5 +17,5 @@ KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
 always := built-in.o
 
 obj-y := entry.o dbg-write.o exception.o setup.o lib.o
-obj-y += mmu_hyp.o
+obj-y += paging.o mmu_hyp.o
 obj-$(CONFIG_SERIAL_AMBA_PL011) += dbg-write-pl011.o
