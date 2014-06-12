@@ -513,6 +513,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 			   read_msr(MSR_IA32_SYSENTER_ESP));
 
 	ok &= vmcs_write64(GUEST_DR7, 0x00000400);
+	ok &= vmcs_write64(GUEST_IA32_DEBUGCTL, 0);
 
 	ok &= vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_ACTIVE);
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
@@ -793,6 +794,7 @@ static void vmx_cpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	ok &= vmcs_write64(GUEST_SYSENTER_ESP, 0);
 
 	ok &= vmcs_write64(GUEST_DR7, 0x00000400);
+	ok &= vmcs_write64(GUEST_IA32_DEBUGCTL, 0);
 
 	ok &= vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_ACTIVE);
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
