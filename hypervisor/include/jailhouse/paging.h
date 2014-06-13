@@ -17,7 +17,7 @@
 #include <asm/types.h>
 #include <asm/paging.h>
 
-#define PAGE_ALIGN(s)		((s + PAGE_SIZE-1) & PAGE_MASK)
+#define PAGE_ALIGN(s)		(((s) + PAGE_SIZE-1) & PAGE_MASK)
 
 #define TEMPORARY_MAPPING_BASE	REMAP_BASE
 #define TEMPORARY_MAPPING_CPU_BASE(cpu_data)				\
