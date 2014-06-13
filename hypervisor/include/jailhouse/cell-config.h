@@ -68,7 +68,7 @@ struct jailhouse_pci_device {
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory config_memory;
-	struct jailhouse_cell_desc system;
+	struct jailhouse_cell_desc root_cell;
 } __attribute__((packed));
 
 static inline __u32
@@ -85,8 +85,8 @@ jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)
 static inline __u32
 jailhouse_system_config_size(struct jailhouse_system *system)
 {
-	return sizeof(*system) - sizeof(system->system) +
-		jailhouse_cell_config_size(&system->system);
+	return sizeof(*system) - sizeof(system->root_cell) +
+		jailhouse_cell_config_size(&system->root_cell);
 }
 
 static inline const unsigned long *

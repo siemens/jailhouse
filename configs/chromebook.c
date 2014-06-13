@@ -27,7 +27,7 @@ struct {
 			.phys_start = 0xbc000000,
 			.size = 0x4000000,
 		},
-		.system = {
+		.root_cell = {
 			.name = "Samsung Chromebook",
 
 			.cpu_set_size = sizeof(config.cpus),

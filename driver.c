@@ -300,7 +300,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 
 	if (copy_from_user(&config_header, arg, sizeof(config_header)))
 		return -EFAULT;
-	config_header.system.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
+	config_header.root_cell.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
 	if (mutex_lock_interruptible(&lock) != 0)
 		return -EINTR;
@@ -351,7 +351,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		goto error_unmap;
 	}
 
-	root_cell = create_cell(&config->system);
+	root_cell = create_cell(&config->root_cell);
 	if (IS_ERR(root_cell)) {
 		err = PTR_ERR(root_cell);
 		goto error_unmap;

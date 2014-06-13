@@ -34,7 +34,7 @@ struct {
 			.phys_start = 0xcca64000,
 			.size = 0x15000,
 		},
-		.system = {
+		.root_cell = {
 			.name = "H87I-PLUS",
 
 			.cpu_set_size = sizeof(config.cpus),

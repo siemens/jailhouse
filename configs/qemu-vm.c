@@ -38,7 +38,7 @@ struct {
 			.phys_start = 0x3fffe000,
 			.size = 0x2000,
 		},
-		.system = {
+		.root_cell = {
 			.name = "QEMU Linux VM",
 
 			.cpu_set_size = sizeof(config.cpus),

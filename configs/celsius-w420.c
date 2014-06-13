@@ -36,7 +36,7 @@ struct {
 			.phys_start = 0xd8a1a000,
 			.size = 0x10000,
 		},
-		.system = {
+		.root_cell = {
 			.name = "Celsius-W420",
 
 			.cpu_set_size = sizeof(config.cpus),

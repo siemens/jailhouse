@@ -56,7 +56,7 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
-	root_cell.config = &system_config->system;
+	root_cell.config = &system_config->root_cell;
 
 	if (system_config->config_memory.size > 0) {
 		size = PAGE_ALIGN(system_config->config_memory.size);
@@ -75,7 +75,7 @@ static void init_early(unsigned int cpu_id)
 			return;
 	}
 
-	error = check_mem_regions(&system_config->system);
+	error = check_mem_regions(&system_config->root_cell);
 	if (error)
 		return;
 

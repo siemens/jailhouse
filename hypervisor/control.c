@@ -44,9 +44,9 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 bool cpu_id_valid(unsigned long cpu_id)
 {
 	const unsigned long *system_cpu_set =
-		jailhouse_cell_cpu_set(&system_config->system);
+		jailhouse_cell_cpu_set(&system_config->root_cell);
 
-	return (cpu_id < system_config->system.cpu_set_size * 8 &&
+	return (cpu_id < system_config->root_cell.cpu_set_size * 8 &&
 		test_bit(cpu_id, system_cpu_set));
 }
 
