@@ -716,25 +716,26 @@ static int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 		JAILHOUSE_CPU_RUNNING;
 }
 
-long hypercall(struct per_cpu *cpu_data, unsigned long code, unsigned long arg)
+long hypercall(struct per_cpu *cpu_data, unsigned long code,
+	       unsigned long arg1, unsigned long arg2)
 {
 	switch (code) {
 	case JAILHOUSE_HC_DISABLE:
 		return shutdown(cpu_data);
 	case JAILHOUSE_HC_CELL_CREATE:
-		return cell_create(cpu_data, arg);
+		return cell_create(cpu_data, arg1);
 	case JAILHOUSE_HC_CELL_START:
-		return cell_start(cpu_data, arg);
+		return cell_start(cpu_data, arg1);
 	case JAILHOUSE_HC_CELL_SET_LOADABLE:
-		return cell_set_loadable(cpu_data, arg);
+		return cell_set_loadable(cpu_data, arg1);
 	case JAILHOUSE_HC_CELL_DESTROY:
-		return cell_destroy(cpu_data, arg);
+		return cell_destroy(cpu_data, arg1);
 	case JAILHOUSE_HC_HYPERVISOR_GET_INFO:
-		return hypervisor_get_info(cpu_data, arg);
+		return hypervisor_get_info(cpu_data, arg1);
 	case JAILHOUSE_HC_CELL_GET_STATE:
-		return cell_get_state(cpu_data, arg);
+		return cell_get_state(cpu_data, arg1);
 	case JAILHOUSE_HC_CPU_GET_STATE:
-		return cpu_get_state(cpu_data, arg);
+		return cpu_get_state(cpu_data, arg1);
 	default:
 		return -ENOSYS;
 	}

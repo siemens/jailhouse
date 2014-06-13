@@ -19,7 +19,8 @@
 #define JAILHOUSE_CALL_INS	"vmcall"
 #define JAILHOUSE_CALL_RESULT	"=a" (result)
 #define JAILHOUSE_CALL_NUM	"a" (num)
-#define JAILHOUSE_CALL_ARG	"D" (arg)
+#define JAILHOUSE_CALL_ARG1	"D" (arg1)
+#define JAILHOUSE_CALL_ARG2	"S" (arg2)
 
 #ifndef __ASSEMBLY__
 
@@ -34,13 +35,24 @@ static inline __u32 jailhouse_call(__u32 num)
 	return result;
 }
 
-static inline __u32 jailhouse_call_arg(__u32 num, __u32 arg)
+static inline __u32 jailhouse_call_arg1(__u32 num, __u32 arg1)
 {
 	__u32 result;
 
 	asm volatile(JAILHOUSE_CALL_INS
 		: JAILHOUSE_CALL_RESULT
-		: JAILHOUSE_CALL_NUM, JAILHOUSE_CALL_ARG
+		: JAILHOUSE_CALL_NUM, JAILHOUSE_CALL_ARG1
+		: "memory");
+	return result;
+}
+
+static inline __u32 jailhouse_call_arg2(__u32 num, __u32 arg1, __u32 arg2)
+{
+	__u32 result;
+
+	asm volatile(JAILHOUSE_CALL_INS
+		: JAILHOUSE_CALL_RESULT
+		: JAILHOUSE_CALL_NUM, JAILHOUSE_CALL_ARG1, JAILHOUSE_CALL_ARG2
 		: "memory");
 	return result;
 }

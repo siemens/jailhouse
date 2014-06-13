@@ -861,7 +861,8 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 		return;
 	}
 
-	guest_regs->rax = hypercall(cpu_data, code, guest_regs->rdi);
+	guest_regs->rax = hypercall(cpu_data, code, guest_regs->rdi,
+				    guest_regs->rsi);
 	if (guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
 		       cpu_data->cpu_id, code,

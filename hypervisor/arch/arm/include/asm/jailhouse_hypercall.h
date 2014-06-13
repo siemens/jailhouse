@@ -15,7 +15,8 @@
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \
 					"hvc #0x4a48"
 #define JAILHOUSE_CALL_NUM_RESULT	"r0"
-#define JAILHOUSE_CALL_ARG		"r1"
+#define JAILHOUSE_CALL_ARG1		"r1"
+#define JAILHOUSE_CALL_ARG2		"r2"
 
 #ifndef __asmeq
 #define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
@@ -37,18 +38,36 @@ static inline __u32 jailhouse_call(__u32 num)
 	return num_result;
 }
 
-static inline __u32 jailhouse_call_arg(__u32 num, __u32 arg)
+static inline __u32 jailhouse_call_arg1(__u32 num, __u32 arg1)
 {
 	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
-	register __u32 __arg asm(JAILHOUSE_CALL_ARG) = arg;
+	register __u32 __arg1 asm(JAILHOUSE_CALL_ARG1) = arg1;
 
 	asm volatile(
 		__asmeq(JAILHOUSE_CALL_NUM_RESULT, "%0")
 		__asmeq(JAILHOUSE_CALL_NUM_RESULT, "%1")
-		__asmeq(JAILHOUSE_CALL_ARG, "%2")
+		__asmeq(JAILHOUSE_CALL_ARG1, "%2")
 		JAILHOUSE_CALL_INS
 		: "=r" (num_result)
-		: "r" (num_result), "r" (__arg)
+		: "r" (num_result), "r" (__arg1)
+		: "memory");
+	return num_result;
+}
+
+static inline __u32 jailhouse_call_arg2(__u32 num, __u32 arg1, __u32 arg2)
+{
+	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
+	register __u32 __arg1 asm(JAILHOUSE_CALL_ARG1) = arg1;
+	register __u32 __arg2 asm(JAILHOUSE_CALL_ARG2) = arg2;
+
+	asm volatile(
+		__asmeq(JAILHOUSE_CALL_NUM_RESULT, "%0")
+		__asmeq(JAILHOUSE_CALL_NUM_RESULT, "%1")
+		__asmeq(JAILHOUSE_CALL_ARG1, "%2")
+		__asmeq(JAILHOUSE_CALL_ARG2, "%3")
+		JAILHOUSE_CALL_INS
+		: "=r" (num_result)
+		: "r" (num_result), "r" (__arg1), "r" (__arg2)
 		: "memory");
 	return num_result;
 }

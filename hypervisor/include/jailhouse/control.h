@@ -40,7 +40,7 @@ int check_mem_regions(const struct jailhouse_cell_desc *config);
 int cell_init(struct cell *cell, bool copy_cpu_set);
 
 long hypercall(struct per_cpu *cpu_data, unsigned long code,
-	       unsigned long arg);
+	       unsigned long arg1, unsigned long arg2);
 
 void __attribute__((noreturn)) panic_stop(struct per_cpu *cpu_data);
 void panic_halt(struct per_cpu *cpu_data);

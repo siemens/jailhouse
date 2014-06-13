@@ -25,7 +25,8 @@ Intel x86-64 (IA-32e) ABI
 
 Instruction:    vmcall
 Hypercall code: RAX
-Argument:       RDI
+1. argument:    RDI
+2. argument:    RSI
 Return code:    RAX
 
 
@@ -37,7 +38,7 @@ returning full control over the hardware back to Linux.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
-Argument: none
+Arguments: None
 
 Return code: 0 on success, negative error code otherwise
 
@@ -55,9 +56,10 @@ i.e. no code is executed on its CPUs after this hypercall completed.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
-Argument: guest-physical address of cell configuration (see [2] for details)
+Arguments: 1. Guest-physical address of cell configuration (see [2] for
+              details)
 
-Return code: positive cell ID or negative error code
+Return code: Positive cell ID or negative error code
 
     Possible errors are:
         -EPERM  (-1)  - hypercall was issued over a non-root cell or an active
@@ -83,7 +85,7 @@ memory regions of this cell that are marked "loadable" [2] is revoked.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
-Argument: ID of target cell
+Arguments: 1. ID of target cell
 
 Return code: 0 on success or negative error code
 
@@ -101,7 +103,7 @@ Shuts down a running cell and enables (re-)loading of their memory regions that
 are marked "loadable" in the cell's configuration. This is achieved by mapping
 the marked regions into the root cell.
 
-Argument: ID of target cell
+Arguments: 1. ID of target cell
 
 Return code: 0 on success or negative error code
 
@@ -121,7 +123,7 @@ cell directly after hypervisor start.
 
 This hypercall can only be issued on CPUs belonging to the root cell.
 
-Argument: ID of cell to be destroyed
+Arguments: 1. ID of cell to be destroyed
 
 Return code: 0 on success, negative error code otherwise
 
@@ -142,14 +144,14 @@ Hypercall "Hypervisor Get Info" (code 5)
 
 Obtain information about specific hypervisor states.
 
-Argument: Information type:
-        0 - number of pages in hypervisor memory pool
-        1 - used pages of hypervisor memory pool
-        2 - number of pages in hypervisor remapping pool
-        3 - used pages of hypervisor remapping pool
-        4 - number of registered cells
+Arguments: 1. Information type:
+               0 - number of pages in hypervisor memory pool
+               1 - used pages of hypervisor memory pool
+               2 - number of pages in hypervisor remapping pool
+               3 - used pages of hypervisor remapping pool
+               4 - number of registered cells
 
-Return code: requested value (>=0) or negative error code
+Return code: Requested value (>=0) or negative error code
 
     Possible errors are:
         -EINVAL (-22) - invalid information type
@@ -160,11 +162,11 @@ Hypercall "Cell Get State" (code 6)
 
 Obtain information about the state of a specific cell.
 
-Argument: ID of cell to be queried
+Arguments: 1. ID of cell to be queried
 
 This hypercall can only be issued on CPUs belonging to the root cell.
 
-Return code: cell state (>=0) or negative error code
+Return code: Cell state (>=0) or negative error code
 
     Valid cell states are:
         0 - Running
@@ -181,7 +183,7 @@ Hypercall "CPU Get State" (code 7)
 
 Obtain information about the state of a specific CPU.
 
-Argument: logical ID of CPU to be queried
+Arguments: 1. logical ID of CPU to be queried
 
 Return code: CPU state (>=0) or negative error code
 
