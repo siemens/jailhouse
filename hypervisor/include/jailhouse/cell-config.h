@@ -85,8 +85,7 @@ jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)
 static inline __u32
 jailhouse_system_config_size(struct jailhouse_system *system)
 {
-	return sizeof(system->hypervisor_memory) +
-		sizeof(system->config_memory) +
+	return sizeof(*system) - sizeof(system->system) +
 		jailhouse_cell_config_size(&system->system);
 }
 
