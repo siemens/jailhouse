@@ -30,6 +30,9 @@
  * (Use the AArch64 names to ease the compatibility work)
  */
 #define MPIDR_EL1	SYSREG_32(0, c0, c0, 5)
+#define TPIDR_EL2	SYSREG_32(4, c13, c0, 2)
+
+#define HVBAR		SYSREG_32(4, c12, c0, 0)
 
 #define SYSREG_32(...) 32, __VA_ARGS__
 #define SYSREG_64(...) 64, __VA_ARGS__

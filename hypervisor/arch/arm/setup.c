@@ -10,7 +10,11 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <asm/setup.h>
+#include <asm/sysregs.h>
 #include <jailhouse/entry.h>
+#include <jailhouse/paging.h>
+#include <jailhouse/string.h>
 
 int arch_init_early(void)
 {
@@ -19,7 +23,25 @@ int arch_init_early(void)
 
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
-	return -ENOSYS;
+	int err = 0;
+
+	/*
+	 * Copy the registers to restore from the linux stack here, because we
+	 * won't be able to access it later
+	 */
+	memcpy(&cpu_data->linux_reg, (void *)cpu_data->linux_sp, NUM_ENTRY_REGS
+			* sizeof(unsigned long));
+
+	err = switch_exception_level(cpu_data);
+
+	/*
+	 * Save pointer in the thread local storage
+	 * Must be done early in order to handle aborts and errors in the setup
+	 * code.
+	 */
+	arm_write_sysreg(TPIDR_EL2, cpu_data);
+
+	return err;
 }
 
 int arch_init_late(void)
@@ -29,6 +51,9 @@ int arch_init_late(void)
 
 void arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
+	/* Return to the kernel */
+	cpu_return_el1(cpu_data);
+
 	while (1);
 }
 
@@ -41,7 +66,6 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 #include <jailhouse/processor.h>
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
-#include <jailhouse/paging.h>
 void arch_suspend_cpu(unsigned int cpu_id) {}
 void arch_resume_cpu(unsigned int cpu_id) {}
 void arch_reset_cpu(unsigned int cpu_id) {}

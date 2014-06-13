@@ -13,6 +13,23 @@
 #ifndef _JAILHOUSE_ASM_PROCESSOR_H
 #define _JAILHOUSE_ASM_PROCESSOR_H
 
+#define PSR_MODE_MASK	0xf
+#define PSR_USR_MODE	0x0
+#define PSR_FIQ_MODE	0x1
+#define PSR_IRQ_MODE	0x2
+#define PSR_SVC_MODE	0x3
+#define PSR_MON_MODE	0x6
+#define PSR_ABT_MODE	0x7
+#define PSR_HYP_MODE	0xa
+#define PSR_UND_MODE	0xb
+#define PSR_SYS_MODE	0xf
+
+#define PSR_32_BIT	(1 << 4)
+#define PSR_T_BIT	(1 << 5)
+#define PSR_F_BIT	(1 << 6)
+#define PSR_I_BIT	(1 << 7)
+#define PSR_A_BIT	(1 << 8)
+
 #define MPIDR_CPUID_MASK	0x00ffffff
 
 #ifndef __ASSEMBLY__

@@ -40,3 +40,24 @@ arch_entry:
 	add	sp, #PERCPU_STACK_END
 	/* Call entry(cpuid, struct per_cpu*) */
 	b	entry
+
+	.globl bootstrap_vectors
+	.align 5
+bootstrap_vectors:
+	b	.
+	b	.
+	b	.
+	b	.
+	b	.
+	b	setup_el2
+	b	.
+	b	.
+
+setup_el2:
+	/*
+	 * Load the physical values of lr and sp, and continue execution at EL2.
+	 */
+	mov	lr, r0
+	mov	sp, r1
+
+	bx	lr
