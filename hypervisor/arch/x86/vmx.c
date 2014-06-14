@@ -62,8 +62,6 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 static u8 __attribute__((aligned(PAGE_SIZE))) apic_access_page[PAGE_SIZE];
 static struct paging ept_paging[EPT_PAGE_DIR_LEVELS];
 
-static unsigned int vmx_true_msr_offs;
-
 static bool vmxon(struct per_cpu *cpu_data)
 {
 	unsigned long vmxon_addr;
@@ -162,31 +160,31 @@ static int vmx_check_features(void)
 
 	vmx_basic = read_msr(MSR_IA32_VMX_BASIC);
 
-	/* require VMCS size <= PAGE_SIZE */
-	if (((vmx_basic >> 32) & 0x1fff) > PAGE_SIZE)
+	/* require VMCS size <= PAGE_SIZE,
+	 * VMCS memory access type == write back and
+	 * availability of TRUE_*_CTLS */
+	if (((vmx_basic >> 32) & 0x1fff) > PAGE_SIZE ||
+	    ((vmx_basic >> 50) & 0xf) != EPT_TYPE_WRITEBACK ||
+	    !(vmx_basic & (1UL << 55)))
 		return -EIO;
-
-	/* require VMCS memory access type == write back */
-	if (((vmx_basic >> 50) & 0xf) != EPT_TYPE_WRITEBACK)
-		return -EIO;
-
-	if (vmx_basic & (1UL << 55))
-		vmx_true_msr_offs = MSR_IA32_VMX_TRUE_PINBASED_CTLS -
-			MSR_IA32_VMX_PINBASED_CTLS;
 
 	/* require NMI exiting and preemption timer support */
-	vmx_pin_ctrl = read_msr(MSR_IA32_VMX_PINBASED_CTLS +
-				vmx_true_msr_offs) >> 32;
+	vmx_pin_ctrl = read_msr(MSR_IA32_VMX_PINBASED_CTLS) >> 32;
 	if (!(vmx_pin_ctrl & PIN_BASED_NMI_EXITING) ||
 	    !(vmx_pin_ctrl & PIN_BASED_VMX_PREEMPTION_TIMER))
 		return -EIO;
 
 	/* require I/O and MSR bitmap as well as secondary controls support */
-	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_PROCBASED_CTLS +
-				 vmx_true_msr_offs) >> 32;
+	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_PROCBASED_CTLS) >> 32;
 	if (!(vmx_proc_ctrl & CPU_BASED_USE_IO_BITMAPS) ||
 	    !(vmx_proc_ctrl & CPU_BASED_USE_MSR_BITMAPS) ||
 	    !(vmx_proc_ctrl & CPU_BASED_ACTIVATE_SECONDARY_CONTROLS))
+		return -EIO;
+
+	/* require disabling of CR3 access interception */
+	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
+	if (vmx_proc_ctrl &
+	    (CPU_BASED_CR3_LOAD_EXITING | CPU_BASED_CR3_STORE_EXITING))
 		return -EIO;
 
 	/* require APIC access, EPT and unrestricted guest mode support */
@@ -526,15 +524,16 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write64(VMCS_LINK_POINTER, -1UL);
 	ok &= vmcs_write32(VM_ENTRY_INTR_INFO_FIELD, 0);
 
-	val = read_msr(MSR_IA32_VMX_PINBASED_CTLS + vmx_true_msr_offs);
+	val = read_msr(MSR_IA32_VMX_PINBASED_CTLS);
 	val |= PIN_BASED_NMI_EXITING;
 	ok &= vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, val);
 
 	ok &= vmcs_write32(VMX_PREEMPTION_TIMER_VALUE, 0);
 
-	val = read_msr(MSR_IA32_VMX_PROCBASED_CTLS + vmx_true_msr_offs);
+	val = read_msr(MSR_IA32_VMX_PROCBASED_CTLS);
 	val |= CPU_BASED_USE_IO_BITMAPS | CPU_BASED_USE_MSR_BITMAPS |
 		CPU_BASED_ACTIVATE_SECONDARY_CONTROLS;
+	val &= ~(CPU_BASED_CR3_LOAD_EXITING | CPU_BASED_CR3_STORE_EXITING);
 	ok &= vmcs_write32(CPU_BASED_VM_EXEC_CONTROL, val);
 
 	ok &= vmcs_write64(MSR_BITMAP, page_map_hvirt2phys(msr_bitmap));
@@ -551,7 +550,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmcs_write32(EXCEPTION_BITMAP, 0);
 
-	val = read_msr(MSR_IA32_VMX_EXIT_CTLS + vmx_true_msr_offs);
+	val = read_msr(MSR_IA32_VMX_EXIT_CTLS);
 	val |= VM_EXIT_HOST_ADDR_SPACE_SIZE | VM_EXIT_SAVE_IA32_EFER |
 		VM_EXIT_LOAD_IA32_EFER;
 	ok &= vmcs_write32(VM_EXIT_CONTROLS, val);
@@ -560,7 +559,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(VM_EXIT_MSR_LOAD_COUNT, 0);
 	ok &= vmcs_write32(VM_ENTRY_MSR_LOAD_COUNT, 0);
 
-	val = read_msr(MSR_IA32_VMX_ENTRY_CTLS + vmx_true_msr_offs);
+	val = read_msr(MSR_IA32_VMX_ENTRY_CTLS);
 	val |= VM_ENTRY_IA32E_MODE | VM_ENTRY_LOAD_IA32_EFER;
 	ok &= vmcs_write32(VM_ENTRY_CONTROLS, val);
 
