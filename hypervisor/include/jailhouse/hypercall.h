@@ -20,7 +20,7 @@
 #define JAILHOUSE_HC_CELL_DESTROY		4
 #define JAILHOUSE_HC_HYPERVISOR_GET_INFO	5
 #define JAILHOUSE_HC_CELL_GET_STATE		6
-#define JAILHOUSE_HC_CPU_GET_STATE		7
+#define JAILHOUSE_HC_CPU_GET_INFO		7
 
 /* Hypervisor information type */
 #define JAILHOUSE_INFO_MEM_POOL_SIZE		0
@@ -28,6 +28,9 @@
 #define JAILHOUSE_INFO_REMAP_POOL_SIZE		2
 #define JAILHOUSE_INFO_REMAP_POOL_USED		3
 #define JAILHOUSE_INFO_NUM_CELLS		4
+
+/* Hypervisor information type */
+#define JAILHOUSE_CPU_INFO_STATE		0
 
 /* CPU state */
 #define JAILHOUSE_CPU_RUNNING			0

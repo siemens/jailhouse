@@ -697,7 +697,8 @@ static long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
 	}
 }
 
-static int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
+static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
+			unsigned long type)
 {
 	if (!cpu_id_valid(cpu_id))
 		return -EINVAL;
@@ -712,8 +713,11 @@ static int cpu_get_state(struct per_cpu *cpu_data, unsigned long cpu_id)
 	     !test_bit(cpu_id, cpu_data->cell->cpu_set->bitmap)))
 		return -EPERM;
 
-	return per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
-		JAILHOUSE_CPU_RUNNING;
+	if (type == JAILHOUSE_CPU_INFO_STATE) {
+		return per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
+			JAILHOUSE_CPU_RUNNING;
+	} else
+		return -EINVAL;
 }
 
 long hypercall(struct per_cpu *cpu_data, unsigned long code,
@@ -734,8 +738,8 @@ long hypercall(struct per_cpu *cpu_data, unsigned long code,
 		return hypervisor_get_info(cpu_data, arg1);
 	case JAILHOUSE_HC_CELL_GET_STATE:
 		return cell_get_state(cpu_data, arg1);
-	case JAILHOUSE_HC_CPU_GET_STATE:
-		return cpu_get_state(cpu_data, arg1);
+	case JAILHOUSE_HC_CPU_GET_INFO:
+		return cpu_get_info(cpu_data, arg1, arg2);
 	default:
 		return -ENOSYS;
 	}

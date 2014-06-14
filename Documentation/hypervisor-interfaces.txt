@@ -178,14 +178,16 @@ Return code: Cell state (>=0) or negative error code
         -EINVAL (-22) - cell state is invalid
 
 
-Hypercall "CPU Get State" (code 7)
-- - - - - - - - - - - - - - - - - -
+Hypercall "CPU Get Info" (code 7)
+- - - - - - - - - - - - - - - - -
 
-Obtain information about the state of a specific CPU.
+Obtain information about a specific CPU.
 
-Arguments: 1. logical ID of CPU to be queried
+Arguments: 1. Logical ID of CPU to be queried
+           2. Information type:
+                  0 - CPU state
 
-Return code: CPU state (>=0) or negative error code
+Return code: Requested value (>=0) or negative error code
 
     Possible CPU states are:
         0 - Running

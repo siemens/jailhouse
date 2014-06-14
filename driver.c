@@ -151,7 +151,8 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 		return -ENOMEM;
 
 	for_each_cpu(cpu, &cell->cpus_assigned)
-		if (jailhouse_call_arg1(JAILHOUSE_HC_CPU_GET_STATE, cpu) ==
+		if (jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
+					JAILHOUSE_CPU_INFO_STATE) ==
 		    JAILHOUSE_CPU_FAILED)
 			cpu_set(cpu, *cpus_failed);
 
