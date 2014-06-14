@@ -31,10 +31,18 @@
 
 /* Hypervisor information type */
 #define JAILHOUSE_CPU_INFO_STATE		0
+#define JAILHOUSE_CPU_INFO_STAT_BASE		1000
 
 /* CPU state */
 #define JAILHOUSE_CPU_RUNNING			0
 #define JAILHOUSE_CPU_FAILED			2 /* terminal state */
+
+/* CPU statistics */
+#define JAILHOUSE_CPU_STAT_VMEXITS_TOTAL	0
+#define JAILHOUSE_CPU_STAT_VMEXITS_MMIO		1
+#define JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT	2
+#define JAILHOUSE_CPU_STAT_VMEXITS_HYPERCALL	3
+#define JAILHOUSE_GENERIC_CPU_STATS		4
 
 #define JAILHOUSE_MSG_NONE			0
 
@@ -54,6 +62,8 @@
 #define JAILHOUSE_CELL_SHUT_DOWN		2 /* terminal state */
 #define JAILHOUSE_CELL_FAILED			3 /* terminal state */
 
+#ifndef __ASSEMBLY__
+
 struct jailhouse_comm_region {
 	volatile __u32 msg_to_cell;
 	volatile __u32 reply_from_cell;
@@ -62,6 +72,8 @@ struct jailhouse_comm_region {
 
 	/* errors etc. */
 };
+
+#endif /* !__ASSEMBLY__ */
 
 #include <asm/jailhouse_hypercall.h>
 

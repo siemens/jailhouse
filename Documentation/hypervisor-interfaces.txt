@@ -186,6 +186,16 @@ Obtain information about a specific CPU.
 Arguments: 1. Logical ID of CPU to be queried
            2. Information type:
                   0 - CPU state
+               1000 - Total number of VM exits
+               1001 - VM exits due to MMIO access
+               1002 - VM exits due to PIO access
+               1003 - VM exits due to IPI submissions
+               1004 - VM exits due to management events
+               1005 - VM exits due to hypercalls
+
+Statistic counters are reset when a CPU is assigned to a different cell. The
+total number of VM exits may be different from the sum of all specific VM exit
+counters.
 
 Return code: Requested value (>=0) or negative error code
 

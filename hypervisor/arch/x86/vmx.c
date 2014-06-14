@@ -1072,11 +1072,14 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	int sipi_vector;
 
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+
 	switch (reason) {
 	case EXIT_REASON_EXCEPTION_NMI:
 		asm volatile("int %0" : : "i" (NMI_VECTOR));
 		/* fall through */
 	case EXIT_REASON_PREEMPTION_TIMER:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
 		vmx_disable_preemption_timer();
 		sipi_vector = x86_handle_events(cpu_data);
 		if (sipi_vector >= 0) {
@@ -1100,10 +1103,12 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		vmx_handle_hypercall(guest_regs, cpu_data);
 		return;
 	case EXIT_REASON_CR_ACCESS:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
 		if (vmx_handle_cr(guest_regs, cpu_data))
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
 			vmx_skip_emulated_instruction(X86_INST_LEN_RDMSR);
@@ -1114,6 +1119,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			     guest_regs->rcx);
 		break;
 	case EXIT_REASON_MSR_WRITE:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (guest_regs->rcx == MSR_X2APIC_ICR) {
 			if (!apic_handle_icr_write(cpu_data, guest_regs->rax,
 						   guest_regs->rdx))
@@ -1131,10 +1137,12 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			     guest_regs->rcx);
 		break;
 	case EXIT_REASON_APIC_ACCESS:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
 		if (vmx_handle_apic_access(guest_regs, cpu_data))
 			return;
 		break;
 	case EXIT_REASON_XSETBV:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XSETBV]++;
 		if (guest_regs->rax & X86_XCR0_FP &&
 		    (guest_regs->rax & ~cpuid_eax(0x0d)) == 0 &&
 		    guest_regs->rcx == 0 && guest_regs->rdx == 0) {
@@ -1150,10 +1158,12 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			     guest_regs->rdx, guest_regs->rax);
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
 		if (vmx_handle_io_access(guest_regs, cpu_data))
 			return;
 		break;
 	case EXIT_REASON_EPT_VIOLATION:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 		if (vmx_handle_ept_violation(guest_regs, cpu_data))
 			return;
 		break;

@@ -17,6 +17,8 @@
 #include <asm/paging.h>
 #include <asm/processor.h>
 
+#include <jailhouse/hypercall.h>
+
 #define NUM_ENTRY_REGS			6
 
 /* Keep in sync with struct per_cpu! */
@@ -44,6 +46,8 @@ struct per_cpu {
 	unsigned int cpu_id;
 	u32 apic_id;
 	struct cell *cell;
+
+	u32 stats[JAILHOUSE_NUM_CPU_STATS];
 
 	struct desc_table_reg linux_gdtr;
 	struct desc_table_reg linux_idtr;

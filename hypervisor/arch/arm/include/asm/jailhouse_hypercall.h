@@ -18,6 +18,9 @@
 #define JAILHOUSE_CALL_ARG1		"r1"
 #define JAILHOUSE_CALL_ARG2		"r2"
 
+/* CPU statistics */
+#define JAILHOUSE_NUM_CPU_STATS			JAILHOUSE_GENERIC_CPU_STATS
+
 #ifndef __asmeq
 #define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
 #endif

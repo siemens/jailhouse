@@ -16,6 +16,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
+#include <jailhouse/utils.h>
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
 
@@ -271,6 +272,7 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 		set_bit(cpu, root_cell.cpu_set->bitmap);
 		per_cpu(cpu)->cell = &root_cell;
 		per_cpu(cpu)->failed = false;
+		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
 	}
 
 	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
@@ -384,6 +386,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 		clear_bit(cpu, root_cell.cpu_set->bitmap);
 		per_cpu(cpu)->cell = cell;
+		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
 	}
 
 	/*
@@ -716,6 +719,10 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 	if (type == JAILHOUSE_CPU_INFO_STATE) {
 		return per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
 			JAILHOUSE_CPU_RUNNING;
+	} else if (type >= JAILHOUSE_CPU_INFO_STAT_BASE &&
+		type - JAILHOUSE_CPU_INFO_STAT_BASE < JAILHOUSE_NUM_CPU_STATS) {
+		type -= JAILHOUSE_CPU_INFO_STAT_BASE;
+		return per_cpu(cpu_id)->stats[type] & BIT_MASK(30, 0);
 	} else
 		return -EINVAL;
 }
@@ -723,6 +730,8 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 long hypercall(struct per_cpu *cpu_data, unsigned long code,
 	       unsigned long arg1, unsigned long arg2)
 {
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_HYPERCALL]++;
+
 	switch (code) {
 	case JAILHOUSE_HC_DISABLE:
 		return shutdown(cpu_data);

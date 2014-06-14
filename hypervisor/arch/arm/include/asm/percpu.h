@@ -36,6 +36,8 @@ struct per_cpu {
 //	u32 apic_id;
 	struct cell *cell;
 
+	u32 stats[JAILHOUSE_NUM_CPU_STATS];
+
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 //	unsigned long linux_ip;
 	bool initialized;
