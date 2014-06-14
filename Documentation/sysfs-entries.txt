@@ -5,15 +5,24 @@ The following sysfs entries are provided by the Jailhouse Linux driver. These
 can be used for monitoring the state of the hypervisor and its cells.
 
 /sys/devices/jailhouse
-|-- enabled                 - 1 if Jailhouse is enabled, 0 otherwise
-|-- mem_pool_size           - number of pages in hypervisor memory pool
-|-- mem_pool_used           - used pages of hypervisor memory pool
-|-- remap_pool_size         - number of pages in hypervisor remapping pool
-|-- remap_pool_used         - used pages of hypervisor remapping pool
-`-- cells
-    |-- <name of cell>
-    |   |-- id              - unique numerical ID
-    |   |-- state           - "running", "shut down", or "failed"
-    |   |-- cpus_assigned   - bitmask of assigned logical CPUs
-    |   `-- cpus_failed     - bitmask of logical CPUs that caused a failure
-    `-- ...
+|- enabled                      - 1 if Jailhouse is enabled, 0 otherwise
+|- mem_pool_size                - number of pages in hypervisor memory pool
+|- mem_pool_used                - used pages of hypervisor memory pool
+|- remap_pool_size              - number of pages in hypervisor remapping pool
+|- remap_pool_used              - used pages of hypervisor remapping pool
+`- cells
+   |- <name of cell>
+   |  |- id                     - unique numerical ID
+   |  |- state                  - "running", "shut down", or "failed"
+   |  |- cpus_assigned          - bitmask of assigned logical CPUs
+   |  |- cpus_failed            - bitmask of logical CPUs that caused a failure
+   |  `- statistics
+   |     |- vmexits_total       - Total number of VM exits
+   |     `- vmexits_<reason>    - VM exits due to <reason>
+   `- ...
+
+Note that statistics are accumulated non-atomically over all CPUs of a cell and
+may not reflect a fully consistent state. The existence and semantics of VM
+exit reason values are architecture-dependent and may change in future
+versions. In general statistics shall only be considered as a first hint when
+analyzing cell behavior.

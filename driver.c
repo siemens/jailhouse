@@ -101,6 +101,73 @@ static struct kobject *cells_dir;
 
 #define MIN(a, b)	((a) < (b) ? (a) : (b))
 
+struct jailhouse_cpu_stats_attr {
+	struct kobj_attribute kattr;
+	unsigned int code;
+};
+
+static ssize_t stats_show(struct kobject *kobj, struct kobj_attribute *attr,
+			  char *buffer)
+{
+	struct jailhouse_cpu_stats_attr *stats_attr =
+		container_of(attr, struct jailhouse_cpu_stats_attr, kattr);
+	unsigned int code = JAILHOUSE_CPU_INFO_STAT_BASE + stats_attr->code;
+	struct cell *cell = container_of(kobj, struct cell, kobj);
+	unsigned int cpu, value;
+	unsigned long sum = 0;
+
+	for_each_cpu(cpu, &cell->cpus_assigned) {
+		value = jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
+					    code);
+		if (value > 0)
+			sum += value;
+	}
+
+	return sprintf(buffer, "%lu\n", sum);
+}
+
+#define JAILHOUSE_CPU_STATS_ATTR(_name, _code) \
+	static struct jailhouse_cpu_stats_attr _name##_attr = { \
+		.kattr = __ATTR(_name, S_IRUGO, stats_show, NULL), \
+		.code = _code, \
+	}
+
+JAILHOUSE_CPU_STATS_ATTR(vmexits_total, JAILHOUSE_CPU_STAT_VMEXITS_TOTAL);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_mmio, JAILHOUSE_CPU_STAT_VMEXITS_MMIO);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_management,
+			 JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_hypercall,
+			 JAILHOUSE_CPU_STAT_VMEXITS_HYPERCALL);
+#ifdef CONFIG_X86
+JAILHOUSE_CPU_STATS_ATTR(vmexits_pio, JAILHOUSE_CPU_STAT_VMEXITS_PIO);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_xapic, JAILHOUSE_CPU_STAT_VMEXITS_XAPIC);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_cr, JAILHOUSE_CPU_STAT_VMEXITS_CR);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_msr, JAILHOUSE_CPU_STAT_VMEXITS_MSR);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_cpuid, JAILHOUSE_CPU_STAT_VMEXITS_CPUID);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_xsetbv, JAILHOUSE_CPU_STAT_VMEXITS_XSETBV);
+#endif
+
+static struct attribute *no_attrs[] = {
+	&vmexits_total_attr.kattr.attr,
+	&vmexits_mmio_attr.kattr.attr,
+	&vmexits_management_attr.kattr.attr,
+	&vmexits_hypercall_attr.kattr.attr,
+#ifdef CONFIG_X86
+	&vmexits_pio_attr.kattr.attr,
+	&vmexits_xapic_attr.kattr.attr,
+	&vmexits_cr_attr.kattr.attr,
+	&vmexits_msr_attr.kattr.attr,
+	&vmexits_cpuid_attr.kattr.attr,
+	&vmexits_xsetbv_attr.kattr.attr,
+#endif
+	NULL
+};
+
+static struct attribute_group stats_attr_group = {
+	.attrs = no_attrs,
+	.name = "statistics"
+};
+
 static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
 		       char *buffer)
 {
@@ -201,6 +268,8 @@ static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 	if (!cell)
 		return ERR_PTR(-ENOMEM);
 
+	INIT_LIST_HEAD(&cell->entry);
+
 	bitmap_copy(cpumask_bits(&cell->cpus_assigned),
 		    jailhouse_cell_cpu_set(cell_desc),
 		    MIN(nr_cpumask_bits, cell_desc->cpu_set_size * 8));
@@ -220,6 +289,12 @@ static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 				   cell_desc->name);
 	if (err) {
 		cell_kobj_release(&cell->kobj);
+		return ERR_PTR(err);
+	}
+
+	err = sysfs_create_group(&cell->kobj, &stats_attr_group);
+	if (err) {
+		kobject_put(&cell->kobj);
 		return ERR_PTR(err);
 	}
 
@@ -247,6 +322,7 @@ static struct cell *find_cell(struct jailhouse_cell_id *cell_id)
 static void delete_cell(struct cell *cell)
 {
 	list_del(&cell->entry);
+	sysfs_remove_group(&cell->kobj, &stats_attr_group);
 	kobject_put(&cell->kobj);
 }
 
@@ -392,7 +468,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	return 0;
 
 error_free_cell:
-	kobject_put(&root_cell->kobj);
+	delete_cell(root_cell);
 
 error_unmap:
 	vunmap(hypervisor_mem);
@@ -529,7 +605,7 @@ static int jailhouse_cell_create(struct jailhouse_cell_create __user *arg)
 
 	if (!cpumask_subset(&cell->cpus_assigned, &root_cell->cpus_assigned)) {
 		err = -EBUSY;
-		goto error_cell_put;
+		goto error_cell_delete;
 	}
 
 	for_each_cpu(cpu, &cell->cpus_assigned) {
@@ -568,8 +644,8 @@ error_cpu_online:
 		cpu_set(cpu, root_cell->cpus_assigned);
 	}
 
-error_cell_put:
-	kobject_put(&cell->kobj);
+error_cell_delete:
+	delete_cell(cell);
 	goto unlock_out;
 }
 
