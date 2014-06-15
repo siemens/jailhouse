@@ -83,14 +83,13 @@ void arch_config_commit(struct per_cpu *cpu_data,
 	unsigned int cpu;
 
 	for_each_cpu_except(cpu, root_cell.cpu_set, cpu_data->cpu_id)
-		per_cpu(cpu)->flush_caches = true;
+		per_cpu(cpu)->flush_virt_caches = true;
 
 	if (cell_added_removed)
 		for_each_cpu_except(cpu, cell_added_removed->cpu_set,
 				    cpu_data->cpu_id)
-			per_cpu(cpu)->flush_caches = true;
+			per_cpu(cpu)->flush_virt_caches = true;
 
-	x86_tlb_flush_all();
 	vmx_invept();
 
 	vtd_config_commit(cell_added_removed);
@@ -230,9 +229,8 @@ int x86_handle_events(struct per_cpu *cpu_data)
 		}
 	} while (cpu_data->init_signaled);
 
-	if (cpu_data->flush_caches) {
-		cpu_data->flush_caches = false;
-		x86_tlb_flush_all();
+	if (cpu_data->flush_virt_caches) {
+		cpu_data->flush_virt_caches = false;
 		vmx_invept();
 	}
 

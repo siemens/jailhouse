@@ -79,7 +79,7 @@ struct per_cpu {
 	volatile bool cpu_stopped;
 	bool init_signaled;
 	int sipi_vector;
-	bool flush_caches;
+	bool flush_virt_caches;
 	bool shutdown_cpu;
 	int shutdown_state;
 	bool failed;
