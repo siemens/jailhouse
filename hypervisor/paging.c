@@ -219,7 +219,8 @@ int page_map_create(const struct paging_structures *pg_structs,
 			}
 			paging++;
 		}
-		arch_tlb_flush_page(virt);
+		if (pg_structs == &hv_paging_structs)
+			arch_tlb_flush_page(virt);
 
 		phys += paging->page_size;
 		virt += paging->page_size;
@@ -274,7 +275,8 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 			paging--;
 			pte = paging->get_entry(pt[--n], virt);
 		}
-		arch_tlb_flush_page(virt);
+		if (pg_structs == &hv_paging_structs)
+			arch_tlb_flush_page(virt);
 
 		if (page_size > size)
 			break;
