@@ -20,9 +20,23 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/string.h>
 
+static int arch_check_features(void)
+{
+	u32 pfr1;
+	arm_read_sysreg(ID_PFR1_EL1, pfr1);
+
+	if (!PFR1_VIRT(pfr1))
+		return -ENODEV;
+
+	return 0;
+}
+
 int arch_init_early(void)
 {
 	int err = 0;
+
+	if ((err = arch_check_features()) != 0)
+		return err;
 
 	err = arch_mmu_cell_init(&root_cell);
 	if (err)

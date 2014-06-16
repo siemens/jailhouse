@@ -34,6 +34,8 @@
 
 #define MPIDR_CPUID_MASK	0x00ffffff
 
+#define PFR1_VIRT(pfr)		((pfr) >> 12 & 0xf)
+
 #define SCTLR_M_BIT	(1 << 0)
 #define SCTLR_A_BIT	(1 << 1)
 #define SCTLR_C_BIT	(1 << 2)
