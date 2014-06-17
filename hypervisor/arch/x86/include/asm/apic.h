@@ -46,6 +46,7 @@
 #define APIC_EOI_ACK			0
 #define APIC_ICR_VECTOR_MASK		0x000000ff
 #define APIC_ICR_DLVR_MASK		0x00000700
+#define APIC_ICR_DLVR_SHIFT		8
 #define  APIC_ICR_DLVR_FIXED		0x00000000
 #define  APIC_ICR_DLVR_LOWPRI		0x00000100
 #define  APIC_ICR_DLVR_SMI		0x00000200
@@ -105,6 +106,15 @@ union x86_msi_vector {
 
 #define MSI_ADDRESS_VALUE		0xfee
 
+struct apic_irq_message {
+	u8 vector;
+	u8 delivery_mode:3;
+	u8 dest_logical:1;
+	u8 level_triggered:1;
+	u8 redir_hint:1;
+	u32 destination;
+};
+
 extern bool using_x2apic;
 
 int apic_init(void);
@@ -113,6 +123,7 @@ int apic_cpu_init(struct per_cpu *cpu_data);
 void apic_clear(struct per_cpu *cpu_data);
 
 void apic_send_nmi_ipi(struct per_cpu *target_data);
+void apic_send_irq(struct apic_irq_message irq_msg);
 
 void apic_nmi_handler(struct per_cpu *cpu_data);
 void apic_irq_handler(struct per_cpu *cpu_data);

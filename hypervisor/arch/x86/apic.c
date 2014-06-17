@@ -183,6 +183,26 @@ void apic_send_nmi_ipi(struct per_cpu *target_data)
 			  APIC_ICR_SH_NONE);
 }
 
+void apic_send_irq(struct apic_irq_message irq_msg)
+{
+	u32 delivery_mode = irq_msg.delivery_mode << APIC_ICR_DLVR_SHIFT;
+
+	/* IA-32 SDM 10.6: "lowest priority IPI [...] should be avoided" */
+	if (delivery_mode == APIC_ICR_DLVR_LOWPRI) {
+		delivery_mode = APIC_ICR_DLVR_FIXED;
+		/* Fixed mode performs a multicast, so reduce the number of
+		 * receivers to one. */
+		if (irq_msg.dest_logical && irq_msg.destination != 0)
+			irq_msg.destination = 1UL << ffsl(irq_msg.destination);
+	}
+	apic_ops.send_ipi(irq_msg.destination,
+			  irq_msg.vector | delivery_mode |
+			  (irq_msg.dest_logical ? APIC_ICR_DEST_LOGICAL : 0) |
+			  APIC_ICR_LV_ASSERT |
+			  (irq_msg.level_triggered ? APIC_ICR_TM_LEVEL : 0) |
+			  APIC_ICR_SH_NONE);
+}
+
 void apic_nmi_handler(struct per_cpu *cpu_data)
 {
 	vmx_schedule_vmexit(cpu_data);
