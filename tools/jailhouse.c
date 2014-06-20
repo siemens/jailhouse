@@ -27,10 +27,20 @@
 
 enum shutdown_load_mode {LOAD, SHUTDOWN};
 
-static void __attribute__((noreturn))
-help(const char *progname, int exit_status)
+struct extension {
+	char *cmd, *subcmd, *help;
+};
+
+static const struct extension extensions[] = {
+	{ "cell", "list", "" },
+	{ NULL }
+};
+
+static void __attribute__((noreturn)) help(char *prog, int exit_status)
 {
-	printf("%s { COMMAND | --help }\n"
+	const struct extension *ext;
+
+	printf("Usage: %s { COMMAND | --help }\n"
 	       "\nAvailable commands:\n"
 	       "   enable SYSCONFIG\n"
 	       "   disable\n"
@@ -39,10 +49,40 @@ help(const char *progname, int exit_status)
 			"[ -a | --address ADDRESS] ...\n"
 	       "   cell start { ID | [--name] NAME }\n"
 	       "   cell shutdown { ID | [--name] NAME }\n"
-	       "   cell destroy { ID | [--name] NAME }\n"
-	       "   cell list\n",
-	       progname);
+	       "   cell destroy { ID | [--name] NAME }\n",
+	       basename(prog));
+	for (ext = extensions; ext->cmd; ext++)
+		printf("   %s %s %s\n", ext->cmd, ext->subcmd, ext->help);
+
 	exit(exit_status);
+}
+
+static void call_extension_script(const char *cmd, int argc, char *argv[])
+{
+	const struct extension *ext;
+	char new_path[PATH_MAX];
+	char script[64];
+
+	if (argc < 3)
+		return;
+
+	for (ext = extensions; ext->cmd; ext++) {
+		if (strcmp(ext->cmd, cmd) != 0 ||
+		    strcmp(ext->subcmd, argv[2]) != 0)
+			continue;
+
+		snprintf(new_path, sizeof(new_path), "PATH=%s:%s:%s",
+			dirname(argv[0]), "/usr/lib/jailhouse",
+			getenv("PATH") ? : "");
+		putenv(new_path);
+
+		snprintf(script, sizeof(script), "jailhouse-%s-%s",
+			 cmd, ext->subcmd);
+		execvp(script, &argv[2]);
+
+		perror("execvp");
+		exit(1);
+	}
 }
 
 static int open_dev()
@@ -271,25 +311,6 @@ static int cell_simple_cmd(int argc, char *argv[], unsigned int command)
 	return err;
 }
 
-static int cell_list(int argc, char *argv[])
-{
-	static const char *cell_list_cmd = "jailhouse-cell-list";
-	char new_path[PATH_MAX];
-	int err;
-
-	if (argc != 3)
-		help(argv[0], 1);
-
-	snprintf(new_path, sizeof(new_path), "PATH=%s:%s",
-		 getenv("PATH") ? : "", dirname(argv[0]));
-	putenv(new_path);
-
-	err = execvp(cell_list_cmd, argv);
-
-	perror(cell_list_cmd);
-	return err;
-}
-
 static int cell_management(int argc, char *argv[])
 {
 	int err;
@@ -297,20 +318,20 @@ static int cell_management(int argc, char *argv[])
 	if (argc < 3)
 		help(argv[0], 1);
 
-	if (strcmp(argv[2], "create") == 0)
+	if (strcmp(argv[2], "create") == 0) {
 		err = cell_create(argc, argv);
-	else if (strcmp(argv[2], "load") == 0)
+	} else if (strcmp(argv[2], "load") == 0) {
 		err = cell_shutdown_load(argc, argv, LOAD);
-	else if (strcmp(argv[2], "start") == 0)
+	} else if (strcmp(argv[2], "start") == 0) {
 		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_START);
-	else if (strcmp(argv[2], "shutdown") == 0)
+	} else if (strcmp(argv[2], "shutdown") == 0) {
 		err = cell_shutdown_load(argc, argv, SHUTDOWN);
-	else if (strcmp(argv[2], "destroy") == 0)
+	} else if (strcmp(argv[2], "destroy") == 0) {
 		err = cell_simple_cmd(argc, argv, JAILHOUSE_CELL_DESTROY);
-	else if (strcmp(argv[2], "list") == 0)
-		err = cell_list(argc, argv);
-	else
+	} else {
+		call_extension_script("cell", argc, argv);
 		help(argv[0], 1);
+	}
 
 	return err;
 }

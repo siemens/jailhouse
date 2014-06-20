@@ -12,6 +12,7 @@
 
 import glob
 import os
+import sys
 
 
 def read_cpus(path):
@@ -42,6 +43,10 @@ def print_cpus(mask):
     output += finish_cpu_list(last_cpu, cpu)
     return output.strip(",")
 
+
+if len(sys.argv) > 1:
+    print("usage: %s" % os.path.basename(sys.argv[0]).replace("-", " "))
+    exit(0 if sys.argv[1] in ("--help", "-h") else 1)
 
 cells = []
 for cell_path in glob.glob('/sys/devices/jailhouse/cells/*'):
