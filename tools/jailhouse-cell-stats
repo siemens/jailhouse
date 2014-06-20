@@ -1,0 +1,109 @@
+#!/usr/bin/python
+
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2014
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+
+from __future__ import print_function
+import curses
+import datetime
+import os
+import sys
+
+stats_dir = "/sys/devices/jailhouse/cells/%s/statistics"
+
+
+def main(stdscr, cell, stats_names):
+    curses.use_default_colors()
+    curses.noecho()
+    curses.curs_set(0)
+    curses.halfdelay(10)
+    value = dict.fromkeys(stats_names)
+    old_value = dict.fromkeys(stats_names, None)
+    while True:
+        now = datetime.datetime.now()
+
+        for name in stats_names:
+            f = open((stats_dir + "/%s") % (cell, name), "r")
+            value[name] = int(f.read())
+
+        def sortkey(name):
+            if old_value[name] is None:
+                return (-value[name], name)
+            else:
+                return (old_value[name] - value[name], -value[name], name)
+
+        stdscr.erase()
+        stdscr.addstr(0, 0, "Statistics for %s cell" % cell)
+        (height, width) = stdscr.getmaxyx()
+        stdscr.hline(2, 0, " ", width, curses.A_REVERSE)
+        stdscr.addstr(2, 0, "COUNTER", curses.A_REVERSE)
+        stdscr.addstr(2, 30, "%10s" % "SUM", curses.A_REVERSE)
+        stdscr.addstr(2, 40, "%10s" % "PER SEC", curses.A_REVERSE)
+        line = 3
+        for name in sorted(stats_names, key=sortkey):
+            stdscr.addstr(line, 0, name)
+            stdscr.addstr(line, 30, "%10u" % value[name])
+            if not old_value[name] is None:
+                dt = (now - last_refresh).total_seconds()
+                delta_per_sec = (value[name] - old_value[name]) / dt
+                stdscr.addstr(line, 40, "%10u" % round(delta_per_sec))
+            old_value[name] = value[name]
+            line += 1
+        stdscr.hline(height - 1, 0, " ", width, curses.A_REVERSE)
+        stdscr.addstr(height - 1, 1, "Q - Quit", curses.A_REVERSE)
+        stdscr.refresh()
+
+        last_refresh = now
+
+        try:
+            if stdscr.getch() == ord('q'):
+                break
+            curses.halfdelay(40)
+        except KeyboardInterrupt:
+            break
+        except curses.error:
+            continue
+
+
+def usage(exit_code):
+    prog = os.path.basename(sys.argv[0]).replace('-', ' ')
+    print("usage: %s { ID | [--name] NAME }" % prog)
+    exit(exit_code)
+
+
+argc = len(sys.argv)
+use_name = argc >= 2 and sys.argv[1] == "--name"
+
+if argc < 2 or argc > 3 or (not use_name and argc > 2):
+    usage(1)
+if sys.argv[1] in ("--help", "-h"):
+    usage(0)
+
+try:
+    if use_name:
+        cell_name = sys.argv[2]
+    else:
+        cell_name = sys.argv[1]
+        try:
+            cell_id = int(sys.argv[1])
+            for cell in os.listdir("/sys/devices/jailhouse/cells"):
+                f = open("/sys/devices/jailhouse/cells/%s/id" % cell, "r")
+                if int(f.read()) == cell_id:
+                    cell_name = cell
+                    break
+        except ValueError:
+            pass
+
+    stats_names = os.listdir(stats_dir % cell_name)
+except OSError as e:
+    print("reading stats: %s" % e.strerror, file=sys.stderr)
+    exit(1)
+
+curses.wrapper(main, cell_name, stats_names)

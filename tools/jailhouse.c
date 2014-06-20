@@ -33,6 +33,7 @@ struct extension {
 
 static const struct extension extensions[] = {
 	{ "cell", "list", "" },
+	{ "cell", "stats", "{ ID | [--name] NAME }" },
 	{ NULL }
 };
 
