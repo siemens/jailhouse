@@ -151,9 +151,15 @@ static void gic_handle_irq(struct per_cpu *cpu_data)
 {
 }
 
+static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
+{
+	return 0;
+}
+
 struct irqchip_ops gic_irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,
+	.inject_irq = gic_inject_irq,
 };
