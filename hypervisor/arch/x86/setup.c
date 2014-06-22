@@ -159,7 +159,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	for (n = 0; n < NUM_ENTRY_REGS; n++)
 		cpu_data->linux_reg[n] =
 			((unsigned long *)cpu_data->linux_sp)[n];
-	cpu_data->linux_ip = ((unsigned long *)cpu_data->linux_sp)[6];
+	cpu_data->linux_ip =
+		((unsigned long *)cpu_data->linux_sp)[NUM_ENTRY_REGS];
 
 	/* set GDTR */
 	dtr.limit = NUM_GDT_DESC * 8 - 1;
