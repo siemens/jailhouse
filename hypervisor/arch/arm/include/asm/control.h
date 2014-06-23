@@ -16,6 +16,8 @@
 #include <asm/cell.h>
 #include <asm/percpu.h>
 
+#define SGI_INJECT	0
+
 #ifndef __ASSEMBLY__
 
 int arch_mmu_cell_init(struct cell *cell);

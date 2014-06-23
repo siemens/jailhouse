@@ -20,6 +20,7 @@
 #include <asm/irqchip.h>
 #include <asm/platform.h>
 #include <asm/setup.h>
+#include <asm/traps.h>
 
 /*
  * This implementation assumes that the kernel driver already initialised most
@@ -147,6 +148,40 @@ static int gic_send_sgi(struct sgi *sgi)
 	isb();
 
 	return 0;
+}
+
+int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir)
+{
+	struct sgi sgi;
+	struct cell *cell = cpu_data->cell;
+	unsigned int cpu;
+	unsigned long this_cpu = cpu_data->cpu_id;
+	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
+	unsigned long targets = sgir & ICC_SGIR_TARGET_MASK;
+	u32 irq = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
+
+	/* FIXME: clusters are not supported yet. */
+	sgi.targets = 0;
+	sgi.routing_mode = routing_mode;
+	sgi.aff1 = sgir >> ICC_SGIR_AFF1_SHIFT & 0xff;
+	sgi.aff2 = sgir >> ICC_SGIR_AFF2_SHIFT & 0xff;
+	sgi.aff3 = sgir >> ICC_SGIR_AFF3_SHIFT & 0xff;
+	sgi.id = SGI_INJECT;
+
+	for_each_cpu_except(cpu, cell->cpu_set, this_cpu) {
+		if (routing_mode == 0 && !test_bit(cpu, &targets))
+			continue;
+		else if (routing_mode == 1 && cpu == this_cpu)
+			continue;
+
+		irqchip_set_pending(per_cpu(cpu), irq, false);
+		sgi.targets |= (1 << cpu);
+	}
+
+	/* Let the other CPUS inject their SGIs */
+	gic_send_sgi(&sgi);
+
+	return TRAP_HANDLED;
 }
 
 /*

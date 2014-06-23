@@ -244,5 +244,8 @@ static inline void gic_write_lr(unsigned int n, u64 val)
 	}
 }
 
+struct per_cpu;
+int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir);
+
 #endif /* __ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_GIC_V3_H */

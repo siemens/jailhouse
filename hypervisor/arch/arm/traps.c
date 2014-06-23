@@ -15,6 +15,8 @@
  */
 
 #include <asm/control.h>
+#include <asm/gic_common.h>
+#include <asm/platform.h>
 #include <asm/traps.h>
 #include <asm/sysregs.h>
 #include <jailhouse/printk.h>
@@ -195,8 +197,39 @@ static int arch_handle_hvc(struct per_cpu *cpu_data, struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
+static int arch_handle_cp15_64(struct per_cpu *cpu_data, struct trap_context *ctx)
+{
+	unsigned long rt_val, rt2_val;
+	u32 opc1	= ctx->esr >> 16 & 0x7;
+	u32 rt2		= ctx->esr >> 10 & 0xf;
+	u32 rt		= ctx->esr >> 5 & 0xf;
+	u32 crm		= ctx->esr >> 1 & 0xf;
+	u32 read	= ctx->esr & 1;
+
+	if (!read) {
+		access_cell_reg(ctx, rt, &rt_val, true);
+		access_cell_reg(ctx, rt2, &rt2_val, true);
+	}
+
+#ifdef CONFIG_ARM_GIC_V3
+	/* Trapped ICC_SGI1R write */
+	if (!read && opc1 == 0 && crm == 12) {
+		arch_skip_instruction(ctx);
+		return gicv3_handle_sgir_write(cpu_data,
+				(u64)rt2_val << 32 | rt_val);
+	}
+#else
+	/* Avoid `unused' warning... */
+	crm = crm;
+	opc1 = opc1;
+#endif
+
+	return TRAP_UNHANDLED;
+}
+
 static const trap_handler trap_handlers[38] =
 {
+	[ESR_EC_CP15_64]	= arch_handle_cp15_64,
 	[ESR_EC_HVC]		= arch_handle_hvc,
 };
 

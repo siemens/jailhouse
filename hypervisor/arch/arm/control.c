@@ -16,7 +16,11 @@
 
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
 {
-
+	switch (irqn) {
+	case SGI_INJECT:
+		irqchip_inject_pending(cpu_data);
+		break;
+	}
 }
 
 void arch_handle_exit(struct per_cpu *cpu_data, struct registers *regs)

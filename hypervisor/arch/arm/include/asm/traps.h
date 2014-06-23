@@ -23,6 +23,7 @@
 enum trap_return {
 	TRAP_HANDLED		= 1,
 	TRAP_UNHANDLED		= 0,
+	TRAP_FORBIDDEN		= -1,
 };
 
 struct trap_context {
