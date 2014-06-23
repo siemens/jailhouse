@@ -31,6 +31,8 @@
 #define PSR_F_BIT	(1 << 6)
 #define PSR_I_BIT	(1 << 7)
 #define PSR_A_BIT	(1 << 8)
+#define PSR_IT_MASK(it)	(((it) & 0x3) << 25 | ((it) & 0xfc) << 8)
+#define PSR_IT(psr)	(((psr) >> 25 & 0x3) | ((psr) >> 8 & 0xfc))
 
 #define MPIDR_CPUID_MASK	0x00ffffff
 
@@ -125,6 +127,9 @@
 #define ESR_EC_PCALIGN		0x22
 #define ESR_EC_DABT		0x24
 #define ESR_EC_DABT_HYP		0x25
+/* Condition code */
+#define ESR_ICC_CV_BIT		(1 << 24)
+#define ESR_ICC_COND(icc)	((icc) >> 20 & 0xf)
 
 #define EXIT_REASON_TRAP	0x1
 #define EXIT_REASON_IRQ		0x2

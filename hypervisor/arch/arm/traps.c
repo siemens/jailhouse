@@ -8,6 +8,10 @@
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
+ *
+ * Condition check code is copied from Linux's
+ * - arch/arm/kernel/opcodes.c
+ * - arch/arm/kvm/emulate.c
  */
 
 #include <asm/control.h>
@@ -15,6 +19,107 @@
 #include <asm/sysregs.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/control.h>
+
+/*
+ * condition code lookup table
+ * index into the table is test code: EQ, NE, ... LT, GT, AL, NV
+ *
+ * bit position in short is condition code: NZCV
+ */
+static const unsigned short cc_map[16] = {
+	0xF0F0,			/* EQ == Z set            */
+	0x0F0F,			/* NE                     */
+	0xCCCC,			/* CS == C set            */
+	0x3333,			/* CC                     */
+	0xFF00,			/* MI == N set            */
+	0x00FF,			/* PL                     */
+	0xAAAA,			/* VS == V set            */
+	0x5555,			/* VC                     */
+	0x0C0C,			/* HI == C set && Z clear */
+	0xF3F3,			/* LS == C clear || Z set */
+	0xAA55,			/* GE == (N==V)           */
+	0x55AA,			/* LT == (N!=V)           */
+	0x0A05,			/* GT == (!Z && (N==V))   */
+	0xF5FA,			/* LE == (Z || (N!=V))    */
+	0xFFFF,			/* AL always              */
+	0			/* NV                     */
+};
+
+/* Check condition field either from ESR or from SPSR in thumb mode */
+static bool arch_failed_condition(struct trap_context *ctx)
+{
+	u32 class = ESR_EC(ctx->esr);
+	u32 icc = ESR_ICC(ctx->esr);
+	u32 cpsr = ctx->cpsr;
+	u32 flags = cpsr >> 28;
+	u32 cond;
+	/*
+	 * Trapped instruction is unconditional, already passed the condition
+	 * check, or is invalid
+	 */
+	if (class & 0x30 || class == 0)
+		return false;
+
+	/* Is condition field valid? */
+	if (icc & ESR_ICC_CV_BIT) {
+		cond = ESR_ICC_COND(icc);
+	} else {
+		/* This can happen in Thumb mode: examine IT state. */
+		unsigned long it = PSR_IT(cpsr);
+
+		/* it == 0 => unconditional. */
+		if (it == 0)
+			return false;
+
+		/* The cond for this insn works out as the top 4 bits. */
+		cond = (it >> 4);
+	}
+
+	/* Compare the apsr flags with the condition code */
+	if ((cc_map[cond] >> flags) & 1)
+		return false;
+
+	return true;
+}
+
+/*
+ * When exceptions occur while instructions are executed in Thumb IF-THEN
+ * blocks, the ITSTATE field of the CPSR is not advanced (updated), so we have
+ * to do this little bit of work manually. The fields map like this:
+ *
+ * IT[7:0] -> CPSR[26:25],CPSR[15:10]
+ */
+static void arch_advance_itstate(struct trap_context *ctx)
+{
+	unsigned long itbits, cond;
+	unsigned long cpsr = ctx->cpsr;
+
+	if (!(cpsr & PSR_IT_MASK(0xff)))
+		return;
+
+	itbits = PSR_IT(cpsr);
+	cond = itbits >> 5;
+
+	if ((itbits & 0x7) == 0)
+		/* One instruction left in the block, next itstate is 0 */
+		itbits = cond = 0;
+	else
+		itbits = (itbits << 1) & 0x1f;
+
+	itbits |= (cond << 5);
+	cpsr &= ~PSR_IT_MASK(0xff);
+	cpsr |= PSR_IT_MASK(itbits);
+
+	ctx->cpsr = cpsr;
+}
+
+static void arch_skip_instruction(struct trap_context *ctx)
+{
+	u32 instruction_length = ESR_IL(ctx->esr);
+
+	ctx->pc += (instruction_length ? 4 : 2);
+	arch_advance_itstate(ctx);
+}
 
 static void access_cell_reg(struct trap_context *ctx, u8 reg,
 				unsigned long *val, bool is_read)
@@ -107,6 +212,15 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 	exception_class = ESR_EC(ctx.esr);
 	ctx.regs = guest_regs->usr;
 
+	/*
+	 * On some implementations, instructions that fail their condition check
+	 * can trap.
+	 */
+	if (arch_failed_condition(&ctx)) {
+		arch_skip_instruction(&ctx);
+		goto restore_context;
+	}
+
 	if (trap_handlers[exception_class])
 		ret = trap_handlers[exception_class](cpu_data, &ctx);
 
@@ -116,5 +230,7 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 		while(1);
 	}
 
+restore_context:
+	arm_write_banked_reg(SPSR_hyp, ctx.cpsr);
 	arm_write_banked_reg(ELR_hyp, ctx.pc);
 }
