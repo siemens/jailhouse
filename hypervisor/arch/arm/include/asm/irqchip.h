@@ -81,6 +81,7 @@ void irqchip_handle_irq(struct per_cpu *cpu_data);
 int irqchip_inject_pending(struct per_cpu *cpu_data);
 int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
 int irqchip_remove_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
+int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject);
 
 #endif /* __ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_IRQCHIP_H */

@@ -20,6 +20,7 @@
 
 int arch_mmu_cell_init(struct cell *cell);
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data);
+void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
 void arch_handle_exit(struct per_cpu *cpu_data, struct registers *guest_regs);
 

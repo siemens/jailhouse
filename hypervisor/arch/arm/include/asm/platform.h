@@ -34,6 +34,8 @@
 #  include <asm/gic_v3.h>
 # endif /* GIC */
 
+# define MAINTENANCE_IRQ 25
+
 #endif /* CONFIG_ARCH_VEXPRESS */
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_PLATFORM_H */

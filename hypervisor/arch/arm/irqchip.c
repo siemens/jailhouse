@@ -108,6 +108,29 @@ int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
+int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
+{
+	struct pending_irq pending;
+
+	pending.virt_id = irq_id;
+	/* Priority must be less than ICC_PMR */
+	pending.priority = 0;
+
+	if (is_sgi(irq_id)) {
+		pending.hw = 0;
+		pending.type.sgi.maintenance = 0;
+		pending.type.sgi.cpuid = 0;
+	} else {
+		pending.hw = 1;
+		pending.type.irq = irq_id;
+	}
+
+	if (try_inject && irqchip.inject_irq(cpu_data, &pending) == 0)
+		return 0;
+
+	return irqchip_insert_pending(cpu_data, &pending);
+}
+
 /*
  * Only executed by `irqchip_inject_pending' on a CPU to inject its own stuff.
  */

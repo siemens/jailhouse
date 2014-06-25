@@ -10,10 +10,12 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/types.h>
+#include <asm/control.h>
 #include <asm/gic_common.h>
 #include <asm/irqchip.h>
 #include <asm/platform.h>
@@ -147,12 +149,111 @@ static int gic_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
+/*
+ * Handle the maintenance interrupt, the rest is injected into the cell.
+ * Return true when the IRQ has been handled by the hyp.
+ */
+static bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
+{
+	if (irqn == MAINTENANCE_IRQ) {
+		irqchip_inject_pending(cpu_data);
+		return true;
+	}
+
+	irqchip_set_pending(cpu_data, irqn, true);
+
+	return false;
+}
+
 static void gic_handle_irq(struct per_cpu *cpu_data)
 {
+	bool handled = false;
+	u32 irq_id;
+
+	while (1) {
+		/* Read ICC_IAR1: set 'active' state */
+		arm_read_sysreg(ICC_IAR1_EL1, irq_id);
+
+		if (irq_id == 0x3ff) /* Spurious IRQ */
+			break;
+
+		/* Handle IRQ */
+		if (is_sgi(irq_id)) {
+			arch_handle_sgi(cpu_data, irq_id);
+			handled = true;
+		} else {
+			handled = arch_handle_phys_irq(cpu_data, irq_id);
+		}
+
+		/*
+		 * Write ICC_EOIR1: drop priority, but stay active if handled is
+		 * false.
+		 * This allows to not be re-interrupted by a level-triggered
+		 * interrupt that needs handling in the guest (e.g. timer)
+		 */
+		arm_write_sysreg(ICC_EOIR1_EL1, irq_id);
+		/* Deactivate if necessary */
+		if (handled)
+			arm_write_sysreg(ICC_DIR_EL1, irq_id);
+	}
 }
 
 static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 {
+	int i;
+	int free_lr = -1;
+	u32 elsr;
+	u64 lr;
+
+	arm_read_sysreg(ICH_ELSR_EL2, elsr);
+	for (i = 0; i < gic_num_lr; i++) {
+		if ((elsr >> i) & 1) {
+			/* Entry is invalid, candidate for injection */
+			if (free_lr == -1)
+				free_lr = i;
+			continue;
+		}
+
+		/*
+		 * Entry is in use, check that it doesn't match the one we want
+		 * to inject.
+		 */
+		lr = gic_read_lr(i);
+
+		/*
+		 * A strict phys->virt id mapping is used for SPIs, so this test
+		 * should be sufficient.
+		 */
+		if ((u32)lr == irq->virt_id)
+			return -EINVAL;
+	}
+
+	if (free_lr == -1) {
+		u32 hcr;
+		/*
+		 * All list registers are in use, trigger a maintenance
+		 * interrupt once they are available again.
+		 */
+		arm_read_sysreg(ICH_HCR_EL2, hcr);
+		hcr |= ICH_HCR_UIE;
+		arm_write_sysreg(ICH_HCR_EL2, hcr);
+
+		return -EBUSY;
+	}
+
+	lr = irq->virt_id;
+	/* Only group 1 interrupts */
+	lr |= ICH_LR_GROUP_BIT;
+	lr |= ICH_LR_PENDING;
+	if (irq->hw) {
+		lr |= ICH_LR_HW_BIT;
+		lr |= (u64)irq->type.irq << ICH_LR_PHYS_ID_SHIFT;
+	} else if (irq->type.sgi.maintenance) {
+		lr |= ICH_LR_SGI_EOI;
+	}
+
+	gic_write_lr(free_lr, lr);
+
 	return 0;
 }
 
