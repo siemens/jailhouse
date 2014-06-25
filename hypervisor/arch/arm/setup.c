@@ -107,13 +107,7 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 }
 
 // catch missing symbols
-void arch_suspend_cpu(unsigned int cpu_id) {}
-void arch_resume_cpu(unsigned int cpu_id) {}
-void arch_reset_cpu(unsigned int cpu_id) {}
-void arch_park_cpu(unsigned int cpu_id) {}
 void arch_shutdown_cpu(unsigned int cpu_id) {}
-int arch_cell_create(struct cell *new_cell)
-{ return -ENOSYS; }
 void arch_flush_cell_vcpu_caches(struct cell *cell) {}
 void arch_cell_destroy(struct cell *new_cell) {}
 void arch_config_commit(struct cell *cell_added_removed) {}

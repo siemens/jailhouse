@@ -46,7 +46,14 @@ vmexit_common:
 	mov	r1, sp
 	bl	arch_handle_exit
 
-	add	sp, sp, #4
+	/*
+	 * Because the hypervisor may call vmreturn to reset the stack,
+	 * arch_handle_exit has to return with the guest registers in r0
+	 */
+.globl vmreturn
+vmreturn:
+	mov	sp, r0
+	add	sp, #4
 
 	/* Restore usr regs */
 	pop	{r0-r12, lr}

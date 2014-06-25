@@ -17,6 +17,7 @@
 #include <asm/percpu.h>
 
 #define SGI_INJECT	0
+#define SGI_CPU_OFF	1
 
 #ifndef __ASSEMBLY__
 
@@ -24,7 +25,10 @@ int arch_mmu_cell_init(struct cell *cell);
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data);
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
-void arch_handle_exit(struct per_cpu *cpu_data, struct registers *guest_regs);
+struct registers* arch_handle_exit(struct per_cpu *cpu_data,
+				   struct registers *regs);
+
+void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
 
 #endif /* !__ASSEMBLY__ */
 

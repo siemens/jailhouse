@@ -34,6 +34,9 @@
 #define PSR_IT_MASK(it)	(((it) & 0x3) << 25 | ((it) & 0xfc) << 8)
 #define PSR_IT(psr)	(((psr) >> 25 & 0x3) | ((psr) >> 8 & 0xfc))
 
+#define RESET_PSR	(PSR_I_BIT | PSR_F_BIT | PSR_A_BIT | PSR_SVC_MODE \
+			| PSR_32_BIT)
+
 #define MPIDR_CPUID_MASK	0x00ffffff
 
 #define PFR1_VIRT(pfr)		((pfr) >> 12 & 0xf)

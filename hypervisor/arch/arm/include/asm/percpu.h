@@ -59,7 +59,6 @@ struct per_cpu {
 	__attribute__((aligned(8))) struct psci_mbox psci_mbox;
 
 	bool flush_caches;
-	bool shutdown_cpu;
 	int shutdown_state;
 	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -86,6 +85,13 @@ static inline struct per_cpu *per_cpu(unsigned int cpu)
 	extern u8 __page_pool[];
 
 	return (struct per_cpu *)(__page_pool + (cpu << PERCPU_SIZE_SHIFT));
+}
+
+static inline struct registers *guest_regs(struct per_cpu *cpu_data)
+{
+	/* Assumes that the trap handler is entered with an empty stack */
+	return (struct registers *)(cpu_data->stack + PERCPU_STACK_END
+			- sizeof(struct registers));
 }
 
 /* Validate defines */
