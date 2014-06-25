@@ -11,6 +11,7 @@
  */
 
 #include <asm/head.h>
+#include <asm/processor.h>
 #include <asm/sysregs.h>
 
 	.text
@@ -23,16 +24,29 @@ hyp_vectors:
 	b	.
 	b	.
 	b	hyp_trap
-	b	.
+	b	hyp_irq
 	b	.
 
-hyp_trap:
+.macro handle_vmexit exit_reason
 	/* Fill the struct registers. Should comply with NUM_USR_REGS */
 	push	{r0-r12, lr}
+	mov	r0, #\exit_reason
+	b	vmexit_common
+.endm
+
+hyp_irq:
+	handle_vmexit EXIT_REASON_IRQ
+hyp_trap:
+	handle_vmexit EXIT_REASON_TRAP
+
+vmexit_common:
+	push	{r0}
 
 	arm_read_sysreg(TPIDR_EL2, r0)
 	mov	r1, sp
-	bl	arch_handle_trap
+	bl	arch_handle_exit
+
+	add	sp, sp, #4
 
 	/* Restore usr regs */
 	pop	{r0-r12, lr}

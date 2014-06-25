@@ -126,11 +126,15 @@
 #define ESR_EC_DABT		0x24
 #define ESR_EC_DABT_HYP		0x25
 
+#define EXIT_REASON_TRAP	0x1
+#define EXIT_REASON_IRQ		0x2
+
 #define NUM_USR_REGS		14
 
 #ifndef __ASSEMBLY__
 
 struct registers {
+	unsigned long exit_reason;
 	/* r0 - r12 and lr. The other registers are banked. */
 	unsigned long usr[NUM_USR_REGS];
 };
