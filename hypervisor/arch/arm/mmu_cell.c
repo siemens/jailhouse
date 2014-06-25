@@ -68,6 +68,11 @@ int arch_mmu_cell_init(struct cell *cell)
 	return 0;
 }
 
+void arch_mmu_cell_destroy(struct cell *cell)
+{
+	page_free(&mem_pool, cell->arch.mm.root_table, 1);
+}
+
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data)
 {
 	struct cell *cell = cpu_data->cell;

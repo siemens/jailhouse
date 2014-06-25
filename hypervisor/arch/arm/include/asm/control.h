@@ -22,9 +22,12 @@
 #ifndef __ASSEMBLY__
 
 int arch_mmu_cell_init(struct cell *cell);
+void arch_mmu_cell_destroy(struct cell *cell);
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data);
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
+int arch_spin_init(void);
+unsigned long arch_cpu_spin(void);
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs);
 

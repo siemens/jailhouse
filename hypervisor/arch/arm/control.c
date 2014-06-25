@@ -20,6 +20,7 @@
 static void arch_reset_self(struct per_cpu *cpu_data)
 {
 	int err;
+	unsigned long reset_address;
 	struct registers *regs = guest_regs(cpu_data);
 
 	err = arch_mmu_cpu_cell_init(cpu_data);
@@ -36,7 +37,13 @@ static void arch_reset_self(struct per_cpu *cpu_data)
 	if (err)
 		printk("IRQ setup failed\n");
 
-	arm_write_banked_reg(ELR_hyp, 0);
+	if (cpu_data->cell == &root_cell)
+		/* Wait for the driver to call cpu_up */
+		reset_address = arch_cpu_spin();
+	else
+		reset_address = 0;
+
+	arm_write_banked_reg(ELR_hyp, reset_address);
 	arm_write_banked_reg(SPSR_hyp, RESET_PSR);
 	memset(regs, 0, sizeof(struct registers));
 
@@ -139,4 +146,14 @@ int arch_cell_create(struct cell *cell)
 		return err;
 
 	return 0;
+}
+
+void arch_cell_destroy(struct cell *cell)
+{
+	unsigned int cpu;
+
+	arch_mmu_cell_destroy(cell);
+
+	for_each_cpu(cpu, cell->cpu_set)
+		arch_reset_cpu(cpu);
 }

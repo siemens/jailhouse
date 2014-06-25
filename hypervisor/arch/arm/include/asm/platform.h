@@ -35,7 +35,14 @@
 # endif /* GIC */
 
 # define MAINTENANCE_IRQ 25
+# define HOTPLUG_MBOX	((void *)0x1c010030)
 
 #endif /* CONFIG_ARCH_VEXPRESS */
+
+#define HOTPLUG_SPIN	1
+/*
+#define HOTPLUG_PSCI	1
+*/
+
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_PLATFORM_H */
