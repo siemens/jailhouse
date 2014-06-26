@@ -11,6 +11,7 @@
  */
 
 #include <asm/control.h>
+#include <asm/irqchip.h>
 #include <asm/percpu.h>
 #include <asm/platform.h>
 #include <asm/setup.h>
@@ -74,6 +75,14 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	arm_write_sysreg(HCR, hcr);
 
 	err = arch_mmu_cpu_cell_init(cpu_data);
+	if (err)
+		return err;
+
+	err = irqchip_init();
+	if (err)
+		return err;
+
+	err = irqchip_cpu_init(cpu_data);
 
 	return err;
 }
