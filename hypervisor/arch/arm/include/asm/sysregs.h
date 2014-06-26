@@ -32,6 +32,11 @@
 #define MPIDR_EL1	SYSREG_32(0, c0, c0, 5)
 #define ID_PFR0_EL1	SYSREG_32(0, c0, c1, 0)
 #define ID_PFR1_EL1	SYSREG_32(0, c0, c1, 1)
+#define SCTLR_EL1	SYSREG_32(0, c1, c0, 0)
+#define ACTLR_EL1	SYSREG_32(0, c1, c0, 1)
+#define CPACR_EL1	SYSREG_32(0, c1, c0, 2)
+#define CONTEXTIDR_EL1	SYSREG_32(0, c13, c0, 1)
+#define CSSELR_EL1	SYSREG_32(2, c0, c0, 0)
 #define SCTLR_EL2	SYSREG_32(4, c1, c0, 0)
 #define ESR_EL2		SYSREG_32(4, c5, c2, 0)
 #define TPIDR_EL2	SYSREG_32(4, c13, c0, 2)
@@ -40,14 +45,48 @@
 #define VTTBR_EL2	SYSREG_64(6, c2)
 #define VTCR_EL2	SYSREG_32(4, c2, c1, 2)
 
+#define TTBR0_EL1	SYSREG_64(0, c2)
+#define TTBR1_EL1	SYSREG_64(1, c2)
 #define PAR_EL1		SYSREG_64(0, c7)
 
-/* AArch32-specific registers */
+#define CNTKCTL_EL1	SYSREG_32(0, c14, c1, 0)
+#define CNTP_TVAL_EL0	SYSREG_32(0, c14, c2, 0)
+#define CNTP_CTL_EL0	SYSREG_32(0, c14, c2, 1)
+#define CNTP_CVAL_EL0	SYSREG_64(2, c14)
+#define CNTV_TVAL_EL0	SYSREG_32(0, c14, c3, 0)
+#define CNTV_CTL_EL0	SYSREG_32(0, c14, c3, 1)
+#define CNTV_CVAL_EL0	SYSREG_64(3, c14)
+
+/*
+ * AArch32-specific registers: they are 64bit on AArch64, and will need some
+ * helpers if used frequently.
+ */
+#define TTBCR		SYSREG_32(0, c2, c0, 2)
+#define DACR		SYSREG_32(0, c3, c0, 0)
+#define VBAR		SYSREG_32(0, c12, c0, 0)
 #define HCR		SYSREG_32(4, c1, c1, 0)
 #define HCR2		SYSREG_32(4, c1, c1, 4)
 #define HMAIR0		SYSREG_32(4, c10, c2, 0)
 #define HMAIR1		SYSREG_32(4, c10, c2, 1)
 #define HVBAR		SYSREG_32(4, c12, c0, 0)
+
+/* Mapped to ESR, IFSR32 and FAR in AArch64 */
+#define DFSR		SYSREG_32(0, c5, c0, 0)
+#define DFAR		SYSREG_32(0, c6, c0, 0)
+#define IFSR		SYSREG_32(0, c5, c0, 1)
+#define IFAR		SYSREG_32(0, c6, c0, 2)
+#define ADFSR		SYSREG_32(0, c5, c1, 0)
+#define AIFSR		SYSREG_32(0, c5, c1, 1)
+
+/* Mapped to MAIR_EL1 */
+#define MAIR0		SYSREG_32(0, c10, c2, 0)
+#define MAIR1		SYSREG_32(0, c10, c2, 1)
+#define AMAIR0		SYSREG_32(0, c10, c3, 0)
+#define AMAIR1		SYSREG_32(0, c10, c3, 1)
+
+#define TPIDRURW	SYSREG_32(0, c13, c0, 2)
+#define TPIDRURO	SYSREG_32(0, c13, c0, 3)
+#define TPIDRPRW	SYSREG_32(0, c13, c0, 4)
 
 #define ATS1HR		SYSREG_32(4, c7, c8, 0)
 
