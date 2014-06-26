@@ -10,6 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <asm/percpu.h>
+#include <asm/platform.h>
 #include <asm/setup.h>
 #include <asm/sysregs.h>
 #include <jailhouse/entry.h>
@@ -18,7 +20,7 @@
 
 int arch_init_early(void)
 {
-	return -ENOSYS;
+	return arch_map_device(UART_BASE_PHYS, UART_BASE_VIRT, PAGE_SIZE);
 }
 
 int arch_cpu_init(struct per_cpu *cpu_data)

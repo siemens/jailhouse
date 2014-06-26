@@ -54,5 +54,25 @@ cpu_switch_el2(unsigned long phys_bootstrap, virt2phys_t virt2phys)
 	: "cc", "memory", "r0", "r1", "r2", "r3");
 }
 
+static inline void  __attribute__((always_inline))
+cpu_switch_phys2virt(phys2virt_t phys2virt)
+{
+	/* phys2virt is allowed to touch the stack */
+	asm volatile(
+	"mov	r0, lr\n"
+	"blx	%0\n"
+	/* Save virt_lr */
+	"push	{r0}\n"
+	/* Translate phys_sp */
+	"mov	r0, sp\n"
+	"blx	%0\n"
+	/* Jump back to virtual addresses */
+	"mov	sp, r0\n"
+	"pop	{pc}\n"
+	:
+	: "r" (phys2virt)
+	: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
+}
+
 #endif /* !__ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_SETUP_MMU_H */

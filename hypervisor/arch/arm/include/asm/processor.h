@@ -13,6 +13,8 @@
 #ifndef _JAILHOUSE_ASM_PROCESSOR_H
 #define _JAILHOUSE_ASM_PROCESSOR_H
 
+#include <jailhouse/utils.h>
+
 #define PSR_MODE_MASK	0xf
 #define PSR_USR_MODE	0x0
 #define PSR_FIQ_MODE	0x1
@@ -31,6 +33,35 @@
 #define PSR_A_BIT	(1 << 8)
 
 #define MPIDR_CPUID_MASK	0x00ffffff
+
+#define SCTLR_M_BIT	(1 << 0)
+#define SCTLR_A_BIT	(1 << 1)
+#define SCTLR_C_BIT	(1 << 2)
+#define SCTLR_CP15B_BIT (1 << 5)
+#define SCTLR_ITD_BIT	(1 << 7)
+#define SCTLR_SED_BIT	(1 << 8)
+#define SCTLR_I_BIT	(1 << 12)
+#define SCTLR_V_BIT	(1 << 13)
+#define SCTLR_nTWI	(1 << 16)
+#define SCTLR_nTWE	(1 << 18)
+#define SCTLR_WXN_BIT	(1 << 19)
+#define SCTLR_UWXN_BIT	(1 << 20)
+#define SCTLR_FI_BIT	(1 << 21)
+#define SCTLR_EE_BIT	(1 << 25)
+#define SCTLR_TRE_BIT	(1 << 28)
+#define SCTLR_AFE_BIT	(1 << 29)
+#define SCTLR_TE_BIT	(1 << 30)
+
+#define PAR_F_BIT	0x1
+#define PAR_FST_SHIFT	1
+#define PAR_FST_MASK	0x3f
+#define PAR_SHA_SHIFT	7
+#define PAR_SHA_MASK	0x3
+#define PAR_NS_BIT	(0x1 << 9)
+#define PAR_LPAE_BIT	(0x1 << 11)
+#define PAR_PA_MASK	BIT_MASK(39, 12)
+#define PAR_ATTR_SHIFT	56
+#define PAR_ATTR_MASK	0xff
 
 #ifndef __ASSEMBLY__
 

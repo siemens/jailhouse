@@ -30,9 +30,46 @@
  * (Use the AArch64 names to ease the compatibility work)
  */
 #define MPIDR_EL1	SYSREG_32(0, c0, c0, 5)
+#define SCTLR_EL2	SYSREG_32(4, c1, c0, 0)
 #define TPIDR_EL2	SYSREG_32(4, c13, c0, 2)
+#define TTBR0_EL2	SYSREG_64(4, c2)
+#define TCR_EL2		SYSREG_32(4, c2, c0, 2)
+#define VTTBR_EL2	SYSREG_64(6, c2)
+#define VTCR_EL2	SYSREG_32(4, c2, c1, 2)
 
+#define PAR_EL1		SYSREG_64(0, c7)
+
+/* AArch32-specific registers */
+#define HMAIR0		SYSREG_32(4, c10, c2, 0)
+#define HMAIR1		SYSREG_32(4, c10, c2, 1)
 #define HVBAR		SYSREG_32(4, c12, c0, 0)
+
+#define ATS1HR		SYSREG_32(4, c7, c8, 0)
+
+#define TLBIALL		SYSREG_32(0, c8, c7, 0)
+#define TLBIALLIS	SYSREG_32(0, c8, c3, 0)
+#define TLBIASID	SYSREG_32(0, c8, c7, 2)
+#define TLBIASIDIS	SYSREG_32(0, c8, c3, 2)
+#define TLBIMVA		SYSREG_32(0, c8, c7, 1)
+#define TLBIMVAIS	SYSREG_32(0, c8, c3, 1)
+#define TLBIMVAL	SYSREG_32(0, c8, c7, 5)
+#define TLBIMVALIS	SYSREG_32(0, c8, c3, 5)
+#define TLBIMVAA	SYSREG_32(0, c8, c7, 3)
+#define TLBIMVAAIS	SYSREG_32(0, c8, c3, 3)
+#define TLBIMVAAL	SYSREG_32(0, c8, c7, 7)
+#define TLBIMVAALIS	SYSREG_32(0, c8, c3, 7)
+#define TLBIALLH	SYSREG_32(4, c8, c7, 0)
+#define TLBIALLHIS	SYSREG_32(4, c8, c3, 0)
+#define TLBIALLNSNH	SYSREG_32(4, c8, c7, 4)
+#define TLBIALLNSNHIS	SYSREG_32(4, c8, c3, 4)
+#define TLBIMVAH	SYSREG_32(4, c8, c7, 1)
+#define TLBIMVAHIS	SYSREG_32(4, c8, c3, 1)
+#define TLBIMVALH	SYSREG_32(4, c8, c7, 5)
+#define TLBIMVALHIS	SYSREG_32(4, c8, c3, 5)
+#define TLBIIPAS2	SYSREG_32(4, c8, c4, 1)
+#define TLBIIPAS2IS	SYSREG_32(4, c8, c0, 1)
+#define TLBIIPAS2L	SYSREG_32(4, c8, c5, 5)
+#define TLBIIPAS2LIS	SYSREG_32(4, c8, c0, 5)
 
 #define SYSREG_32(...) 32, __VA_ARGS__
 #define SYSREG_64(...) 64, __VA_ARGS__
