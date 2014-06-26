@@ -98,9 +98,41 @@
 #define PAR_ATTR_SHIFT	56
 #define PAR_ATTR_MASK	0xff
 
+/* exception class */
+#define ESR_EC_SHIFT		26
+#define ESR_EC(hsr)		((hsr) >> ESR_EC_SHIFT & 0x3f)
+/* instruction length */
+#define ESR_IL_SHIFT		25
+#define ESR_IL(hsr)		((hsr) >> ESR_IL_SHIFT & 0x1)
+/* Instruction specific */
+#define ESR_ICC_MASK		0x1ffffff
+#define ESR_ICC(hsr)		((hsr) & ESR_ICC_MASK)
+/* Exception classes values */
+#define ESR_EC_UNK		0x00
+#define ESR_EC_WFI		0x01
+#define ESR_EC_CP15_32		0x03
+#define ESR_EC_CP15_64		0x04
+#define ESR_EC_CP14_32		0x05
+#define ESR_EC_CP14_LC		0x06
+#define ESR_EC_HCPTR		0x07
+#define ESR_EC_CP10		0x08
+#define ESR_EC_CP14_64		0x0c
+#define ESR_EC_SVC_HYP		0x11
+#define ESR_EC_HVC		0x12
+#define ESR_EC_SMC		0x13
+#define ESR_EC_IABT		0x20
+#define ESR_EC_IABT_HYP		0x21
+#define ESR_EC_PCALIGN		0x22
+#define ESR_EC_DABT		0x24
+#define ESR_EC_DABT_HYP		0x25
+
+#define NUM_USR_REGS		14
+
 #ifndef __ASSEMBLY__
 
 struct registers {
+	/* r0 - r12 and lr. The other registers are banked. */
+	unsigned long usr[NUM_USR_REGS];
 };
 
 #define dmb(domain)	asm volatile("dmb " #domain "\n" ::: "memory")

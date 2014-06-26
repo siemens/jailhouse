@@ -11,6 +11,7 @@
  */
 
 #include <asm/head.h>
+#include <asm/sysregs.h>
 
 	.text
 	.globl hyp_vectors
@@ -21,6 +22,18 @@ hyp_vectors:
 	b	.
 	b	.
 	b	.
+	b	hyp_trap
 	b	.
 	b	.
-	b	.
+
+hyp_trap:
+	/* Fill the struct registers. Should comply with NUM_USR_REGS */
+	push	{r0-r12, lr}
+
+	arm_read_sysreg(TPIDR_EL2, r0)
+	mov	r1, sp
+	bl	arch_handle_trap
+
+	/* Restore usr regs */
+	pop	{r0-r12, lr}
+	eret
