@@ -87,8 +87,8 @@ struct vtd_entry {
 # define VTD_GSTS_TES			(1UL << 31)
 #define VTD_RTADDR_REG			0x20
 #define VTD_CCMD_REG			0x28
-# define VTD_CCMD_CIRG_GLOBAL		(1UL << 60)
-# define VTD_CCMD_CIRG_DOMAIN		(2UL << 60)
+# define VTD_CCMD_CIRG_GLOBAL		(1UL << 61)
+# define VTD_CCMD_CIRG_DOMAIN		(2UL << 61)
 # define VTD_CCMD_ICC			(1UL << 63)
 #define VTD_FSTS_REG			0x34
 # define VTD_FSTS_PFO			(1UL << 0)
@@ -110,8 +110,8 @@ struct vtd_entry {
 # define VTD_IOTLB_DID_SHIFT		32
 # define VTD_IOTLB_DW			(1UL << 48)
 # define VTD_IOTLB_DR			(1UL << 49)
-# define VTD_IOTLB_IIRG_GLOBAL		(1UL << 57)
-# define VTD_IOTLB_IIRG_DOMAIN		(2UL << 57)
+# define VTD_IOTLB_IIRG_GLOBAL		(1UL << 60)
+# define VTD_IOTLB_IIRG_DOMAIN		(2UL << 60)
 # define VTD_IOTLB_IVT			(1UL << 63)
 # define VTD_IOTLB_R_MASK		BIT_MASK(31, 0)
 
