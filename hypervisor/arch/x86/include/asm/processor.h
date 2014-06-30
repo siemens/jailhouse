@@ -17,6 +17,7 @@
 
 #define X86_FEATURE_VMX					(1 << 5)
 #define X86_FEATURE_GBPAGES				(1 << 26)
+#define X86_FEATURE_RDTSCP				(1 << 27)
 
 #define X86_RFLAGS_VM					(1 << 17)
 
