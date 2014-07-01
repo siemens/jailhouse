@@ -101,6 +101,22 @@ static void vtd_flush_domain_caches(unsigned int did)
 	}
 }
 
+static void vtd_update_gcmd_reg(void *reg_base, u32 mask, unsigned int set)
+{
+	u32 val = mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_USED_CTRLS;
+
+	if (set)
+		val |= mask;
+	else
+		val &= ~mask;
+	mmio_write32(reg_base + VTD_GCMD_REG, val);
+
+	/* Note: This test is built on the fact related bits are at the same
+	 * position in VTD_GCMD_REG and VTD_GSTS_REG. */
+	while ((mmio_read32(reg_base + VTD_GSTS_REG) & mask) != (val & mask))
+		cpu_relax();
+}
+
 static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
 	*pte = (next_pt & 0x000ffffffffff000UL) | VTD_PAGE_READ |
@@ -208,16 +224,12 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 	/* Set root entry table pointer */
 	mmio_write64(reg_base + VTD_RTADDR_REG,
 		     page_map_hvirt2phys(root_entry_table));
-	mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_SRTP);
-	while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_RTPS))
-		cpu_relax();
+	vtd_update_gcmd_reg(reg_base, VTD_GCMD_SRTP, 1);
 
 	/* Setup and activate invalidation queue */
 	mmio_write64(reg_base + VTD_IQT_REG, 0);
 	mmio_write64(reg_base + VTD_IQA_REG, page_map_hvirt2phys(inv_queue));
-	mmio_write32(reg_base + VTD_GCMD_REG, VTD_GCMD_QIE);
-	while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_QIES))
-		cpu_relax();
+	vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 1);
 
 	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_context);
 	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_iotlb);
@@ -282,7 +294,7 @@ int vtd_init(void)
 		if (!(mmio_read64(reg_base + VTD_ECAP_REG) & VTD_ECAP_QI))
 			return -EIO;
 
-		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
+		if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_USED_CTRLS)
 			return -EBUSY;
 
 		num_did = 1 << (4 + (caps & VTD_CAP_NUM_DID_MASK) * 2);
@@ -450,12 +462,8 @@ void vtd_config_commit(struct cell *cell_added_removed)
 	if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
 		return;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		mmio_write32(reg_base + VTD_GCMD_REG,
-			     VTD_GCMD_TE | VTD_GCMD_QIE);
-		while (!(mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES))
-			cpu_relax();
-	}
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE)
+		vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 1);
 }
 
 void vtd_shutdown(void)
@@ -464,8 +472,7 @@ void vtd_shutdown(void)
 	unsigned int n;
 
 	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		mmio_write32(reg_base + VTD_GCMD_REG, 0);
-		while (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
-			cpu_relax();
+		vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 0);
+		vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 0);
 	}
 }

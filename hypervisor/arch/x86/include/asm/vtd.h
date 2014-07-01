@@ -58,8 +58,9 @@ struct vtd_entry {
 # define VTD_GCMD_TE			(1UL << 31)
 #define VTD_GSTS_REG			0x1c
 # define VTD_GSTS_QIES			(1UL << 26)
-# define VTD_GSTS_RTPS			(1UL << 30)
 # define VTD_GSTS_TES			(1UL << 31)
+# define VTD_GSTS_USED_CTRLS \
+	(VTD_GSTS_QIES | VTD_GSTS_TES)
 #define VTD_RTADDR_REG			0x20
 #define VTD_FSTS_REG			0x34
 # define VTD_FSTS_PFO			(1UL << 0)
