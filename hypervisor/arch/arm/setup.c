@@ -121,5 +121,3 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 // catch missing symbols
 void arch_shutdown_cpu(unsigned int cpu_id) {}
 void arch_shutdown(void) {}
-void arch_panic_stop(void) {__builtin_unreachable();}
-void arch_panic_park(void) {}

@@ -19,13 +19,13 @@
 	.align 5
 hyp_vectors:
 	b	.
-	b	.
-	b	.
-	b	.
-	b	.
+	b	hyp_undef
+	b	hyp_hvc
+	b	hyp_pabt
+	b	hyp_dabt
 	b	hyp_trap
 	b	hyp_irq
-	b	.
+	b	hyp_fiq
 
 .macro handle_vmexit exit_reason
 	/* Fill the struct registers. Should comply with NUM_USR_REGS */
@@ -34,8 +34,19 @@ hyp_vectors:
 	b	vmexit_common
 .endm
 
+hyp_undef:
+	handle_vmexit EXIT_REASON_UNDEF
+hyp_hvc:
+	handle_vmexit EXIT_REASON_HVC
+hyp_pabt:
+	handle_vmexit EXIT_REASON_PABT
+hyp_dabt:
+	handle_vmexit EXIT_REASON_DABT
+
 hyp_irq:
 	handle_vmexit EXIT_REASON_IRQ
+hyp_fiq:
+	handle_vmexit EXIT_REASON_FIQ
 hyp_trap:
 	handle_vmexit EXIT_REASON_TRAP
 

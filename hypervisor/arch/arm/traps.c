@@ -188,6 +188,22 @@ static void access_cell_reg(struct trap_context *ctx, u8 reg,
 	}
 }
 
+static void dump_guest_regs(struct per_cpu *cpu_data, struct trap_context *ctx)
+{
+	u8 reg;
+	unsigned long reg_val;
+
+	panic_printk("pc=0x%08x cpsr=0x%08x esr=0x%08x\n", ctx->pc, ctx->cpsr,
+			ctx->esr);
+	for (reg = 0; reg < 15; reg++) {
+		access_cell_reg(ctx, reg, &reg_val, true);
+		panic_printk("r%d=0x%08x ", reg, reg_val);
+		if ((reg + 1) % 4 == 0)
+			panic_printk("\n");
+	}
+	panic_printk("\n");
+}
+
 static int arch_handle_hvc(struct per_cpu *cpu_data, struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
@@ -257,10 +273,14 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 	if (trap_handlers[exception_class])
 		ret = trap_handlers[exception_class](cpu_data, &ctx);
 
-	if (ret != TRAP_HANDLED) {
-		panic_printk("CPU%d: Unhandled HYP trap, syndrome 0x%x\n",
-				cpu_data->cpu_id, ctx.esr);
-		while(1);
+	switch (ret) {
+	case TRAP_UNHANDLED:
+	case TRAP_FORBIDDEN:
+		panic_printk("FATAL: %s on CPU%d\n", (ret == TRAP_UNHANDLED ?
+				"unhandled trap" : "forbidden access"),
+				cpu_data->cpu_id);
+		dump_guest_regs(cpu_data, &ctx);
+		panic_park();
 	}
 
 restore_context:

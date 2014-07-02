@@ -142,8 +142,13 @@
 #define ESR_ICC_CV_BIT		(1 << 24)
 #define ESR_ICC_COND(icc)	((icc) >> 20 & 0xf)
 
-#define EXIT_REASON_TRAP	0x1
-#define EXIT_REASON_IRQ		0x2
+#define EXIT_REASON_UNDEF	0x1
+#define EXIT_REASON_HVC		0x2
+#define EXIT_REASON_PABT	0x3
+#define EXIT_REASON_DABT	0x4
+#define EXIT_REASON_TRAP	0x5
+#define EXIT_REASON_IRQ		0x6
+#define EXIT_REASON_FIQ		0x7
 
 #define NUM_USR_REGS		14
 
