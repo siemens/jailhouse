@@ -87,5 +87,11 @@ static inline void access_usr_reg(struct trap_context *ctx, u8 reg,
 		ctx->regs[reg] = *val;
 }
 
+void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
+		     bool is_read);
+void arch_skip_instruction(struct trap_context *ctx);
+
+int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx);
+
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_TRAPS_H */

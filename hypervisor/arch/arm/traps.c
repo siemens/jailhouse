@@ -115,7 +115,7 @@ static void arch_advance_itstate(struct trap_context *ctx)
 	ctx->cpsr = cpsr;
 }
 
-static void arch_skip_instruction(struct trap_context *ctx)
+void arch_skip_instruction(struct trap_context *ctx)
 {
 	u32 instruction_length = ESR_IL(ctx->esr);
 
@@ -123,8 +123,8 @@ static void arch_skip_instruction(struct trap_context *ctx)
 	arch_advance_itstate(ctx);
 }
 
-static void access_cell_reg(struct trap_context *ctx, u8 reg,
-				unsigned long *val, bool is_read)
+void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
+		     bool is_read)
 {
 	unsigned long mode = ctx->cpsr & PSR_MODE_MASK;
 
@@ -247,6 +247,7 @@ static const trap_handler trap_handlers[38] =
 {
 	[ESR_EC_CP15_64]	= arch_handle_cp15_64,
 	[ESR_EC_HVC]		= arch_handle_hvc,
+	[ESR_EC_DABT]		= arch_handle_dabt,
 };
 
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)

@@ -32,6 +32,8 @@
 #define PSR_F_BIT	(1 << 6)
 #define PSR_I_BIT	(1 << 7)
 #define PSR_A_BIT	(1 << 8)
+#define PSR_E_BIT	(1 << 9)
+#define PSR_J_BIT	(1 << 24)
 #define PSR_IT_MASK(it)	(((it) & 0x3) << 25 | ((it) & 0xfc) << 8)
 #define PSR_IT(psr)	(((psr) >> 25 & 0x3) | ((psr) >> 8 & 0xfc))
 
