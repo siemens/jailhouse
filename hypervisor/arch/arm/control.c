@@ -89,7 +89,7 @@ static void arch_reset_el1(struct registers *regs)
 	arm_write_sysreg(TPIDRPRW, 0);
 }
 
-static void arch_reset_self(struct per_cpu *cpu_data)
+void arch_reset_self(struct per_cpu *cpu_data)
 {
 	int err;
 	unsigned long reset_address;

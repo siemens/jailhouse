@@ -13,6 +13,17 @@
 #include <asm/head.h>
 #include <asm/psci.h>
 
+	.arch_extension sec
+	.globl smc
+	/*
+	 * Since we trap all SMC instructions, it may be useful to forward them
+	 * when it isn't a PSCI call. The shutdown code will also have to issue
+	 * a real PSCI_OFF call on secondary CPUs.
+	 */
+smc:
+	smc	#0
+	bx	lr
+
 	.global _psci_cpu_off
 	/* r0: struct psci_mbox* */
 _psci_cpu_off:

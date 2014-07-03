@@ -11,8 +11,10 @@
  */
 
 #include <asm/control.h>
+#include <asm/percpu.h>
 #include <asm/psci.h>
 #include <asm/traps.h>
+#include <jailhouse/control.h>
 
 void _psci_cpu_off(struct psci_mbox *);
 long _psci_cpu_on(struct psci_mbox *, unsigned long, unsigned long);
@@ -71,4 +73,76 @@ int psci_wait_cpu_stopped(unsigned int cpu_id)
 	} while (1);
 
 	return -EBUSY;
+}
+
+static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
+				struct trap_context *ctx)
+{
+	unsigned int target = ctx->regs[1];
+	unsigned int cpu;
+	struct psci_mbox *mbox;
+
+	cpu = arm_cpu_virt2phys(cpu_data->cell, target);
+	if (cpu == -1)
+		/* Virtual id not in set */
+		return PSCI_DENIED;
+
+	mbox = &(per_cpu(cpu)->guest_mbox);
+	mbox->entry = ctx->regs[2];
+	mbox->context = ctx->regs[3];
+
+	return psci_resume(cpu);
+}
+
+/* Returns the secondary address set by the guest */
+unsigned long psci_emulate_spin(struct per_cpu *cpu_data)
+{
+	struct psci_mbox *mbox = &(cpu_data->guest_mbox);
+
+	mbox->entry = 0;
+
+	/* Wait for emulate_cpu_on or a trapped mmio to the mbox */
+	while (mbox->entry == 0)
+		psci_suspend(cpu_data);
+
+	return mbox->entry;
+}
+
+int psci_cell_init(struct cell *cell)
+{
+	unsigned int cpu;
+
+	for_each_cpu(cpu, cell->cpu_set) {
+		per_cpu(cpu)->guest_mbox.entry = 0;
+		per_cpu(cpu)->guest_mbox.context = 0;
+	}
+
+	return 0;
+}
+
+long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx)
+{
+	u32 function_id = ctx->regs[0];
+
+	switch (function_id) {
+	case PSCI_VERSION:
+		/* Major[31:16], minor[15:0] */
+		return 2;
+
+	case PSCI_CPU_OFF:
+		/*
+		 * The reset function will take care of calling
+		 * psci_emulate_spin
+		 */
+		arch_reset_self(cpu_data);
+
+		/* Not reached */
+		return 0;
+
+	case PSCI_CPU_ON_32:
+		return psci_emulate_cpu_on(cpu_data, ctx);
+
+	default:
+		return PSCI_NOT_SUPPORTED;
+	}
 }

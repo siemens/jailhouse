@@ -171,6 +171,8 @@ struct registers {
 #define wfi()		asm volatile("wfi\n")
 #define sev()		asm volatile("sev\n")
 
+unsigned int smc(unsigned int r0, ...);
+
 static inline void cpu_relax(void)
 {
 	asm volatile("" : : : "memory");

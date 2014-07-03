@@ -37,6 +37,7 @@ int arch_spin_init(void);
 unsigned long arch_cpu_spin(void);
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs);
+void arch_reset_self(struct per_cpu *cpu_data);
 
 void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
 

@@ -17,6 +17,7 @@
 #include <asm/control.h>
 #include <asm/gic_common.h>
 #include <asm/platform.h>
+#include <asm/psci.h>
 #include <asm/traps.h>
 #include <asm/sysregs.h>
 #include <jailhouse/printk.h>
@@ -204,11 +205,28 @@ static void dump_guest_regs(struct per_cpu *cpu_data, struct trap_context *ctx)
 	panic_printk("\n");
 }
 
+static int arch_handle_smc(struct per_cpu *cpu_data, struct trap_context *ctx)
+{
+	unsigned long *regs = ctx->regs;
+
+	if (IS_PSCI_FN(regs[0]))
+		regs[0] = psci_dispatch(cpu_data, ctx);
+	else
+		regs[0] = smc(regs[0], regs[1], regs[2], regs[3]);
+
+	arch_skip_instruction(ctx);
+
+	return TRAP_HANDLED;
+}
+
 static int arch_handle_hvc(struct per_cpu *cpu_data, struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
-	regs[0] = hypercall(regs[0], regs[1], regs[2]);
+	if (IS_PSCI_FN(regs[0]))
+		regs[0] = psci_dispatch(cpu_data, ctx);
+	else
+		regs[0] = hypercall(regs[0], regs[1], regs[2]);
 
 	return TRAP_HANDLED;
 }
@@ -247,6 +265,7 @@ static const trap_handler trap_handlers[38] =
 {
 	[ESR_EC_CP15_64]	= arch_handle_cp15_64,
 	[ESR_EC_HVC]		= arch_handle_hvc,
+	[ESR_EC_SMC]		= arch_handle_smc,
 	[ESR_EC_DABT]		= arch_handle_dabt,
 };
 

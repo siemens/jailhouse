@@ -39,6 +39,8 @@
 #define PSCI_NOT_PRESENT	(-7)
 #define PSCI_DISABLED		(-8)
 
+#define IS_PSCI_FN(hvc)		((((hvc) >> 24) & 0x84) == 0x84)
+
 #define PSCI_INVALID_ADDRESS	0xffffffff
 
 #ifndef __ASSEMBLY__
@@ -59,6 +61,11 @@ int psci_wait_cpu_stopped(unsigned int cpu_id);
 void psci_suspend(struct per_cpu *cpu_data);
 long psci_resume(unsigned int target);
 long psci_try_resume(unsigned int cpu_id);
+
+long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx);
+
+int psci_cell_init(struct cell *cell);
+unsigned long psci_emulate_spin(struct per_cpu *cpu_data);
 
 #endif /* !__ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_PSCI_H */
