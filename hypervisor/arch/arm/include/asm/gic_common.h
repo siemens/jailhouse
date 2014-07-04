@@ -13,6 +13,7 @@
 #ifndef _JAILHOUSE_ASM_GIC_COMMON_H
 #define _JAILHOUSE_ASM_GIC_COMMON_H
 
+#include <jailhouse/mmio.h>
 #include <jailhouse/types.h>
 
 #define GICD_CTLR			0x0000
@@ -40,4 +41,13 @@
 #define is_ppi(irqn)			((irqn) > 15 && (irqn) < 32)
 #define is_spi(irqn)			((irqn) > 31 && (irqn) < 1020)
 
+#ifndef __ASSEMBLY__
+
+struct arm_mmio_access;
+struct per_cpu;
+
+int gic_handle_dist_access(struct per_cpu *cpu_data,
+			   struct mmio_access *access);
+
+#endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

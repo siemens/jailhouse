@@ -101,5 +101,18 @@ int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
 int irqchip_remove_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
 int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject);
 
+static inline bool spi_in_cell(struct cell *cell, unsigned int spi)
+{
+	/* FIXME: Change the configuration to a bitmask range */
+	u64 spi_mask;
+
+	if (spi > 64)
+		return false;
+
+	spi_mask = cell->arch.spis;
+
+	return spi_mask & (1 << spi);
+}
+
 #endif /* __ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_IRQCHIP_H */
