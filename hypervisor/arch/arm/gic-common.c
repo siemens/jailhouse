@@ -270,6 +270,8 @@ int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
 	struct cell *cell = cpu_data->cell;
 	bool is_target = false;
 
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI]++;
+
 	targets = sgi->targets;
 	sgi->targets = 0;
 

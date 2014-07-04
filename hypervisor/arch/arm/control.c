@@ -177,6 +177,8 @@ static void arch_dump_abt(bool is_data)
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs)
 {
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+
 	switch (regs->exit_reason) {
 	case EXIT_REASON_IRQ:
 		irqchip_handle_irq(cpu_data);
@@ -268,6 +270,8 @@ void arch_suspend_cpu(unsigned int cpu_id)
 
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
 {
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
+
 	switch (irqn) {
 	case SGI_INJECT:
 		irqchip_inject_pending(cpu_data);
@@ -299,9 +303,13 @@ unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id)
 bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
 {
 	if (irqn == MAINTENANCE_IRQ) {
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE]++;
+
 		irqchip_inject_pending(cpu_data);
 		return true;
 	}
+
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ]++;
 
 	irqchip_set_pending(cpu_data, irqn, true);
 

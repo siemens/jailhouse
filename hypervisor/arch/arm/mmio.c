@@ -115,6 +115,8 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 	access.addr = hpfar << 8;
 	access.addr |= hdfar & 0xfff;
 
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
+
 	/*
 	 * Invalid instruction syndrome means multiple access or writeback, there
 	 * is nothing we can do.
