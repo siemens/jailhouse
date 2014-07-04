@@ -28,6 +28,8 @@ struct arch_cell {
 	spinlock_t caches_lock;
 	bool needs_flush;
 
+	u64 spis;
+
 	unsigned int last_virt_id;
 };
 

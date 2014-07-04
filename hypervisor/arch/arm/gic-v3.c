@@ -33,6 +33,8 @@ static unsigned int gic_num_lr;
 static unsigned int gic_num_priority_bits;
 static u32 gic_version;
 
+extern void *gicd_base;
+extern unsigned int gicd_size;
 static void *gicr_base;
 static unsigned int gicr_size;
 
@@ -159,6 +161,34 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	arm_write_sysreg(ICH_HCR_EL2, ICH_HCR_EN);
 
 	return 0;
+}
+
+static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
+{
+	int i;
+	u64 spis = config_cell->arch.spis;
+	void *irouter = gicd_base + GICD_IROUTER;
+	unsigned int first_cpu;
+
+	/* Use the core functions to retrieve the first physical id */
+	for_each_cpu(first_cpu, dest_cell->cpu_set)
+		break;
+
+	for (i = 0; i < 64; i++, irouter += 8) {
+		if (test_bit(i, (unsigned long *)&spis))
+			mmio_write64(irouter, first_cpu);
+	}
+}
+
+static void gic_cell_init(struct cell *cell)
+{
+	gic_route_spis(cell, cell);
+}
+
+static void gic_cell_exit(struct cell *cell)
+{
+	/* Reset interrupt routing of the cell's spis*/
+	gic_route_spis(cell, &root_cell);
 }
 
 static int gic_send_sgi(struct sgi *sgi)
@@ -417,6 +447,8 @@ struct irqchip_ops gic_irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
+	.cell_init = gic_cell_init,
+	.cell_exit = gic_cell_exit,
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,

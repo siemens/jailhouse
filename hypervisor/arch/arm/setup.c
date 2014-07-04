@@ -104,6 +104,9 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 int arch_init_late(void)
 {
+	/* Setup the SPI bitmap */
+	irqchip_cell_init(&root_cell);
+
 	return map_root_memory_regions();
 }
 

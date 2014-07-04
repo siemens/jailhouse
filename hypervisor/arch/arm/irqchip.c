@@ -234,6 +234,43 @@ int irqchip_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access)
 	return TRAP_UNHANDLED;
 }
 
+static const struct jailhouse_irqchip *
+irqchip_find_config(struct jailhouse_cell_desc *config)
+{
+	const struct jailhouse_irqchip *irq_config =
+		jailhouse_cell_irqchips(config);
+
+	if (config->num_irqchips)
+		return irq_config;
+	else
+		return NULL;
+}
+
+void irqchip_cell_init(struct cell *cell)
+{
+	const struct jailhouse_irqchip *pins = irqchip_find_config(cell->config);
+
+	cell->arch.spis = (pins ? pins->pin_bitmap : 0);
+
+	irqchip.cell_init(cell);
+}
+
+void irqchip_cell_exit(struct cell *cell)
+{
+	const struct jailhouse_irqchip *root_pins =
+		irqchip_find_config(root_cell.config);
+
+	if (root_pins)
+		root_cell.arch.spis |= cell->arch.spis & root_pins->pin_bitmap;
+
+	irqchip.cell_exit(cell);
+}
+
+void irqchip_root_cell_shrink(struct cell *cell)
+{
+	root_cell.arch.spis &= ~(cell->arch.spis);
+}
+
 /* Only the GIC is implemented */
 extern struct irqchip_ops gic_irqchip;
 

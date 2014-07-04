@@ -299,6 +299,9 @@ int arch_cell_create(struct cell *cell)
 	}
 	cell->arch.last_virt_id = virt_id - 1;
 
+	irqchip_cell_init(cell);
+	irqchip_root_cell_shrink(cell);
+
 	return 0;
 }
 
@@ -315,6 +318,8 @@ void arch_cell_destroy(struct cell *cell)
 		percpu->virt_id = percpu->cpu_id;
 		arch_reset_cpu(cpu);
 	}
+
+	irqchip_cell_exit(cell);
 }
 
 /* Note: only supports synchronous flushing as triggered by config_commit! */
