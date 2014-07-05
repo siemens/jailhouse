@@ -299,8 +299,6 @@ int vmx_cell_init(struct cell *cell)
 		for (b = root_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 		     b++, pio_bitmap++, pio_bitmap_size--)
 			*b |= ~*pio_bitmap;
-
-		vmx_invept();
 	}
 
 	return 0;
