@@ -68,6 +68,11 @@ struct jailhouse_pci_device {
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory config_memory;
+	union {
+		struct {
+			__u16 pm_timer_address;
+		} x86;
+	} platform_info;
 	struct jailhouse_cell_desc root_cell;
 } __attribute__((packed));
 
