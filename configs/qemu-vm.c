@@ -27,7 +27,7 @@ struct {
 	struct jailhouse_memory mem_regions[5];
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
-	struct jailhouse_pci_device pci_devices[7];
+	struct jailhouse_pci_device pci_devices[9];
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
@@ -93,9 +93,7 @@ struct {
 	},
 
 	.pio_bitmap = {
-		[     0/8 ...   0x1f/8] = -1,
-		[  0x20/8 ...   0x27/8] = 0xfc, /* HACK: PIC */
-		[  0x28/8 ...   0x3f/8] = -1,
+		[     0/8 ...   0x3f/8] = -1,
 		[  0x40/8 ...   0x47/8] = 0xf0, /* PIT */
 		[  0x48/8 ...   0x5f/8] = -1,
 		[  0x60/8 ...   0x67/8] = 0xec, /* HACK: 8042, PC speaker - and more */
@@ -118,54 +116,64 @@ struct {
 		[ 0x3f8/8 ... 0x5657/8] = -1,
 		[0x5658/8 ... 0x565f/8] = 0xf0, /* vmport */
 		[0x5660/8 ... 0xbfff/8] = -1,
-		[0xc000/8 ... 0xc03f/8] = 0, /* e1000 */
-		[0xc040/8 ... 0xc07f/8] = 0, /* virtio-9p-pci */
-		[0xc080/8 ... 0xc08f/8] = 0, /* piix bmdma */
-		[0xc090/8 ... 0xffff/8] = -1,
+		[0xc000/8 ... 0xc0ff/8] = 0, /* PCI devices */
+		[0xc100/8 ... 0xffff/8] = -1,
 	},
 
 	.pci_devices = {
-		{
-			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
-			.devfn = 0x00,
-		},
-		{
+		{ /* 440fx: ISA bridge, q35: VGA */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x08,
 		},
-		{
+		{ /* 440fx: IDE */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x09,
 		},
-		{
+		{ /* 440fx: SMBus */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x0b,
 		},
-		{
+		{ /* 440fx: VGA, q35: e1000 */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x10,
 		},
-		{
+		{ /* 44fx: e1000, q35: virtio-9p-pci */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x18,
 		},
-		{
+		{ /* 440fx: virtio-9p-pci */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x20,
+		},
+		{ /* q35: ISA bridge */
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xf8,
+		},
+		{ /* q35: AHCI */
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfa,
+		},
+		{ /* q35: SMBus */
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bus = 0x00,
+			.devfn = 0xfb,
 		},
 	},
 };
