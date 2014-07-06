@@ -43,6 +43,8 @@ typedef u64 __u64;
 
 typedef enum { true=1, false=0 } bool;
 
+#include <jailhouse/hypercall.h>
+
 static inline void cpu_relax(void)
 {
 	asm volatile("rep; nop" : : : "memory");
@@ -77,6 +79,5 @@ void irq_handler(void);
 
 void inmate_main(void);
 
-bool init_pm_timer(void);
-unsigned long read_pm_timer(void);
+unsigned long read_pm_timer(struct jailhouse_comm_region *comm_region);
 #endif

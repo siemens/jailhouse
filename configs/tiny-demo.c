@@ -20,7 +20,7 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[1];
+	struct jailhouse_memory mem_regions[2];
 	__u8 pio_bitmap[0x2000];
 } __attribute__((packed)) config = {
 	.cell = {
@@ -46,18 +46,18 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_LOADABLE,
 		},
+		/* communication region */ {
+			.virt_start = 0x00100000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_COMM_REGION,
+		},
 	},
 
 	.pio_bitmap = {
 		[     0/8 ...  0x2f7/8] = -1,
 		[ 0x2f8/8 ...  0x2ff/8] = 0, /* serial2 */
-		[ 0x300/8 ...  0x407/8] = -1,
-		[ 0x408/8 ...  0x40f/8] = 0xf0, /* PM-timer H700 */
-		[ 0x410/8 ... 0x1807/8] = -1,
-		[0x1808/8 ... 0x180f/8] = 0xf0, /* PM-timer H87I-PLUS */
-		[0x1810/8 ... 0xb007/8] = -1,
-		[0xb008/8 ... 0xb00f/8] = 0xf0, /* PM-timer QEMU */
-		[0xb010/8 ... 0xdfff/8] = -1,
+		[ 0x300/8 ... 0xdfff/8] = -1,
 		[0xe000/8 ... 0xe007/8] = 0, /* OXPCIe952 serial2 */
 		[0xe008/8 ... 0xffff/8] = -1,
 	},

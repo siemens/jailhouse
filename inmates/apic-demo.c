@@ -77,7 +77,7 @@ void irq_handler(void)
 
 	write_msr(X2APIC_EOI, APIC_EOI_ACK);
 
-	delta = read_pm_timer() - expected_time;
+	delta = read_pm_timer(comm_region) - expected_time;
 	if (delta < min)
 		min = delta;
 	if (delta > max)
@@ -86,8 +86,8 @@ void irq_handler(void)
 	       delta, min, max);
 
 	expected_time += 100 * NS_PER_MSEC;
-	write_msr(X2APIC_TMICT,
-		  (expected_time - read_pm_timer()) * apic_frequency / NS_PER_SEC);
+	write_msr(X2APIC_TMICT, (expected_time - read_pm_timer(comm_region)) *
+				apic_frequency / NS_PER_SEC);
 }
 
 static void init_apic(void)
@@ -101,13 +101,13 @@ static void init_apic(void)
 
 	write_msr(X2APIC_TDCR, 3);
 
-	start = read_pm_timer();
+	start = read_pm_timer(comm_region);
 	write_msr(X2APIC_TMICT, 0xffffffff);
 
-	while (read_pm_timer() - start < 100 * NS_PER_MSEC)
+	while (read_pm_timer(comm_region) - start < 100 * NS_PER_MSEC)
 		cpu_relax();
 
-	end = read_pm_timer();
+	end = read_pm_timer(comm_region);
 	tmr = read_msr(X2APIC_TMCCT);
 
 	apic_frequency = (0xffffffff - tmr) * NS_PER_SEC / (end - start);
@@ -124,7 +124,7 @@ static void init_apic(void)
 	write_idtr(&dtr);
 
 	write_msr(X2APIC_LVTT, APIC_TIMER_VECTOR);
-	expected_time = read_pm_timer();
+	expected_time = read_pm_timer(comm_region);
 	write_msr(X2APIC_TMICT, 1);
 
 	asm volatile("sti");
@@ -144,8 +144,7 @@ void inmate_main(void)
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
-	if (init_pm_timer())
-		init_apic();
+	init_apic();
 
 	while (!terminate) {
 		asm volatile("hlt");
