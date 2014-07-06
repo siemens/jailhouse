@@ -34,6 +34,9 @@ struct {
 			.phys_start = 0xcca64000,
 			.size = 0x15000,
 		},
+		.platform_info.x86 = {
+			.pm_timer_address = 0x1808,
+		},
 		.root_cell = {
 			.name = "H87I-PLUS",
 

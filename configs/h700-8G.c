@@ -34,6 +34,9 @@ struct {
 			.phys_start = 0xbf7de000,
 			.size = 0x21000,
 		},
+		.platform_info.x86 = {
+			.pm_timer_address = 0x408,
+		},
 		.root_cell = {
 			.name = "Celsius H700",
 
