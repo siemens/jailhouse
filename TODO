@@ -8,10 +8,10 @@ o x86 support
  - PCI resource access control
   - config space access moderation [WIP]
  - AMD64 (SVM) [WIP]
- - share PM timer across all cells (r/o), advertise in comm region
  - power management
   - block
   - allow per cell (managing inter-core/inter-cell impacts)
+ - moderate access to keyboard controller (ports 0x60/0x64)
 o ARM support
  - v7 (32-bit)
  - v8 (64-bit)
