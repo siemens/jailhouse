@@ -33,6 +33,12 @@
 
 #ifndef __ASSEMBLY__
 
+struct jailhouse_comm_region {
+	COMM_REGION_GENERIC_HEADER;
+
+	__u16 pm_timer_address;
+};
+
 static inline __u32 jailhouse_call(__u32 num)
 {
 	__u32 result;

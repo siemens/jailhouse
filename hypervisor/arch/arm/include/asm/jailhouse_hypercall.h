@@ -27,6 +27,10 @@
 
 #ifndef __ASSEMBLY__
 
+struct jailhouse_comm_region {
+	COMM_REGION_GENERIC_HEADER;
+};
+
 static inline __u32 jailhouse_call(__u32 num)
 {
 	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;

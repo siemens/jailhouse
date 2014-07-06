@@ -228,9 +228,16 @@ Communication region layout
         |  Message from Cell (32 bit)  |
         +------------------------------+
         |     Cell State (32 bit)      |
+        +------------------------------+
+        |      Reserved (32 bit)       |
+        +------------------------------+
+        :     Platform Information     :
         +------------------------------+ - higher address
 
-All fields use the native endianness of the system.
+All fields use the native endianness of the system. The format is of the
+Platform Information part is architecture-specific. Its content is filled by
+the hypervisor during cell creation and shall be considered read-only until
+cell destruction.
 
 
 Logical Channel "Message"
@@ -305,6 +312,16 @@ defined:
 Once a cell declared to have reached a terminal state, the hypervisor is free
 to destroy or restart that cell. On restart, it will also reset the state field
 to "Running".
+
+
+Platform Information for x86
+- - - - - - - - - - - - - - -
+
+        +------------------------------+ - begin of communication region
+        :   generic part, see above    :   (lower address)
+        +------------------------------+
+        |   PM Timer Address (16 bit)  |
+        +------------------------------+ - higher address
 
 
 References

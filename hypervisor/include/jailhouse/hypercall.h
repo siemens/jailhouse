@@ -62,18 +62,11 @@
 #define JAILHOUSE_CELL_SHUT_DOWN		2 /* terminal state */
 #define JAILHOUSE_CELL_FAILED			3 /* terminal state */
 
-#ifndef __ASSEMBLY__
-
-struct jailhouse_comm_region {
-	volatile __u32 msg_to_cell;
-	volatile __u32 reply_from_cell;
-
-	volatile __u32 cell_state;
-
-	/* errors etc. */
-};
-
-#endif /* !__ASSEMBLY__ */
+#define COMM_REGION_GENERIC_HEADER		\
+	volatile __u32 msg_to_cell;		\
+	volatile __u32 reply_from_cell;		\
+	volatile __u32 cell_state;		\
+	volatile __u32 padding
 
 #include <asm/jailhouse_hypercall.h>
 

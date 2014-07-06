@@ -259,9 +259,14 @@ int vmx_cell_init(struct cell *cell)
 {
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
 	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
-	int n, err;
+	unsigned int n, pm_timer_addr;
 	u32 size;
+	int err;
 	u8 *b;
+
+	/* PM timer has to be provided */
+	if (system_config->platform_info.x86.pm_timer_address == 0)
+		return -EINVAL;
 
 	/* build root EPT of cell */
 	cell->vmx.ept_structs.root_paging = ept_paging;
@@ -299,6 +304,13 @@ int vmx_cell_init(struct cell *cell)
 		for (b = root_cell.vmx.io_bitmap; pio_bitmap_size > 0;
 		     b++, pio_bitmap++, pio_bitmap_size--)
 			*b |= ~*pio_bitmap;
+	}
+
+	/* permit access to the PM timer */
+	pm_timer_addr = system_config->platform_info.x86.pm_timer_address;
+	for (n = 0; n < 4; n++, pm_timer_addr++) {
+		b = cell->vmx.io_bitmap;
+		b[pm_timer_addr / 8] &= ~(1 << (pm_timer_addr % 8));
 	}
 
 	return 0;

@@ -44,6 +44,9 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 	ioapic_cell_init(cell);
 	ioapic_root_cell_shrink(cell->config);
 
+	cell->comm_page.comm_region.pm_timer_address =
+		system_config->platform_info.x86.pm_timer_address;
+
 	return 0;
 }
 
