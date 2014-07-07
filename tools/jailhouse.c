@@ -34,6 +34,9 @@ struct extension {
 static const struct extension extensions[] = {
 	{ "cell", "list", "" },
 	{ "cell", "stats", "{ ID | [--name] NAME }" },
+	{ "config", "create", "[-h] [-g] [-r ROOT] "
+	  "[--mem-inmates MEM_INMATES] [--mem-hv MEM_HV] FILE" },
+	{ "config", "collect", "FILE.TAR" },
 	{ NULL }
 };
 
@@ -355,6 +358,9 @@ int main(int argc, char *argv[])
 		close(fd);
 	} else if (strcmp(argv[1], "cell") == 0) {
 		err = cell_management(argc, argv);
+	} else if (strcmp(argv[1], "config") == 0) {
+		call_extension_script(argv[1], argc, argv);
+		help(argv[0], 1);
 	} else if (strcmp(argv[1], "--help") == 0) {
 		help(argv[0], 0);
 	} else

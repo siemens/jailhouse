@@ -11,4 +11,5 @@ jailhouse.ko
 hypervisor/include/jailhouse/config.h
 hypervisor/hypervisor.lds
 tools/jailhouse
+tools/jailhouse-config-collect
 configs/*.cell

@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2014
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+# This script will collect information needed to generate a Jailhouse
+# configuration for hypervisor and root cell (Linux).
+#
+# Run it like that:
+#  $ jailhouse-config-collect.sh mytarget.tar
+#
+# Copying files and directories from /sys and /proc is surprisingly hard
+# it would be nice to use just one tool together with the list of files.
+# The main problem is that stat does not report the correct file sizes. In
+# procfs files seem to have a size of 0 while in sysfs they ofter appear
+# bigger than they really are.
+# Archivers like tar/cpio etc. can not be used for procfs and sysfs.
+# This scripts first gets a temporary copy of all the files we want. After
+# copying the files can be archived with tar.
+
+set -e
+
+if test -z "$1"; then
+	echo "Usage: $0 mytarget.tar" 1>&2
+	exit 1
+fi
+
+filelist="${filelist}"
+
+tmpdir=/tmp/jailhouse-config-collect.$$
+
+rm -rf $tmpdir
+mkdir $tmpdir
+
+# copy all the files we need to a temporary directory first
+for f in $filelist
+do
+	if [ -f $f ]
+	then
+		dstdir=$tmpdir/$(dirname $f)
+		if [ ! -d $dstdir ]
+		then
+			mkdir -p $dstdir
+		fi
+		cp -p $f $tmpdir/$f
+	else
+		echo "Warning: $f does not exist" 1>&2
+	fi
+done
+
+# now archive it and remove temporary copy
+tar -C $tmpdir -cf $1 .
+rm -rf $tmpdir
+
+exit 0

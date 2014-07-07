@@ -1,0 +1,103 @@
+/*
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Copyright (c) Siemens AG, 2014
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ *
+ * Configuration for ${product[0]} ${product[1]}
+ * created with '${argstr}'
+ *
+ * NOTE: This config expects the following to be appended to your kernel cmdline
+ *       "memmap=${hex(ourmem[1])}$${hex(ourmem[0])}"
+ */
+
+#include <linux/types.h>
+#include <jailhouse/cell-config.h>
+
+#define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
+
+struct {
+	struct jailhouse_system header;
+	__u64 cpus[1];
+	struct jailhouse_memory mem_regions[${len(regions)}];
+	struct jailhouse_irqchip irqchips[1];
+	__u8 pio_bitmap[0x2000];
+	struct jailhouse_pci_device pci_devices[${len(pcidevices)}];
+} __attribute__((packed)) config = {
+	.header = {
+		.hypervisor_memory = {
+			.phys_start = ${hex(hvmem[0])},
+			.size = ${hex(hvmem[1])},
+		},
+		.config_memory = {
+			.phys_start = ${hex(confmem[0])},
+			.size = ${hex(confmem[1])},
+		},
+		.root_cell = {
+			.name = "${product[1]}",
+			.cpu_set_size = sizeof(config.cpus),
+			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+			.num_irqchips = ARRAY_SIZE(config.irqchips),
+			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
+			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+		},
+	},
+
+	.cpus = {
+		0b${'1'*cpucount},
+	},
+
+	.mem_regions = {
+		% for r in regions:
+		/* ${str(r)} */
+		% for c in r.comments:
+		/* ${c} */
+		% endfor
+		{
+			.phys_start = ${hex(r.start)},
+			.virt_start = ${hex(r.start)},
+			.size = ${hex(r.size())},
+			.flags = ${r.flagstr('\t\t')},
+		},
+		% endfor
+	},
+
+	.irqchips = {
+		/* IOAPIC */ {
+			.address = 0xfec00000,
+			.id = ${hex(ioapic_id)},
+			.pin_bitmap = 0xffffff,
+		},
+	},
+
+	.pio_bitmap = {
+		[     0/8 ...   0x1f/8] = -1,
+		[  0x20/8 ...   0x27/8] = 0xfc, /* HACK: PIC */
+		[  0x28/8 ...   0x3f/8] = -1,
+		[  0x40/8 ...   0x47/8] = 0xf0, /* PIT */
+		[  0x48/8 ...   0x5f/8] = -1,
+		[  0x60/8 ...   0x67/8] = 0, /* HACK: 8042, NMI status/control */
+		[  0x68/8 ...   0x6f/8] = -1,
+		[  0x70/8 ...   0x77/8] = 0xfc, /* RTC */
+		[  0x78/8 ...  0x3af/8] = -1,
+		[ 0x3b0/8 ...  0x3df/8] = 0x00, /* VGA */
+		[ 0x3e0/8 ...  0x3ff/8] = -1,
+		[ 0x400/8 ...  0x47f/8] = 0, /* HACK: ACPI */
+		[ 0x480/8 ...  0xcff/8] = -1,
+		[ 0xd00/8 ... 0xffff/8] = 0, /* HACK: PCI bus */
+	},
+
+	.pci_devices = {
+		% for d in pcidevices:
+		/* ${str(d)} */
+		{
+			.type = ${d.type},
+			.domain = ${hex(d.domain)},
+			.bus = ${hex(d.bus)},
+			.devfn = ${hex(d.devfn())},
+		},
+		% endfor
+	},
+};
