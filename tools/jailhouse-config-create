@@ -324,6 +324,18 @@ def parse_dmar():
 
     return ioapic_id, regions
 
+
+def parse_ioports():
+    pm_timer_base = None
+    f, e = input_open('/proc/ioports', True, False, 'r')
+    for line in f:
+        if line.endswith('ACPI PM_TMR\n'):
+            pm_timer_base = int(line.split('-')[0], 16)
+            break
+    f.close()
+    return pm_timer_base
+
+
 pcidevices = parse_pcidevices()
 
 product = [input_readline('/sys/class/dmi/id/sys_vendor',
@@ -362,6 +374,8 @@ regions.append(inmatereg)
 
 cpucount = count_cpus()
 
+pm_timer_base = parse_ioports()
+
 f = open(options.file, 'w')
 
 if options.generate_collector:
@@ -379,4 +393,5 @@ else:
                         product=product,
                         pcidevices=pcidevices,
                         cpucount=cpucount,
-                        ioapic_id=ioapic_id))
+                        ioapic_id=ioapic_id,
+                        pm_timer_base=pm_timer_base))
