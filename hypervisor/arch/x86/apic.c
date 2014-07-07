@@ -262,29 +262,26 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 	unsigned int target_cpu_id;
 	unsigned int logical_id;
 	unsigned int cluster_id;
-	unsigned long dest_mask;
 	unsigned int apic_id;
 
 	if (using_x2apic) {
 		cluster_id = (dest & X2APIC_DEST_CLUSTER_ID_MASK) >>
 			X2APIC_DEST_CLUSTER_ID_SHIFT;
-		dest_mask = ~(dest & X2APIC_DEST_LOGICAL_ID_MASK);
-		while (dest_mask != ~0UL) {
-			logical_id = ffzl(dest_mask);
-			dest_mask |= 1UL << logical_id;
+		dest &= X2APIC_DEST_LOGICAL_ID_MASK;
+		while (dest != 0) {
+			logical_id = ffsl(dest);
+			dest &= ~(1UL << logical_id);
 			apic_id = logical_id |
 				(cluster_id << X2APIC_CLUSTER_ID_SHIFT);
 			target_cpu_id = apic_to_cpu_id[apic_id];
 			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 		}
-	} else {
-		dest_mask = ~dest;
-		while (dest_mask != ~0UL) {
-			target_cpu_id = ffzl(dest_mask);
-			dest_mask |= 1UL << target_cpu_id;
+	} else
+		while (dest != 0) {
+			target_cpu_id = ffsl(dest);
+			dest &= ~(1UL << target_cpu_id);
 			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 		}
-	}
 }
 
 bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
