@@ -31,6 +31,10 @@
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
 
+#ifdef CONFIG_X86_32
+#error 64-bit kernel required!
+#endif
+
 /* For compatibility with older kernel versions */
 #include <linux/version.h>
 

@@ -20,14 +20,14 @@ a similar channel. Details of the hypercall ABI are architecture specific and
 will be defined in the following.
 
 
-Intel x86-64 (IA-32e) ABI
+Intel x86 (IA-32/32e) ABI
 - - - - - - - - - - - - -
 
 Instruction:    vmcall
-Hypercall code: RAX
-1. argument:    RDI
-2. argument:    RSI
-Return code:    RAX
+Hypercall code: EAX
+1. argument:    RDI (IA-32e) / EDI (IA-32)
+2. argument:    RSI (IA-32e) / ESI (IA-32)
+Return code:    EAX
 
 
 Hypercall "Disable" (code 0)

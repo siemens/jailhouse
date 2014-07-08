@@ -869,19 +869,20 @@ static void update_efer(void)
 static void vmx_handle_hypercall(struct registers *guest_regs,
 				 struct per_cpu *cpu_data)
 {
+	bool ia32e_mode = !!(vmcs_read64(GUEST_IA32_EFER) & EFER_LMA);
+	unsigned long arg_mask = ia32e_mode ? (u64)-1 : (u32)-1;
 	unsigned long code = guest_regs->rax;
 
 	vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
 
-	if ((!(vmcs_read64(GUEST_IA32_EFER) & EFER_LMA) &&
-	     vmcs_read64(GUEST_RFLAGS) & X86_RFLAGS_VM) ||
+	if ((!ia32e_mode && vmcs_read64(GUEST_RFLAGS) & X86_RFLAGS_VM) ||
 	    (vmcs_read16(GUEST_CS_SELECTOR) & 3) != 0) {
 		guest_regs->rax = -EPERM;
 		return;
 	}
 
-	guest_regs->rax = hypercall(cpu_data, code, guest_regs->rdi,
-				    guest_regs->rsi);
+	guest_regs->rax = hypercall(cpu_data, code, guest_regs->rdi & arg_mask,
+				    guest_regs->rsi & arg_mask);
 	if (guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
 		       cpu_data->cpu_id, code,

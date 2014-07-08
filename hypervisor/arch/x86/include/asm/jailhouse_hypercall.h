@@ -10,10 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef __x86_64__
-#error 64-bit kernel required!
-#endif
-
 #define JAILHOUSE_BASE		0xfffffffff0000000
 
 #define JAILHOUSE_CALL_INS	"vmcall"
@@ -50,7 +46,7 @@ static inline __u32 jailhouse_call(__u32 num)
 	return result;
 }
 
-static inline __u32 jailhouse_call_arg1(__u32 num, __u32 arg1)
+static inline __u32 jailhouse_call_arg1(__u32 num, unsigned long arg1)
 {
 	__u32 result;
 
@@ -61,7 +57,8 @@ static inline __u32 jailhouse_call_arg1(__u32 num, __u32 arg1)
 	return result;
 }
 
-static inline __u32 jailhouse_call_arg2(__u32 num, __u32 arg1, __u32 arg2)
+static inline __u32 jailhouse_call_arg2(__u32 num, unsigned long arg1,
+					unsigned long arg2)
 {
 	__u32 result;
 
