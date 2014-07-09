@@ -36,10 +36,16 @@ static struct irqchip_ops irqchip;
 
 static int irqchip_init_pending(struct per_cpu *cpu_data)
 {
-	struct pending_irq *pend_array = page_alloc(&mem_pool, 1);
+	struct pending_irq *pend_array;
 
-	if (pend_array == NULL)
-		return -ENOMEM;
+	if (cpu_data->pending_irqs == NULL) {
+		cpu_data->pending_irqs = pend_array = page_alloc(&mem_pool, 1);
+		if (pend_array == NULL)
+			return -ENOMEM;
+	} else {
+		pend_array = cpu_data->pending_irqs;
+	}
+
 	memset(pend_array, 0, PAGE_SIZE);
 
 	cpu_data->pending_irqs = pend_array;
@@ -182,6 +188,11 @@ void irqchip_handle_irq(struct per_cpu *cpu_data)
 	irqchip.handle_irq(cpu_data);
 }
 
+void irqchip_eoi_irq(u32 irqn, bool deactivate)
+{
+	irqchip.eoi_irq(irqn, deactivate);
+}
+
 int irqchip_send_sgi(struct sgi *sgi)
 {
 	return irqchip.send_sgi(sgi);
@@ -197,6 +208,20 @@ int irqchip_cpu_init(struct per_cpu *cpu_data)
 
 	if (irqchip.cpu_init)
 		return irqchip.cpu_init(cpu_data);
+
+	return 0;
+}
+
+int irqchip_cpu_reset(struct per_cpu *cpu_data)
+{
+	int err;
+
+	err = irqchip_init_pending(cpu_data);
+	if (err)
+		return err;
+
+	if (irqchip.cpu_reset)
+		return irqchip.cpu_reset(cpu_data);
 
 	return 0;
 }

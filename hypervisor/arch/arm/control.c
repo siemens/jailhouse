@@ -26,6 +26,16 @@ static void arch_reset_self(struct per_cpu *cpu_data)
 	if (err)
 		printk("MMU setup failed\n");
 
+	/*
+	 * We come from the IRQ handler, but we won't return there, so the IPI
+	 * is deactivated here.
+	 */
+	irqchip_eoi_irq(SGI_CPU_OFF, true);
+
+	err = irqchip_cpu_reset(cpu_data);
+	if (err)
+		printk("IRQ setup failed\n");
+
 	arm_write_banked_reg(ELR_hyp, 0);
 	arm_write_banked_reg(SPSR_hyp, RESET_PSR);
 	memset(regs, 0, sizeof(struct registers));

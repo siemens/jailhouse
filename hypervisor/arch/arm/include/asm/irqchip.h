@@ -45,9 +45,11 @@ struct sgi {
 struct irqchip_ops {
 	int	(*init)(void);
 	int	(*cpu_init)(struct per_cpu *cpu_data);
+	int	(*cpu_reset)(struct per_cpu *cpu_data);
 
 	int	(*send_sgi)(struct sgi *sgi);
 	void	(*handle_irq)(struct per_cpu *cpu_data);
+	void	(*eoi_irq)(u32 irqn, bool deactivate);
 	int	(*inject_irq)(struct per_cpu *cpu_data, struct pending_irq *irq);
 };
 
@@ -74,9 +76,11 @@ struct pending_irq {
 
 int irqchip_init(void);
 int irqchip_cpu_init(struct per_cpu *cpu_data);
+int irqchip_cpu_reset(struct per_cpu *cpu_data);
 
 int irqchip_send_sgi(struct sgi *sgi);
 void irqchip_handle_irq(struct per_cpu *cpu_data);
+void irqchip_eoi_irq(u32 irqn, bool deactivate);
 
 int irqchip_inject_pending(struct per_cpu *cpu_data);
 int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);

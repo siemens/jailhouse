@@ -30,6 +30,7 @@
  */
 
 static unsigned int gic_num_lr;
+static unsigned int gic_num_priority_bits;
 
 static void *gicr_base;
 static unsigned int gicr_size;
@@ -46,6 +47,47 @@ static int gic_init(void)
 	err = arch_map_device(gicr_base, gicr_base, gicr_size);
 
 	return err;
+}
+
+static int gic_cpu_reset(struct per_cpu *cpu_data)
+{
+	unsigned int i;
+	void *gicr = cpu_data->gicr_base;
+	unsigned long active;
+
+	if (gicr == 0)
+		return -ENODEV;
+
+	/* Clear list registers */
+	for (i = 0; i < gic_num_lr; i++)
+		gic_write_lr(i, 0);
+
+	gicr += GICR_SGI_BASE;
+	active = mmio_read32(gicr + GICR_ICACTIVER);
+	/* Deactivate all active PPIs */
+	for (i = 16; i < 32; i++) {
+		if (test_bit(i, &active))
+			arm_write_sysreg(ICC_DIR_EL1, i);
+	}
+
+	/* Disable all PPIs, ensure IPIs are enabled */
+	mmio_write32(gicr + GICR_ICENABLER, 0xffff0000);
+	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff);
+
+	/* Clear active priority bits */
+	if (gic_num_priority_bits >= 5)
+		arm_write_sysreg(ICH_AP1R0_EL2, 0);
+	if (gic_num_priority_bits >= 6)
+		arm_write_sysreg(ICH_AP1R1_EL2, 0);
+	if (gic_num_priority_bits > 6) {
+		arm_write_sysreg(ICH_AP1R2_EL2, 0);
+		arm_write_sysreg(ICH_AP1R3_EL2, 0);
+	}
+
+	arm_write_sysreg(ICH_VMCR_EL2, 0);
+	arm_write_sysreg(ICH_HCR_EL2, ICH_HCR_EN);
+
+	return 0;
 }
 
 static int gic_cpu_init(struct per_cpu *cpu_data)
@@ -104,6 +146,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 
 	arm_read_sysreg(ICH_VTR_EL2, ich_vtr);
 	gic_num_lr = (ich_vtr & 0xf) + 1;
+	gic_num_priority_bits = (ich_vtr >> 29) + 1;
 
 	ich_vmcr = (cell_icc_pmr & ICC_PMR_MASK) << ICH_VMCR_VPMR_SHIFT;
 	if (cell_icc_igrpen1 & ICC_IGRPEN1_EN)
@@ -200,6 +243,13 @@ static bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
 	return false;
 }
 
+static void gic_eoi_irq(u32 irq_id, bool deactivate)
+{
+	arm_write_sysreg(ICC_EOIR1_EL1, irq_id);
+	if (deactivate)
+		arm_write_sysreg(ICC_DIR_EL1, irq_id);
+}
+
 static void gic_handle_irq(struct per_cpu *cpu_data)
 {
 	bool handled = false;
@@ -226,10 +276,7 @@ static void gic_handle_irq(struct per_cpu *cpu_data)
 		 * This allows to not be re-interrupted by a level-triggered
 		 * interrupt that needs handling in the guest (e.g. timer)
 		 */
-		arm_write_sysreg(ICC_EOIR1_EL1, irq_id);
-		/* Deactivate if necessary */
-		if (handled)
-			arm_write_sysreg(ICC_DIR_EL1, irq_id);
+		gic_eoi_irq(irq_id, handled);
 	}
 }
 
@@ -295,7 +342,9 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 struct irqchip_ops gic_irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
+	.cpu_reset = gic_cpu_reset,
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
+	.eoi_irq = gic_eoi_irq,
 };
