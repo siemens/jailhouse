@@ -27,6 +27,8 @@ struct arch_cell {
 
 	spinlock_t caches_lock;
 	bool needs_flush;
+
+	unsigned int last_virt_id;
 };
 
 struct cell {

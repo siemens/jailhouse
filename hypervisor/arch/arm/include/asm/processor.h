@@ -41,6 +41,8 @@
 			| PSR_32_BIT)
 
 #define MPIDR_CPUID_MASK	0x00ffffff
+#define MPIDR_MP_BIT		(1 << 31)
+#define MPIDR_U_BIT		(1 << 30)
 
 #define PFR1_VIRT(pfr)		((pfr) >> 12 & 0xf)
 
@@ -67,7 +69,6 @@
 			| SCTLR_I_BIT | SCTLR_V_BIT | SCTLR_WXN_BIT	\
 			| SCTLR_UWXN_BIT | SCTLR_FI_BIT | SCTLR_EE_BIT	\
 			| SCTLR_TRE_BIT | SCTLR_AFE_BIT | SCTLR_TE_BIT)
-
 
 #define HCR_TRVM_BIT	(1 << 30)
 #define HCR_TVM_BIT	(1 << 26)

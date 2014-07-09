@@ -40,6 +40,7 @@
 #define CSSIDR_EL1	SYSREG_32(1, c0, c0, 0)
 #define CLIDR_EL1	SYSREG_32(1, c0, c0, 1)
 #define CSSELR_EL1	SYSREG_32(2, c0, c0, 0)
+#define VMPIDR_EL2	SYSREG_32(4, c0, c0, 5)
 #define SCTLR_EL2	SYSREG_32(4, c1, c0, 0)
 #define ESR_EL2		SYSREG_32(4, c5, c2, 0)
 #define TPIDR_EL2	SYSREG_32(4, c13, c0, 2)

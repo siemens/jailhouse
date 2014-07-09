@@ -197,7 +197,7 @@ int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir)
 {
 	struct sgi sgi;
 	struct cell *cell = cpu_data->cell;
-	unsigned int cpu;
+	unsigned int cpu, virt_id;
 	unsigned long this_cpu = cpu_data->cpu_id;
 	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
 	unsigned long targets = sgir & ICC_SGIR_TARGET_MASK;
@@ -212,7 +212,9 @@ int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir)
 	sgi.id = SGI_INJECT;
 
 	for_each_cpu_except(cpu, cell->cpu_set, this_cpu) {
-		if (routing_mode == 0 && !test_bit(cpu, &targets))
+		virt_id = arm_cpu_phys2virt(cpu);
+
+		if (routing_mode == 0 && !test_bit(virt_id, &targets))
 			continue;
 		else if (routing_mode == 1 && cpu == this_cpu)
 			continue;

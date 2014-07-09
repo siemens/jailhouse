@@ -41,6 +41,7 @@ struct per_cpu {
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 
 	unsigned int cpu_id;
+	unsigned int virt_id;
 
 	/* Other CPUs can insert sgis into the pending array */
 	spinlock_t gic_lock;
@@ -93,6 +94,13 @@ static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 	return (struct registers *)(cpu_data->stack + PERCPU_STACK_END
 			- sizeof(struct registers));
 }
+
+static inline unsigned int arm_cpu_phys2virt(unsigned int cpu_id)
+{
+	return per_cpu(cpu_id)->virt_id;
+}
+
+unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id);
 
 /* Validate defines */
 #define CHECK_ASSUMPTION(assume)	((void)sizeof(char[1 - 2*!(assume)]))

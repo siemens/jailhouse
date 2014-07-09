@@ -123,6 +123,9 @@ static void arch_reset_self(struct per_cpu *cpu_data)
 	else
 		reset_address = 0;
 
+	/* Set the new MPIDR */
+	arm_write_sysreg(VMPIDR_EL2, cpu_data->virt_id | MPIDR_MP_BIT);
+
 	/* Restore an empty context */
 	arch_reset_el1(regs);
 
@@ -264,13 +267,37 @@ void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
 	}
 }
 
+unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id)
+{
+	unsigned int cpu;
+
+	for_each_cpu(cpu, cell->cpu_set) {
+		if (per_cpu(cpu)->virt_id == virt_id)
+			return cpu;
+	}
+
+	return -1;
+}
+
 int arch_cell_create(struct cell *cell)
 {
 	int err;
+	unsigned int cpu;
+	unsigned int virt_id = 0;
 
 	err = arch_mmu_cell_init(cell);
 	if (err)
 		return err;
+
+	/*
+	 * Generate a virtual CPU id according to the position of each CPU in
+	 * the cell set
+	 */
+	for_each_cpu(cpu, cell->cpu_set) {
+		per_cpu(cpu)->virt_id = virt_id;
+		virt_id++;
+	}
+	cell->arch.last_virt_id = virt_id - 1;
 
 	return 0;
 }
@@ -278,11 +305,16 @@ int arch_cell_create(struct cell *cell)
 void arch_cell_destroy(struct cell *cell)
 {
 	unsigned int cpu;
+	struct per_cpu *percpu;
 
 	arch_mmu_cell_destroy(cell);
 
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, cell->cpu_set) {
+		percpu = per_cpu(cpu);
+		/* Re-assign the physical IDs for the root cell */
+		percpu->virt_id = percpu->cpu_id;
 		arch_reset_cpu(cpu);
+	}
 }
 
 /* Note: only supports synchronous flushing as triggered by config_commit! */
