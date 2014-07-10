@@ -52,11 +52,13 @@ static int gic_init(void)
 	return err;
 }
 
-static int gic_cpu_reset(struct per_cpu *cpu_data)
+static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
 	unsigned int i;
 	void *gicr = cpu_data->gicr_base;
 	unsigned long active;
+	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
+	u32 ich_vmcr;
 
 	if (gicr == 0)
 		return -ENODEV;
@@ -73,8 +75,13 @@ static int gic_cpu_reset(struct per_cpu *cpu_data)
 			arm_write_sysreg(ICC_DIR_EL1, i);
 	}
 
-	/* Disable all PPIs, ensure IPIs are enabled */
-	mmio_write32(gicr + GICR_ICENABLER, 0xffff0000);
+	/*
+	 * Disable all PPIs, ensure IPIs are enabled.
+	 * On shutdown, the root cell expects to find all its PPIs still enabled
+	 * when returning to the driver.
+	 */
+	if (!root_shutdown)
+		mmio_write32(gicr + GICR_ICENABLER, 0xffff0000);
 	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff);
 
 	/* Clear active priority bits */
@@ -87,8 +94,21 @@ static int gic_cpu_reset(struct per_cpu *cpu_data)
 		arm_write_sysreg(ICH_AP1R3_EL2, 0);
 	}
 
+	if (root_shutdown) {
+		/* Restore the root config */
+		arm_read_sysreg(ICH_VMCR_EL2, ich_vmcr);
+
+		if (!(ich_vmcr & ICH_VMCR_VEOIM)) {
+			u32 icc_ctlr;
+			arm_read_sysreg(ICC_CTLR_EL1, icc_ctlr);
+			icc_ctlr &= ~ICC_CTLR_EOImode;
+			arm_write_sysreg(ICC_CTLR_EL1, icc_ctlr);
+		}
+
+		arm_write_sysreg(ICH_HCR_EL2, 0);
+	}
+
 	arm_write_sysreg(ICH_VMCR_EL2, 0);
-	arm_write_sysreg(ICH_HCR_EL2, ICH_HCR_EN);
 
 	return 0;
 }

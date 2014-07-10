@@ -221,9 +221,15 @@ int irqchip_cpu_reset(struct per_cpu *cpu_data)
 		return err;
 
 	if (irqchip.cpu_reset)
-		return irqchip.cpu_reset(cpu_data);
+		return irqchip.cpu_reset(cpu_data, false);
 
 	return 0;
+}
+
+void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
+{
+	if (irqchip.cpu_reset)
+		irqchip.cpu_reset(cpu_data, true);
 }
 
 int irqchip_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access)
