@@ -69,3 +69,13 @@ vmreturn:
 	/* Restore usr regs */
 	pop	{r0-r12, lr}
 	eret
+
+	/*
+	 * Hypervisor calling convention follows the AAPCS:
+	 * r0-r3:	arguments
+	 * r0:		return value
+	 */
+.globl hvc
+hvc:
+	hvc	#0
+	bx	lr

@@ -172,6 +172,7 @@ struct registers {
 #define sev()		asm volatile("sev\n")
 
 unsigned int smc(unsigned int r0, ...);
+unsigned int hvc(unsigned int r0, ...);
 
 static inline void cpu_relax(void)
 {
