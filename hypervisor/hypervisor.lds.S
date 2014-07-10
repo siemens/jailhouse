@@ -22,6 +22,10 @@ SECTIONS
 	__text_start = .;
 	.text		: { *(.text) }
 
+#ifdef ARCH_LINK
+#include <asm/sections.lds>
+#endif
+
 	. = ALIGN(16);
 	.rodata		: { *(.rodata) }
 
