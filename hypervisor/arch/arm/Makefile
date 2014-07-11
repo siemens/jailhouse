@@ -19,4 +19,5 @@ always := built-in.o
 obj-y := entry.o dbg-write.o exception.o setup.o lib.o traps.o
 obj-y += paging.o mmu_hyp.o mmu_cell.o
 obj-y += irqchip.o
+obj-$(CONFIG_ARM_GIC_V3) += gic-v3.o
 obj-$(CONFIG_SERIAL_AMBA_PL011) += dbg-write-pl011.o

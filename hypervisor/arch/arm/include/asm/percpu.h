@@ -37,7 +37,9 @@ struct per_cpu {
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 
 	unsigned int cpu_id;
-//	u32 apic_id;
+	/* Only GICv3: redistributor base */
+	void *gicr_base;
+
 	struct cell *cell;
 
 	u32 stats[JAILHOUSE_NUM_CPU_STATS];

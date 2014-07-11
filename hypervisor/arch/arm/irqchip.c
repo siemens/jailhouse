@@ -10,12 +10,22 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/irqchip.h>
-#include <asm/sysregs.h>
 #include <jailhouse/entry.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <asm/gic_common.h>
+#include <asm/irqchip.h>
+#include <asm/platform.h>
+#include <asm/setup.h>
+#include <asm/sysregs.h>
+
+/* AMBA's biosfood */
+#define AMBA_DEVICE	0xb105f00d
+
+void *gicd_base;
+unsigned long gicd_size;
 
 /*
  * The init function must be called after the MMU setup, and whilst in the
@@ -42,14 +52,54 @@ int irqchip_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 }
 
+/* Only the GIC is implemented */
+extern struct irqchip_ops gic_irqchip;
+
 int irqchip_init(void)
 {
+	int i, err;
+	u32 pidr2, cidr;
+	u32 dev_id = 0;
+
 	/* Only executed on master CPU */
 	if (irqchip_is_init)
 		return 0;
 
-	memset(&irqchip, 0, sizeof(irqchip));
-	irqchip_is_init = true;
+	/* FIXME: parse device tree */
+	gicd_base = GICD_BASE;
+	gicd_size = GICD_SIZE;
+
+	if ((err = arch_map_device(gicd_base, gicd_base, gicd_size)) != 0)
+		return err;
+
+	for (i = 3; i >= 0; i--) {
+		cidr = mmio_read32(gicd_base + GICD_CIDR0 + i * 4);
+		dev_id |= cidr << i * 8;
+	}
+	if (dev_id != AMBA_DEVICE)
+		goto err_no_distributor;
+
+	/* Probe the GIC version */
+	pidr2 = mmio_read32(gicd_base + GICD_PIDR2);
+	switch (GICD_PIDR2_ARCH(pidr2)) {
+	case 0x2:
+		break;
+	case 0x3:
+	case 0x4:
+		memcpy(&irqchip, &gic_irqchip, sizeof(struct irqchip_ops));
+		break;
+	}
+
+	if (irqchip.init) {
+		err = irqchip.init();
+		irqchip_is_init = true;
+
+		return err;
+	}
+
+err_no_distributor:
+	printk("GIC: no distributor found\n");
+	arch_unmap_device(gicd_base, gicd_size);
 
 	return -ENODEV;
 }
