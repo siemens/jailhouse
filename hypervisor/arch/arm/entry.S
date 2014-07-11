@@ -21,25 +21,46 @@ arch_entry:
 	push	{r0 - r12}
 
 	ldr	r1, =__page_pool
-	mov	r2, #1
-	lsl	r2, #PERCPU_SIZE_SHIFT
+	mov	r4, #1
+	lsl	r4, #PERCPU_SIZE_SHIFT
 	/*
 	 * percpu data = pool + cpuid * shift
 	 * TODO: handle aff1 and aff2
 	 */
-	mla	r1, r2, r0, r1
-	add	r2, r1, #PERCPU_LINUX_SP
+	mla	r1, r4, r0, r1
+	add	r4, r1, #PERCPU_LINUX_SP
 
-	/* Save SP, LR, CPSR */
-	str	sp, [r2], #4
-	str	lr, [r2], #4
+	/*
+	 * Save SP, LR, CPSR
+	 * r4 is used so that they can be easily retrieved on failure.
+	 */
+	str	sp, [r4], #4
+	str	lr, [r4], #4
 	mrs	r3, cpsr
-	str	r3, [r2]
+	str	r3, [r4]
 
 	mov	sp, r1
 	add	sp, #PERCPU_STACK_END
+	/*
+	 * Keep some space for a struct registers, in case setup fails and needs
+	 * to return to the driver through the arch_shutdown_self path.
+	 */
+	sub	sp, #((NUM_USR_REGS + 1) * 4)
 	/* Call entry(cpuid, struct per_cpu*) */
-	b	entry
+	bl	entry
+
+	/*
+	 * entry only returns here when there is an error before setting up EL2
+	 */
+	ldr	r3, [r4], #-4
+	msr	spsr, r3
+	ldr	lr, [r4], #-4
+	ldr	sp, [r4]
+
+	/* Keep the return value in r0 */
+	pop	{r1}
+	pop	{r1 - r12}
+	subs	pc, lr, #0
 
 	.globl bootstrap_vectors
 	.align 5

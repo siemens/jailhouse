@@ -119,7 +119,7 @@ int arch_init_late(void)
 void arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	/* Return to the kernel */
-	cpu_return_el1(cpu_data);
+	cpu_return_el1(cpu_data, false);
 
 	while (1);
 }
@@ -146,4 +146,20 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 
 void arch_cpu_restore(struct per_cpu *cpu_data)
 {
+	/*
+	 * If we haven't reached switch_exception_level yet, there is nothing to
+	 * clean up.
+	 */
+	if (!is_el2())
+		return;
+
+	/*
+	 * Otherwise, attempt do disable the MMU and return to EL1 using the
+	 * arch_shutdown path. cpu_return will fill the banked registers and the
+	 * guest regs structure (stored at the begginning of the stack) to
+	 * prepare the ERET.
+	 */
+	cpu_return_el1(cpu_data, true);
+
+	arch_shutdown_self(cpu_data);
 }

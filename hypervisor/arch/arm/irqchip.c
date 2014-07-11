@@ -228,6 +228,11 @@ int irqchip_cpu_reset(struct per_cpu *cpu_data)
 
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 {
+	/*
+	 * The GIC backend must take care of only resetting the hyp interface if
+	 * it has been initialised: this function may be executed during the
+	 * setup phase.
+	 */
 	if (irqchip.cpu_reset)
 		irqchip.cpu_reset(cpu_data, true);
 }
