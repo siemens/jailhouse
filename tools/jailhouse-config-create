@@ -238,7 +238,7 @@ def alloc_mem(regions, size):
 
 
 def count_cpus():
-    list = input_listdir('/sys/devices/system/cpu', ['cpu*/topology/core_id'])
+    list = input_listdir('/sys/devices/system/cpu', ['cpu*/uevent'])
     count = 0
     for f in list:
         if re.match(r'cpu[0-9]+', f):
