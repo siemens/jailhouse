@@ -12,6 +12,7 @@
 # information about the system. For more advanced scenarios you will have
 # to change the generated C-code.
 
+from __future__ import print_function
 import sys
 import os
 import re
@@ -375,6 +376,14 @@ regions.append(inmatereg)
 cpucount = count_cpus()
 
 pm_timer_base = parse_ioports()
+
+jh_enabled = input_readline('/sys/devices/jailhouse/enabled',
+                            True, True).rstrip()
+if options.generate_collector is False and jh_enabled == '1':
+    print('ERROR: Jailhouse was enabled when collecting input files! '
+          'Disable jailhouse and try again.',
+          file=sys.stderr)
+    sys.exit(1)
 
 f = open(options.file, 'w')
 
