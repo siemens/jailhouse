@@ -404,3 +404,5 @@ else:
                         cpucount=cpucount,
                         ioapic_id=ioapic_id,
                         pm_timer_base=pm_timer_base))
+
+f.close()
