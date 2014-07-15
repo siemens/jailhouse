@@ -143,6 +143,25 @@ static int handle_irq_route(struct per_cpu *cpu_data,
 	}
 }
 
+static int handle_sgir_access(struct per_cpu *cpu_data,
+			      struct mmio_access *access)
+{
+	struct sgi sgi;
+	unsigned long val = access->val;
+
+	if (!access->is_write)
+		return TRAP_HANDLED;
+
+	sgi.targets = (val >> 16) & 0xff;
+	sgi.routing_mode = (val >> 24) & 0x3;
+	sgi.aff1 = 0;
+	sgi.aff2 = 0;
+	sgi.aff3 = 0;
+	sgi.id = val & 0xf;
+
+	return gic_handle_sgir_write(cpu_data, &sgi, false);
+}
+
 int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
 			  bool virt_input)
 {
@@ -210,6 +229,10 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 	case REG_RANGE(GICD_IPRIORITYR, 255, 4):
 		ret = restrict_bitmask_access(cpu_data, access,
 				(reg & 0x3ff) / 4, 8, false);
+		break;
+
+	case GICD_SGIR:
+		ret = handle_sgir_access(cpu_data, access);
 		break;
 
 	case GICD_CTLR:
