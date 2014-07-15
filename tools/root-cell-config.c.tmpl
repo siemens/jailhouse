@@ -39,7 +39,7 @@ struct {
 			.pm_timer_address = ${hex(pm_timer_base)},
 		},
 		.root_cell = {
-			.name = "${product[1]}",
+			.name = "RootCell",
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
