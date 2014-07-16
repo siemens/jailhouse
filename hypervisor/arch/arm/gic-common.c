@@ -29,6 +29,9 @@ extern unsigned int gicd_size;
 
 static DEFINE_SPINLOCK(dist_lock);
 
+/* The GIC interface numbering does not necessarily match the logical map */
+u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
 /*
  * Most of the GIC distributor writes only reconfigure the IRQs corresponding to
  * the bits of the written value, by using separate `set' and `clear' registers.
@@ -143,6 +146,80 @@ static int handle_irq_route(struct per_cpu *cpu_data,
 	}
 }
 
+/*
+ * GICv2 uses 8bit values for each IRQ in the ITARGETRs registers
+ */
+static int handle_irq_target(struct per_cpu *cpu_data,
+			     struct mmio_access *access, unsigned int reg)
+{
+	/*
+	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
+	 * access corresponds to the reg index
+	 */
+	unsigned int i, cpu;
+	unsigned int spi = reg - 32;
+	unsigned int offset;
+	u32 access_mask = 0;
+	u8 targets;
+
+	/*
+	 * Let the guest freely access its SGIs and PPIs, which may be used to
+	 * fill its CPU interface map.
+	 */
+	if (!is_spi(reg))
+		return TRAP_UNHANDLED;
+
+	/*
+	 * The registers are byte-accessible, extend the access to a word if
+	 * necessary.
+	 */
+	offset = spi % 4;
+	access->val <<= 8 * offset;
+	access->size = 4;
+	spi -= offset;
+
+	for (i = 0; i < 4; i++, spi++) {
+		if (spi_in_cell(cpu_data->cell, spi))
+			access_mask |= 0xff << (8 * i);
+		else
+			continue;
+
+		if (!access->is_write)
+			continue;
+
+		targets = (access->val >> (8 * i)) & 0xff;
+
+		/* Check that the targeted interface belongs to the cell */
+		for (cpu = 0; cpu < 8; cpu++) {
+			if (!(targets & target_cpu_map[cpu]))
+				continue;
+
+			if (per_cpu(cpu)->cell == cpu_data->cell)
+				continue;
+
+			printk("Attempt to route SPI%d outside of cell\n", spi);
+			return TRAP_FORBIDDEN;
+		}
+	}
+
+	if (access->is_write) {
+		spin_lock(&dist_lock);
+		u32 itargetsr =
+			mmio_read32(gicd_base + GICD_ITARGETSR + reg + offset);
+		access->val &= access_mask;
+		/* Combine with external SPIs */
+		access->val |= (itargetsr & ~access_mask);
+		/* And do the access */
+		arch_mmio_access(access);
+		spin_unlock(&dist_lock);
+	} else {
+		arch_mmio_access(access);
+		access->val &= access_mask;
+	}
+
+	return TRAP_HANDLED;
+}
+
 static int handle_sgir_access(struct per_cpu *cpu_data,
 			      struct mmio_access *access)
 {
@@ -162,6 +239,28 @@ static int handle_sgir_access(struct per_cpu *cpu_data,
 	return gic_handle_sgir_write(cpu_data, &sgi, false);
 }
 
+/*
+ * Get the CPU interface ID for this cpu. It can be discovered by reading
+ * the banked value of the PPI and IPI TARGET registers
+ * Patch 2bb3135 in Linux explains why the probe may need to scans the first 8
+ * registers: some early implementation returned 0 for the first TARGETS
+ * registributor.
+ * Since those didn't have virtualization extensions, we can safely ignore that
+ * case.
+ */
+int gic_probe_cpu_id(unsigned int cpu)
+{
+	if (cpu > 8)
+		return -EINVAL;
+
+	target_cpu_map[cpu] = mmio_read32(gicd_base + GICD_ITARGETSR);
+
+	if (target_cpu_map[cpu] == 0)
+		return -ENODEV;
+
+	return 0;
+}
+
 int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
 			  bool virt_input)
 {
@@ -176,9 +275,16 @@ int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
 
 	/* Filter the targets */
 	for_each_cpu_except(cpu, cell->cpu_set, this_cpu) {
+		/*
+		 * When using a cpu map to target the different CPUs (GICv2),
+		 * they are independent from the physical CPU IDs, so there is
+		 * no need to translate them to the hypervisor's virtual IDs.
+		 */
 		if (virt_input)
 			is_target = !!test_bit(arm_cpu_phys2virt(cpu),
 					       &targets);
+		else
+			is_target = !!(targets & target_cpu_map[cpu]);
 
 		if (sgi->routing_mode == 0 && !is_target)
 			continue;
@@ -204,6 +310,10 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 	case REG_RANGE(GICD_IROUTER, 1024, 8):
 		ret = handle_irq_route(cpu_data, access,
 				(reg - GICD_IROUTER) / 8);
+		break;
+
+	case REG_RANGE(GICD_ITARGETSR, 1024, 1):
+		ret = handle_irq_target(cpu_data, access, reg - GICD_ITARGETSR);
 		break;
 
 	case REG_RANGE(GICD_ICENABLER, 32, 4):
@@ -286,5 +396,42 @@ void gic_handle_irq(struct per_cpu *cpu_data)
 		 * interrupt that needs handling in the guest (e.g. timer)
 		 */
 		irqchip_eoi_irq(irq_id, handled);
+	}
+}
+
+void gic_target_spis(struct cell *config_cell, struct cell *dest_cell)
+{
+	unsigned int i, first_cpu, cpu_itf;
+	unsigned int shift = 0;
+	void *itargetsr = gicd_base + GICD_ITARGETSR;
+	u32 targets;
+	u32 mask = 0;
+	u32 bits = 0;
+
+	/* Always route to the first logical CPU on reset */
+	for_each_cpu(first_cpu, dest_cell->cpu_set)
+		break;
+
+	cpu_itf = target_cpu_map[first_cpu];
+
+	/* ITARGETSR0-7 contain the PPIs and SGIs, and are read-only. */
+	itargetsr += 4 * 8;
+
+	for (i = 0; i < 64; i++, shift = (shift + 8) % 32) {
+		if (spi_in_cell(config_cell, i)) {
+			mask |= (0xff << shift);
+			bits |= (cpu_itf << shift);
+		}
+
+		/* ITARGETRs have 4 IRQ per register */
+		if ((i + 1) % 4 == 0) {
+			targets = mmio_read32(itargetsr);
+			targets &= ~mask;
+			targets |= bits;
+			mmio_write32(itargetsr, targets);
+			itargetsr += 4;
+			mask = 0;
+			bits = 0;
+		}
 	}
 }

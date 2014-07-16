@@ -137,6 +137,9 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	mmio_write32(gich_base + GICH_VMCR, vmcr);
 	mmio_write32(gich_base + GICH_HCR, GICH_HCR_EN);
 
+	/* Register ourselves into the CPU itf map */
+	gic_probe_cpu_id(cpu_data->cpu_id);
+
 	return 0;
 }
 
@@ -151,10 +154,6 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 		mmio_write32(gicc_base + GICC_DIR, irq_id);
 }
 
-static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
-{
-}
-
 static void gic_cell_init(struct cell *cell)
 {
 	struct jailhouse_memory gicv_region;
@@ -166,7 +165,7 @@ static void gic_cell_init(struct cell *cell)
 	 * them when unplugging a CPU.
 	 */
 	if (cell != &root_cell)
-		gic_route_spis(cell, cell);
+		gic_target_spis(cell, cell);
 
 	gicv_region.phys_start = (unsigned long)gicv_base;
 	/*
@@ -189,8 +188,8 @@ static void gic_cell_init(struct cell *cell)
 
 static void gic_cell_exit(struct cell *cell)
 {
-	/* Reset interrupt routing of the cell's spis*/
-	gic_route_spis(cell, &root_cell);
+	/* Reset interrupt routing of the cell's spis */
+	gic_target_spis(cell, &root_cell);
 }
 
 static int gic_send_sgi(struct sgi *sgi)
