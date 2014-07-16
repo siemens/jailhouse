@@ -18,9 +18,6 @@
 #define UART_BASE		0x2f8
 #endif
 
-static struct jailhouse_comm_region *comm_region =
-	(struct jailhouse_comm_region *)0x100000UL;
-
 void inmate_main(void)
 {
 	unsigned long long start, now;
@@ -29,10 +26,10 @@ void inmate_main(void)
 	printk_uart_base = UART_BASE;
 	printk("Hello from this tiny cell!\n");
 
-	start = read_pm_timer(comm_region);
+	start = read_pm_timer();
 	for (n = 0; n < 10; n++) {
 		do {
-			now = read_pm_timer(comm_region);
+			now = read_pm_timer();
 			cpu_relax();
 		} while (now - start < 1000000000ULL);
 		start += 1000000000ULL;

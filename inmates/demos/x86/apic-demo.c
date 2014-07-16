@@ -42,9 +42,6 @@ static unsigned long apic_frequency;
 static unsigned long expected_time;
 static unsigned long min = -1, max;
 
-static struct jailhouse_comm_region *comm_region =
-	(struct jailhouse_comm_region *)0x100000UL;
-
 struct desc_table_reg {
 	u16 limit;
 	u64 base;
@@ -77,7 +74,7 @@ void irq_handler(void)
 
 	write_msr(X2APIC_EOI, APIC_EOI_ACK);
 
-	delta = read_pm_timer(comm_region) - expected_time;
+	delta = read_pm_timer() - expected_time;
 	if (delta < min)
 		min = delta;
 	if (delta > max)
@@ -86,7 +83,7 @@ void irq_handler(void)
 	       delta, min, max);
 
 	expected_time += 100 * NS_PER_MSEC;
-	write_msr(X2APIC_TMICT, (expected_time - read_pm_timer(comm_region)) *
+	write_msr(X2APIC_TMICT, (expected_time - read_pm_timer()) *
 				apic_frequency / NS_PER_SEC);
 }
 
@@ -101,13 +98,13 @@ static void init_apic(void)
 
 	write_msr(X2APIC_TDCR, 3);
 
-	start = read_pm_timer(comm_region);
+	start = read_pm_timer();
 	write_msr(X2APIC_TMICT, 0xffffffff);
 
-	while (read_pm_timer(comm_region) - start < 100 * NS_PER_MSEC)
+	while (read_pm_timer() - start < 100 * NS_PER_MSEC)
 		cpu_relax();
 
-	end = read_pm_timer(comm_region);
+	end = read_pm_timer();
 	tmr = read_msr(X2APIC_TMCCT);
 
 	apic_frequency = (0xffffffff - tmr) * NS_PER_SEC / (end - start);
@@ -124,7 +121,7 @@ static void init_apic(void)
 	write_idtr(&dtr);
 
 	write_msr(X2APIC_LVTT, APIC_TIMER_VECTOR);
-	expected_time = read_pm_timer(comm_region);
+	expected_time = read_pm_timer();
 	write_msr(X2APIC_TMICT, 1);
 
 	asm volatile("sti");

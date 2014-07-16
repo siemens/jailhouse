@@ -17,7 +17,7 @@
 #define PM_TIMER_HZ		3579545
 #define PM_TIMER_OVERFLOW	((0x1000000 * 1000000000ULL) / PM_TIMER_HZ)
 
-unsigned long read_pm_timer(struct jailhouse_comm_region *comm_region)
+unsigned long read_pm_timer(void)
 {
 	static unsigned long last, overflows;
 	unsigned long tmr;

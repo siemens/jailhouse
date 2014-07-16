@@ -10,11 +10,12 @@
  * the COPYING file in the top-level directory.
  */
 
-#define FSEGMENT_BASE	0xf0000
+#define FSEGMENT_BASE		0x0f0000
+#define COMM_REGION_BASE	0x100000
 
-#define INMATE_CS32	0x8
-#define INMATE_CS64	0x10
-#define INMATE_DS32	0x18
+#define INMATE_CS32		0x8
+#define INMATE_CS64		0x10
+#define INMATE_DS32		0x18
 
 #ifndef __ASSEMBLY__
 typedef signed char s8;
@@ -43,8 +44,6 @@ typedef u64 __u64;
 
 typedef enum { true=1, false=0 } bool;
 
-#include <jailhouse/hypercall.h>
-
 static inline void cpu_relax(void)
 {
 	asm volatile("rep; nop" : : : "memory");
@@ -69,6 +68,10 @@ static inline u32 inl(u16 port)
 	return v;
 }
 
+#include <jailhouse/hypercall.h>
+
+#define comm_region	((struct jailhouse_comm_region *)COMM_REGION_BASE)
+
 extern unsigned int printk_uart_base;
 void printk(const char *fmt, ...);
 
@@ -79,5 +82,5 @@ void irq_handler(void);
 
 void inmate_main(void);
 
-unsigned long read_pm_timer(struct jailhouse_comm_region *comm_region);
+unsigned long read_pm_timer(void);
 #endif
