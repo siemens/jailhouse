@@ -61,6 +61,7 @@ static void init_apic(void)
 
 void inmate_main(void)
 {
+	bool allow_terminate = false;
 	bool terminate = false;
 	unsigned int n;
 
@@ -80,11 +81,14 @@ void inmate_main(void)
 
 		switch (comm_region->msg_to_cell) {
 		case JAILHOUSE_MSG_SHUTDOWN_REQUEST:
-			printk("Rejecting first shutdown request - "
-			       "try again!\n");
-			jailhouse_send_reply_from_cell(comm_region,
-					JAILHOUSE_MSG_REQUEST_DENIED);
-			terminate = true;
+			if (!allow_terminate) {
+				printk("Rejecting first shutdown request - "
+				       "try again!\n");
+				jailhouse_send_reply_from_cell(comm_region,
+						JAILHOUSE_MSG_REQUEST_DENIED);
+				allow_terminate = true;
+			} else
+				terminate = true;
 			break;
 		default:
 			jailhouse_send_reply_from_cell(comm_region,
@@ -92,9 +96,6 @@ void inmate_main(void)
 			break;
 		}
 	}
-
-	for (n = 0; n < 10; n++)
-		asm volatile("hlt");
 
 	printk("Stopped APIC demo\n");
 	comm_region->cell_state = JAILHOUSE_CELL_SHUT_DOWN;
