@@ -92,36 +92,3 @@ pdpt:
 	.align(4096)
 pd:
 	.quad	0x0000000000000083
-
-
-	.global irq_entry
-	.balign 16
-irq_entry:
-	push %rax
-	push %rcx
-	push %rdx
-	push %rsi
-	push %rdi
-	push %r8
-	push %r9
-	push %r10
-	push %r11
-
-	call irq_handler - FSEGMENT_BASE
-
-	pop %r11
-	pop %r10
-	pop %r9
-	pop %r8
-	pop %rdi
-	pop %rsi
-	pop %rdx
-	pop %rcx
-	pop %rax
-
-	iretq
-
-
-/* to please linker if irq_entry remains unused */
-	.weak irq_handler
-irq_handler:

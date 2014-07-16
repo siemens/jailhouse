@@ -17,6 +17,8 @@
 #define INMATE_CS64		0x10
 #define INMATE_DS32		0x18
 
+#define X2APIC_ID		0x802
+
 #ifndef __ASSEMBLY__
 typedef signed char s8;
 typedef unsigned char u8;
@@ -27,8 +29,8 @@ typedef unsigned short u16;
 typedef signed int s32;
 typedef unsigned int u32;
 
-typedef signed long s64;
-typedef unsigned long u64;
+typedef signed long long s64;
+typedef unsigned long long u64;
 
 typedef s8 __s8;
 typedef u8 __u8;
@@ -68,6 +70,27 @@ static inline u32 inl(u16 port)
 	return v;
 }
 
+static inline u64 read_msr(unsigned int msr)
+{
+	u32 low, high;
+
+	asm volatile("rdmsr" : "=a" (low), "=d" (high) : "c" (msr));
+	return low | ((u64)high << 32);
+}
+
+static inline void write_msr(unsigned int msr, u64 val)
+{
+	asm volatile("wrmsr"
+		: /* no output */
+		: "c" (msr), "a" (val), "d" (val >> 32)
+		: "memory");
+}
+
+static inline unsigned int cpu_id(void)
+{
+	return read_msr(X2APIC_ID);
+}
+
 #include <jailhouse/hypercall.h>
 
 #define comm_region	((struct jailhouse_comm_region *)COMM_REGION_BASE)
@@ -77,8 +100,10 @@ void printk(const char *fmt, ...);
 
 void *memset(void *s, int c, unsigned long n);
 
-extern u8 irq_entry[];
-void irq_handler(void);
+typedef void(*int_handler_t)(void);
+
+void int_init(void);
+void int_set_handler(unsigned int vector, int_handler_t handler);
 
 void inmate_main(void);
 

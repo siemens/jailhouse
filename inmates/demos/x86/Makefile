@@ -20,6 +20,7 @@ tiny-demo-y := tiny-demo.o \
 	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/pm-timer.o
 
 apic-demo-y := apic-demo.o \
-	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/pm-timer.o
+	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/pm-timer.o \
+	$(LIBDIR)/int.o
 
 $(eval $(call DECLARE_TARGETS,$(INMATES)))
