@@ -10,13 +10,19 @@
 # the COPYING file in the top-level directory.
 #
 
-LINUXINCLUDE := -I$(src)
+INMATES_LIB = $(src)/lib/$(SRCARCH)
+export INMATES_LIB
+
+INCLUDES := -I$(INMATES_LIB) \
+	    -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
+	    -I$(src)/../hypervisor/include
+
+LINUXINCLUDE  :=
+KBUILD_AFLAGS += $(INCLUDES)
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
-		 -fno-common -fno-stack-protector -I. \
-		 -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
-		 -I$(src)/../hypervisor/include
+		 -fno-common -fno-stack-protector $(INCLUDES)
 ifneq ($(wildcard $(src)/../hypervisor/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(src)/../hypervisor/include/jailhouse/config.h
 endif
@@ -24,39 +30,4 @@ endif
 OBJCOPYFLAGS := -O binary
 LDFLAGS += -T
 
-
-ifeq ($(SRCARCH), x86)
-
-KBUILD_CFLAGS += -m64
-
-INMATES := tiny-demo.bin apic-demo.bin
-
-AFLAGS_header-32.o := -m32
-CFLAGS_printk-32.o := -m32
-
-$(obj)/printk-32.o: $(obj)/printk.c
-	$(call if_changed_rule,cc_o_c)
-
-endif
-
-tiny-demo-y := tiny-demo.o header.o printk.o pm-timer.o
-
-apic-demo-y := apic-demo.o header.o printk.o pm-timer.o
-
-
-always := $(INMATES)
-
-# $(NAME-y) NAME-linked.o NAME.bin
-targets += $(foreach t,$(INMATES:.bin=-y),$($t)) $(INMATES:.bin=-linked.o) \
-		$(INMATES)
-
-# prevent deleting intermediate files which would cause rebuilds
-.SECONDARY: $(addprefix $(obj)/,$(targets))
-
-# obj/NAME-linked.o: ... obj/$(NAME-y)
-.SECONDEXPANSION:
-$(obj)/%-linked.o: $(src)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y))
-	$(call if_changed,ld)
-
-$(obj)/%.bin: $(obj)/%-linked.o
-	$(call if_changed,objcopy)
+subdir-y := demos/$(SRCARCH)

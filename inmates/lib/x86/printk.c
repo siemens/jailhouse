@@ -39,7 +39,7 @@ static void uart_write(const char *msg)
 }
 
 #define console_write(msg)	uart_write(msg)
-#include "../hypervisor/printk-core.c"
+#include "../../../hypervisor/printk-core.c"
 
 void printk(const char *fmt, ...)
 {

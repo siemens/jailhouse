@@ -1,0 +1,44 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2013, 2014
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+KBUILD_CFLAGS += -m64
+
+define DECLARE_TARGETS =
+ _TARGETS = $(1)
+ always := $$(_TARGETS)
+ # $(NAME-y) NAME-linked.o NAME.bin
+ targets += $$(foreach t,$$(_TARGETS:.bin=-y),$$($$t)) \
+            $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)
+endef
+
+# prevent deleting intermediate files which would cause rebuilds
+.SECONDARY: $(addprefix $(obj)/,$(targets))
+
+# obj/NAME-linked.o: ... obj/$(NAME-y)
+.SECONDEXPANSION:
+$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y))
+	$(call if_changed,ld)
+
+$(obj)/%.bin: $(obj)/%-linked.o
+	$(call if_changed,objcopy)
+
+# 32-bit (i386) support
+define DECLARE_32_BIT =
+ CFLAGS_$(1).o := -m32
+ LDFLAGS_$(1)-linked.o := /dev/null -m elf_i386 -T
+endef
+
+AFLAGS_header-32.o := -m32
+
+$(obj)/%-32.o: c_flags += -m32
+$(obj)/%-32.o: $(obj)/%.c
+	$(call if_changed_rule,cc_o_c)
