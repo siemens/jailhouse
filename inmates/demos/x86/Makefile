@@ -17,10 +17,10 @@ LIBDIR := ../../lib/x86
 INMATES := tiny-demo.bin apic-demo.bin
 
 tiny-demo-y := tiny-demo.o \
-	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/pm-timer.o
+	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/timing.o
 
 apic-demo-y := apic-demo.o \
-	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/pm-timer.o \
+	$(LIBDIR)/header.o $(LIBDIR)/printk.o $(LIBDIR)/timing.o \
 	$(LIBDIR)/int.o
 
 $(eval $(call DECLARE_TARGETS,$(INMATES)))

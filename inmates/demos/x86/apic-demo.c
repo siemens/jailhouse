@@ -22,17 +22,8 @@
 #define UART_LSR_THRE		0x20
 #define UART_IDLE_LOOPS		100
 
-#define NS_PER_MSEC		1000000UL
-#define NS_PER_SEC		1000000000UL
-
 #define APIC_TIMER_VECTOR	32
 
-#define X2APIC_LVTT		0x832
-#define X2APIC_TMICT		0x838
-#define X2APIC_TMCCT		0x839
-#define X2APIC_TDCR		0x83e
-
-static unsigned long apic_frequency;
 static unsigned long expected_time;
 static unsigned long min = -1, max;
 
@@ -40,7 +31,7 @@ static void irq_handler(void)
 {
 	unsigned long delta;
 
-	delta = read_pm_timer() - expected_time;
+	delta = pm_timer_read() - expected_time;
 	if (delta < min)
 		min = delta;
 	if (delta > max)
@@ -49,37 +40,21 @@ static void irq_handler(void)
 	       delta, min, max);
 
 	expected_time += 100 * NS_PER_MSEC;
-	write_msr(X2APIC_TMICT, (expected_time - read_pm_timer()) *
-				apic_frequency / NS_PER_SEC);
+	apic_timer_set(expected_time - pm_timer_read());
 }
 
 static void init_apic(void)
 {
-	unsigned long start, end;
-	unsigned long tmr;
+	unsigned long apic_freq_khz;
 
 	int_init();
 	int_set_handler(APIC_TIMER_VECTOR, irq_handler);
 
-	write_msr(X2APIC_TDCR, 3);
+	apic_freq_khz = apic_timer_init(APIC_TIMER_VECTOR);
+	printk("Calibrated APIC frequency: %lu kHz\n", apic_freq_khz);
 
-	start = read_pm_timer();
-	write_msr(X2APIC_TMICT, 0xffffffff);
-
-	while (read_pm_timer() - start < 100 * NS_PER_MSEC)
-		cpu_relax();
-
-	end = read_pm_timer();
-	tmr = read_msr(X2APIC_TMCCT);
-
-	apic_frequency = (0xffffffff - tmr) * NS_PER_SEC / (end - start);
-
-	printk("Calibrated APIC frequency: %lu kHz\n",
-	       (apic_frequency * 16 + 500) / 1000);
-
-	write_msr(X2APIC_LVTT, APIC_TIMER_VECTOR);
-	expected_time = read_pm_timer();
-	write_msr(X2APIC_TMICT, 1);
+	expected_time = pm_timer_read() + NS_PER_MSEC;
+	apic_timer_set(NS_PER_MSEC);
 
 	asm volatile("sti");
 }

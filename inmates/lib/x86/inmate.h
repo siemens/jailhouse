@@ -17,6 +17,9 @@
 #define INMATE_CS64		0x10
 #define INMATE_DS32		0x18
 
+#define NS_PER_MSEC		1000000UL
+#define NS_PER_SEC		1000000000UL
+
 #define X2APIC_ID		0x802
 
 #ifndef __ASSEMBLY__
@@ -107,5 +110,7 @@ void int_set_handler(unsigned int vector, int_handler_t handler);
 
 void inmate_main(void);
 
-unsigned long read_pm_timer(void);
+unsigned long pm_timer_read(void);
+unsigned long apic_timer_init(unsigned int vector);
+void apic_timer_set(unsigned long timeout_ns);
 #endif

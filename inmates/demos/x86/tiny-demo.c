@@ -26,10 +26,10 @@ void inmate_main(void)
 	printk_uart_base = UART_BASE;
 	printk("Hello from this tiny cell!\n");
 
-	start = read_pm_timer();
+	start = pm_timer_read();
 	for (n = 0; n < 10; n++) {
 		do {
-			now = read_pm_timer();
+			now = pm_timer_read();
 			cpu_relax();
 		} while (now - start < 1000000000ULL);
 		start += 1000000000ULL;
