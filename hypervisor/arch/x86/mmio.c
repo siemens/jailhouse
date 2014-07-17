@@ -26,7 +26,7 @@ union opcode {
 		u8 mod:2;
 	} __attribute__((packed)) modrm;
 	struct {
-		u8 reg:3;
+		u8 base:3;
 		u8 index:3;
 		u8 ss:2;
 	} __attribute__((packed)) sib;
@@ -109,7 +109,7 @@ restart:
 
 		op[2].raw = page[pc & PAGE_OFFS_MASK];
 		if (op[2].sib.ss != 0 || op[2].sib.index != 4 ||
-		    op[2].sib.reg != 5)
+		    op[2].sib.base != 5)
 			goto error_unsupported;
 		access.inst_len += 5;
 		break;
