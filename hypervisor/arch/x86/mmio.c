@@ -67,7 +67,7 @@ restart:
 		 * virtualization support. */
 		if (op[0].rex.r)
 			has_rex_r = true;
-		if (op[0].rex.x || op[0].rex.b)
+		if (op[0].rex.x)
 			goto error_unsupported;
 
 		pc++;
