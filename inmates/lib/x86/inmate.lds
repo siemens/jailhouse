@@ -10,6 +10,15 @@
  * the COPYING file in the top-level directory.
  */
 
+/*
+ * Layout:
+ *  0x000000..        : heap (not configured here)
+ *          ..0x0e0000: stack
+ *  0x0e0000..0x0effff: bss
+ *  0x0f0000..0x0fffef: startup code, text, rodata, data
+ *  0x0ffff0..0x0fffff: startup code (boot address)
+ *  0x100000..0x100fff: communication region (not configured here)
+ */
 SECTIONS
 {
 	/* 16-bit sections */
