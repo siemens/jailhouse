@@ -61,7 +61,11 @@ start32:
 	rep stosl
 
 	mov $inmate_main,%eax
-	jmp *%eax
+	call *%eax
+
+stop:	cli
+	hlt
+	jmp stop
 
 
 	.align(16)

@@ -99,6 +99,4 @@ void inmate_main(void)
 
 	printk("Stopped APIC demo\n");
 	comm_region->cell_state = JAILHOUSE_CELL_SHUT_DOWN;
-
-	asm volatile("cli; hlt");
 }

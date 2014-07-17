@@ -35,6 +35,4 @@ void inmate_main(void)
 		start += 1000000000ULL;
 		printk("PM Timer: %11lu\n", now);
 	}
-
-	asm volatile("hlt");
 }

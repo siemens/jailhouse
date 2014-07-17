@@ -68,7 +68,11 @@ start64:
 	rep stosq
 
 	mov $inmate_main,%rax
-	jmpq *%rax
+	callq *%rax
+
+stop:	cli
+	hlt
+	jmp stop
 
 
 	.align(16)
