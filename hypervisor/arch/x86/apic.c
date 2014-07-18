@@ -372,7 +372,10 @@ void x2apic_handle_read(struct registers *guest_regs)
 	u32 reg = guest_regs->rcx;
 
 	guest_regs->rax &= ~0xffffffffUL;
-	guest_regs->rax |= apic_ops.read(reg - MSR_X2APIC_BASE);
+	if (reg == MSR_X2APIC_ID)
+		guest_regs->rax |= apic_ops.read_id();
+	else
+		guest_regs->rax |= apic_ops.read(reg - MSR_X2APIC_BASE);
 
 	guest_regs->rdx &= ~0xffffffffUL;
 	if (reg == MSR_X2APIC_ICR)
