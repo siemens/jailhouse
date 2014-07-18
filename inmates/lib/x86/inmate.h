@@ -32,6 +32,22 @@
 
 #define X2APIC_ID		0x802
 
+#define PCI_CFG_VENDOR_ID	0x000
+#define PCI_CFG_DEVICE_ID	0x002
+#define PCI_CFG_COMMAND		0x004
+# define PCI_CMD_IO		(1 << 0)
+# define PCI_CMD_MEM		(1 << 1)
+# define PCI_CMD_MASTER		(1 << 2)
+# define PCI_CMD_INTX_OFF	(1 << 10)
+#define PCI_CFG_STATUS		0x006
+# define PCI_STS_INT		(1 << 3)
+#define PCI_CFG_BAR		0x010
+#define PCI_CFG_CAP_PTR		0x034
+
+#define PCI_ID_ANY		0xffff
+
+#define PCI_CAP_MSI		0x05
+
 #ifndef __ASSEMBLY__
 typedef signed char s8;
 typedef unsigned char u8;
@@ -201,4 +217,11 @@ enum map_type { MAP_CACHED, MAP_UNCACHED };
 
 void *alloc(unsigned long size, unsigned long align);
 void map_range(void *start, unsigned long size, enum map_type map_type);
+
+u32 pci_read_config(u16 bdf, unsigned int addr, unsigned int size);
+void pci_write_config(u16 bdf, unsigned int addr, u32 value,
+		      unsigned int size);
+int pci_find_device(u16 vendor, u16 device);
+int pci_find_cap(u16 bdf, u16 cap);
+void pci_msi_set_vector(u16 bdf, unsigned int vector);
 #endif
