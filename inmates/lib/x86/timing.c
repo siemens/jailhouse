@@ -34,6 +34,14 @@ unsigned long pm_timer_read(void)
 	return tmr + overflows;
 }
 
+void delay_us(unsigned long microsecs)
+{
+	unsigned long timeout = pm_timer_read() + microsecs * NS_PER_USEC;
+
+	while ((long)(timeout - pm_timer_read()) > 0)
+		cpu_relax();
+}
+
 unsigned long apic_timer_init(unsigned int vector)
 {
 	unsigned long start, end;
