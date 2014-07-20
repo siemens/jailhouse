@@ -28,6 +28,7 @@ struct {
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[9];
+	struct jailhouse_pci_capability pci_caps[3];
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
@@ -49,6 +50,7 @@ struct {
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+			.num_pci_caps = ARRAY_SIZE(config.pci_caps),
 		},
 	},
 
@@ -150,12 +152,16 @@ struct {
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x18,
+			.caps_start = 0, /* for q35 */
+			.num_caps = 1,
 		},
 		{ /* 440fx: virtio-9p-pci */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0x20,
+			.caps_start = 0,
+			.num_caps = 1,
 		},
 		{ /* q35: ISA bridge */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
@@ -168,12 +174,35 @@ struct {
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0xfa,
+			.caps_start = 2,
+			.num_caps = 2,
 		},
 		{ /* q35: SMBus */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0xfb,
+		},
+	},
+
+	.pci_caps = {
+		{ /* virtio-9p-pci */
+			.id = 0x11,
+			.start = 0x40,
+			.len = 12,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{ /* AHCI */
+			.id = 0x12,
+			.start = 0xa8,
+			.len = 2,
+			.flags = 0,
+		},
+		{
+			.id = 0x5,
+			.start = 0x50,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 	},
 };

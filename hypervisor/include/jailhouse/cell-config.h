@@ -26,6 +26,7 @@ struct jailhouse_cell_desc {
 	__u32 num_irqchips;
 	__u32 pio_bitmap_size;
 	__u32 num_pci_devices;
+	__u32 num_pci_caps;
 } __attribute__((packed));
 
 #define JAILHOUSE_MEM_READ		0x0001
@@ -63,6 +64,17 @@ struct jailhouse_pci_device {
 	__u16 domain;
 	__u8 bus;
 	__u8 devfn;
+	__u16 caps_start;
+	__u16 num_caps;
+} __attribute__((packed));
+
+#define JAILHOUSE_PCICAPS_WRITE		0x0001
+
+struct jailhouse_pci_capability {
+	__u16 id;
+	__u16 start;
+	__u16 len;
+	__u16 flags;
 } __attribute__((packed));
 
 struct jailhouse_system {
@@ -84,7 +96,8 @@ jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)
 		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
 		cell->num_irqchips * sizeof(struct jailhouse_irqchip) +
 		cell->pio_bitmap_size +
-		cell->num_pci_devices * sizeof(struct jailhouse_pci_device);
+		cell->num_pci_devices * sizeof(struct jailhouse_pci_device) +
+		cell->num_pci_caps * sizeof(struct jailhouse_pci_capability);
 }
 
 static inline __u32
@@ -129,6 +142,14 @@ jailhouse_cell_pci_devices(const struct jailhouse_cell_desc *cell)
 	return (const struct jailhouse_pci_device *)
 		((void *)jailhouse_cell_pio_bitmap(cell) +
 		 cell->pio_bitmap_size);
+}
+
+static inline const struct jailhouse_pci_capability *
+jailhouse_cell_pci_caps(const struct jailhouse_cell_desc *cell)
+{
+	return (const struct jailhouse_pci_capability *)
+		((void *)jailhouse_cell_pci_devices(cell) +
+		 cell->num_pci_devices * sizeof(struct jailhouse_pci_device));
 }
 
 #endif /* !_JAILHOUSE_CELL_CONFIG_H */

@@ -25,6 +25,7 @@ struct {
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[${len(pcidevices)}];
+	struct jailhouse_pci_capability pci_caps[${len(pcicaps)}];
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
@@ -45,6 +46,7 @@ struct {
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+			.num_pci_caps = ARRAY_SIZE(config.pci_caps),
 		},
 	},
 
@@ -101,6 +103,22 @@ struct {
 			.domain = ${hex(d.domain)},
 			.bus = ${hex(d.bus)},
 			.devfn = ${hex(d.devfn())},
+			.caps_start = ${d.caps_start},
+			.num_caps = ${d.num_caps},
+		},
+		% endfor
+	},
+
+	.pci_caps = {
+		% for c in pcicaps:
+		% for comment in c.comments:
+		/* ${comment} */
+		% endfor
+		{
+			.id = ${hex(c.id)},
+			.start = ${hex(c.start)},
+			.len = ${c.len},
+			.flags = ${c.flags},
 		},
 		% endfor
 	},

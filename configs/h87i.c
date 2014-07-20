@@ -24,6 +24,7 @@ struct {
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[13];
+	struct jailhouse_pci_capability pci_caps[27];
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
@@ -45,6 +46,7 @@ struct {
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+			.num_pci_caps = ARRAY_SIZE(config.pci_caps),
 		},
 	},
 
@@ -130,83 +132,299 @@ struct {
 	},
 
 	.pci_devices = {
+		/* PCIDevice: 00:00.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
-			.devfn = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
+			.devfn = 0x0,
+			.caps_start = 0,
+			.num_caps = 1,
 		},
+		/* PCIDevice: 00:01.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
-			.domain = 0x0000,
-			.bus = 0x00,
-			.devfn = 0x08,
+			.domain = 0x0,
+			.bus = 0x0,
+			.devfn = 0x8,
+			.caps_start = 1,
+			.num_caps = 4,
 		},
+		/* PCIDevice: 00:02.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0x10,
+			.caps_start = 5,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:03.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0x18,
+			.caps_start = 8,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:14.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xa0,
+			.caps_start = 11,
+			.num_caps = 2,
 		},
+		/* PCIDevice: 00:16.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xb0,
+			.caps_start = 13,
+			.num_caps = 2,
 		},
+		/* PCIDevice: 00:19.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xc8,
+			.caps_start = 15,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:1a.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xd0,
+			.caps_start = 18,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:1b.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xd8,
+			.caps_start = 21,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:1d.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xe8,
+			.caps_start = 18,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:1f.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xf8,
+			.caps_start = 0,
+			.num_caps = 1,
 		},
+		/* PCIDevice: 00:1f.2 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xfa,
+			.caps_start = 24,
+			.num_caps = 3,
 		},
+		/* PCIDevice: 00:1f.3 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bus = 0x00,
+			.domain = 0x0,
+			.bus = 0x0,
 			.devfn = 0xfb,
+			.caps_start = 0,
+			.num_caps = 0,
+		},
+	},
+
+	.pci_caps = {
+		/* PCIDevice: 00:00.0 */
+		/* PCIDevice: 00:1f.0 */
+		{
+			.id = 0x9,
+			.start = 0xe0,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:01.0 */
+		{
+			.id = 0xd,
+			.start = 0x88,
+			.len = 2,
+			.flags = 0,
+		},
+		{
+			.id = 0x1,
+			.start = 0x80,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x5,
+			.start = 0x90,
+			.len = 10,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x10,
+			.start = 0xa0,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:02.0 */
+		{
+			.id = 0x5,
+			.start = 0x90,
+			.len = 10,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x1,
+			.start = 0xd0,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x13,
+			.start = 0xa4,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:03.0 */
+		{
+			.id = 0x1,
+			.start = 0x50,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x5,
+			.start = 0x60,
+			.len = 10,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x10,
+			.start = 0x70,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:14.0 */
+		{
+			.id = 0x1,
+			.start = 0x70,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x5,
+			.start = 0x80,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		/* PCIDevice: 00:16.0 */
+		{
+			.id = 0x1,
+			.start = 0x50,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x5,
+			.start = 0x8c,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		/* PCIDevice: 00:19.0 */
+		{
+			.id = 0x1,
+			.start = 0xc8,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x5,
+			.start = 0xd0,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x13,
+			.start = 0xe0,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:1a.0 */
+		/* PCIDevice: 00:1d.0 */
+		{
+			.id = 0x1,
+			.start = 0x50,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0xa,
+			.start = 0x58,
+			.len = 2,
+			.flags = 0,
+		},
+		{
+			.id = 0x13,
+			.start = 0x98,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:1b.0 */
+		{
+			.id = 0x1,
+			.start = 0x50,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x5,
+			.start = 0x60,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x10,
+			.start = 0x70,
+			.len = 2,
+			.flags = 0,
+		},
+		/* PCIDevice: 00:1f.2 */
+		{
+			.id = 0x5,
+			.start = 0x80,
+			.len = 10,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x1,
+			.start = 0x70,
+			.len = 8,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{
+			.id = 0x12,
+			.start = 0xa8,
+			.len = 2,
+			.flags = 0,
 		},
 	},
 };

@@ -56,13 +56,73 @@ options = parser.parse_args()
 inputs = {'files': set(), 'files_opt': set(), 'dirs': set()}
 
 
+class PCICapability:
+    def __init__(self, id, start, len, flags):
+        self.id = id
+        self.start = start
+        self.len = len
+        self.flags = flags
+        self.comments = []
+
+    def __eq__(self, other):
+        return self.id == other.id and self.start == other.start and \
+            self.len == other.len and self.flags == other.flags
+
+    RD = '0'
+    RW = 'JAILHOUSE_PCICAPS_WRITE'
+
+    @staticmethod
+    def parse_pcicaps(dir):
+        caps = []
+        f = input_open(dir + '/config', 'rb')
+        f.seek(0x06)
+        (status,) = struct.unpack('<H', f.read(2))
+        # capability list supported?
+        if (status & (1 << 4)) == 0:
+            f.close()
+            return caps
+        # walk capability list
+        f.seek(0x34)
+        (next,) = struct.unpack('B', f.read(1))
+        while next != 0:
+            cap = next
+            f.seek(cap)
+            (id, next) = struct.unpack('<BB', f.read(2))
+            if id == 0x01:  # Power Management
+                # this cap can be handed out completely
+                len = 8
+                flags = PCICapability.RW
+            elif id == 0x05:  # MSI
+                # access will be moderated by hypervisor
+                len = 10
+                (msgctl,) = struct.unpack('<H', f.read(2))
+                if (msgctl & (1 << 7)) != 0:  # 64-bit support
+                    len += 4
+                if (msgctl & (1 << 8)) != 0:  # per-vector masking support
+                    len += 10
+                flags = PCICapability.RW
+            elif id == 0x11:  # MSI-X
+                # access will be moderated by hypervisor
+                len = 12
+                flags = PCICapability.RW
+            else:
+                # unknown/unhandled cap, mark its existence
+                len = 2
+                flags = PCICapability.RD
+            caps.append(PCICapability(id, cap, len, flags))
+        return caps
+
+
 class PCIDevice:
-    def __init__(self, type, domain, bus, dev, fn):
+    def __init__(self, type, domain, bus, dev, fn, caps):
         self.type = type
         self.domain = domain
         self.bus = bus
         self.dev = dev
         self.fn = fn
+        self.caps = caps
+        self.caps_start = 0
+        self.num_caps = 0
 
     def __str__(self):
         return 'PCIDevice: %02x:%02x.%x' % (self.bus, self.dev, self.fn)
@@ -72,7 +132,8 @@ class PCIDevice:
 
     @staticmethod
     def parse_pcidevice_sysfsdir(basedir, dir):
-        dclass = input_readline(basedir + '/' + dir + '/class')
+        dpath = basedir + '/' + dir
+        dclass = input_readline(dpath + '/class')
         if re.match(r'0x0604..', dclass):
             type = 'JAILHOUSE_PCI_TYPE_BRIDGE'
         else:
@@ -81,7 +142,9 @@ class PCIDevice:
         domain = int(a[0], 16)
         bus = int(a[1], 16)
         df = a[2].split('.')
-        return PCIDevice(type, domain, bus, int(df[0], 16), int(df[1], 16))
+        caps = PCICapability.parse_pcicaps(dpath)
+        return PCIDevice(type, domain, bus, int(df[0], 16), int(df[1], 16),
+                         caps)
 
 
 class MemRegion:
@@ -161,13 +224,30 @@ def parse_iomem():
 
 def parse_pcidevices():
     devices = []
+    caps = []
     basedir = '/sys/bus/pci/devices'
-    list = input_listdir(basedir, ['*/class'])
+    list = input_listdir(basedir, ['*/class', '*/config'])
     for dir in list:
         d = PCIDevice.parse_pcidevice_sysfsdir(basedir, dir)
         if d is not None:
+            if len(d.caps) > 0:
+                duplicate = False
+                # look for duplicate capability patterns
+                for d2 in devices:
+                    if d2.caps == d.caps:
+                        # reused existing capability list, but record all users
+                        d2.caps[0].comments.append(str(d))
+                        d.caps_start = d2.caps_start
+                        d.num_caps = d2.num_caps
+                        duplicate = True
+                        break
+                if not duplicate:
+                    d.caps[0].comments.append(str(d))
+                    d.caps_start = len(caps)
+                    d.num_caps = len(d.caps)
+                    caps.extend(d.caps)
             devices.append(d)
-    return devices
+    return (devices, caps)
 
 
 def kmg_multiply(value, kmg):
@@ -332,7 +412,7 @@ def parse_ioports():
     return pm_timer_base
 
 
-pcidevices = parse_pcidevices()
+(pcidevices, pcicaps) = parse_pcidevices()
 
 product = [input_readline('/sys/class/dmi/id/sys_vendor',
                           True).rstrip(),
@@ -400,6 +480,7 @@ else:
                         confmem=confmem,
                         product=product,
                         pcidevices=pcidevices,
+                        pcicaps=pcicaps,
                         cpucount=cpucount,
                         ioapic_id=ioapic_id,
                         pm_timer_base=pm_timer_base))

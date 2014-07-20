@@ -24,6 +24,7 @@ struct {
 	struct jailhouse_memory mem_regions[3];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[1];
+	struct jailhouse_pci_capability pci_caps[1];
 } __attribute__((packed)) config = {
 	.cell = {
 		.name = "pci-demo",
@@ -34,6 +35,7 @@ struct {
 		.num_irqchips = 0,
 		.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 		.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+		.num_pci_caps = ARRAY_SIZE(config.pci_caps),
 	},
 
 	.cpus = {
@@ -76,6 +78,17 @@ struct {
 			.domain = 0x0000,
 			.bus = 0x00,
 			.devfn = 0xd8,
+			.caps_start = 0,
+			.num_caps = 1,
+		},
+	},
+
+	.pci_caps = {
+		{ /* Intel HDA @00:1b.0 */
+			.id = 0x5,
+			.start = 0x50,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 	},
 };
