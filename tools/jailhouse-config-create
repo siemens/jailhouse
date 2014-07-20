@@ -72,7 +72,7 @@ class PCIDevice:
 
     @staticmethod
     def parse_pcidevice_sysfsdir(basedir, dir):
-        dclass = input_readline(basedir + '/' + dir + '/class', False, False)
+        dclass = input_readline(basedir + '/' + dir + '/class')
         if re.match(r'0x0604..', dclass):
             type = 'JAILHOUSE_PCI_TYPE_BRIDGE'
         else:
@@ -136,7 +136,7 @@ class MemRegion:
 
 def parse_iomem():
     regions = []
-    f, e = input_open('/proc/iomem', True, False, 'r')
+    f, e = input_open('/proc/iomem', False, 'r')
     for line in f:
         r = MemRegion.parse_iomem_line(line)
         ## XXX what else to ignore??
@@ -188,9 +188,8 @@ def kmg_multiply_str(str):
     return 0
 
 
-def input_open(name, record, optional, *args):
-    if record:
-        inputs['files'].add(name)
+def input_open(name, optional, *args):
+    inputs['files'].add(name)
     try:
         f = open(options.root + name, *args)
     except Exception as e:
@@ -200,8 +199,8 @@ def input_open(name, record, optional, *args):
     return f, None
 
 
-def input_readline(name, record=True, optional=False):
-    f, e = input_open(name, record, optional, 'r')
+def input_readline(name, optional=False):
+    f, e = input_open(name, optional, 'r')
     if f is None and optional:
         return ''
 
@@ -260,7 +259,7 @@ def parse_dmar_devscope(f):
 # parsing of DMAR ACPI Table
 # see Intel VT-d Spec chapter 8
 def parse_dmar():
-    f, e = input_open('/sys/firmware/acpi/tables/DMAR', True, True, 'rb')
+    f, e = input_open('/sys/firmware/acpi/tables/DMAR', True, 'rb')
     if not f:
         if options.generate_collector:
             return 0, []
@@ -330,7 +329,7 @@ def parse_dmar():
 
 def parse_ioports():
     pm_timer_base = None
-    f, e = input_open('/proc/ioports', True, False, 'r')
+    f, e = input_open('/proc/ioports', False, 'r')
     for line in f:
         if line.endswith('ACPI PM_TMR\n'):
             pm_timer_base = int(line.split('-')[0], 16)
@@ -342,9 +341,9 @@ def parse_ioports():
 pcidevices = parse_pcidevices()
 
 product = [input_readline('/sys/class/dmi/id/sys_vendor',
-                          True, True).rstrip(),
+                          True).rstrip(),
            input_readline('/sys/class/dmi/id/product_name',
-                          True, True).rstrip()
+                          True).rstrip()
            ]
 
 inmatemem = kmg_multiply_str(options.mem_inmates)
@@ -380,7 +379,7 @@ cpucount = count_cpus()
 pm_timer_base = parse_ioports()
 
 jh_enabled = input_readline('/sys/devices/jailhouse/enabled',
-                            True, True).rstrip()
+                            True).rstrip()
 if options.generate_collector is False and jh_enabled == '1':
     print('ERROR: Jailhouse was enabled when collecting input files! '
           'Disable jailhouse and try again.',
