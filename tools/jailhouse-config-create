@@ -213,6 +213,8 @@ def input_readline(name, record=True, optional=False):
 def input_listdir(dir, wildcards):
     for w in wildcards:
         inputs['dirs'].add(dir + '/' + w)
+    if options.generate_collector:
+        return []
     return os.listdir(options.root + dir)
 
 
