@@ -30,22 +30,29 @@ if test -z "$1"; then
 fi
 
 filelist="${filelist}"
+filelist_opt="${filelist_opt}"
 
 tmpdir=/tmp/jailhouse-config-collect.$$
 
 rm -rf $tmpdir
 mkdir $tmpdir
 
+copy_file()
+{
+	dstdir=$tmpdir/$(dirname $1)
+	if [ ! -d $dstdir ]; then
+		mkdir -p $dstdir
+	fi
+	cp -p $1 $tmpdir/$1
+}
+
 # copy all the files we need to a temporary directory first
 for f in $filelist; do
+	copy_file $f
+done
+for f in $filelist_opt; do
 	if [ -f $f ]; then
-		dstdir=$tmpdir/$(dirname $f)
-		if [ ! -d $dstdir ]; then
-			mkdir -p $dstdir
-		fi
-		cp -p $f $tmpdir/$f
-	else
-		echo "Warning: $f does not exist" 1>&2
+		copy_file $f
 	fi
 done
 

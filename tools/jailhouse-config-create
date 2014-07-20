@@ -53,7 +53,7 @@ parser.add_argument('file', metavar='FILE',
 
 options = parser.parse_args()
 
-inputs = {'files': set(), 'dirs': set()}
+inputs = {'files': set(), 'files_opt': set(), 'dirs': set()}
 
 
 class PCIDevice:
@@ -189,7 +189,7 @@ def kmg_multiply_str(str):
 
 
 def input_open(name, optional, *args):
-    inputs['files'].add(name)
+    inputs['files_opt' if optional else 'files'].add(name)
     try:
         f = open(options.root + name, *args)
     except Exception as e:
@@ -390,9 +390,10 @@ f = open(options.file, 'w')
 
 if options.generate_collector:
     filelist = ' '.join(inputs['files'].union(inputs['dirs']))
+    filelist_opt = ' '.join(inputs['files_opt'])
 
     tmpl = Template(filename='jailhouse-config-collect.tmpl')
-    f.write(tmpl.render(filelist=filelist))
+    f.write(tmpl.render(filelist=filelist, filelist_opt=filelist_opt))
 else:
     tmpl = Template(filename='root-cell-config.c.tmpl')
     f.write(tmpl.render(regions=regions,
