@@ -155,6 +155,33 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 	asm volatile("b	.\n");
 }
 
+/*
+ * Shutdown the MMU and returns to EL1 with the kernel context stored in `regs'
+ */
+static void __attribute__((naked)) __attribute__((section(".trampoline")))
+shutdown_el2(struct registers *regs, unsigned long vectors)
+{
+	u32 sctlr_el2;
+
+	/* Disable stage-1 translation, caches must be cleaned. */
+	arm_read_sysreg(SCTLR_EL2, sctlr_el2);
+	sctlr_el2 &= ~(SCTLR_M_BIT | SCTLR_C_BIT | SCTLR_I_BIT);
+	arm_write_sysreg(SCTLR_EL2, sctlr_el2);
+	isb();
+
+	/* Clean the MMU registers */
+	arm_write_sysreg(HMAIR0, 0);
+	arm_write_sysreg(HMAIR1, 0);
+	arm_write_sysreg(TTBR0_EL2, 0);
+	arm_write_sysreg(TCR_EL2, 0);
+	isb();
+
+	/* Reset the vectors as late as possible */
+	arm_write_sysreg(HVBAR, vectors);
+
+	vmreturn(regs);
+}
+
 static void check_mmu_map(unsigned long virt_addr, unsigned long phys_addr)
 {
 	unsigned long phys_base;
@@ -251,6 +278,47 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	destroy_id_maps();
 
 	return 0;
+}
+
+void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
+{
+	static DEFINE_SPINLOCK(map_lock);
+
+	virt2phys_t virt2phys = paging_hvirt2phys;
+	void *stack_virt = cpu_data->stack;
+	unsigned long stack_phys = virt2phys((void *)stack_virt);
+	unsigned long trampoline_phys = virt2phys((void *)&trampoline_start);
+	struct registers *regs_phys =
+			(struct registers *)virt2phys(guest_regs(cpu_data));
+
+	/* Jump to the identity-mapped trampoline page before shutting down */
+	void (*shutdown_fun_phys)(struct registers*, unsigned long);
+	shutdown_fun_phys = (void*)virt2phys(shutdown_el2);
+
+	/*
+	 * No need to check for size or overlapping here, it has already be
+	 * done, and the paging structures will soon be deleted. However, the
+	 * cells' CPUs may execute this concurrently.
+	 */
+	spin_lock(&map_lock);
+	paging_create(&hv_paging_structs, stack_phys, PAGE_SIZE, stack_phys,
+		      PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
+	paging_create(&hv_paging_structs, trampoline_phys, PAGE_SIZE,
+		      trampoline_phys, PAGE_DEFAULT_FLAGS,
+		      PAGING_NON_COHERENT);
+	spin_unlock(&map_lock);
+
+	arch_cpu_dcaches_flush(CACHES_CLEAN);
+
+	/*
+	 * Final shutdown:
+	 * - disable the MMU whilst inside the trampoline page
+	 * - reset the vectors
+	 * - return to EL1
+	 */
+	shutdown_fun_phys(regs_phys, saved_vectors);
+
+	__builtin_unreachable();
 }
 
 int arch_map_device(void *paddr, void *vaddr, unsigned long size)

@@ -36,8 +36,10 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs);
 void arch_reset_self(struct per_cpu *cpu_data);
+void arch_shutdown_self(struct per_cpu *cpu_data);
 
 void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
+void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data);
 
 #endif /* !__ASSEMBLY__ */
 

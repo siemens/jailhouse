@@ -124,10 +124,26 @@ void arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 	while (1);
 }
 
+void arch_shutdown_self(struct per_cpu *cpu_data)
+{
+	irqchip_cpu_shutdown(cpu_data);
+
+	/* Free the guest */
+	arm_write_sysreg(HCR, 0);
+	arm_write_sysreg(TPIDR_EL2, 0);
+	arm_write_sysreg(VTCR_EL2, 0);
+
+	/* Remove stage-2 mappings */
+	arch_cpu_tlb_flush(cpu_data);
+
+	/* TLB flush needs the cell's VMID */
+	isb();
+	arm_write_sysreg(VTTBR_EL2, 0);
+
+	/* Return to EL1 */
+	arch_shutdown_mmu(cpu_data);
+}
+
 void arch_cpu_restore(struct per_cpu *cpu_data)
 {
 }
-
-// catch missing symbols
-void arch_shutdown_cpu(unsigned int cpu_id) {}
-void arch_shutdown(void) {}
