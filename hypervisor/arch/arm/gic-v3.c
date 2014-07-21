@@ -31,6 +31,7 @@
 
 static unsigned int gic_num_lr;
 static unsigned int gic_num_priority_bits;
+static u32 gic_version;
 
 static void *gicr_base;
 static unsigned int gicr_size;
@@ -94,7 +95,6 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 {
 	u64 typer;
 	u32 pidr;
-	u32 gic_version;
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
 	u32 ich_vtr;
 	u32 ich_vmcr;
@@ -341,6 +341,78 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
+static int gic_handle_redist_access(struct per_cpu *cpu_data,
+				    struct mmio_access *access)
+{
+	unsigned int cpu;
+	unsigned int reg;
+	int ret = TRAP_UNHANDLED;
+	unsigned int virt_id;
+	void *virt_redist = 0;
+	void *phys_redist = 0;
+	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
+	void *address = (void *)access->addr;
+
+	/*
+	 * The redistributor accessed by the cell is not the one stored in these
+	 * cpu_datas, but the one associated to its virtual id. So we first
+	 * need to translate the redistributor address.
+	 */
+	for_each_cpu(cpu, cpu_data->cell->cpu_set) {
+		virt_id = arm_cpu_phys2virt(cpu);
+		virt_redist = per_cpu(virt_id)->gicr_base;
+		if (address >= virt_redist && address < virt_redist
+				+ redist_size) {
+			phys_redist = per_cpu(cpu)->gicr_base;
+			break;
+		}
+	}
+
+	if (phys_redist == NULL)
+		return TRAP_FORBIDDEN;
+
+	reg = address - virt_redist;
+	access->addr = (unsigned long)phys_redist + reg;
+
+	/* Change the ID register, all other accesses are allowed. */
+	if (!access->is_write) {
+		switch (reg) {
+		case GICR_TYPER:
+			if (virt_id == cpu_data->cell->arch.last_virt_id)
+				access->val = GICR_TYPER_Last;
+			else
+				access->val = 0;
+			/* AArch64 can use a writeq for this register */
+			if (access->size == 8)
+				access->val |= (u64)virt_id << 32;
+
+			ret = TRAP_HANDLED;
+			break;
+		case GICR_TYPER + 4:
+			/* Upper bits contain the affinity */
+			access->val = virt_id;
+			ret = TRAP_HANDLED;
+			break;
+		}
+	}
+	if (ret == TRAP_HANDLED)
+		return ret;
+
+	arch_mmio_access(access);
+	return TRAP_HANDLED;
+}
+
+static int gic_mmio_access(struct per_cpu *cpu_data,
+			   struct mmio_access *access)
+{
+	void *address = (void *)access->addr;
+
+	if (address >= gicr_base && address < gicr_base + gicr_size)
+		return gic_handle_redist_access(cpu_data, access);
+
+	return TRAP_UNHANDLED;
+}
+
 struct irqchip_ops gic_irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
@@ -349,4 +421,5 @@ struct irqchip_ops gic_irqchip = {
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
 	.eoi_irq = gic_eoi_irq,
+	.mmio_access = gic_mmio_access,
 };

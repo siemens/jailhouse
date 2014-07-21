@@ -226,6 +226,14 @@ int irqchip_cpu_reset(struct per_cpu *cpu_data)
 	return 0;
 }
 
+int irqchip_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access)
+{
+	if (irqchip.mmio_access)
+		return irqchip.mmio_access(cpu_data, access);
+
+	return TRAP_UNHANDLED;
+}
+
 /* Only the GIC is implemented */
 extern struct irqchip_ops gic_irqchip;
 

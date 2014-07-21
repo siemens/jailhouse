@@ -21,7 +21,9 @@
  */
 #define MAX_PENDING_IRQS	(PAGE_SIZE / sizeof(struct pending_irq))
 
+#include <jailhouse/mmio.h>
 #include <asm/percpu.h>
+#include <asm/traps.h>
 
 #ifndef __ASSEMBLY__
 
@@ -50,7 +52,11 @@ struct irqchip_ops {
 	int	(*send_sgi)(struct sgi *sgi);
 	void	(*handle_irq)(struct per_cpu *cpu_data);
 	void	(*eoi_irq)(u32 irqn, bool deactivate);
-	int	(*inject_irq)(struct per_cpu *cpu_data, struct pending_irq *irq);
+	int	(*inject_irq)(struct per_cpu *cpu_data,
+			      struct pending_irq *irq);
+
+	int	(*mmio_access)(struct per_cpu *cpu_data,
+			       struct mmio_access *access);
 };
 
 /* Virtual interrupts waiting to be injected */
@@ -81,6 +87,8 @@ int irqchip_cpu_reset(struct per_cpu *cpu_data);
 int irqchip_send_sgi(struct sgi *sgi);
 void irqchip_handle_irq(struct per_cpu *cpu_data);
 void irqchip_eoi_irq(u32 irqn, bool deactivate);
+
+int irqchip_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access);
 
 int irqchip_inject_pending(struct per_cpu *cpu_data);
 int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
