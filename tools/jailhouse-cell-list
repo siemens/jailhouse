@@ -16,7 +16,7 @@ import sys
 
 
 def read_cpus(path):
-    return int(file(path).read().strip().replace(",", ""), 16)
+    return int(open(path).readline().strip().replace(",", ""), 16)
 
 
 def finish_cpu_list(last_cpu, cpu):
@@ -52,8 +52,8 @@ cells = []
 for cell_path in glob.glob('/sys/devices/jailhouse/cells/*'):
     cells.append({
         'name': os.path.basename(cell_path),
-        'id': file(cell_path + "/id").read().strip(),
-        'state': file(cell_path + "/state").read().strip(),
+        'id': open(cell_path + "/id").readline().strip(),
+        'state': open(cell_path + "/state").readline().strip(),
         'cpus_assigned': read_cpus(cell_path + "/cpus_assigned"),
         'cpus_failed': read_cpus(cell_path + "/cpus_failed")
         })
