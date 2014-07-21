@@ -87,7 +87,7 @@ static int data_port_out_handler(struct registers *guest_regs, u16 port,
 	u32 reg_data;
 
 	if (!device)
-		return 1;
+		return -1;
 
 	reg_data = get_rax_reg(guest_regs, size);
 
