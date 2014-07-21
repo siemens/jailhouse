@@ -50,21 +50,31 @@ static u32 get_rax_reg(struct registers *guest_regs, u8 size)
 /**
  * data_port_in_handler() - Handler for IN accesses to data port
  * @guest_regs:	Guest register set
+ * @cell:	Issuing cell
  * @port:	I/O port number
  * @size:	Access size (1, 2 or 4 bytes)
  * @device:	Structure describing PCI device
+ * @reg_num:	Register number in PCI configuration space
+ *
+ * Return: 1 if handled successfully, -1 on access error
  */
 static int
-data_port_in_handler(struct registers *guest_regs, u16 port, unsigned int size,
-		     const struct jailhouse_pci_device *device)
+data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
+		     u16 port, unsigned int size,
+		     const struct jailhouse_pci_device *device, u8 reg_num)
 {
 	u32 reg_data;
 
-	if (!device)
-		reg_data = -1;
-	else
-		reg_data = inl(PCI_REG_DATA_PORT);
-	reg_data >>= (port - PCI_REG_DATA_PORT) * 8;
+	if (pci_cfg_read_moderate(cell, device, reg_num,
+				  port - PCI_REG_DATA_PORT, size,
+				  &reg_data) == PCI_ACCESS_PERFORM) {
+		if (size == 1)
+			reg_data = inb(port);
+		else if (size == 2)
+			reg_data = inw(port);
+		else if (size == 4)
+			reg_data = inl(port);
+	}
 
 	set_rax_reg(guest_regs, reg_data, size);
 
@@ -74,31 +84,27 @@ data_port_in_handler(struct registers *guest_regs, u16 port, unsigned int size,
 /**
  * data_port_out_handler() - Handler for OUT accesses to data port
  * @guest_regs:	Guest register set
+ * @cell:	Issuing cell
  * @port:	I/O port number
  * @size:	Access size (1, 2 or 4 bytes)
  * @device:	Structure describing PCI device
  * @reg_num:	Register number in PCI configuration space
+ *
+ * Return: 1 if handled successfully, -1 on access error
  */
-static int data_port_out_handler(struct registers *guest_regs, u16 port,
-				 unsigned int size,
-				 const struct jailhouse_pci_device *device,
-				 u8 reg_num)
+static int
+data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
+		      u16 port, unsigned int size,
+		      const struct jailhouse_pci_device *device, u8 reg_num)
 {
 	u32 reg_data;
 
-	if (!device)
-		return -1;
-
 	reg_data = get_rax_reg(guest_regs, size);
 
-	if (reg_num < PCI_CONFIG_HEADER_SIZE) {
-		if (!pci_cfg_write_allowed(device->type, reg_num,
-					   port - PCI_REG_DATA_PORT, size))
-			return -1;
-	} else {
-		// HACK: permit capability access until we properly filter it
-		// return -1;
-	}
+	if (pci_cfg_write_moderate(cell, device, reg_num,
+				   port - PCI_REG_DATA_PORT, size,
+				   &reg_data) == PCI_ACCESS_REJECT)
+		return -1;
 
 	if (size == 1)
 		outb(reg_data, port);
@@ -163,11 +169,11 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 		outl(addr_port_val & PCI_ADDR_VALID_MASK, PCI_REG_ADDR_PORT);
 
 		if (dir_in)
-			result = data_port_in_handler(guest_regs, port, size,
-						      device);
+			result = data_port_in_handler(guest_regs, cell, port,
+						      size, device, reg_num);
 		else
-			result = data_port_out_handler(guest_regs, port, size,
-						       device, reg_num);
+			result = data_port_out_handler(guest_regs, cell, port,
+						       size, device, reg_num);
 
 		spin_unlock(&pci_lock);
 	}

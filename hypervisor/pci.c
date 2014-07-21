@@ -76,35 +76,80 @@ pci_get_assigned_device(const struct cell *cell, u16 bdf)
 }
 
 /**
- * pci_cfg_write_allowed() - Check general config space write permission
- * @type:	JAILHOUSE_PCI_TYPE_DEVICE or JAILHOUSE_PCI_TYPE_BRIDGE
+ * pci_cfg_read_moderate() - Moderate config space read access
+ * @cell:	Request issuing cell
+ * @device:	The device to be accessed; if NULL, access will be emulated,
+ * 		returning a value of -1
  * @reg_num:	Register number (4-byte aligned)
  * @bias:	Bias from register base address in bytes
  * @size:	Access size (1, 2 or 4 bytes)
+ * @value:	Pointer to buffer to receive the emulated value if
+ * 		PCI_ACCESS_EMULATE is returned
  *
- * Return: True if writing is allowed, false otherwise.
+ * Return: PCI_ACCESS_PERFORM or PCI_ACCESS_EMULATE.
  */
-bool pci_cfg_write_allowed(u32 type, u8 reg_num, unsigned int reg_bias,
-			   unsigned int size)
+enum pci_access
+pci_cfg_read_moderate(const struct cell *cell,
+		      const struct jailhouse_pci_device *device, u8 reg_num,
+		      unsigned int reg_bias, unsigned int size, u32 *value)
+{
+	if (!device) {
+		*value = -1;
+		return PCI_ACCESS_EMULATE;
+	}
+
+	if (reg_num < PCI_CONFIG_HEADER_SIZE)
+		return PCI_ACCESS_PERFORM;
+
+	// HACK: permit capability access until we properly filter it
+	return PCI_ACCESS_PERFORM;
+}
+
+/**
+ * pci_cfg_write_moderate() - Moderate config space write access
+ * @cell:	Request issuing cell
+ * @device:	The device to be accessed; if NULL, access will be rejected
+ * @reg_num:	Register number (4-byte aligned)
+ * @bias:	Bias from register base address in bytes
+ * @size:	Access size (1, 2 or 4 bytes)
+ * @value:	Pointer to value to be written, initialized with cell value,
+ * 		set to the to-be-written hardware value if PCI_ACCESS_EMULATE
+ * 		is returned
+ *
+ * Return: PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_EMULATE.
+ */
+enum pci_access
+pci_cfg_write_moderate(const struct cell *cell,
+		       const struct jailhouse_pci_device *device, u8 reg_num,
+		       unsigned int reg_bias, unsigned int size, u32 *value)
 {
 	/* initialize list to work around wrong compiler warning */
 	const struct pci_cfg_access *list = NULL;
 	unsigned int n, len = 0;
 
-	if (type == JAILHOUSE_PCI_TYPE_DEVICE) {
-		list = endpoint_write_access;
-		len = ARRAY_SIZE(endpoint_write_access);
-	} else if (type == JAILHOUSE_PCI_TYPE_BRIDGE) {
-		list = bridge_write_access;
-		len = ARRAY_SIZE(bridge_write_access);
+	if (!device)
+		return PCI_ACCESS_REJECT;
+
+	if (reg_num < PCI_CONFIG_HEADER_SIZE) {
+		if (device->type == JAILHOUSE_PCI_TYPE_DEVICE) {
+			list = endpoint_write_access;
+			len = ARRAY_SIZE(endpoint_write_access);
+		} else if (device->type == JAILHOUSE_PCI_TYPE_BRIDGE) {
+			list = bridge_write_access;
+			len = ARRAY_SIZE(bridge_write_access);
+		}
+
+		for (n = 0; n < len; n++) {
+			if (list[n].reg_num == reg_num &&
+			    ((list[n].mask >> (reg_bias * 8)) &
+			     BYTE_MASK(size)) == BYTE_MASK(size))
+				return PCI_ACCESS_PERFORM;
+		}
+		return PCI_ACCESS_REJECT;
 	}
 
-	for (n = 0; n < len; n++)
-		if (list[n].reg_num == reg_num)
-			return ((list[n].mask >> (reg_bias * 8)) &
-				 BYTE_MASK(size)) == BYTE_MASK(size);
-
-	return false;
+	// HACK: permit capability access until we properly filter it
+	return PCI_ACCESS_PERFORM;
 }
 
 /**
@@ -150,10 +195,9 @@ int pci_init(void)
 int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			    u64 addr, u32 *value)
 {
+	u32 mmcfg_offset, val, reg_bias, reg_num;
 	const struct jailhouse_pci_device *device;
-	u32 mmcfg_offset;
-	u32 reg_num;
-	u32 reg_bias;
+	enum pci_access access;
 
 	if (addr < pci_mmcfg_addr ||
 	    addr >= (pci_mmcfg_addr + pci_mmcfg_size - 4))
@@ -165,23 +209,20 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
 
 	if (is_write) {
-		if (!device)
+		val = *value;
+		access = pci_cfg_write_moderate(cell, device,
+						reg_num - reg_bias, reg_bias,
+						4, &val);
+		if (access == PCI_ACCESS_REJECT)
 			goto invalid_access;
-		if (reg_num < PCI_CONFIG_HEADER_SIZE) {
-			if (!pci_cfg_write_allowed(device->type,
-						   reg_num - reg_bias,
-						   reg_bias, 4))
-				goto invalid_access;
-		} else {
-			// TODO: moderate capability access
-			goto invalid_access;
-		}
-		mmio_write32(pci_space + mmcfg_offset, *value);
-	} else
-		if (device)
+		mmio_write32(pci_space + mmcfg_offset, val);
+	} else {
+		access = pci_cfg_read_moderate(cell, device,
+					       reg_num - reg_bias, reg_bias,
+					       4, value);
+		if (access == PCI_ACCESS_PERFORM)
 			*value = mmio_read32(pci_space + mmcfg_offset);
-		else
-			*value = -1;
+	}
 
 	return 1;
 
