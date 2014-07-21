@@ -101,6 +101,7 @@ restart:
 			goto error_unsupported;
 		else if (op[1].modrm.rm != 4) /* no SIB */
 			break;
+		access.inst_len++;
 
 		pc++;
 		page = map_code_page(cpu_data, pg_structs, pc, page);
@@ -108,10 +109,8 @@ restart:
 			goto error_nopage;
 
 		op[2].raw = page[pc & PAGE_OFFS_MASK];
-		if (op[2].sib.ss != 0 || op[2].sib.index != 4 ||
-		    op[2].sib.base != 5)
-			goto error_unsupported;
-		access.inst_len += 5;
+		if (op[2].sib.base == 5)
+			access.inst_len += 4;
 		break;
 	case 1:
 	case 2:
