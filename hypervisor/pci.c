@@ -173,14 +173,14 @@ int pci_init(void)
 	pci_mmcfg_size = (mcfg->alloc_structs[0].end_bus -
 			  mcfg->alloc_structs[0].start_bus) * 256 * 4096;
 	pci_space = page_alloc(&remap_pool, pci_mmcfg_size / PAGE_SIZE);
-	if (pci_space)
-		page_map_create(&hv_paging_structs,
-				mcfg->alloc_structs[0].base_addr,
-				pci_mmcfg_size, (unsigned long)pci_space,
-				PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				PAGE_MAP_NON_COHERENT);
+	if (!pci_space)
+		return -ENOMEM;
 
-	return 0;
+	return page_map_create(&hv_paging_structs,
+			       mcfg->alloc_structs[0].base_addr,
+			       pci_mmcfg_size, (unsigned long)pci_space,
+			       PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+			       PAGE_MAP_NON_COHERENT);
 }
 
 /**
