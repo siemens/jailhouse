@@ -12,6 +12,9 @@ o x86 support
   - block
   - allow per cell (managing inter-core/inter-cell impacts)
  - moderate access to keyboard controller (ports 0x60/0x64)
+ - moderate programming of LVTs that evaluate the Delivery Mode field
+   (NMI, SMI...)
+ - review & fix x2APIC trapping and emulation (e.g. writing to DLR/DFR)
 o ARM support
  - v7 (32-bit)
  - v8 (64-bit)
@@ -20,8 +23,13 @@ o configuration
    (shared pages, read-only PIO ports)?
  - review of format, rework of textual representation
  - platform device assignment
- - create base configuration from knowledge base and running system
-   [WIP: python script, optional shell script for data collection on target]
+ - enhance config generator
+  - confine the created root cell config to the essentially required resources
+    (e.g. PCI BARs)
+  - generate non-root cell configs
+  - add knowledge base about resource access rules that need manual review or
+    configurations that are known to be problematic (e.g. INTx sharing between
+    cells)
 o setup validation
  - check integrity of configurations
  - check integrity of runtime environment (hypervisor core & page_pool,
