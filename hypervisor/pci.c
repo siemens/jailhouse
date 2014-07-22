@@ -199,7 +199,7 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	const struct jailhouse_pci_device *device;
 	enum pci_access access;
 
-	if (addr < pci_mmcfg_addr ||
+	if (!pci_space || addr < pci_mmcfg_addr ||
 	    addr >= (pci_mmcfg_addr + pci_mmcfg_size - 4))
 		return 0;
 
