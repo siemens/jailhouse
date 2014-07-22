@@ -42,7 +42,7 @@ targets += hypervisor.o
 $(obj)/hypervisor.o: $(src)/hypervisor.lds $(HYPERVISOR_OBJS)
 	$(call if_changed,ld)
 
-OBJCOPYFLAGS_jailhouse.bin := -O binary
+OBJCOPYFLAGS_jailhouse.bin := -O binary -R .eh_frame
 
 targets += jailhouse.bin
 $(obj)/jailhouse.bin: $(obj)/hypervisor.o

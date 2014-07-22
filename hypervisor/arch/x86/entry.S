@@ -54,10 +54,14 @@ arch_entry:
 
 /* Exception/interrupt entry points */
 .macro common_exception_entry vector
+	.cfi_startproc
+	.cfi_def_cfa_offset 16
 	pushq $\vector
+	.cfi_adjust_cfa_offset 8
 	mov %rsp,%rdi
 	call x86_exception_handler
 1:	jmp 1b
+	.cfi_endproc
 .endm
 
 .macro no_error_entry vector

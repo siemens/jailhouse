@@ -35,7 +35,5 @@ SECTIONS
 	. = ALIGN(PAGE_SIZE);
 	__page_pool = .;
 
-	/DISCARD/ : {
-		*(.eh_frame*)
-	}
+	.eh_frame	: { *(.eh_frame*) }
 }
