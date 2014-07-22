@@ -68,15 +68,15 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* ACPI */ {
-			.phys_start = 0xcca64000,
-			.virt_start = 0xcca64000,
+			.phys_start = 0xcca63000,
+			.virt_start = 0xcca63000,
 			.size = 0x15000,
 			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* RAM */ {
-			.phys_start = 0xcca79000,
-			.virt_start = 0xcca79000,
-			.size = 0x12787000,
+			.phys_start = 0xcdfff000,
+			.virt_start = 0xcdfff000,
+			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
