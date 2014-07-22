@@ -90,7 +90,7 @@ struct {
 		/* PCI */ {
 			.phys_start = 0xdf200000,
 			.virt_start = 0xdf200000,
-			.size = 0x1fa00000,
+			.size = 0x18e00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* not safe until we catch MSIs via interrupt remapping */

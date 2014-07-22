@@ -71,9 +71,9 @@ struct {
 			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* PCI */ {
-			.phys_start = 0x40000000,
-			.virt_start = 0x40000000,
-			.size = 0xbec00000,
+			.phys_start = 0xc0000000,
+			.virt_start = 0xc0000000,
+			.size = 0x3ec00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* not safe until we catch MSIs via interrupt remapping */
