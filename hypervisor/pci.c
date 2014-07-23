@@ -76,6 +76,29 @@ pci_get_assigned_device(const struct cell *cell, u16 bdf)
 }
 
 /**
+ * pci_find_capability() - Look up capability at given config space address
+ * @cell:	Device owning cell
+ * @device:	The device to be accessed
+ * @address:	Config space access address
+ *
+ * Return: Corresponding capability structure or NULL if none found.
+ */
+static const struct jailhouse_pci_capability *
+pci_find_capability(const struct cell *cell,
+		    const struct jailhouse_pci_device *device, u16 address)
+{
+	const struct jailhouse_pci_capability *cap =
+		jailhouse_cell_pci_caps(cell->config) + device->caps_start;
+	u32 n;
+
+	for (n = 0; n < device->num_caps; n++, cap++)
+		if (cap->start <= address && cap->start + cap->len > address)
+			return cap;
+
+	return NULL;
+}
+
+/**
  * pci_cfg_read_moderate() - Moderate config space read access
  * @cell:	Request issuing cell
  * @device:	The device to be accessed; if NULL, access will be emulated,
@@ -93,6 +116,8 @@ pci_cfg_read_moderate(const struct cell *cell,
 		      const struct jailhouse_pci_device *device, u8 reg_num,
 		      unsigned int reg_bias, unsigned int size, u32 *value)
 {
+	const struct jailhouse_pci_capability *cap;
+
 	if (!device) {
 		*value = -1;
 		return PCI_ACCESS_EMULATE;
@@ -101,7 +126,12 @@ pci_cfg_read_moderate(const struct cell *cell,
 	if (reg_num < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
 
-	// HACK: permit capability access until we properly filter it
+	cap = pci_find_capability(cell, device, reg_num + reg_bias);
+	if (!cap)
+		return PCI_ACCESS_PERFORM;
+
+	// TODO: Emulate MSI/MSI-X etc.
+
 	return PCI_ACCESS_PERFORM;
 }
 
@@ -123,6 +153,7 @@ pci_cfg_write_moderate(const struct cell *cell,
 		       const struct jailhouse_pci_device *device, u8 reg_num,
 		       unsigned int reg_bias, unsigned int size, u32 *value)
 {
+	const struct jailhouse_pci_capability *cap;
 	/* initialize list to work around wrong compiler warning */
 	const struct pci_cfg_access *list = NULL;
 	unsigned int n, len = 0;
@@ -148,7 +179,10 @@ pci_cfg_write_moderate(const struct cell *cell,
 		return PCI_ACCESS_REJECT;
 	}
 
-	// HACK: permit capability access until we properly filter it
+	cap = pci_find_capability(cell, device, reg_num + reg_bias);
+	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))
+		return PCI_ACCESS_REJECT;
+
 	return PCI_ACCESS_PERFORM;
 }
 
