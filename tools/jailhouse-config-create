@@ -211,7 +211,9 @@ def input_listdir(dir, wildcards):
         inputs['dirs'].add(dir + '/' + w)
     if options.generate_collector:
         return []
-    return os.listdir(options.root + dir)
+    dirs = os.listdir(options.root + dir)
+    dirs.sort()
+    return dirs
 
 
 def parse_cmdline():
