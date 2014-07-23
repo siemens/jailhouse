@@ -40,13 +40,13 @@ struct pci_cfg_access {
 /* Type 1: Endpoints */
 static const struct pci_cfg_access endpoint_write_access[] = {
 	{ 0x04, 0xffffffff }, /* Command, Status */
-	{ 0x0c, 0xff000000 }, /* BIST */
+	{ 0x0c, 0xff00ffff }, /* BIST, Latency Timer, Cacheline */
 	{ 0x3c, 0x000000ff }, /* Int Line */
 };
 /* Type 2: Bridges */
 static const struct pci_cfg_access bridge_write_access[] = {
 	{ 0x04, 0xffffffff }, /* Command, Status */
-	{ 0x0c, 0xff000000 }, /* BIST */
+	{ 0x0c, 0xff00ffff }, /* BIST, Latency Timer, Cacheline */
 	{ 0x3c, 0xffff00ff }, /* Int Line, Bridge Control */
 };
 
