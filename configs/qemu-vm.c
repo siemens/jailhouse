@@ -32,11 +32,11 @@ struct {
 	.header = {
 		.hypervisor_memory = {
 			.phys_start = 0x3c000000,
-			.size = 0x4000000 - 0x2000,
+			.size = 0x4000000 - 0x4000,
 		},
 		.config_memory = {
-			.phys_start = 0x3fffe000,
-			.size = 0x2000,
+			.phys_start = 0x3fffc000,
+			.size = 0x4000,
 		},
 		.platform_info.x86 = {
 			.pm_timer_address = 0x608,
@@ -65,9 +65,9 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* ACPI */ {
-			.phys_start = 0x3fffe000,
-			.virt_start = 0x3fffe000,
-			.size = 0x2000,
+			.phys_start = 0x3fffc000,
+			.virt_start = 0x3fffc000,
+			.size = 0x4000,
 			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* PCI */ {
