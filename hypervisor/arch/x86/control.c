@@ -194,7 +194,6 @@ static void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
 {
 	cpu_data->init_signaled = false;
 	cpu_data->wait_for_sipi = true;
-	vmx_cpu_park(cpu_data);
 }
 
 int x86_handle_events(struct per_cpu *cpu_data)
@@ -243,7 +242,11 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 	spin_unlock(&cpu_data->control_lock);
 
-	if (sipi_vector >= 0)
+	/* wait_for_sipi is only modified on this CPU, so checking outside of
+	 * control_lock is fine */
+	if (cpu_data->wait_for_sipi)
+		vmx_cpu_park(cpu_data);
+	else if (sipi_vector >= 0)
 		apic_clear();
 
 	return sipi_vector;
@@ -273,4 +276,6 @@ void arch_panic_halt(struct per_cpu *cpu_data)
 	spin_lock(&cpu_data->control_lock);
 	x86_enter_wait_for_sipi(cpu_data);
 	spin_unlock(&cpu_data->control_lock);
+
+	vmx_cpu_park(cpu_data);
 }
