@@ -163,6 +163,17 @@ void apic_nmi_handler(struct per_cpu *cpu_data)
 
 void apic_irq_handler(struct per_cpu *cpu_data)
 {
+	cpu_data->num_clear_apic_irqs++;
+	if (cpu_data->num_clear_apic_irqs > 256)
+		/*
+		 * Do not try to ack infinitely. Once we should have handled
+		 * all possible vectors, raise the task priority to prevent
+		 * further interrupts. TPR will be cleared again on exit from
+		 * apic_clear(). This way we will leave with some bits in IRR
+		 * set - better than spinning endlessly.
+		 */
+		apic_ops.write(APIC_REG_TPR, 0xff);
+
 	apic_ops.write(APIC_REG_EOI, APIC_EOI_ACK);
 }
 
@@ -174,7 +185,7 @@ static void apic_mask_lvt(unsigned int reg)
 		apic_ops.write(reg, val | APIC_LVT_MASKED);
 }
 
-void apic_clear(void)
+void apic_clear(struct per_cpu *cpu_data)
 {
 	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
 	int n;
@@ -195,9 +206,11 @@ void apic_clear(void)
 			apic_ops.write(APIC_REG_EOI, APIC_EOI_ACK);
 
 	apic_ops.write(APIC_REG_TPR, 0);
+	cpu_data->num_clear_apic_irqs = 0;
 	enable_irq();
 	cpu_relax();
 	disable_irq();
+	apic_ops.write(APIC_REG_TPR, 0);
 }
 
 static bool apic_valid_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)

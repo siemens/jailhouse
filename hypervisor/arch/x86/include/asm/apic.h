@@ -95,7 +95,7 @@ extern bool using_x2apic;
 int apic_init(void);
 int apic_cpu_init(struct per_cpu *cpu_data);
 
-void apic_clear(void);
+void apic_clear(struct per_cpu *cpu_data);
 
 void apic_send_nmi_ipi(struct per_cpu *target_data);
 

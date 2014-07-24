@@ -217,7 +217,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 			cpu_relax();
 
 		if (cpu_data->shutdown_cpu) {
-			apic_clear();
+			apic_clear(cpu_data);
 			vmx_cpu_exit(cpu_data);
 			asm volatile("1: hlt; jmp 1b");
 		}
@@ -247,7 +247,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	if (cpu_data->wait_for_sipi)
 		vmx_cpu_park(cpu_data);
 	else if (sipi_vector >= 0)
-		apic_clear();
+		apic_clear(cpu_data);
 
 	return sipi_vector;
 }

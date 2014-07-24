@@ -88,6 +88,8 @@ struct per_cpu {
 	int shutdown_state;
 	bool failed;
 
+	unsigned int num_clear_apic_irqs;
+
 	struct vmcs vmxon_region __attribute__((aligned(PAGE_SIZE)));
 	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));
 } __attribute__((aligned(PAGE_SIZE)));
