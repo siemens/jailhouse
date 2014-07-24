@@ -20,7 +20,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	__u64 cpus[${int((cpucount + 63) / 64)}];
 	struct jailhouse_memory mem_regions[${len(regions)}];
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
@@ -49,7 +49,12 @@ struct {
 	},
 
 	.cpus = {
-		0b${'1'*cpucount},
+		% for n in range(int(cpucount / 64)):
+		0xffffffffffffffff,
+		% endfor
+		% if (cpucount % 64):
+		${'0x%016x,' % ((1 << (cpucount % 64)) - 1)}
+		% endif
 	},
 
 	.mem_regions = {
