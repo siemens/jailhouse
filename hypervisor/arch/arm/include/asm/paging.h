@@ -98,6 +98,7 @@
 #define BLOCK_2M_VADDR_MASK	BIT_MASK(20, 0)
 
 #define TTBR_MASK		BIT_MASK(47, PADDR_OFF)
+#define VTTBR_VMID_SHIFT	48
 
 #define HTCR_RES1		((1 << 31) | (1 << 23))
 #define VTCR_RES1		((1 << 31))

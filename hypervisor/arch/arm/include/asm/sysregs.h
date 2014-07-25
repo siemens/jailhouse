@@ -40,6 +40,8 @@
 #define PAR_EL1		SYSREG_64(0, c7)
 
 /* AArch32-specific registers */
+#define HCR		SYSREG_32(4, c1, c1, 0)
+#define HCR2		SYSREG_32(4, c1, c1, 4)
 #define HMAIR0		SYSREG_32(4, c10, c2, 0)
 #define HMAIR1		SYSREG_32(4, c10, c2, 1)
 #define HVBAR		SYSREG_32(4, c12, c0, 0)

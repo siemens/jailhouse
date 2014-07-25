@@ -14,12 +14,20 @@
 #define _JAILHOUSE_ASM_CELL_H
 
 #include <jailhouse/types.h>
-#include <asm/paging.h>
+
+#ifndef __ASSEMBLY__
 
 #include <jailhouse/cell-config.h>
+#include <jailhouse/paging.h>
 #include <jailhouse/hypercall.h>
 
+struct arch_cell {
+	struct paging_structures mm;
+};
+
 struct cell {
+	struct arch_cell arch;
+
 	unsigned int id;
 	unsigned int data_pages;
 	struct jailhouse_cell_desc *config;
@@ -39,4 +47,5 @@ struct cell {
 
 extern struct cell root_cell;
 
+#endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_CELL_H */
