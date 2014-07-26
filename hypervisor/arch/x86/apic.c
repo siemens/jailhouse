@@ -24,6 +24,27 @@
 
 bool using_x2apic;
 
+/* Initialized for x2APIC, adjusted for xAPIC during init */
+static u32 apic_reserved_bits[] = {
+	[0x00 ... 0x07] = -1,
+	[0x08]          = 0xffffff00,	/* TPR */
+	[0x09 ... 0x0a] = -1,
+	[0x0b]          = 0,		/* EOI */
+	[0x0c ... 0x0e] = -1,
+	[0x0f]          = 0xfffffe00,	/* SVR */
+	[0x10 ... 0x2e] = -1,
+	[0x2f]          = 0xfffef800,	/* CMCI */
+	[0x30]          = 0xfff33000,	/* ICR (0..31) */
+	[0x31]          = -1,
+	[0x32]          = 0xfff8ff00,	/* Timer */
+	[0x33 ... 0x34] = 0xfffef800,	/* Thermal, Perf */
+	[0x35 ... 0x36] = 0xfff0f800,	/* LINT0, LINT1 */
+	[0x37]          = 0xfff8ff00,	/* Error */
+	[0x38]		= 0,		/* Initial Counter */
+	[0x39 ... 0x3d] = -1,
+	[0x3e]		= 0xfffffff4,	/* DCR */
+	[0x3f]		= 0xffffff00,	/* Self IPI */
+};
 static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = APIC_INVALID_ID };
 static void *xapic_page;
 
@@ -138,6 +159,12 @@ int apic_init(void)
 		apic_ops.read_id = read_xapic_id;
 		apic_ops.write = write_xapic;
 		apic_ops.send_ipi = send_xapic_ipi;
+
+		/* adjust reserved bits to xAPIC mode */
+		apic_reserved_bits[0x0d] = 0; /* LDR, separately filtered */
+		apic_reserved_bits[0x0e] = 0; /* DFR, separately filtered */
+		apic_reserved_bits[0x31] = 0x00ffffff; /* ICR (32..63) */
+		apic_reserved_bits[0x3f] = -1; /* no Self IPI register */
 	} else
 		return -EIO;
 
@@ -329,6 +356,16 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 	return true;
 }
 
+static bool apic_accessing_reserved_bits(unsigned int reg, u32 val)
+{
+	if ((apic_reserved_bits[reg] & val) == 0)
+		return false;
+
+	printk("FATAL: Trying to set reserved APIC bits "
+	       "(reg %02x, value %08x)\n", reg, val);
+	return true;
+}
+
 unsigned int apic_mmio_access(struct registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,
 			      const struct guest_paging_structures *pg_structs,
@@ -347,6 +384,9 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 	}
 	if (is_write) {
 		val = ((unsigned long *)guest_regs)[access.reg];
+		if (apic_accessing_reserved_bits(reg, val))
+			return 0;
+
 		if (reg == APIC_REG_ICR) {
 			if (!apic_handle_icr_write(cpu_data, val,
 					apic_ops.read(APIC_REG_ICR_HI)))
@@ -374,6 +414,9 @@ bool x2apic_handle_write(struct registers *guest_regs,
 {
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 	u32 val = guest_regs->rax;
+
+	if (apic_accessing_reserved_bits(reg, val))
+		return false;
 
 	if (reg == APIC_REG_SELF_IPI)
 		/* TODO: emulate */
