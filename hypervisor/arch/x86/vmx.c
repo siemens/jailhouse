@@ -31,11 +31,12 @@ static const struct segment invalid_seg = {
 	.access_rights = 0x10000
 };
 
+/* bit cleared: direct access allowed */
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BMP_0000_READ ] = {
 		[      0/8 ...  0x7ff/8 ] = 0,
 		[  0x800/8 ...  0x807/8 ] = 0x0c, /* 0x802, 0x803 */
-		[  0x808/8 ...  0x80f/8 ] = 0xa5, /* 0x808, 0x80a, 0x80d */
+		[  0x808/8 ...  0x80f/8 ] = 0xa5, /* 0x808, 0x80a, 0x80d, 0x80f */
 		[  0x810/8 ...  0x817/8 ] = 0xff, /* 0x810 - 0x817 */
 		[  0x818/8 ...  0x81f/8 ] = 0xff, /* 0x818 - 0x81f */
 		[  0x820/8 ...  0x827/8 ] = 0xff, /* 0x820 - 0x827 */
@@ -1149,7 +1150,8 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		}
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
-			x2apic_handle_write(guest_regs);
+			if (!x2apic_handle_write(guest_regs, cpu_data))
+				break;
 			vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
 		}

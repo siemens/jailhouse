@@ -369,28 +369,32 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 	return access.inst_len;
 }
 
-void x2apic_handle_write(struct registers *guest_regs)
+bool x2apic_handle_write(struct registers *guest_regs,
+			 struct per_cpu *cpu_data)
 {
-	u32 reg = guest_regs->rcx;
+	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
+	u32 val = guest_regs->rax;
 
-	if (reg == MSR_X2APIC_SELF_IPI)
+	if (reg == APIC_REG_SELF_IPI)
 		/* TODO: emulate */
 		printk("Unhandled x2APIC self IPI write\n");
 	else
-		apic_ops.write(reg - MSR_X2APIC_BASE, guest_regs->rax);
+		apic_ops.write(reg, val);
+	return true;
 }
 
+/* must only be called for readable registers */
 void x2apic_handle_read(struct registers *guest_regs)
 {
-	u32 reg = guest_regs->rcx;
+	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 
 	guest_regs->rax &= ~0xffffffffUL;
-	if (reg == MSR_X2APIC_ID)
+	if (reg == APIC_REG_ID)
 		guest_regs->rax |= apic_ops.read_id();
 	else
-		guest_regs->rax |= apic_ops.read(reg - MSR_X2APIC_BASE);
+		guest_regs->rax |= apic_ops.read(reg);
 
 	guest_regs->rdx &= ~0xffffffffUL;
-	if (reg == MSR_X2APIC_ICR)
-		guest_regs->rdx |= apic_ops.read(reg - MSR_X2APIC_BASE + 1);
+	if (reg == APIC_REG_ICR)
+		guest_regs->rdx |= apic_ops.read(reg + 1);
 }

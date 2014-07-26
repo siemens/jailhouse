@@ -41,6 +41,7 @@
 #define APIC_REG_LVT0			0x35
 #define APIC_REG_LVT1			0x36
 #define APIC_REG_LVTERR			0x37
+#define APIC_REG_SELF_IPI		0x3f
 
 #define APIC_EOI_ACK			0
 #define APIC_ICR_VECTOR_MASK		0x000000ff
@@ -109,5 +110,6 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			      const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write);
 
-void x2apic_handle_write(struct registers *guest_regs);
+bool x2apic_handle_write(struct registers *guest_regs,
+			 struct per_cpu *cpu_data);
 void x2apic_handle_read(struct registers *guest_regs);
