@@ -1141,13 +1141,6 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_MSR_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
-		if (guest_regs->rcx == MSR_X2APIC_ICR) {
-			if (!apic_handle_icr_write(cpu_data, guest_regs->rax,
-						   guest_regs->rdx))
-				break;
-			vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
-			return;
-		}
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
 			if (!x2apic_handle_write(guest_regs, cpu_data))

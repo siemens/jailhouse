@@ -378,6 +378,8 @@ bool x2apic_handle_write(struct registers *guest_regs,
 	if (reg == APIC_REG_SELF_IPI)
 		/* TODO: emulate */
 		printk("Unhandled x2APIC self IPI write\n");
+	else if (reg == APIC_REG_ICR)
+		return apic_handle_icr_write(cpu_data, val, guest_regs->rdx);
 	else
 		apic_ops.write(reg, val);
 	return true;
