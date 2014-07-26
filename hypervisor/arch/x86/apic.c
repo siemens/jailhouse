@@ -366,6 +366,18 @@ static bool apic_accessing_reserved_bits(unsigned int reg, u32 val)
 	return true;
 }
 
+static bool apic_invalid_lvt_delivery_mode(unsigned int reg, u32 val)
+{
+	if (val & APIC_LVT_MASKED ||
+	    (val & APIC_LVT_DLVR_MASK) == APIC_LVT_DLVR_FIXED ||
+	    (val & APIC_LVT_DLVR_MASK) == APIC_LVT_DLVR_NMI)
+		return false;
+
+	printk("FATAL: Setting invalid LVT delivery mode "
+	       "(reg %02x, value %08x)\n", reg, val);
+	return true;
+}
+
 unsigned int apic_mmio_access(struct registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,
 			      const struct guest_paging_structures *pg_structs,
@@ -400,7 +412,10 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			panic_printk("FATAL: Unsupported change to DFR: %x\n",
 				     val);
 			return 0;
-		} else
+		} else if (reg >= APIC_REG_LVTCMCI && reg <= APIC_REG_LVTERR &&
+			   apic_invalid_lvt_delivery_mode(reg, val))
+			return 0;
+		else
 			apic_ops.write(reg, val);
 	} else {
 		val = apic_ops.read(reg);
@@ -423,6 +438,9 @@ bool x2apic_handle_write(struct registers *guest_regs,
 		printk("Unhandled x2APIC self IPI write\n");
 	else if (reg == APIC_REG_ICR)
 		return apic_handle_icr_write(cpu_data, val, guest_regs->rdx);
+	else if (reg >= APIC_REG_LVTCMCI && reg <= APIC_REG_LVTERR &&
+		 apic_invalid_lvt_delivery_mode(reg, val))
+		return false;
 	else
 		apic_ops.write(reg, val);
 	return true;
