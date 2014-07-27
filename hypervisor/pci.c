@@ -204,8 +204,7 @@ int pci_init(void)
 		return -EIO;
 
 	pci_mmcfg_addr = mcfg->alloc_structs[0].base_addr;
-	pci_mmcfg_size = (mcfg->alloc_structs[0].end_bus -
-			  mcfg->alloc_structs[0].start_bus) * 256 * 4096;
+	pci_mmcfg_size = (mcfg->alloc_structs[0].end_bus + 1) * 256 * 4096;
 	pci_space = page_alloc(&remap_pool, pci_mmcfg_size / PAGE_SIZE);
 	if (!pci_space)
 		return -ENOMEM;
