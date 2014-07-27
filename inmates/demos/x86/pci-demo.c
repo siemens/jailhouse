@@ -74,6 +74,8 @@ void inmate_main(void)
 
 	asm volatile("sti");
 
+	mmio_write16(hdbar + HDA_STATESTS, mmio_read16(hdbar + HDA_STATESTS));
+
 	mmio_write16(hdbar + HDA_GCTL, 0);
 	delay_us(7000);
 	mmio_write16(hdbar + HDA_GCTL, 1);
