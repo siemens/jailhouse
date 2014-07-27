@@ -16,6 +16,8 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/utils.h>
 
+#define PCI_CONFIG_HEADER_SIZE		0x40
+
 struct acpi_mcfg_alloc {
 	u64 base_addr;
 	u16 segment_num;

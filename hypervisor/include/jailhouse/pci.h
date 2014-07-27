@@ -15,7 +15,6 @@
 
 #include <asm/cell.h>
 
-#define PCI_CONFIG_HEADER_SIZE		0x40
 
 enum pci_access { PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM, PCI_ACCESS_EMULATE };
 
