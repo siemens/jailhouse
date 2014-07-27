@@ -76,7 +76,7 @@ data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
 			reg_data = inb(port);
 		else if (size == 2)
 			reg_data = inw(port);
-		else if (size == 4)
+		else
 			reg_data = inl(port);
 
 		spin_unlock(&pci_lock);
@@ -120,7 +120,7 @@ data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
 		outb(reg_data, port);
 	else if (size == 2)
 		outw(reg_data, port);
-	else if (size == 4)
+	else
 		outl(reg_data, port);
 
 	spin_unlock(&pci_lock);
