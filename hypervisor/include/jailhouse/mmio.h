@@ -22,25 +22,25 @@ struct mmio_access {
 	unsigned int reg;
 };
 
-static inline u32 mmio_read32(void *address)
-{
-	return *(volatile u32 *)address;
+#define DEFINE_MMIO_READ(size)						\
+static inline u##size mmio_read##size(void *address)			\
+{									\
+	return *(volatile u##size *)address;				\
 }
+DEFINE_MMIO_READ(8)
+DEFINE_MMIO_READ(16)
+DEFINE_MMIO_READ(32)
+DEFINE_MMIO_READ(64)
 
-static inline u64 mmio_read64(void *address)
-{
-	return *(volatile u64 *)address;
+#define DEFINE_MMIO_WRITE(size)						\
+static inline void mmio_write##size(void *address, u##size value)	\
+{									\
+	*(volatile u##size *)address = value;				\
 }
-
-static inline void mmio_write32(void *address, u32 value)
-{
-	*(volatile u32 *)address = value;
-}
-
-static inline void mmio_write64(void *address, u64 value)
-{
-	*(volatile u64 *)address = value;
-}
+DEFINE_MMIO_WRITE(8)
+DEFINE_MMIO_WRITE(16)
+DEFINE_MMIO_WRITE(32)
+DEFINE_MMIO_WRITE(64)
 
 struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 			      const struct guest_paging_structures *pg_structs,
