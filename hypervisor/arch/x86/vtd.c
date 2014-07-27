@@ -292,20 +292,19 @@ int vtd_init(void)
 static bool vtd_add_device_to_cell(struct cell *cell,
 				   const struct jailhouse_pci_device *device)
 {
-	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
+	u64 *root_entry_lo = &root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;
 
-	if (root_entry_lo & VTD_ROOT_PRESENT) {
+	if (*root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
-			page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
+			page_map_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	} else {
 		context_entry_table = page_alloc(&mem_pool, 1);
 		if (!context_entry_table)
 			return false;
-		root_entry_table[device->bus].lo_word = VTD_ROOT_PRESENT |
+		*root_entry_lo = VTD_ROOT_PRESENT |
 			page_map_hvirt2phys(context_entry_table);
-		flush_cache(&root_entry_table[device->bus].lo_word,
-			    sizeof(u64));
+		flush_cache(root_entry_lo, sizeof(u64));
 	}
 
 	context_entry = &context_entry_table[device->devfn];
@@ -330,15 +329,15 @@ static void
 vtd_remove_device_from_cell(struct cell *cell,
 			    const struct jailhouse_pci_device *device)
 {
-	u64 root_entry_lo = root_entry_table[device->bus].lo_word;
+	u64 *root_entry_lo = &root_entry_table[device->bus].lo_word;
 	struct vtd_entry *context_entry_table;
 	struct vtd_entry *context_entry;
 	unsigned int n;
 
-	if (!(root_entry_lo & VTD_ROOT_PRESENT))
+	if (!(*root_entry_lo & VTD_ROOT_PRESENT))
 		return;
 
-	context_entry_table = page_map_phys2hvirt(root_entry_lo & PAGE_MASK);
+	context_entry_table = page_map_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	context_entry = &context_entry_table[device->devfn];
 
 	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
@@ -355,8 +354,8 @@ vtd_remove_device_from_cell(struct cell *cell,
 		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)
 			return;
 
-	root_entry_table[device->bus].lo_word &= ~VTD_ROOT_PRESENT;
-	flush_cache(&root_entry_table[device->bus].lo_word, sizeof(u64));
+	*root_entry_lo &= ~VTD_ROOT_PRESENT;
+	flush_cache(root_entry_lo, sizeof(u64));
 	page_free(&mem_pool, context_entry_table, 1);
 }
 
