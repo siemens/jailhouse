@@ -19,13 +19,19 @@
 
 #define PCI_CONFIG_HEADER_SIZE		0x40
 
-#define PCI_CFG_COMMAND			0x04
-# define PCI_CMD_INTX_OFF		(1 << 10)
+#define PCI_CAP_MSI			0x05
+#define PCI_CAP_MSIX			0x11
 
 #define for_each_configured_pci_device(dev, cell)			\
 	for ((dev) = (cell)->pci_devices;				\
 	     (dev) - (cell)->pci_devices < (cell)->config->num_pci_devices; \
 	     (dev)++)
+
+#define for_each_pci_cap(cap, dev, counter)				\
+	for ((cap) = jailhouse_cell_pci_caps((dev)->cell->config) +	\
+		(dev)->info->caps_start, (counter) = 0;			\
+	     (counter) < (dev)->info->num_caps;				\
+	     (cap)++, (counter)++)
 
 /* entry for PCI config space whitelist (granting access) */
 struct pci_cfg_access {
@@ -161,6 +167,7 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 				      unsigned int size, u32 *value)
 {
 	const struct jailhouse_pci_capability *cap;
+	unsigned int cap_offs;
 
 	if (!device) {
 		*value = -1;
@@ -174,7 +181,13 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 	if (!cap)
 		return PCI_ACCESS_PERFORM;
 
-	// TODO: Emulate MSI/MSI-X etc.
+	cap_offs = address - cap->start;
+	if (cap->id == PCI_CAP_MSI && cap_offs >= 4 &&
+	    (cap_offs < 10 || (device->info->msi_64bits && cap_offs < 14))) {
+		*value = device->msi_registers.raw[cap_offs / 4] >>
+			((cap_offs % 4) * 8);
+		return PCI_ACCESS_DONE;
+	}
 
 	return PCI_ACCESS_PERFORM;
 }
@@ -194,8 +207,9 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	const struct jailhouse_pci_capability *cap;
 	/* initialize list to work around wrong compiler warning */
 	const struct pci_cfg_access *list = NULL;
-	unsigned int n, bias_shift, len = 0;
-	u32 mask;
+	unsigned int bias_shift = (address % 4) * 8;
+	unsigned int n, cap_offs, len = 0;
+	u32 mask = BYTE_MASK(size);
 
 	if (!device)
 		return PCI_ACCESS_REJECT;
@@ -209,9 +223,6 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 			len = ARRAY_SIZE(bridge_write_access);
 		}
 
-		bias_shift = (address & 0x003) * 8;
-		mask = BYTE_MASK(size);
-
 		for (n = 0; n < len; n++) {
 			if (list[n].reg_num == (address & 0xffc) &&
 			    ((list[n].mask >> bias_shift) & mask) == mask)
@@ -224,6 +235,25 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	cap = pci_find_capability(device, address);
 	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))
 		return PCI_ACCESS_REJECT;
+
+	cap_offs = address - cap->start;
+	if (cap->id == PCI_CAP_MSI &&
+	    (cap_offs < 10 || (device->info->msi_64bits && cap_offs < 14))) {
+		value <<= bias_shift;
+		mask <<= bias_shift;
+		device->msi_registers.raw[cap_offs / 4] &= ~mask;
+		device->msi_registers.raw[cap_offs / 4] |= value;
+
+		if (pci_update_msi(device, cap) < 0)
+			return PCI_ACCESS_REJECT;
+
+		/*
+		 * Address and data words are emulated, the control word is
+		 * written as-is.
+		 */
+		if (cap_offs >= 4)
+			return PCI_ACCESS_DONE;
+	}
 
 	return PCI_ACCESS_PERFORM;
 }
@@ -308,6 +338,55 @@ invalid_access:
 
 }
 
+unsigned int pci_enabled_msi_vectors(struct pci_device *device)
+{
+	return device->msi_registers.msg32.enable ?
+		1 << device->msi_registers.msg32.mme : 0;
+}
+
+static void pci_save_msi(struct pci_device *device,
+			 const struct jailhouse_pci_capability *cap)
+{
+	u16 bdf = device->info->bdf;
+	unsigned int n;
+
+	for (n = 0; n < (device->info->msi_64bits ? 4 : 3); n++)
+		device->msi_registers.raw[n] =
+			pci_read_config(bdf, cap->start + n * 4, 4);
+}
+
+static void pci_restore_msi(struct pci_device *device,
+			    const struct jailhouse_pci_capability *cap)
+{
+	unsigned int n;
+
+	for (n = 1; n < (device->info->msi_64bits ? 4 : 3); n++)
+		pci_write_config(device->info->bdf, cap->start + n * 4,
+				 device->msi_registers.raw[n], 4);
+}
+
+/**
+ * pci_prepare_handover() - Prepare the handover of PCI devices to Jailhouse or
+ *                          back to Linux
+ */
+void pci_prepare_handover(void)
+{
+	const struct jailhouse_pci_capability *cap;
+	struct pci_device *device;
+	unsigned int n;
+
+	if (!root_cell.pci_devices)
+		return;
+
+	for_each_configured_pci_device(device, &root_cell) {
+		if (device->cell)
+			for_each_pci_cap(cap, device, n)
+				if (cap->id == PCI_CAP_MSI)
+					pci_suppress_msi(device, cap);
+				// TODO: MSI-X
+	}
+}
+
 static int pci_add_device(struct cell *cell, struct pci_device *device)
 {
 	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
@@ -330,8 +409,9 @@ int pci_cell_init(struct cell *cell)
 					      sizeof(struct pci_device));
 	const struct jailhouse_pci_device *dev_infos =
 		jailhouse_cell_pci_devices(cell->config);
+	const struct jailhouse_pci_capability *cap;
 	struct pci_device *device, *root_device;
-	unsigned int ndev;
+	unsigned int ndev, ncap;
 	int err;
 
 	cell->pci_devices = page_alloc(&mem_pool, array_size / PAGE_SIZE);
@@ -362,7 +442,18 @@ int pci_cell_init(struct cell *cell)
 		}
 
 		device->cell = cell;
+
+		for_each_pci_cap(cap, device, ncap)
+			if (cap->id == PCI_CAP_MSI)
+				pci_save_msi(device, cap);
+			else if (cap->id == PCI_CAP_MSIX)
+				// TODO: Handle
+				printk("MSI-X left out @%02x:%02x.%x!\n",
+				       PCI_BDF_PARAMS(device->info->bdf));
 	}
+
+	if (cell == &root_cell)
+		pci_prepare_handover();
 
 	return 0;
 }
@@ -396,12 +487,55 @@ void pci_cell_exit(struct cell *cell)
 	if (cell == &root_cell)
 		return;
 
-	for_each_configured_pci_device(device, cell) {
-		if (!device->cell)
-			continue;
-		pci_remove_device(device);
-		pci_return_device_to_root_cell(device);
-	}
+	for_each_configured_pci_device(device, cell)
+		if (device->cell) {
+			pci_remove_device(device);
+			pci_return_device_to_root_cell(device);
+		}
 
 	page_free(&mem_pool, cell->pci_devices, array_size / PAGE_SIZE);
+}
+
+void pci_config_commit(struct cell *cell_added_removed)
+{
+	const struct jailhouse_pci_capability *cap;
+	struct pci_device *device;
+	unsigned int n;
+	int err = 0;
+
+	if (!cell_added_removed)
+		return;
+
+	for_each_configured_pci_device(device, &root_cell)
+		if (device->cell)
+			for_each_pci_cap(cap, device, n) {
+				if (cap->id == PCI_CAP_MSI)
+					err = pci_update_msi(device, cap);
+				// TODO: MSI-X
+				if (err)
+					goto error;
+			}
+	return;
+
+error:
+	panic_printk("FATAL: Unsupported MSI/MSI-X state, device %02x:%02x.%x,"
+		     " cap %d\n", PCI_BDF_PARAMS(device->info->bdf), cap->id);
+	panic_stop(NULL);
+}
+
+void pci_shutdown(void)
+{
+	const struct jailhouse_pci_capability *cap;
+	struct pci_device *device;
+	unsigned int n;
+
+	if (!root_cell.pci_devices)
+		return;
+
+	for_each_configured_pci_device(device, &root_cell)
+		if (device->cell)
+			for_each_pci_cap(cap, device, n)
+				if (cap->id == PCI_CAP_MSI)
+					pci_restore_msi(device, cap);
+				// TODO: MSI-X
 }

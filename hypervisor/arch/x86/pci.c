@@ -11,9 +11,11 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/utils.h>
+#include <asm/apic.h>
 #include <asm/io.h>
 #include <asm/pci.h>
 #include <asm/vtd.h>
@@ -222,4 +224,113 @@ int arch_pci_add_device(struct cell *cell, struct pci_device *device)
 void arch_pci_remove_device(struct pci_device *device)
 {
 	vtd_remove_pci_device(device);
+}
+
+static union x86_msi_vector pci_get_x86_msi_vector(struct pci_device *device)
+{
+	union pci_msi_registers *regs = &device->msi_registers;
+	bool msi_64bits = device->info->msi_64bits;
+	union x86_msi_vector msi;
+
+	msi.raw.address = msi_64bits ? regs->msg64.address :
+				       regs->msg32.address;
+	msi.raw.data = msi_64bits ? regs->msg64.data : regs->msg32.data;
+	return msi;
+}
+
+static struct apic_irq_message
+pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
+			 unsigned int legacy_vectors, union x86_msi_vector msi)
+{
+	struct apic_irq_message irq_msg;
+
+	irq_msg.vector = msi.native.vector;
+	if (legacy_vectors > 1) {
+		irq_msg.vector &= ~(legacy_vectors - 1);
+		irq_msg.vector |= vector;
+	}
+	irq_msg.delivery_mode = msi.native.delivery_mode;
+	irq_msg.level_triggered = 0;
+	irq_msg.dest_logical = msi.native.dest_logical;
+	irq_msg.redir_hint = msi.native.redir_hint;
+	irq_msg.destination = msi.native.destination;
+
+	return irq_msg;
+}
+
+void pci_suppress_msi(struct pci_device *device,
+		      const struct jailhouse_pci_capability *cap)
+{
+	unsigned int n, vectors = pci_enabled_msi_vectors(device);
+	const struct jailhouse_pci_device *info = device->info;
+	struct apic_irq_message irq_msg;
+	union x86_msi_vector msi = {
+		.native.dest_logical = 1,
+		.native.redir_hint = 1,
+		.native.address = MSI_ADDRESS_VALUE,
+	};
+
+	if (!(pci_read_config(info->bdf, PCI_CFG_COMMAND, 2) & PCI_CMD_MASTER))
+		return;
+
+	/*
+	 * Disable delivery by setting no destination CPU bit in logical
+	 * addressing mode.
+	 */
+	if (info->msi_64bits)
+		pci_write_config(info->bdf, cap->start + 8, 0, 4);
+	pci_write_config(info->bdf, cap->start + 4, (u32)msi.raw.address, 4);
+
+	/*
+	 * Inject MSI vectors to avoid losing events while suppressed.
+	 * Linux can handle rare spurious interrupts.
+	 */
+	msi = pci_get_x86_msi_vector(device);
+	for (n = 0; n < vectors; n++) {
+		irq_msg = pci_translate_msi_vector(device, n, vectors, msi);
+		apic_send_irq(irq_msg);
+	}
+}
+
+int pci_update_msi(struct pci_device *device,
+		   const struct jailhouse_pci_capability *cap)
+{
+	unsigned int n, vectors = pci_enabled_msi_vectors(device);
+	union x86_msi_vector msi = pci_get_x86_msi_vector(device);
+	const struct jailhouse_pci_device *info = device->info;
+	struct apic_irq_message irq_msg;
+	u16 bdf = info->bdf;
+	int result = 0;
+
+	if (vectors == 0)
+		return 0;
+
+	for (n = 0; n < vectors; n++) {
+		irq_msg = pci_translate_msi_vector(device, n, vectors, msi);
+		result = vtd_map_interrupt(device->cell, bdf, n, irq_msg);
+		// HACK for QEMU
+		if (result == -ENOSYS) {
+			for (n = 1; n < (info->msi_64bits ? 4 : 3); n++)
+				pci_write_config(bdf, cap->start + n * 4,
+					device->msi_registers.raw[n], 4);
+			return 0;
+		}
+		if (result < 0)
+			return result;
+	}
+
+	/* set result to the base index again */
+	result -= vectors - 1;
+
+	pci_write_config(bdf, cap->start + (info->msi_64bits ? 12 : 8), 0, 2);
+
+	if (info->msi_64bits)
+		pci_write_config(bdf, cap->start + 8, 0, 4);
+	msi.remap.int_index15 = result >> 15;
+	msi.remap.shv = 1;
+	msi.remap.remapped = 1;
+	msi.remap.int_index = result;
+	pci_write_config(bdf, cap->start + 4, (u32)msi.raw.address, 4);
+
+	return 0;
 }

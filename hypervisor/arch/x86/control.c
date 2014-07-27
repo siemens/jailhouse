@@ -112,13 +112,17 @@ void arch_config_commit(struct per_cpu *cpu_data,
 	vmx_invept();
 
 	vtd_config_commit(cell_added_removed);
+	pci_config_commit(cell_added_removed);
 	ioapic_config_commit(cell_added_removed);
 }
 
 void arch_shutdown(void)
 {
+	pci_prepare_handover();
 	ioapic_prepare_handover();
+
 	vtd_shutdown();
+	pci_shutdown();
 	ioapic_shutdown();
 }
 

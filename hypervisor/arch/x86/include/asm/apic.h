@@ -97,12 +97,22 @@ union x86_msi_vector {
 		u32 vector:8,
 		    delivery_mode:3,
 		    reserved:21;
-	} native;
+	} __attribute__((packed)) native;
+	struct {
+		u64 unused:2,
+		    int_index15:1,
+		    shv:1,
+		    remapped:1,
+		    int_index:15,
+		    address:44;
+		u16 subhandle;
+		u16 zero;
+	} __attribute__((packed)) remap;
 	struct {
 		u64 address;
 		u32 data;
-	} raw;
-};
+	} __attribute__((packed)) raw;
+} __attribute__((packed));
 
 /* MSI delivery modes */
 #define MSI_DM_NMI			(0x4 << 8)
