@@ -127,8 +127,8 @@ class PCIDevice:
     def __str__(self):
         return 'PCIDevice: %02x:%02x.%x' % (self.bus, self.dev, self.fn)
 
-    def devfn(self):
-        return self.dev << 3 | self.fn
+    def bdf(self):
+        return self.bus << 8 | self.dev << 3 | self.fn
 
     @staticmethod
     def parse_pcidevice_sysfsdir(basedir, dir):

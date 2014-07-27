@@ -71,7 +71,7 @@ pci_get_assigned_device(const struct cell *cell, u16 bdf)
 	u32 n;
 
 	for (n = 0; n < cell->config->num_pci_devices; n++)
-		if (((device[n].bus << 8) | device[n].devfn) == bdf)
+		if (device[n].bdf == bdf)
 			return &device[n];
 
 	return NULL;
@@ -263,8 +263,7 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 
 invalid_access:
 	panic_printk("FATAL: Invalid PCI MMCONFIG write, device %02x:%02x.%x, "
-		     "reg: %\n", mmcfg_offset >> 20, (mmcfg_offset >> 15) & 31,
-		     (mmcfg_offset >> 12) & 7, reg_num);
+		     "reg: %\n", PCI_BDF_PARAMS(mmcfg_offset >> 12), reg_num);
 	return -1;
 
 }

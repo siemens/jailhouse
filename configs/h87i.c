@@ -136,8 +136,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0x0,
+			.bdf = 0x0,
 			.caps_start = 0,
 			.num_caps = 1,
 		},
@@ -145,8 +144,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0x8,
+			.bdf = 0x8,
 			.caps_start = 1,
 			.num_caps = 4,
 		},
@@ -154,8 +152,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0x10,
+			.bdf = 0x10,
 			.caps_start = 5,
 			.num_caps = 3,
 		},
@@ -163,8 +160,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0x18,
+			.bdf = 0x18,
 			.caps_start = 8,
 			.num_caps = 3,
 		},
@@ -172,8 +168,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xa0,
+			.bdf = 0xa0,
 			.caps_start = 11,
 			.num_caps = 2,
 		},
@@ -181,8 +176,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xb0,
+			.bdf = 0xb0,
 			.caps_start = 13,
 			.num_caps = 2,
 		},
@@ -190,8 +184,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xc8,
+			.bdf = 0xc8,
 			.caps_start = 15,
 			.num_caps = 3,
 		},
@@ -199,8 +192,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xd0,
+			.bdf = 0xd0,
 			.caps_start = 18,
 			.num_caps = 3,
 		},
@@ -208,8 +200,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xd8,
+			.bdf = 0xd8,
 			.caps_start = 21,
 			.num_caps = 3,
 		},
@@ -217,8 +208,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xe8,
+			.bdf = 0xe8,
 			.caps_start = 18,
 			.num_caps = 3,
 		},
@@ -226,8 +216,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xf8,
+			.bdf = 0xf8,
 			.caps_start = 0,
 			.num_caps = 1,
 		},
@@ -235,8 +224,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xfa,
+			.bdf = 0xfa,
 			.caps_start = 24,
 			.num_caps = 3,
 		},
@@ -244,8 +232,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0,
-			.bus = 0x0,
-			.devfn = 0xfb,
+			.bdf = 0xfb,
 			.caps_start = 0,
 			.num_caps = 0,
 		},

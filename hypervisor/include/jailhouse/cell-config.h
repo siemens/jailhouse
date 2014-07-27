@@ -62,8 +62,7 @@ struct jailhouse_irqchip {
 struct jailhouse_pci_device {
 	__u32 type;
 	__u16 domain;
-	__u8 bus;
-	__u8 devfn;
+	__u16 bdf;
 	__u16 caps_start;
 	__u16 num_caps;
 } __attribute__((packed));

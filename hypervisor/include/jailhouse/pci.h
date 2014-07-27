@@ -5,6 +5,7 @@
  *
  * Authors:
  *  Ivan Kolchin <ivan.kolchin@siemens.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -15,6 +16,9 @@
 
 #include <asm/cell.h>
 
+#define PCI_BUS(bdf)		((bdf) >> 8)
+#define PCI_DEVFN(bdf)		((bdf) & 0xff)
+#define PCI_BDF_PARAMS(bdf)	(bdf) >> 8, ((bdf) >> 3) & 0x1f, (bdf) & 7
 
 enum pci_access { PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM, PCI_ACCESS_EMULATE };
 

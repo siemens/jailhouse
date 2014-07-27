@@ -76,8 +76,7 @@ struct {
 		{ /* Intel HDA @00:1b.0 */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
-			.bus = 0x00,
-			.devfn = 0xd8,
+			.bdf = 0x00d8,
 			.caps_start = 0,
 			.num_caps = 1,
 		},
