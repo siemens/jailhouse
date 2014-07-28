@@ -5,6 +5,7 @@
  *
  * Authors:
  *  Ivan Kolchin <ivan.kolchin@siemens.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -17,6 +18,60 @@
 
 /* protects the root bridge's PIO interface to the PCI config space */
 static DEFINE_SPINLOCK(pci_lock);
+
+/**
+ * arch_pci_read_config() - Read from PCI config space via PIO method
+ * @bdf:	16-bit bus/device/function ID of target
+ * @address:	Config space access address
+ * @size:	Access size (1, 2 or 4 bytes)
+ *
+ * Return: read value
+ */
+u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size)
+{
+	u16 port = PCI_REG_DATA_PORT + (address & 0x3);
+	u32 value;
+
+	spin_lock(&pci_lock);
+
+	outl(PCI_ADDR_ENABLE | (bdf << PCI_ADDR_BDF_SHIFT) |
+	     (address & PCI_ADDR_REGNUM_MASK), PCI_REG_ADDR_PORT);
+	if (size == 1)
+		value = inb(port);
+	else if (size == 2)
+		value = inw(port);
+	else
+		value = inl(port);
+
+	spin_unlock(&pci_lock);
+
+	return value;
+}
+
+/**
+ * arch_pci_write_config() - Write to PCI config space via PIO method
+ * @bdf:	16-bit bus/device/function ID of target
+ * @address:	Config space access address
+ * @value:	Value to be written
+ * @size:	Access size (1, 2 or 4 bytes)
+ */
+void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
+{
+	u16 port = PCI_REG_DATA_PORT + (address & 0x3);
+
+	spin_lock(&pci_lock);
+
+	outl(PCI_ADDR_ENABLE | (bdf << PCI_ADDR_BDF_SHIFT) |
+	     (address & PCI_ADDR_REGNUM_MASK), PCI_REG_ADDR_PORT);
+	if (size == 1)
+		outb(value, port);
+	else if (size == 2)
+		outw(value, port);
+	else
+		outl(value, port);
+
+	spin_unlock(&pci_lock);
+}
 
 /**
  * set_rax_reg() - Set value of RAX in guest register set
@@ -51,36 +106,22 @@ static u32 get_rax_reg(struct registers *guest_regs, u8 size)
  * data_port_in_handler() - Handler for IN accesses to data port
  * @guest_regs:		Guest register set
  * @cell:		Issuing cell
- * @addr_port_val:	Address port value the issuer programmed
- * @port:		I/O port number
- * @size:		Access size (1, 2 or 4 bytes)
  * @device:		Structure describing PCI device
+ * @address:		Config space access address
+ * @size:		Access size (1, 2 or 4 bytes)
  *
  * Return: 1 if handled successfully, -1 on access error
  */
 static int
 data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
-		     u32 addr_port_val, u16 port, unsigned int size,
-		     const struct jailhouse_pci_device *device)
+		     const struct jailhouse_pci_device *device,
+		     u16 address, unsigned int size)
 {
-	u8 reg_num = addr_port_val & PCI_ADDR_REGNUM_MASK;
 	u32 reg_data;
 
-	if (pci_cfg_read_moderate(cell, device,
-				  reg_num + port - PCI_REG_DATA_PORT, size,
-				  &reg_data) == PCI_ACCESS_PERFORM) {
-		spin_lock(&pci_lock);
-
-		outl(addr_port_val & PCI_ADDR_VALID_MASK, PCI_REG_ADDR_PORT);
-		if (size == 1)
-			reg_data = inb(port);
-		else if (size == 2)
-			reg_data = inw(port);
-		else
-			reg_data = inl(port);
-
-		spin_unlock(&pci_lock);
-	}
+	if (pci_cfg_read_moderate(cell, device, address, size,
+				  &reg_data) == PCI_ACCESS_PERFORM)
+		reg_data = arch_pci_read_config(device->bdf, address, size);
 
 	set_rax_reg(guest_regs, reg_data, size);
 
@@ -91,39 +132,24 @@ data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
  * data_port_out_handler() - Handler for OUT accesses to data port
  * @guest_regs:		Guest register set
  * @cell:		Issuing cell
- * @addr_port_val:	Address port value the issuer programmed
- * @port:		I/O port number
- * @size:		Access size (1, 2 or 4 bytes)
  * @device:		Structure describing PCI device
+ * @address:		Config space access address
+ * @size:		Access size (1, 2 or 4 bytes)
  *
  * Return: 1 if handled successfully, -1 on access error
  */
 static int
 data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
-		      u32 addr_port_val, u16 port, unsigned int size,
-		      const struct jailhouse_pci_device *device)
+		      const struct jailhouse_pci_device *device,
+		      u16 address, unsigned int size)
 {
-	u8 reg_num = addr_port_val & PCI_ADDR_REGNUM_MASK;
-	u32 reg_data;
+	u32 reg_data = get_rax_reg(guest_regs, size);
 
-	reg_data = get_rax_reg(guest_regs, size);
-
-	if (pci_cfg_write_moderate(cell, device,
-				   reg_num + port - PCI_REG_DATA_PORT, size,
-				   &reg_data) == PCI_ACCESS_REJECT)
+	if (pci_cfg_write_moderate(cell, device, address,
+				   size, &reg_data) == PCI_ACCESS_REJECT)
 		return -1;
 
-	spin_lock(&pci_lock);
-
-	outl(addr_port_val & PCI_ADDR_VALID_MASK, PCI_REG_ADDR_PORT);
-	if (size == 1)
-		outb(reg_data, port);
-	else if (size == 2)
-		outw(reg_data, port);
-	else
-		outl(reg_data, port);
-
-	spin_unlock(&pci_lock);
+	arch_pci_write_config(device->bdf, address, reg_data, size);
 
 	return 1;
 }
@@ -143,8 +169,8 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 {
 	const struct jailhouse_pci_device *device = NULL;
 	u32 addr_port_val;
+	u16 bdf, address;
 	int result = 0;
-	u16 bdf;
 
 	if (port == PCI_REG_ADDR_PORT) {
 		/* only 4-byte accesses are valid */
@@ -171,18 +197,18 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 		 */
 		addr_port_val = cell->pci_addr_port_val;
 
-		/* get device (NULL if it doesn't belong to the cell) */
 		bdf = addr_port_val >> PCI_ADDR_BDF_SHIFT;
 		device = pci_get_assigned_device(cell, bdf);
 
+		address = (addr_port_val & PCI_ADDR_REGNUM_MASK) +
+			port - PCI_REG_DATA_PORT;
+
 		if (dir_in)
 			result = data_port_in_handler(guest_regs, cell,
-						      addr_port_val, port,
-						      size, device);
+						      device, address, size);
 		else
 			result = data_port_out_handler(guest_regs, cell,
-						       addr_port_val, port,
-						       size, device);
+						       device, address, size);
 	}
 
 	return result;

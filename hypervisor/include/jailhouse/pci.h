@@ -39,4 +39,7 @@ pci_cfg_write_moderate(const struct cell *cell,
 int pci_mmio_access_handler(const struct cell *cell, bool is_write, u64 addr,
 			    u32 *value);
 
+u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size);
+void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size);
+
 #endif /* !_JAILHOUSE_PCI_H */
