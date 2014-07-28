@@ -5,6 +5,7 @@
  *
  * Authors:
  *  Ivan Kolchin <ivan.kolchin@siemens.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -55,6 +56,57 @@ static const struct pci_cfg_access bridge_write_access[] = {
 static void *pci_space;
 static u64 pci_mmcfg_addr;
 static u32 pci_mmcfg_size;
+static u8 end_bus;
+
+static void *pci_get_device_mmcfg_base(u16 bdf)
+{
+	return pci_space + ((unsigned long)bdf << 12);
+}
+
+/**
+ * pci_read_config() - Read from PCI config space
+ * @bdf:	16-bit bus/device/function ID of target
+ * @address:	Config space access address
+ * @size:	Access size (1, 2 or 4 bytes)
+ *
+ * Return: read value
+ */
+u32 pci_read_config(u16 bdf, u16 address, unsigned int size)
+{
+	void *mmcfg_addr = pci_get_device_mmcfg_base(bdf) + address;
+
+	if (!pci_space || PCI_BUS(bdf) > end_bus)
+		return arch_pci_read_config(bdf, address, size);
+
+	if (size == 1)
+		return mmio_read8(mmcfg_addr);
+	else if (size == 2)
+		return mmio_read16(mmcfg_addr);
+	else
+		return mmio_read32(mmcfg_addr);
+}
+
+/**
+ * pci_write_config() - Write to PCI config space
+ * @bdf:	16-bit bus/device/function ID of target
+ * @address:	Config space access address
+ * @value:	Value to be written
+ * @size:	Access size (1, 2 or 4 bytes)
+ */
+void pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
+{
+	void *mmcfg_addr = pci_get_device_mmcfg_base(bdf) + address;
+
+	if (!pci_space || PCI_BUS(bdf) > end_bus)
+		return arch_pci_write_config(bdf, address, value, size);
+
+	if (size == 1)
+		mmio_write8(mmcfg_addr, value);
+	else if (size == 2)
+		mmio_write16(mmcfg_addr, value);
+	else
+		mmio_write32(mmcfg_addr, value);
+}
 
 /**
  * pci_get_assigned_device() - Look up device owned by a cell
@@ -212,6 +264,8 @@ int pci_init(void)
 	pci_space = page_alloc(&remap_pool, pci_mmcfg_size / PAGE_SIZE);
 	if (!pci_space)
 		return -ENOMEM;
+
+	end_bus = mcfg->alloc_structs[0].end_bus;
 
 	return page_map_create(&hv_paging_structs,
 			       mcfg->alloc_structs[0].base_addr,

@@ -24,6 +24,9 @@ enum pci_access { PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM, PCI_ACCESS_EMULATE };
 
 int pci_init(void);
 
+u32 pci_read_config(u16 bdf, u16 address, unsigned int size);
+void pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size);
+
 const struct jailhouse_pci_device *
 pci_get_assigned_device(const struct cell *cell, u16 bdf);
 
