@@ -66,8 +66,8 @@ data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
 	u8 reg_num = addr_port_val & PCI_ADDR_REGNUM_MASK;
 	u32 reg_data;
 
-	if (pci_cfg_read_moderate(cell, device, reg_num,
-				  port - PCI_REG_DATA_PORT, size,
+	if (pci_cfg_read_moderate(cell, device,
+				  reg_num + port - PCI_REG_DATA_PORT, size,
 				  &reg_data) == PCI_ACCESS_PERFORM) {
 		spin_lock(&pci_lock);
 
@@ -108,8 +108,8 @@ data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
 
 	reg_data = get_rax_reg(guest_regs, size);
 
-	if (pci_cfg_write_moderate(cell, device, reg_num,
-				   port - PCI_REG_DATA_PORT, size,
+	if (pci_cfg_write_moderate(cell, device,
+				   reg_num + port - PCI_REG_DATA_PORT, size,
 				   &reg_data) == PCI_ACCESS_REJECT)
 		return -1;
 

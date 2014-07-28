@@ -29,12 +29,12 @@ pci_get_assigned_device(const struct cell *cell, u16 bdf);
 
 enum pci_access
 pci_cfg_read_moderate(const struct cell *cell,
-		      const struct jailhouse_pci_device *device, u8 reg_num,
-		      unsigned int reg_bias, unsigned int size, u32 *value);
+		      const struct jailhouse_pci_device *device, u16 address,
+		      unsigned int size, u32 *value);
 enum pci_access
 pci_cfg_write_moderate(const struct cell *cell,
-		       const struct jailhouse_pci_device *device, u8 reg_num,
-		       unsigned int reg_bias, unsigned int size, u32 *value);
+		       const struct jailhouse_pci_device *device, u16 address,
+		       unsigned int size, u32 *value);
 
 int pci_mmio_access_handler(const struct cell *cell, bool is_write, u64 addr,
 			    u32 *value);

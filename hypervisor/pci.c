@@ -105,8 +105,7 @@ pci_find_capability(const struct cell *cell,
  * @cell:	Request issuing cell
  * @device:	The device to be accessed; if NULL, access will be emulated,
  * 		returning a value of -1
- * @reg_num:	Register number (4-byte aligned)
- * @bias:	Bias from register base address in bytes
+ * @address:	Config space address
  * @size:	Access size (1, 2 or 4 bytes)
  * @value:	Pointer to buffer to receive the emulated value if
  * 		PCI_ACCESS_EMULATE is returned
@@ -115,8 +114,8 @@ pci_find_capability(const struct cell *cell,
  */
 enum pci_access
 pci_cfg_read_moderate(const struct cell *cell,
-		      const struct jailhouse_pci_device *device, u8 reg_num,
-		      unsigned int reg_bias, unsigned int size, u32 *value)
+		      const struct jailhouse_pci_device *device, u16 address,
+		      unsigned int size, u32 *value)
 {
 	const struct jailhouse_pci_capability *cap;
 
@@ -125,10 +124,10 @@ pci_cfg_read_moderate(const struct cell *cell,
 		return PCI_ACCESS_EMULATE;
 	}
 
-	if (reg_num < PCI_CONFIG_HEADER_SIZE)
+	if (address < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
 
-	cap = pci_find_capability(cell, device, reg_num + reg_bias);
+	cap = pci_find_capability(cell, device, address);
 	if (!cap)
 		return PCI_ACCESS_PERFORM;
 
@@ -141,8 +140,7 @@ pci_cfg_read_moderate(const struct cell *cell,
  * pci_cfg_write_moderate() - Moderate config space write access
  * @cell:	Request issuing cell
  * @device:	The device to be accessed; if NULL, access will be rejected
- * @reg_num:	Register number (4-byte aligned)
- * @bias:	Bias from register base address in bytes
+ * @address:	Config space address
  * @size:	Access size (1, 2 or 4 bytes)
  * @value:	Pointer to value to be written, initialized with cell value,
  * 		set to the to-be-written hardware value if PCI_ACCESS_EMULATE
@@ -152,18 +150,19 @@ pci_cfg_read_moderate(const struct cell *cell,
  */
 enum pci_access
 pci_cfg_write_moderate(const struct cell *cell,
-		       const struct jailhouse_pci_device *device, u8 reg_num,
-		       unsigned int reg_bias, unsigned int size, u32 *value)
+		       const struct jailhouse_pci_device *device, u16 address,
+		       unsigned int size, u32 *value)
 {
 	const struct jailhouse_pci_capability *cap;
 	/* initialize list to work around wrong compiler warning */
 	const struct pci_cfg_access *list = NULL;
-	unsigned int n, len = 0;
+	unsigned int n, bias_shift, len = 0;
+	u32 mask;
 
 	if (!device)
 		return PCI_ACCESS_REJECT;
 
-	if (reg_num < PCI_CONFIG_HEADER_SIZE) {
+	if (address < PCI_CONFIG_HEADER_SIZE) {
 		if (device->type == JAILHOUSE_PCI_TYPE_DEVICE) {
 			list = endpoint_write_access;
 			len = ARRAY_SIZE(endpoint_write_access);
@@ -172,16 +171,19 @@ pci_cfg_write_moderate(const struct cell *cell,
 			len = ARRAY_SIZE(bridge_write_access);
 		}
 
+		bias_shift = (address & 0x003) * 8;
+		mask = BYTE_MASK(size);
+
 		for (n = 0; n < len; n++) {
-			if (list[n].reg_num == reg_num &&
-			    ((list[n].mask >> (reg_bias * 8)) &
-			     BYTE_MASK(size)) == BYTE_MASK(size))
+			if (list[n].reg_num == (address & 0xffc) &&
+			    ((list[n].mask >> bias_shift) & mask) == mask)
 				return PCI_ACCESS_PERFORM;
 		}
+
 		return PCI_ACCESS_REJECT;
 	}
 
-	cap = pci_find_capability(cell, device, reg_num + reg_bias);
+	cap = pci_find_capability(cell, device, address);
 	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))
 		return PCI_ACCESS_REJECT;
 
@@ -230,7 +232,7 @@ int pci_init(void)
 int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			    u64 addr, u32 *value)
 {
-	u32 mmcfg_offset, val, reg_bias, reg_num;
+	u32 mmcfg_offset, val, reg_addr;
 	const struct jailhouse_pci_device *device;
 	enum pci_access access;
 
@@ -239,22 +241,19 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 		return 0;
 
 	mmcfg_offset = addr - pci_mmcfg_addr;
-	reg_bias = mmcfg_offset % 4;
-	reg_num = mmcfg_offset & 0xfff;
+	reg_addr = mmcfg_offset & 0xfff;
 	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
 
 	if (is_write) {
 		val = *value;
-		access = pci_cfg_write_moderate(cell, device,
-						reg_num - reg_bias, reg_bias,
-						4, &val);
+		access = pci_cfg_write_moderate(cell, device, reg_addr, 4,
+						&val);
 		if (access == PCI_ACCESS_REJECT)
 			goto invalid_access;
 		mmio_write32(pci_space + mmcfg_offset, val);
 	} else {
-		access = pci_cfg_read_moderate(cell, device,
-					       reg_num - reg_bias, reg_bias,
-					       4, value);
+		access = pci_cfg_read_moderate(cell, device, reg_addr, 4,
+					       value);
 		if (access == PCI_ACCESS_PERFORM)
 			*value = mmio_read32(pci_space + mmcfg_offset);
 	}
@@ -263,7 +262,7 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 
 invalid_access:
 	panic_printk("FATAL: Invalid PCI MMCONFIG write, device %02x:%02x.%x, "
-		     "reg: %\n", PCI_BDF_PARAMS(mmcfg_offset >> 12), reg_num);
+		     "reg: %\n", PCI_BDF_PARAMS(mmcfg_offset >> 12), reg_addr);
 	return -1;
 
 }
