@@ -122,7 +122,7 @@ class PCIDevice:
         self.fn = fn
         self.caps = caps
         self.caps_start = 0
-        self.num_caps = 0
+        self.num_caps = len(caps)
 
     def __str__(self):
         return 'PCIDevice: %02x:%02x.%x' % (self.bus, self.dev, self.fn)
@@ -238,13 +238,11 @@ def parse_pcidevices():
                         # reused existing capability list, but record all users
                         d2.caps[0].comments.append(str(d))
                         d.caps_start = d2.caps_start
-                        d.num_caps = d2.num_caps
                         duplicate = True
                         break
                 if not duplicate:
                     d.caps[0].comments.append(str(d))
                     d.caps_start = len(caps)
-                    d.num_caps = len(d.caps)
                     caps.extend(d.caps)
             devices.append(d)
     return (devices, caps)
