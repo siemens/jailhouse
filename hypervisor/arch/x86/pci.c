@@ -183,8 +183,6 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 			result = data_port_out_handler(guest_regs, cell,
 						       addr_port_val, port,
 						       size, device);
-
-		spin_unlock(&pci_lock);
 	}
 
 	return result;
