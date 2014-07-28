@@ -149,6 +149,7 @@ struct {
 			.bdf = 0x8,
 			.caps_start = 1,
 			.num_caps = 4,
+			.num_msi_vectors = 1,
 		},
 		/* PCIDevice: 00:02.0 */
 		{
@@ -157,6 +158,7 @@ struct {
 			.bdf = 0x10,
 			.caps_start = 5,
 			.num_caps = 3,
+			.num_msi_vectors = 1,
 		},
 		/* PCIDevice: 00:03.0 */
 		{
@@ -165,6 +167,7 @@ struct {
 			.bdf = 0x18,
 			.caps_start = 8,
 			.num_caps = 3,
+			.num_msi_vectors = 1,
 		},
 		/* PCIDevice: 00:14.0 */
 		{
@@ -173,6 +176,8 @@ struct {
 			.bdf = 0xa0,
 			.caps_start = 11,
 			.num_caps = 2,
+			.num_msi_vectors = 8,
+			.msi_64bits = 1,
 		},
 		/* PCIDevice: 00:16.0 */
 		{
@@ -181,6 +186,8 @@ struct {
 			.bdf = 0xb0,
 			.caps_start = 13,
 			.num_caps = 2,
+			.num_msi_vectors = 1,
+			.msi_64bits = 1,
 		},
 		/* PCIDevice: 00:19.0 */
 		{
@@ -189,6 +196,8 @@ struct {
 			.bdf = 0xc8,
 			.caps_start = 15,
 			.num_caps = 3,
+			.num_msi_vectors = 1,
+			.msi_64bits = 1,
 		},
 		/* PCIDevice: 00:1a.0 */
 		{
@@ -205,6 +214,8 @@ struct {
 			.bdf = 0xd8,
 			.caps_start = 21,
 			.num_caps = 3,
+			.num_msi_vectors = 1,
+			.msi_64bits = 1,
 		},
 		/* PCIDevice: 00:1d.0 */
 		{
@@ -229,6 +240,7 @@ struct {
 			.bdf = 0xfa,
 			.caps_start = 24,
 			.num_caps = 3,
+			.num_msi_vectors = 1,
 		},
 		/* PCIDevice: 00:1f.3 */
 		{

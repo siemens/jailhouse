@@ -142,6 +142,8 @@ struct {
 			.bdf = 0x00fa,
 			.caps_start = 2,
 			.num_caps = 2,
+			.num_msi_vectors = 1,
+			.msi_64bits = 1,
 		},
 		{ /* SMBus */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
