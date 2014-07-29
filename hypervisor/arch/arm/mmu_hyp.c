@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <asm/control.h>
 #include <asm/setup.h>
 #include <asm/setup_mmu.h>
 #include <asm/sysregs.h>
@@ -103,11 +104,11 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 		| (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)
 		| (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)
 		| HTCR_RES1;
-	u32 sctlr;
+	u32 sctlr_el1, sctlr_el2;
 
 	/* Ensure that MMU is disabled. */
-	arm_read_sysreg(SCTLR_EL2, sctlr);
-	if (sctlr & SCTLR_M_BIT)
+	arm_read_sysreg(SCTLR_EL2, sctlr_el2);
+	if (sctlr_el2 & SCTLR_M_BIT)
 		return;
 
 	/*
@@ -121,14 +122,24 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 	arm_write_sysreg(TTBR0_EL2, ttbr);
 	arm_write_sysreg(TCR_EL2, tcr);
 
-	/* Flush TLB */
+	/*
+	 * Flush HYP TLB. It should only be necessary if a previous hypervisor
+	 * was running.
+	 */
 	arm_write_sysreg(TLBIALLH, 1);
 	dsb(nsh);
 
+	/*
+	 * We need coherency with the kernel in order to use the setup
+	 * spinlocks: only enable the caches if they are enabled at EL1.
+	 */
+	arm_read_sysreg(SCTLR_EL1, sctlr_el1);
+	sctlr_el1 &= (SCTLR_I_BIT | SCTLR_C_BIT);
+
 	/* Enable stage-1 translation */
-	arm_read_sysreg(SCTLR_EL2, sctlr);
-	sctlr |= SCTLR_M_BIT;
-	arm_write_sysreg(SCTLR_EL2, sctlr);
+	arm_read_sysreg(SCTLR_EL2, sctlr_el2);
+	sctlr_el2 |= SCTLR_M_BIT | sctlr_el1;
+	arm_write_sysreg(SCTLR_EL2, sctlr_el2);
 	isb();
 
 	/*
@@ -202,6 +213,13 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	if (set_id_map(1, stack_phys, PAGE_SIZE) != 0)
 		return -E2BIG;
 	create_id_maps();
+
+	/*
+	 * Before doing anything hairy, we need to sync the caches with memory:
+	 * they will be off at EL2. From this point forward and until the caches
+	 * are re-enabled, we cannot write anything critical to memory.
+	 */
+	arch_cpu_dcaches_flush(CACHES_CLEAN);
 
 	cpu_switch_el2(phys_bootstrap, virt2phys);
 	/*

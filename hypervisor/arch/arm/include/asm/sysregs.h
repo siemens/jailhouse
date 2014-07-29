@@ -36,6 +36,8 @@
 #define ACTLR_EL1	SYSREG_32(0, c1, c0, 1)
 #define CPACR_EL1	SYSREG_32(0, c1, c0, 2)
 #define CONTEXTIDR_EL1	SYSREG_32(0, c13, c0, 1)
+#define CSSIDR_EL1	SYSREG_32(1, c0, c0, 0)
+#define CLIDR_EL1	SYSREG_32(1, c0, c0, 1)
 #define CSSELR_EL1	SYSREG_32(2, c0, c0, 0)
 #define SCTLR_EL2	SYSREG_32(4, c1, c0, 0)
 #define ESR_EL2		SYSREG_32(4, c5, c2, 0)
@@ -89,6 +91,11 @@
 #define TPIDRPRW	SYSREG_32(0, c13, c0, 4)
 
 #define ATS1HR		SYSREG_32(4, c7, c8, 0)
+
+#define ICIALLUIS	SYSREG_32(0, c7, c1, 0)
+#define ICIALLU		SYSREG_32(0, c7, c5, 0)
+#define DCCSW		SYSREG_32(0, c7, c10, 2)
+#define DCCISW		SYSREG_32(0, c7, c14, 2)
 
 #define TLBIALL		SYSREG_32(0, c8, c7, 0)
 #define TLBIALLIS	SYSREG_32(0, c8, c3, 0)

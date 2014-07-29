@@ -19,8 +19,12 @@
 #define SGI_INJECT	0
 #define SGI_CPU_OFF	1
 
+#define CACHES_CLEAN		0
+#define CACHES_CLEAN_INVALIDATE	1
+
 #ifndef __ASSEMBLY__
 
+void arch_cpu_dcaches_flush(unsigned int action);
 int arch_mmu_cell_init(struct cell *cell);
 void arch_mmu_cell_destroy(struct cell *cell);
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data);
