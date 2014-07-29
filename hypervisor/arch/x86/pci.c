@@ -105,7 +105,6 @@ static u32 get_rax_reg(struct registers *guest_regs, u8 size)
 /**
  * data_port_in_handler() - Handler for IN accesses to data port
  * @guest_regs:		Guest register set
- * @cell:		Issuing cell
  * @device:		Structure describing PCI device
  * @address:		Config space access address
  * @size:		Access size (1, 2 or 4 bytes)
@@ -113,15 +112,15 @@ static u32 get_rax_reg(struct registers *guest_regs, u8 size)
  * Return: 1 if handled successfully, -1 on access error
  */
 static int
-data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
-		     const struct jailhouse_pci_device *device,
+data_port_in_handler(struct registers *guest_regs, struct pci_device *device,
 		     u16 address, unsigned int size)
 {
 	u32 reg_data;
 
-	if (pci_cfg_read_moderate(cell, device, address, size,
-				  &reg_data) == PCI_ACCESS_PERFORM)
-		reg_data = arch_pci_read_config(device->bdf, address, size);
+	if (pci_cfg_read_moderate(device, address,
+				  size, &reg_data) == PCI_ACCESS_PERFORM)
+		reg_data = arch_pci_read_config(device->info->bdf, address,
+						size);
 
 	set_rax_reg(guest_regs, reg_data, size);
 
@@ -131,7 +130,6 @@ data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
 /**
  * data_port_out_handler() - Handler for OUT accesses to data port
  * @guest_regs:		Guest register set
- * @cell:		Issuing cell
  * @device:		Structure describing PCI device
  * @address:		Config space access address
  * @size:		Access size (1, 2 or 4 bytes)
@@ -139,18 +137,18 @@ data_port_in_handler(struct registers *guest_regs, const struct cell *cell,
  * Return: 1 if handled successfully, -1 on access error
  */
 static int
-data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
-		      const struct jailhouse_pci_device *device,
+data_port_out_handler(struct registers *guest_regs, struct pci_device *device,
 		      u16 address, unsigned int size)
 {
 	u32 reg_data = get_rax_reg(guest_regs, size);
 	enum pci_access access;
 
-	access = pci_cfg_write_moderate(cell, device, address, size, reg_data);
+	access = pci_cfg_write_moderate(device, address, size, reg_data);
 	if (access == PCI_ACCESS_REJECT)
 		return -1;
 	if (access == PCI_ACCESS_PERFORM)
-		arch_pci_write_config(device->bdf, address, reg_data, size);
+		arch_pci_write_config(device->info->bdf, address, reg_data,
+				      size);
 	return 1;
 }
 
@@ -167,7 +165,7 @@ data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
 int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 			   u16 port, bool dir_in, unsigned int size)
 {
-	const struct jailhouse_pci_device *device = NULL;
+	struct pci_device *device;
 	u32 addr_port_val;
 	u16 bdf, address;
 	int result = 0;
@@ -204,11 +202,11 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 			port - PCI_REG_DATA_PORT;
 
 		if (dir_in)
-			result = data_port_in_handler(guest_regs, cell,
-						      device, address, size);
+			result = data_port_in_handler(guest_regs, device,
+						      address, size);
 		else
-			result = data_port_out_handler(guest_regs, cell,
-						       device, address, size);
+			result = data_port_out_handler(guest_regs, device,
+						       address, size);
 	}
 
 	return result;

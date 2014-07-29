@@ -113,39 +113,39 @@ void pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
  * @cell:	Owning cell
  * @bdf:	16-bit bus/device/function ID
  *
- * Return: Valid pointer - owns, NULL - doesn't own.
+ * Return: Pointer to owned PCI device or NULL.
  */
-const struct jailhouse_pci_device *
-pci_get_assigned_device(const struct cell *cell, u16 bdf)
+struct pci_device *pci_get_assigned_device(const struct cell *cell, u16 bdf)
 {
-	const struct jailhouse_pci_device *device =
+	const struct jailhouse_pci_device *dev_info =
 		jailhouse_cell_pci_devices(cell->config);
 	u32 n;
 
+	/* We iterate over the static device information to increase cache
+	 * locality. */
 	for (n = 0; n < cell->config->num_pci_devices; n++)
-		if (device[n].bdf == bdf)
-			return &device[n];
+		if (dev_info[n].bdf == bdf)
+			return &cell->pci_devices[n];
 
 	return NULL;
 }
 
 /**
  * pci_find_capability() - Look up capability at given config space address
- * @cell:	Device owning cell
  * @device:	The device to be accessed
  * @address:	Config space access address
  *
  * Return: Corresponding capability structure or NULL if none found.
  */
 static const struct jailhouse_pci_capability *
-pci_find_capability(const struct cell *cell,
-		    const struct jailhouse_pci_device *device, u16 address)
+pci_find_capability(struct pci_device *device, u16 address)
 {
 	const struct jailhouse_pci_capability *cap =
-		jailhouse_cell_pci_caps(cell->config) + device->caps_start;
+		jailhouse_cell_pci_caps(device->cell->config) +
+		device->info->caps_start;
 	u32 n;
 
-	for (n = 0; n < device->num_caps; n++, cap++)
+	for (n = 0; n < device->info->num_caps; n++, cap++)
 		if (cap->start <= address && cap->start + cap->len > address)
 			return cap;
 
@@ -154,7 +154,6 @@ pci_find_capability(const struct cell *cell,
 
 /**
  * pci_cfg_read_moderate() - Moderate config space read access
- * @cell:	Request issuing cell
  * @device:	The device to be accessed; if NULL, access will be emulated,
  * 		returning a value of -1
  * @address:	Config space address
@@ -164,10 +163,8 @@ pci_find_capability(const struct cell *cell,
  *
  * Return: PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
  */
-enum pci_access
-pci_cfg_read_moderate(const struct cell *cell,
-		      const struct jailhouse_pci_device *device, u16 address,
-		      unsigned int size, u32 *value)
+enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
+				      unsigned int size, u32 *value)
 {
 	const struct jailhouse_pci_capability *cap;
 
@@ -179,7 +176,7 @@ pci_cfg_read_moderate(const struct cell *cell,
 	if (address < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
 
-	cap = pci_find_capability(cell, device, address);
+	cap = pci_find_capability(device, address);
 	if (!cap)
 		return PCI_ACCESS_PERFORM;
 
@@ -190,7 +187,6 @@ pci_cfg_read_moderate(const struct cell *cell,
 
 /**
  * pci_cfg_write_moderate() - Moderate config space write access
- * @cell:	Request issuing cell
  * @device:	The device to be accessed; if NULL, access will be rejected
  * @address:	Config space address
  * @size:	Access size (1, 2 or 4 bytes)
@@ -198,10 +194,8 @@ pci_cfg_read_moderate(const struct cell *cell,
  *
  * Return: PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
  */
-enum pci_access
-pci_cfg_write_moderate(const struct cell *cell,
-		       const struct jailhouse_pci_device *device, u16 address,
-		       unsigned int size, u32 value)
+enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
+				       unsigned int size, u32 value)
 {
 	const struct jailhouse_pci_capability *cap;
 	/* initialize list to work around wrong compiler warning */
@@ -213,10 +207,10 @@ pci_cfg_write_moderate(const struct cell *cell,
 		return PCI_ACCESS_REJECT;
 
 	if (address < PCI_CONFIG_HEADER_SIZE) {
-		if (device->type == JAILHOUSE_PCI_TYPE_DEVICE) {
+		if (device->info->type == JAILHOUSE_PCI_TYPE_DEVICE) {
 			list = endpoint_write_access;
 			len = ARRAY_SIZE(endpoint_write_access);
-		} else if (device->type == JAILHOUSE_PCI_TYPE_BRIDGE) {
+		} else if (device->info->type == JAILHOUSE_PCI_TYPE_BRIDGE) {
 			list = bridge_write_access;
 			len = ARRAY_SIZE(bridge_write_access);
 		}
@@ -233,7 +227,7 @@ pci_cfg_write_moderate(const struct cell *cell,
 		return PCI_ACCESS_REJECT;
 	}
 
-	cap = pci_find_capability(cell, device, address);
+	cap = pci_find_capability(device, address);
 	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))
 		return PCI_ACCESS_REJECT;
 
@@ -248,6 +242,11 @@ pci_cfg_write_moderate(const struct cell *cell,
 int pci_init(void)
 {
 	struct acpi_mcfg_table *mcfg;
+	int err;
+
+	err = pci_cell_init(&root_cell);
+	if (err)
+		return err;
 
 	mcfg = (struct acpi_mcfg_table *)acpi_find_table("MCFG", NULL);
 	if (!mcfg)
@@ -284,8 +283,8 @@ int pci_init(void)
 int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			    u64 addr, u32 *value)
 {
-	const struct jailhouse_pci_device *device;
 	u32 mmcfg_offset, reg_addr;
+	struct pci_device *device;
 	enum pci_access access;
 
 	if (!pci_space || addr < pci_mmcfg_addr ||
@@ -297,15 +296,13 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
 
 	if (is_write) {
-		access = pci_cfg_write_moderate(cell, device, reg_addr, 4,
-						*value);
+		access = pci_cfg_write_moderate(device, reg_addr, 4, *value);
 		if (access == PCI_ACCESS_REJECT)
 			goto invalid_access;
 		if (access == PCI_ACCESS_PERFORM)
 			mmio_write32(pci_space + mmcfg_offset, *value);
 	} else {
-		access = pci_cfg_read_moderate(cell, device, reg_addr, 4,
-					       value);
+		access = pci_cfg_read_moderate(device, reg_addr, 4, value);
 		if (access == PCI_ACCESS_PERFORM)
 			*value = mmio_read32(pci_space + mmcfg_offset);
 	}
@@ -317,4 +314,40 @@ invalid_access:
 		     "reg: %\n", PCI_BDF_PARAMS(mmcfg_offset >> 12), reg_addr);
 	return -1;
 
+}
+
+int pci_cell_init(struct cell *cell)
+{
+	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
+					      sizeof(struct pci_device));
+	const struct jailhouse_pci_device *dev_infos =
+		jailhouse_cell_pci_devices(cell->config);
+	struct pci_device *device;
+	unsigned int ndev;
+
+	cell->pci_devices = page_alloc(&mem_pool, array_size / PAGE_SIZE);
+	if (!cell->pci_devices)
+		return -ENOMEM;
+
+	/*
+	 * We order device states in the same way as the static information
+	 * so that we can use the index of the latter to find the former. For
+	 * the other way around and for obtaining the owner cell, we use more
+	 * handy pointers.
+	 */
+	for (ndev = 0; ndev < cell->config->num_pci_devices; ndev++) {
+		device = &cell->pci_devices[ndev];
+		device->info = &dev_infos[ndev];
+		device->cell = cell;
+	}
+
+	return 0;
+}
+
+void pci_cell_exit(struct cell *cell)
+{
+	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
+					      sizeof(struct pci_device));
+
+	page_free(&mem_pool, cell->pci_devices, array_size / PAGE_SIZE);
 }

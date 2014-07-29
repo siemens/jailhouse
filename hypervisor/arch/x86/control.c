@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
@@ -38,10 +39,12 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 		return err;
 
 	err = vtd_cell_init(cell);
-	if (err) {
-		vmx_cell_exit(cell);
-		return err;
-	}
+	if (err)
+		goto error_vmx_exit;
+
+	err = pci_cell_init(cell);
+	if (err)
+		goto error_vtd_exit;
 
 	ioapic_cell_init(cell);
 	ioapic_root_cell_shrink(cell->config);
@@ -50,6 +53,12 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 		system_config->platform_info.x86.pm_timer_address;
 
 	return 0;
+
+error_vtd_exit:
+	vtd_cell_exit(cell);
+error_vmx_exit:
+	vmx_cell_exit(cell);
+	return err;
 }
 
 int arch_map_memory_region(struct cell *cell,
@@ -82,6 +91,7 @@ int arch_unmap_memory_region(struct cell *cell,
 void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
 {
 	ioapic_cell_exit(cell);
+	pci_cell_exit(cell);
 	vtd_cell_exit(cell);
 	vmx_cell_exit(cell);
 }

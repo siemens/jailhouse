@@ -18,6 +18,8 @@
 #include <jailhouse/cell-config.h>
 #include <jailhouse/hypercall.h>
 
+struct pci_device;
+
 /**
  * struct cell - cell-related state information
  * ...
@@ -47,6 +49,7 @@ struct cell {
 
 	struct cell *next;
 
+	struct pci_device *pci_devices;
 	u32 pci_addr_port_val;
 
 	u32 ioapic_index_reg_val;
