@@ -38,8 +38,10 @@ int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
 		return err;
 
 	err = vtd_cell_init(cell);
-	if (err)
+	if (err) {
 		vmx_cell_exit(cell);
+		return err;
+	}
 
 	ioapic_cell_init(cell);
 	ioapic_root_cell_shrink(cell->config);
