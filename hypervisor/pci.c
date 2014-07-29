@@ -160,9 +160,9 @@ pci_find_capability(const struct cell *cell,
  * @address:	Config space address
  * @size:	Access size (1, 2 or 4 bytes)
  * @value:	Pointer to buffer to receive the emulated value if
- * 		PCI_ACCESS_EMULATE is returned
+ * 		PCI_ACCESS_DONE is returned
  *
- * Return: PCI_ACCESS_PERFORM or PCI_ACCESS_EMULATE.
+ * Return: PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
  */
 enum pci_access
 pci_cfg_read_moderate(const struct cell *cell,
@@ -173,7 +173,7 @@ pci_cfg_read_moderate(const struct cell *cell,
 
 	if (!device) {
 		*value = -1;
-		return PCI_ACCESS_EMULATE;
+		return PCI_ACCESS_DONE;
 	}
 
 	if (address < PCI_CONFIG_HEADER_SIZE)
@@ -196,7 +196,7 @@ pci_cfg_read_moderate(const struct cell *cell,
  * @size:	Access size (1, 2 or 4 bytes)
  * @value:	Value to be written
  *
- * Return: PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_EMULATE.
+ * Return: PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
  */
 enum pci_access
 pci_cfg_write_moderate(const struct cell *cell,
@@ -301,7 +301,8 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 						*value);
 		if (access == PCI_ACCESS_REJECT)
 			goto invalid_access;
-		mmio_write32(pci_space + mmcfg_offset, *value);
+		if (access == PCI_ACCESS_PERFORM)
+			mmio_write32(pci_space + mmcfg_offset, *value);
 	} else {
 		access = pci_cfg_read_moderate(cell, device, reg_addr, 4,
 					       value);

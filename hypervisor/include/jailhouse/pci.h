@@ -20,7 +20,7 @@
 #define PCI_DEVFN(bdf)		((bdf) & 0xff)
 #define PCI_BDF_PARAMS(bdf)	(bdf) >> 8, ((bdf) >> 3) & 0x1f, (bdf) & 7
 
-enum pci_access { PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM, PCI_ACCESS_EMULATE };
+enum pci_access { PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM, PCI_ACCESS_DONE };
 
 int pci_init(void);
 
