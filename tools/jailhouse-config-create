@@ -340,11 +340,12 @@ def parse_dmar():
     signature = f.read(4)
     if signature != b'DMAR':
         if options.generate_collector:
-            return 0, []
+            return [], 0, []
         raise RuntimeError('incorrect input file format %s' % signature)
     (length,) = struct.unpack('<I', f.read(4))
     f.seek(48)
     length -= 48
+    units = []
     regions = []
     ioapic_id = 0
 
@@ -356,7 +357,13 @@ def parse_dmar():
 
         # DMA Remapping Hardware Unit Definition
         if struct_type == 0:
-            f.seek(16 - offset, os.SEEK_CUR)
+            (segment, base) = struct.unpack('<xxHQ', f.read(12))
+            if segment != 0:
+                raise RuntimeError('We do not support multiple PCI segments')
+            if len(units) >= 8:
+                raise RuntimeError('Too many DMAR units. '
+                                   'Raise JAILHOUSE_MAX_DMAR_UNITS.')
+            units.append(base)
             offset += 16 - offset
             while offset < struct_len:
                 (off, scope_type, scope_len, bus, dev, fn) =\
@@ -396,7 +403,7 @@ def parse_dmar():
 
         f.seek(struct_len - offset, os.SEEK_CUR)
 
-    return ioapic_id, regions
+    return units, ioapic_id, regions
 
 
 def parse_ioports():
@@ -452,7 +459,7 @@ total = hvmem[1] + inmatemem
 
 mmconfig = MMConfig.parse()
 
-ioapic_id, rmrr_regs = parse_dmar()
+(dmar_units, ioapic_id, rmrr_regs) = parse_dmar()
 regions += rmrr_regs
 
 # kernel does not have memmap region, pick one
@@ -509,6 +516,7 @@ else:
                         cpucount=cpucount,
                         ioapic_id=ioapic_id,
                         pm_timer_base=pm_timer_base,
-                        mmconfig=mmconfig))
+                        mmconfig=mmconfig,
+                        dmar_units=dmar_units))
 
 f.close()

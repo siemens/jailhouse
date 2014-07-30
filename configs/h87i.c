@@ -39,6 +39,10 @@ struct {
 			.mmconfig_base = 0xf8000000,
 			.mmconfig_end_bus = 0x3f,
 			.pm_timer_address = 0x1808,
+			.dmar_unit_base = {
+				0xfed90000,
+				0xfed91000,
+			},
 		},
 		.root_cell = {
 			.name = "H87I-PLUS",

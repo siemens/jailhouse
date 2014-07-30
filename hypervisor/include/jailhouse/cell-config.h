@@ -76,6 +76,8 @@ struct jailhouse_pci_capability {
 	__u16 flags;
 } __attribute__((packed));
 
+#define JAILHOUSE_MAX_DMAR_UNITS	8
+
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory config_memory;
@@ -85,6 +87,7 @@ struct jailhouse_system {
 			__u8 mmconfig_end_bus;
 			__u8 padding[5];
 			__u16 pm_timer_address;
+			__u64 dmar_unit_base[JAILHOUSE_MAX_DMAR_UNITS];
 		} x86;
 	} platform_info;
 	struct jailhouse_cell_desc root_cell;

@@ -40,6 +40,11 @@ struct {
 			.mmconfig_base = ${hex(mmconfig.base)},
 			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},
 			.pm_timer_address = ${hex(pm_timer_base)},
+			.dmar_unit_base = {
+				% for d in dmar_units:
+				${hex(d)},
+				% endfor
+			},
 		},
 		.root_cell = {
 			.name = "RootCell",
