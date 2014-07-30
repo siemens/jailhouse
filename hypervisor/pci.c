@@ -11,7 +11,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/acpi.h>
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
@@ -22,20 +21,6 @@
 
 #define PCI_CFG_COMMAND			0x04
 # define PCI_CMD_INTX_OFF		(1 << 10)
-
-struct acpi_mcfg_alloc {
-	u64 base_addr;
-	u16 segment_num;
-	u8 start_bus;
-	u8 end_bus;
-	u32 reserved;
-} __attribute__((packed));
-
-struct acpi_mcfg_table {
-	struct acpi_table_header header;
-	u8 reserved[8];
-	struct acpi_mcfg_alloc alloc_structs[];
-} __attribute__((packed));
 
 #define for_each_configured_pci_device(dev, cell)			\
 	for ((dev) = (cell)->pci_devices;				\
@@ -63,8 +48,7 @@ static const struct pci_cfg_access bridge_write_access[] = {
 };
 
 static void *pci_space;
-static u64 pci_mmcfg_addr;
-static u32 pci_mmcfg_size;
+static u64 mmcfg_start, mmcfg_end;
 static u8 end_bus;
 
 static void *pci_get_device_mmcfg_base(u16 bdf)
@@ -251,32 +235,27 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
  */
 int pci_init(void)
 {
-	struct acpi_mcfg_table *mcfg;
+	unsigned int mmcfg_size;
 	int err;
 
 	err = pci_cell_init(&root_cell);
 	if (err)
 		return err;
 
-	mcfg = (struct acpi_mcfg_table *)acpi_find_table("MCFG", NULL);
-	if (!mcfg)
+	mmcfg_start = system_config->platform_info.x86.mmconfig_base;
+	if (mmcfg_start == 0)
 		return 0;
 
-	if (mcfg->header.length !=
-	    sizeof(struct acpi_mcfg_table) + sizeof(struct acpi_mcfg_alloc))
-		return -EIO;
+	end_bus = system_config->platform_info.x86.mmconfig_end_bus;
+	mmcfg_size = (end_bus + 1) * 256 * 4096;
+	mmcfg_end = mmcfg_start + mmcfg_size - 4;
 
-	pci_mmcfg_addr = mcfg->alloc_structs[0].base_addr;
-	pci_mmcfg_size = (mcfg->alloc_structs[0].end_bus + 1) * 256 * 4096;
-	pci_space = page_alloc(&remap_pool, pci_mmcfg_size / PAGE_SIZE);
+	pci_space = page_alloc(&remap_pool, mmcfg_size / PAGE_SIZE);
 	if (!pci_space)
 		return -ENOMEM;
 
-	end_bus = mcfg->alloc_structs[0].end_bus;
-
-	return page_map_create(&hv_paging_structs,
-			       mcfg->alloc_structs[0].base_addr,
-			       pci_mmcfg_size, (unsigned long)pci_space,
+	return page_map_create(&hv_paging_structs, mmcfg_start, mmcfg_size,
+			       (unsigned long)pci_space,
 			       PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
 			       PAGE_MAP_NON_COHERENT);
 }
@@ -297,11 +276,10 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	struct pci_device *device;
 	enum pci_access access;
 
-	if (!pci_space || addr < pci_mmcfg_addr ||
-	    addr >= (pci_mmcfg_addr + pci_mmcfg_size - 4))
+	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end)
 		return 0;
 
-	mmcfg_offset = addr - pci_mmcfg_addr;
+	mmcfg_offset = addr - mmcfg_start;
 	reg_addr = mmcfg_offset & 0xfff;
 	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
 
