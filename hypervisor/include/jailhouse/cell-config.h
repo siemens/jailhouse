@@ -81,6 +81,9 @@ struct jailhouse_system {
 	struct jailhouse_memory config_memory;
 	union {
 		struct {
+			__u64 mmconfig_base;
+			__u8 mmconfig_end_bus;
+			__u8 padding[5];
 			__u16 pm_timer_address;
 		} x86;
 	} platform_info;

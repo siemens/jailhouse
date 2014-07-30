@@ -41,6 +41,8 @@ struct {
 			.size = 0x30000,
 		},
 		.platform_info.x86 = {
+			.mmconfig_base = 0xb0000000,
+			.mmconfig_end_bus = 0xff,
 			.pm_timer_address = 0x608,
 		},
 		.root_cell = {

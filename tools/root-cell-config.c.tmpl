@@ -37,6 +37,8 @@ struct {
 			.size = ${hex(confmem[1])},
 		},
 		.platform_info.x86 = {
+			.mmconfig_base = ${hex(mmconfig.base)},
+			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},
 			.pm_timer_address = ${hex(pm_timer_base)},
 		},
 		.root_cell = {

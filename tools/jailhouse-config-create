@@ -410,6 +410,31 @@ def parse_ioports():
     return pm_timer_base
 
 
+class MMConfig:
+    def __init__(self, base, end_bus):
+        self.base = base
+        self.end_bus = end_bus
+
+    @staticmethod
+    def parse():
+        f = input_open('/sys/firmware/acpi/tables/MCFG', 'rb')
+        signature = f.read(4)
+        if signature != b'MCFG':
+            if options.generate_collector:
+                return MMConfig(0, 0)
+            raise RuntimeError('incorrect input file format %s' % signature)
+        (length,) = struct.unpack('<I', f.read(4))
+        if length > 60:
+            raise RuntimeError('Multiple MMCONFIG regions found! '
+                               'This is not supported')
+        f.seek(44)
+        (base, segment, start_bus, end_bus) = \
+            struct.unpack('<QHBB', f.read(12))
+        if segment != 0 or start_bus != 0:
+            raise RuntimeError('Invalid MCFG structure found')
+        return MMConfig(base, end_bus)
+
+
 (pcidevices, pcicaps) = parse_pcidevices()
 
 product = [input_readline('/sys/class/dmi/id/sys_vendor',
@@ -424,6 +449,8 @@ hvmem = [0, kmg_multiply_str(options.mem_hv)]
 regions = parse_iomem()
 ourmem = parse_cmdline()
 total = hvmem[1] + inmatemem
+
+mmconfig = MMConfig.parse()
 
 ioapic_id, rmrr_regs = parse_dmar()
 regions += rmrr_regs
@@ -481,6 +508,7 @@ else:
                         pcicaps=pcicaps,
                         cpucount=cpucount,
                         ioapic_id=ioapic_id,
-                        pm_timer_base=pm_timer_base))
+                        pm_timer_base=pm_timer_base,
+                        mmconfig=mmconfig))
 
 f.close()
