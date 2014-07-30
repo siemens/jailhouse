@@ -25,6 +25,8 @@
 #ifndef __ASSEMBLY__
 
 void arch_cpu_dcaches_flush(unsigned int action);
+void arch_cpu_icache_flush(void);
+void arch_cell_caches_flush(struct cell *cell);
 int arch_mmu_cell_init(struct cell *cell);
 void arch_mmu_cell_destroy(struct cell *cell);
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data);

@@ -59,6 +59,13 @@
 #define SCTLR_AFE_BIT	(1 << 29)
 #define SCTLR_TE_BIT	(1 << 30)
 
+/* Bits to wipe on cell reset */
+#define SCTLR_MASK	(SCTLR_M_BIT | SCTLR_A_BIT | SCTLR_C_BIT	\
+			| SCTLR_I_BIT | SCTLR_V_BIT | SCTLR_WXN_BIT	\
+			| SCTLR_UWXN_BIT | SCTLR_FI_BIT | SCTLR_EE_BIT	\
+			| SCTLR_TRE_BIT | SCTLR_AFE_BIT | SCTLR_TE_BIT)
+
+
 #define HCR_TRVM_BIT	(1 << 30)
 #define HCR_TVM_BIT	(1 << 26)
 #define HCR_HDC_BIT	(1 << 29)

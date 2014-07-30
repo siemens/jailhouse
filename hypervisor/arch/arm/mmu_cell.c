@@ -104,3 +104,29 @@ int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data)
 
 	return 0;
 }
+
+void arch_cell_caches_flush(struct cell *cell)
+{
+	/* Only the first CPU needs to clean the data caches */
+	spin_lock(&cell->arch.caches_lock);
+	if (cell->arch.needs_flush) {
+		/*
+		 * Since there is no way to know which virtual addresses have been used
+		 * by the root cell to write the new cell's data, a complete clean has
+		 * to be performed.
+		 */
+		arch_cpu_dcaches_flush(CACHES_CLEAN_INVALIDATE);
+		cell->arch.needs_flush = false;
+	}
+	spin_unlock(&cell->arch.caches_lock);
+
+	/*
+	 * New instructions may have been written, so the I-cache needs to be
+	 * invalidated even though the VMID is different.
+	 * A complete invalidation is the only way to ensure all virtual aliases
+	 * of these memory locations are invalidated, whatever the cache type.
+	 */
+	arch_cpu_icache_flush();
+
+	/* ERET will ensure context synchronization */
+}
