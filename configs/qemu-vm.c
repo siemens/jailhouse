@@ -36,10 +36,6 @@ struct {
 			.phys_start = 0x3c000000,
 			.size = 0x4000000 - 0x30000,
 		},
-		.config_memory = {
-			.phys_start = 0x3ffdf000,
-			.size = 0x30000,
-		},
 		.platform_info.x86 = {
 			.mmconfig_base = 0xb0000000,
 			.mmconfig_end_bus = 0xff,

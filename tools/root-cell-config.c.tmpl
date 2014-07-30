@@ -32,10 +32,6 @@ struct {
 			.phys_start = ${hex(hvmem[0])},
 			.size = ${hex(hvmem[1])},
 		},
-		.config_memory = {
-			.phys_start = ${hex(confmem[0])},
-			.size = ${hex(confmem[1])},
-		},
 		.platform_info.x86 = {
 			.mmconfig_base = ${hex(mmconfig.base)},
 			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},

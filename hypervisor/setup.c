@@ -22,7 +22,6 @@ extern u8 __text_start[], __hv_core_end[];
 
 static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
 
-void *config_memory;
 struct cell root_cell;
 
 static DEFINE_SPINLOCK(init_lock);
@@ -43,7 +42,6 @@ static void init_early(unsigned int cpu_id)
 {
 	struct jailhouse_memory hv_page;
 	unsigned long core_percpu_size;
-	unsigned long size;
 
 	master_cpu_id = cpu_id;
 
@@ -57,23 +55,6 @@ static void init_early(unsigned int cpu_id)
 		return;
 
 	root_cell.config = &system_config->root_cell;
-
-	if (system_config->config_memory.size > 0) {
-		size = PAGE_ALIGN(system_config->config_memory.size);
-
-		config_memory = page_alloc(&remap_pool, size / PAGE_SIZE);
-		if (!config_memory) {
-			error = -ENOMEM;
-			return;
-		}
-
-		error = page_map_create(&hv_paging_structs,
-				system_config->config_memory.phys_start,
-				size, (unsigned long)config_memory,
-				PAGE_READONLY_FLAGS, PAGE_MAP_NON_COHERENT);
-		if (error)
-			return;
-	}
 
 	error = check_mem_regions(&system_config->root_cell);
 	if (error)

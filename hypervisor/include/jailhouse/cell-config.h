@@ -80,7 +80,6 @@ struct jailhouse_pci_capability {
 
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
-	struct jailhouse_memory config_memory;
 	union {
 		struct {
 			__u64 mmconfig_base;

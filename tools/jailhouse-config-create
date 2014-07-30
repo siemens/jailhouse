@@ -471,13 +471,6 @@ elif (total > ourmem[1]):
 
 hvmem[0] = ourmem[0]
 
-creg = MemRegion.find_region(regions, 'ACPI Tables')
-if creg is not None:
-    confmem = [creg.start, creg.size()]
-else:
-    print('WARNING: Could not find "ACPI Tables" memory! '
-          'You need to set it manually.', file=sys.stderr)
-    confmem = [0, 0]
 inmatereg = MemRegion(ourmem[0] + hvmem[1],
                       ourmem[0] + hvmem[1] + inmatemem - 1,
                       'JAILHOUSE Inmate Memory')
@@ -509,7 +502,6 @@ else:
                         ourmem=ourmem,
                         argstr=' '.join(sys.argv),
                         hvmem=hvmem,
-                        confmem=confmem,
                         product=product,
                         pcidevices=pcidevices,
                         pcicaps=pcicaps,

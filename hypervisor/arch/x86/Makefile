@@ -13,4 +13,4 @@
 always := built-in.o
 
 obj-y := apic.o dbg-write.o entry.o setup.o vmx.o control.o mmio.o \
-	 ../../acpi.o vtd.o paging.o ../../pci.o pci.o ioapic.o
+	 vtd.o paging.o ../../pci.o pci.o ioapic.o

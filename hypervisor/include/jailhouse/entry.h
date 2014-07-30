@@ -34,7 +34,6 @@ struct per_cpu;
 struct cell;
 
 extern struct jailhouse_header hypervisor_header;
-extern void *config_memory;
 
 int arch_entry(unsigned int cpu_id);
 void vm_exit(void);
