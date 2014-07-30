@@ -1,9 +1,10 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Test configuration for QEMU VM, 1 GB RAM, 64 MB hypervisor (-8 K ACPI)
+ * Test configuration for QEMU Q35 VM, 1 GB RAM, 64 MB hypervisor (-192K ACPI)
  * Command line:
- * qemu-system-x86_64 /path/to/image -m 1G -enable-kvm -smp 4 \
+ * qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
+ *  -drive file=/path/to/image,id=disk,if=none -device ide-hd,drive=disk \
  *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
  *  -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic
  *
@@ -27,7 +28,7 @@ struct {
 	struct jailhouse_memory mem_regions[5];
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
-	struct jailhouse_pci_device pci_devices[9];
+	struct jailhouse_pci_device pci_devices[6];
 	struct jailhouse_pci_capability pci_caps[3];
 } __attribute__((packed)) config = {
 	.header = {
@@ -103,19 +104,11 @@ struct {
 		[  0x70/8 ...   0x77/8] = 0xfc, /* rtc */
 		[  0x78/8 ...   0x7f/8] = -1,
 		[  0x80/8 ...   0x87/8] = 0xfe, /* port 80 (delays) */
-		[  0x88/8 ...  0x16f/8] = -1,
-		[ 0x170/8 ...  0x177/8] = 0, /* ide */
-		[ 0x178/8 ...  0x1ef/8] = -1,
-		[ 0x1f0/8 ...  0x1f7/8] = 0, /* ide */
-		[ 0x1f8/8 ...  0x2f7/8] = -1,
+		[  0x88/8 ...  0x2f7/8] = -1,
 		[ 0x2f8/8 ...  0x2ff/8] = 0, /* serial2 */
-		[ 0x300/8 ...  0x36f/8] = -1,
-		[ 0x370/8 ...  0x377/8] = 0xbf, /* ide */
-		[ 0x378/8 ...  0x3af/8] = -1,
+		[ 0x300/8 ...  0x3af/8] = -1,
 		[ 0x3b0/8 ...  0x3df/8] = 0, /* VGA */
-		[ 0x3e0/8 ...  0x3ef/8] = -1,
-		[ 0x3f0/8 ...  0x3f7/8] = 0xbf, /* ide */
-		[ 0x3f8/8 ... 0x5657/8] = -1,
+		[ 0x3e0/8 ... 0x5657/8] = -1,
 		[0x5658/8 ... 0x565f/8] = 0xf0, /* vmport */
 		[0x5660/8 ... 0xbfff/8] = -1,
 		[0xc000/8 ... 0xc0ff/8] = 0, /* PCI devices */
@@ -123,53 +116,36 @@ struct {
 	},
 
 	.pci_devices = {
-		{ /* 440fx: ISA bridge, q35: VGA */
+		{ /* VGA */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bdf = 0x0008,
 		},
-		{ /* 440fx: IDE */
-			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bdf = 0x0009,
-		},
-		{ /* 440fx: SMBus */
-			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bdf = 0x000b,
-		},
-		{ /* 440fx: VGA, q35: e1000 */
+		{ /* e1000 */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bdf = 0x0010,
 		},
-		{ /* 44fx: e1000, q35: virtio-9p-pci */
+		{ /* virtio-9p-pci */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bdf = 0x0018,
-			.caps_start = 0, /* for q35 */
-			.num_caps = 1,
-		},
-		{ /* 440fx: virtio-9p-pci */
-			.type = JAILHOUSE_PCI_TYPE_DEVICE,
-			.domain = 0x0000,
-			.bdf = 0x0020,
 			.caps_start = 0,
 			.num_caps = 1,
 		},
-		{ /* q35: ISA bridge */
+		{ /* ISA bridge */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bdf = 0x00f8,
 		},
-		{ /* q35: AHCI */
+		{ /* AHCI */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bdf = 0x00fa,
 			.caps_start = 2,
 			.num_caps = 2,
 		},
-		{ /* q35: SMBus */
+		{ /* SMBus */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
 			.bdf = 0x00fb,
