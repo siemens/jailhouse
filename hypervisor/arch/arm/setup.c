@@ -21,13 +21,21 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/string.h>
 
+unsigned int cache_line_size;
+
 static int arch_check_features(void)
 {
 	u32 pfr1;
+	u32 ctr;
+
 	arm_read_sysreg(ID_PFR1_EL1, pfr1);
 
 	if (!PFR1_VIRT(pfr1))
 		return -ENODEV;
+
+	arm_read_sysreg(CTR_EL0, ctr);
+	/* Extract the minimal cache line size */
+	cache_line_size = 4 << (ctr >> 16 & 0xf);
 
 	return 0;
 }
@@ -112,8 +120,6 @@ void arch_cpu_restore(struct per_cpu *cpu_data)
 
 // catch missing symbols
 void arch_shutdown_cpu(unsigned int cpu_id) {}
-void arch_flush_cell_vcpu_caches(struct cell *cell) {}
-void arch_config_commit(struct cell *cell_added_removed) {}
 void arch_shutdown(void) {}
 void arch_panic_stop(void) {__builtin_unreachable();}
 void arch_panic_park(void) {}

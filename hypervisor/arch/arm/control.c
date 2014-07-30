@@ -134,6 +134,9 @@ static void arch_reset_self(struct per_cpu *cpu_data)
 static void arch_suspend_self(struct per_cpu *cpu_data)
 {
 	psci_suspend(cpu_data);
+
+	if (cpu_data->flush_vcpu_caches)
+		arch_cpu_tlb_flush(cpu_data);
 }
 
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
@@ -240,4 +243,20 @@ void arch_cell_destroy(struct cell *cell)
 
 	for_each_cpu(cpu, cell->cpu_set)
 		arch_reset_cpu(cpu);
+}
+
+/* Note: only supports synchronous flushing as triggered by config_commit! */
+void arch_flush_cell_vcpu_caches(struct cell *cell)
+{
+	unsigned int cpu;
+
+	for_each_cpu(cpu, cell->cpu_set)
+		if (cpu == this_cpu_id())
+			arch_cpu_tlb_flush(per_cpu(cpu));
+		else
+			per_cpu(cpu)->flush_vcpu_caches = true;
+}
+
+void arch_config_commit(struct cell *cell_added_removed)
+{
 }

@@ -58,7 +58,7 @@ struct per_cpu {
 	/* The mbox will be accessed with a ldrd, which requires alignment */
 	__attribute__((aligned(8))) struct psci_mbox psci_mbox;
 
-	bool flush_caches;
+	bool flush_vcpu_caches;
 	int shutdown_state;
 	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));

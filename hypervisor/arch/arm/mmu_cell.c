@@ -95,14 +95,27 @@ int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data)
 	arm_write_sysreg(VTTBR_EL2, vttbr);
 	arm_write_sysreg(VTCR_EL2, vtcr);
 
+	/* Ensure that the new VMID is present before flushing the caches */
 	isb();
+	/*
+	 * At initialisation, arch_config_commit does not act on other CPUs,
+	 * since they register themselves to the root cpu_set afterwards. It
+	 * means that this unconditionnal flush is redundant on master CPU.
+	 */
+	arch_cpu_tlb_flush(cpu_data);
+
+	return 0;
+}
+
+void arch_cpu_tlb_flush(struct per_cpu *cpu_data)
+{
 	/*
 	 * Invalidate all stage-1 and 2 TLB entries for the current VMID
 	 * ERET will ensure completion of these ops
 	 */
 	arm_write_sysreg(TLBIALL, 1);
-
-	return 0;
+	dsb(nsh);
+	cpu_data->flush_vcpu_caches = false;
 }
 
 void arch_cell_caches_flush(struct cell *cell)

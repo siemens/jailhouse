@@ -13,6 +13,7 @@
 #ifndef _JAILHOUSE_ASM_PROCESSOR_H
 #define _JAILHOUSE_ASM_PROCESSOR_H
 
+#include <jailhouse/types.h>
 #include <jailhouse/utils.h>
 
 #define PSR_MODE_MASK	0xf
@@ -174,6 +175,15 @@ static inline void memory_barrier(void)
 
 static inline void memory_load_barrier(void)
 {
+}
+
+static inline bool is_el2(void)
+{
+	u32 psr;
+
+	asm volatile ("mrs	%0, cpsr" : "=r" (psr));
+
+	return (psr & PSR_MODE_MASK) == PSR_HYP_MODE;
 }
 
 #endif /* !__ASSEMBLY__ */

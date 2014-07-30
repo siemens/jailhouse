@@ -29,6 +29,7 @@
  * 32bit sysregs definitions
  * (Use the AArch64 names to ease the compatibility work)
  */
+#define CTR_EL0		SYSREG_32(0, c0, c0, 1)
 #define MPIDR_EL1	SYSREG_32(0, c0, c0, 5)
 #define ID_PFR0_EL1	SYSREG_32(0, c0, c1, 0)
 #define ID_PFR1_EL1	SYSREG_32(0, c0, c1, 1)
@@ -94,6 +95,7 @@
 
 #define ICIALLUIS	SYSREG_32(0, c7, c1, 0)
 #define ICIALLU		SYSREG_32(0, c7, c5, 0)
+#define DCCIMVAC	SYSREG_32(0, c7, c10, 1)
 #define DCCSW		SYSREG_32(0, c7, c10, 2)
 #define DCCISW		SYSREG_32(0, c7, c14, 2)
 

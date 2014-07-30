@@ -16,6 +16,7 @@
 #include <jailhouse/types.h>
 #include <jailhouse/utils.h>
 #include <asm/processor.h>
+#include <asm/sysregs.h>
 
 #define PAGE_SIZE		4096
 #define PAGE_MASK		~(PAGE_SIZE - 1)
@@ -176,12 +177,28 @@
 
 typedef u64 *pt_entry_t;
 
+/* Only executed on hypervisor paging struct changes */
 static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 {
+	/*
+	 * This instruction is UNDEF at EL1, but the whole TLB is invalidated
+	 * before enabling the EL2 stage 1 MMU anyway.
+	 */
+	if (is_el2())
+		arm_write_sysreg(TLBIMVAH, page_addr & PAGE_MASK);
 }
 
+extern unsigned int cache_line_size;
+
+/* Used to clean the PAGE_MAP_COHERENT page table changes */
 static inline void arch_paging_flush_cpu_caches(void *addr, long size)
 {
+	do {
+		/* Clean & invalidate by MVA to PoC */
+		arm_write_sysreg(DCCIMVAC, addr);
+		size -= cache_line_size;
+		addr += cache_line_size;
+	} while (size > 0);
 }
 
 #endif /* !__ASSEMBLY__ */
