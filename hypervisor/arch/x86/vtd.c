@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/pci.h>
@@ -184,37 +185,23 @@ static void vtd_init_unit(void *reg_base)
 
 int vtd_init(void)
 {
-	unsigned long offset, caps, sllps_caps = ~0UL;
+	unsigned long caps, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
-	const struct acpi_dmar_table *dmar;
-	const struct acpi_dmar_drhd *drhd;
 	void *reg_base = NULL;
+	u64 base_addr;
 	int err;
 
-	dmar = (struct acpi_dmar_table *)acpi_find_table("DMAR", NULL);
-	if (!dmar)
-//		return -ENODEV;
-		{ printk("WARNING: No VT-d support found!\n"); return 0; }
+	for (n = 0; n < JAILHOUSE_MAX_DMAR_UNITS; n++) {
+		base_addr = system_config->platform_info.x86.dmar_unit_base[n];
+		if (base_addr == 0) {
+			if (dmar_units == 0)
+				//return -ENODEV;
+				// HACK for QEMU
+				printk("WARNING: No VT-d support found!\n");
+			break;
+		}
 
-	if (sizeof(struct acpi_dmar_table) +
-	    sizeof(struct acpi_dmar_drhd) > dmar->header.length)
-		return -EIO;
-
-	drhd = (struct acpi_dmar_drhd *)dmar->remap_structs;
-	if (drhd->header.type != ACPI_DMAR_DRHD)
-		return -EIO;
-
-	offset = (void *)dmar->remap_structs - (void *)dmar;
-	do {
-		if (drhd->header.length < sizeof(struct acpi_dmar_drhd) ||
-		    offset + drhd->header.length > dmar->header.length)
-			return -EIO;
-
-		/* TODO: support multiple segments */
-		if (drhd->segment != 0)
-			return -EIO;
-
-		printk("Found DMAR @%p\n", drhd->register_base_addr);
+		printk("Found DMAR @%p\n", base_addr);
 
 		reg_base = page_alloc(&remap_pool, 1);
 		if (!reg_base)
@@ -225,8 +212,7 @@ int vtd_init(void)
 		else if (reg_base != dmar_reg_base + dmar_units * PAGE_SIZE)
 			return -ENOMEM;
 
-		err = page_map_create(&hv_paging_structs,
-				      drhd->register_base_addr, PAGE_SIZE,
+		err = page_map_create(&hv_paging_structs, base_addr, PAGE_SIZE,
 				      (unsigned long)reg_base,
 				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
 				      PAGE_MAP_NON_COHERENT);
@@ -263,12 +249,7 @@ int vtd_init(void)
 		dmar_units++;
 
 		vtd_init_unit(reg_base);
-
-		offset += drhd->header.length;
-		drhd = (struct acpi_dmar_drhd *)
-			(((void *)drhd) + drhd->header.length);
-	} while (offset < dmar->header.length &&
-		 drhd->header.type == ACPI_DMAR_DRHD);
+	}
 
 	/*
 	 * Derive vdt_paging from very similar x86_64_paging,

@@ -10,39 +10,11 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/acpi.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/utils.h>
 #include <asm/cell.h>
 
 #include <jailhouse/cell-config.h>
-
-#define ACPI_DMAR_DRHD			0
-#define ACPI_DMAR_RMRR			1
-#define ACPI_DMAR_ATSR			2
-#define ACPI_DMAR_RHSA			3
-
-struct acpi_dmar_remap_header {
-	u16 type;
-	u16 length;
-};
-
-struct acpi_dmar_table {
-	struct acpi_table_header header;
-	u8 host_address_width;
-	u8 flags;
-	u8 reserved[10];
-	struct acpi_dmar_remap_header remap_structs[];
-};
-
-struct acpi_dmar_drhd {
-	struct acpi_dmar_remap_header header;
-	u8 flags;
-	u8 reserved;
-	u16 segment;
-	u64 register_base_addr;
-	u8 device_scope[];
-};
 
 #define VTD_ROOT_PRESENT		0x00000001
 
