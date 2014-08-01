@@ -99,11 +99,7 @@ static void vtd_init_fault_nmi(void)
 		mmio_write32(reg_base + VTD_FEADDR_REG,
 			((apic_id << APIC_MSI_ADDR_DESTID_SHIFT) &
 			 APIC_MSI_ADDR_DESTID_MASK) | APIC_MSI_ADDR_FIXED_VAL);
-
-		/* Write upper APIC ID bits for x2APIC mode */
-		if (using_x2apic)
-			mmio_write32(reg_base + VTD_FEUADDR_REG,
-				     apic_id & APIC_MSI_UADDR_DESTID_MASK);
+		mmio_write32(reg_base + VTD_FEUADDR_REG, 0);
 
 		/* Unmask events */
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 0);

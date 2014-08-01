@@ -92,8 +92,6 @@
 /* FIXED: fixed value for interrupt messages */
 #define APIC_MSI_ADDR_FIXED_VAL		(0xfee << 20)
 
-#define APIC_MSI_UADDR_DESTID_MASK	BIT_MASK(31, 8)
-
 extern bool using_x2apic;
 
 int apic_init(void);
