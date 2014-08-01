@@ -60,7 +60,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 {
 	int err = 0;
 	unsigned long hcr = HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT
-			  | HCR_TSC_BIT;
+			  | HCR_TSC_BIT | HCR_TAC_BIT;
 
 	cpu_data->psci_mbox.entry = 0;
 	cpu_data->virt_id = cpu_data->cpu_id;

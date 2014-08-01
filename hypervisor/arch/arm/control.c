@@ -56,7 +56,6 @@ static void arch_reset_el1(struct registers *regs)
 	arm_read_sysreg(SCTLR_EL1, sctlr);
 	sctlr = sctlr & ~SCTLR_MASK;
 	arm_write_sysreg(SCTLR_EL1, sctlr);
-	arm_write_sysreg(ACTLR_EL1, 0);
 	arm_write_sysreg(CPACR_EL1, 0);
 	arm_write_sysreg(CONTEXTIDR_EL1, 0);
 	arm_write_sysreg(PAR_EL1, 0);

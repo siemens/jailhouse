@@ -231,6 +231,30 @@ static int arch_handle_hvc(struct per_cpu *cpu_data, struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
+static int arch_handle_cp15_32(struct per_cpu *cpu_data, struct trap_context *ctx)
+{
+	u32 opc2	= ctx->esr >> 17 & 0x7;
+	u32 opc1	= ctx->esr >> 14 & 0x7;
+	u32 crn		= ctx->esr >> 10 & 0xf;
+	u32 rt		= ctx->esr >> 5 & 0xf;
+	u32 crm		= ctx->esr >> 1 & 0xf;
+	u32 read	= ctx->esr & 1;
+
+	if (opc1 == 0 && crn == 1 && crm == 0 && opc2 == 1) {
+		/* Do not let the guest disable coherency by writing ACTLR... */
+		if (read) {
+			unsigned long val;
+			arm_read_sysreg(ACTLR_EL1, val);
+			access_cell_reg(ctx, rt, &val, false);
+		}
+		arch_skip_instruction(ctx);
+
+		return TRAP_HANDLED;
+	}
+
+	return TRAP_UNHANDLED;
+}
+
 static int arch_handle_cp15_64(struct per_cpu *cpu_data, struct trap_context *ctx)
 {
 	unsigned long rt_val, rt2_val;
@@ -263,6 +287,7 @@ static int arch_handle_cp15_64(struct per_cpu *cpu_data, struct trap_context *ct
 
 static const trap_handler trap_handlers[38] =
 {
+	[ESR_EC_CP15_32]	= arch_handle_cp15_32,
 	[ESR_EC_CP15_64]	= arch_handle_cp15_64,
 	[ESR_EC_HVC]		= arch_handle_hvc,
 	[ESR_EC_SMC]		= arch_handle_smc,
