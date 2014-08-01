@@ -81,16 +81,29 @@
 
 #define APIC_BSP_PSEUDO_SIPI		0x100
 
-/* Message signaled interrupts (MSI) */
-/* DM: Delivery Mode */
-#define APIC_MSI_DATA_DM_NMI		(0x4 << 8)
+union x86_msi_vector {
+	struct {
+		u32 unused:2,
+		    dest_logical:1,
+		    redir_hint:1,
+		    reserved1:8,
+		    destination:8,
+		    address:12;
+		u32 reserved2;
+		u32 vector:8,
+		    delivery_mode:3,
+		    reserved:21;
+	} native;
+	struct {
+		u64 address;
+		u32 data;
+	} raw;
+};
 
-/* DESTID: destination ID */
-#define APIC_MSI_ADDR_DESTID_MASK	BIT_MASK(19, 12)
-#define APIC_MSI_ADDR_DESTID_SHIFT	12
+/* MSI delivery modes */
+#define MSI_DM_NMI			(0x4 << 8)
 
-/* FIXED: fixed value for interrupt messages */
-#define APIC_MSI_ADDR_FIXED_VAL		(0xfee << 20)
+#define MSI_ADDRESS_VALUE		0xfee
 
 extern bool using_x2apic;
 

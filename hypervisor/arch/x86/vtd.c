@@ -76,9 +76,9 @@ static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 
 static void vtd_init_fault_nmi(void)
 {
+	union x86_msi_vector msi = { .native.address = MSI_ADDRESS_VALUE };
 	void *reg_base = dmar_reg_base;
 	struct per_cpu *cpu_data;
-	unsigned int apic_id;
 	int i;
 
 	/* Assume that at least one bit is set somewhere as
@@ -86,7 +86,9 @@ static void vtd_init_fault_nmi(void)
 	for (i = 0; root_cell.cpu_set->bitmap[i] == 0; i++)
 		/* Empty loop */;
 	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[i]));
-	apic_id = cpu_data->apic_id;
+
+	/* We only support 8-bit APIC IDs. */
+	msi.native.destination = (u8)cpu_data->apic_id;
 
 	/* Save this value globally to avoid multiple reports of the same
 	 * case from different CPUs */
@@ -97,10 +99,8 @@ static void vtd_init_fault_nmi(void)
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
 
 		/* Program MSI message to send NMIs to the target CPU */
-		mmio_write32(reg_base + VTD_FEDATA_REG, APIC_MSI_DATA_DM_NMI);
-		mmio_write32(reg_base + VTD_FEADDR_REG,
-			((apic_id << APIC_MSI_ADDR_DESTID_SHIFT) &
-			 APIC_MSI_ADDR_DESTID_MASK) | APIC_MSI_ADDR_FIXED_VAL);
+		mmio_write32(reg_base + VTD_FEDATA_REG, MSI_DM_NMI);
+		mmio_write32(reg_base + VTD_FEADDR_REG, (u32)msi.raw.address);
 		mmio_write32(reg_base + VTD_FEUADDR_REG, 0);
 
 		/* Unmask events */
