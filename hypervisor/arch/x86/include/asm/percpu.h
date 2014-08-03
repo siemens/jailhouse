@@ -32,6 +32,7 @@
 
 #include <asm/cell.h>
 #include <asm/spinlock.h>
+#include <asm/svm.h>
 #include <asm/vmx.h>
 
 /**
@@ -140,7 +141,9 @@ struct per_cpu {
 				__attribute__((aligned(PAGE_SIZE)));
 		};
 		struct {
-			/* TODO: Add VMCB block here */
+			/** VMCB block, required by SVM. */
+			struct vmcb vmcb
+				__attribute__((aligned(PAGE_SIZE)));
 			/** SVM Host save area; opaque to us. */
 			u8 host_state[PAGE_SIZE]
 				__attribute__((aligned(PAGE_SIZE)));
