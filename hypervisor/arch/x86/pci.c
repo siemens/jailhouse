@@ -146,7 +146,7 @@ data_port_out_handler(struct registers *guest_regs, const struct cell *cell,
 	u32 reg_data = get_rax_reg(guest_regs, size);
 
 	if (pci_cfg_write_moderate(cell, device, address,
-				   size, &reg_data) == PCI_ACCESS_REJECT)
+				   size, reg_data) == PCI_ACCESS_REJECT)
 		return -1;
 
 	arch_pci_write_config(device->bdf, address, reg_data, size);

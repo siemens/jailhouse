@@ -194,16 +194,14 @@ pci_cfg_read_moderate(const struct cell *cell,
  * @device:	The device to be accessed; if NULL, access will be rejected
  * @address:	Config space address
  * @size:	Access size (1, 2 or 4 bytes)
- * @value:	Pointer to value to be written, initialized with cell value,
- * 		set to the to-be-written hardware value if PCI_ACCESS_EMULATE
- * 		is returned
+ * @value:	Value to be written
  *
  * Return: PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_EMULATE.
  */
 enum pci_access
 pci_cfg_write_moderate(const struct cell *cell,
 		       const struct jailhouse_pci_device *device, u16 address,
-		       unsigned int size, u32 *value)
+		       unsigned int size, u32 value)
 {
 	const struct jailhouse_pci_capability *cap;
 	/* initialize list to work around wrong compiler warning */
@@ -286,8 +284,8 @@ int pci_init(void)
 int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			    u64 addr, u32 *value)
 {
-	u32 mmcfg_offset, val, reg_addr;
 	const struct jailhouse_pci_device *device;
+	u32 mmcfg_offset, reg_addr;
 	enum pci_access access;
 
 	if (!pci_space || addr < pci_mmcfg_addr ||
@@ -299,12 +297,11 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
 
 	if (is_write) {
-		val = *value;
 		access = pci_cfg_write_moderate(cell, device, reg_addr, 4,
-						&val);
+						*value);
 		if (access == PCI_ACCESS_REJECT)
 			goto invalid_access;
-		mmio_write32(pci_space + mmcfg_offset, val);
+		mmio_write32(pci_space + mmcfg_offset, *value);
 	} else {
 		access = pci_cfg_read_moderate(cell, device, reg_addr, 4,
 					       value);
