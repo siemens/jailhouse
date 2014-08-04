@@ -34,7 +34,6 @@ static int register_root_cpu(struct per_cpu *cpu_data)
 	if (!cpu_id_valid(cpu_data->cpu_id))
 		return -EINVAL;
 	cpu_data->cell = &root_cell;
-	set_bit(cpu_data->cpu_id, root_cell.cpu_set->bitmap);
 	return 0;
 }
 
@@ -65,7 +64,7 @@ static void init_early(unsigned int cpu_id)
 		return;
 
 	root_cell.id = -1;
-	error = cell_init(&root_cell, false);
+	error = cell_init(&root_cell);
 	if (error)
 		return;
 
@@ -125,7 +124,15 @@ static void init_late(struct per_cpu *cpu_data)
 {
 	const struct jailhouse_memory *mem =
 		jailhouse_cell_mem_regions(root_cell.config);
+	unsigned int expected_cpus = 0;
 	unsigned int n;
+
+	for_each_cpu(n, root_cell.cpu_set)
+		expected_cpus++;
+	if (hypervisor_header.online_cpus != expected_cpus) {
+		error = -EINVAL;
+		return;
+	}
 
 	error = arch_init_late();
 	if (error)

@@ -144,7 +144,7 @@ retry:
 }
 
 /* cell must be zero-initialized */
-int cell_init(struct cell *cell, bool copy_cpu_set)
+int cell_init(struct cell *cell)
 {
 	const unsigned long *config_cpu_set =
 		jailhouse_cell_cpu_set(cell->config);
@@ -167,8 +167,7 @@ int cell_init(struct cell *cell, bool copy_cpu_set)
 			(sizeof(cell->small_cpu_set.bitmap) * 8) - 1;
 	}
 	cell->cpu_set = cpu_set;
-	if (copy_cpu_set)
-		memcpy(cell->cpu_set->bitmap, config_cpu_set, cpu_set_size);
+	memcpy(cell->cpu_set->bitmap, config_cpu_set, cpu_set_size);
 
 	return 0;
 }
@@ -355,7 +354,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	cell->config = ((void *)cell) + sizeof(*cell);
 	memcpy(cell->config, cfg, cfg_total_size);
 
-	err = cell_init(cell, true);
+	err = cell_init(cell);
 	if (err)
 		goto err_free_cell;
 

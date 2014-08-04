@@ -37,7 +37,7 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 bool cpu_id_valid(unsigned long cpu_id);
 
 int check_mem_regions(const struct jailhouse_cell_desc *config);
-int cell_init(struct cell *cell, bool copy_cpu_set);
+int cell_init(struct cell *cell);
 
 long hypercall(struct per_cpu *cpu_data, unsigned long code,
 	       unsigned long arg1, unsigned long arg2);
