@@ -309,9 +309,6 @@ int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
 	}
 
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
-	if (context_entry->lo_word & VTD_CTX_PRESENT)
-		return true;
-
 	context_entry->lo_word = VTD_CTX_PRESENT | VTD_CTX_TTYPE_MLP_UNTRANS |
 		page_map_hvirt2phys(cell->vtd.pg_structs.root_table);
 	context_entry->hi_word =
@@ -334,14 +331,8 @@ void vtd_remove_pci_device(struct pci_device *device)
 	if (dmar_units == 0)
 		return;
 
-	if (!(*root_entry_lo & VTD_ROOT_PRESENT))
-		return;
-
 	context_entry_table = page_map_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
-
-	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
-		return;
 
 	context_entry->lo_word &= ~VTD_CTX_PRESENT;
 	flush_cache(&context_entry->lo_word, sizeof(u64));
