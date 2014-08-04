@@ -155,19 +155,17 @@ int cell_init(struct cell *cell)
 
 	if (cpu_set_size > PAGE_SIZE)
 		return -EINVAL;
-	else if (cpu_set_size > sizeof(cell->small_cpu_set.bitmap)) {
+	if (cpu_set_size > sizeof(cell->small_cpu_set.bitmap)) {
 		cpu_set = page_alloc(&mem_pool, 1);
 		if (!cpu_set)
 			return -ENOMEM;
-		cpu_set->max_cpu_id =
-			((PAGE_SIZE - sizeof(unsigned long)) * 8) - 1;
 	} else {
 		cpu_set = &cell->small_cpu_set;
-		cpu_set->max_cpu_id =
-			(sizeof(cell->small_cpu_set.bitmap) * 8) - 1;
 	}
+	cpu_set->max_cpu_id = cpu_set_size * 8 - 1;
+	memcpy(cpu_set->bitmap, config_cpu_set, cpu_set_size);
+
 	cell->cpu_set = cpu_set;
-	memcpy(cell->cpu_set->bitmap, config_cpu_set, cpu_set_size);
 
 	return 0;
 }
