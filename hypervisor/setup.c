@@ -29,14 +29,6 @@ static unsigned int master_cpu_id = -1;
 static volatile unsigned int initialized_cpus;
 static volatile int error;
 
-static int register_root_cpu(struct per_cpu *cpu_data)
-{
-	if (!cpu_id_valid(cpu_data->cpu_id))
-		return -EINVAL;
-	cpu_data->cell = &root_cell;
-	return 0;
-}
-
 static void init_early(unsigned int cpu_id)
 {
 	struct jailhouse_memory hv_page;
@@ -93,13 +85,14 @@ static void init_early(unsigned int cpu_id)
 
 static void cpu_init(struct per_cpu *cpu_data)
 {
-	int err;
+	int err = -EINVAL;
 
 	printk(" CPU %d... ", cpu_data->cpu_id);
 
-	err = register_root_cpu(cpu_data);
-	if (err)
+	if (!cpu_id_valid(cpu_data->cpu_id))
 		goto failed;
+
+	cpu_data->cell = &root_cell;
 
 	err = arch_cpu_init(cpu_data);
 	if (err)
