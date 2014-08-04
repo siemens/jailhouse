@@ -20,6 +20,9 @@
 
 #define PCI_CONFIG_HEADER_SIZE		0x40
 
+#define PCI_CFG_COMMAND			0x04
+# define PCI_CMD_INTX_OFF		(1 << 10)
+
 struct acpi_mcfg_alloc {
 	u64 base_addr;
 	u16 segment_num;
@@ -335,6 +338,8 @@ static void pci_remove_device(struct pci_device *device)
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
 	arch_pci_remove_device(device);
+	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
+			 PCI_CMD_INTX_OFF, 2);
 }
 
 int pci_cell_init(struct cell *cell)
