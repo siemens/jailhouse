@@ -51,12 +51,12 @@ static void init_early(unsigned int cpu_id)
 	if (error)
 		return;
 
-	error = arch_init_early();
+	root_cell.id = -1;
+	error = cell_init(&root_cell);
 	if (error)
 		return;
 
-	root_cell.id = -1;
-	error = cell_init(&root_cell);
+	error = arch_init_early();
 	if (error)
 		return;
 
