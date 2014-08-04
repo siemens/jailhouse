@@ -286,11 +286,15 @@ int vtd_init(void)
 	return vtd_cell_init(&root_cell);
 }
 
-static bool vtd_add_device_to_cell(struct cell *cell,
-				   const struct jailhouse_pci_device *device)
+int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
 {
-	u64 *root_entry_lo = &root_entry_table[PCI_BUS(device->bdf)].lo_word;
+	u16 bdf = device->info->bdf;
+	u64 *root_entry_lo = &root_entry_table[PCI_BUS(bdf)].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;
+
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return 0;
 
 	if (*root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
@@ -298,18 +302,15 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 	} else {
 		context_entry_table = page_alloc(&mem_pool, 1);
 		if (!context_entry_table)
-			return false;
+			return -ENOMEM;
 		*root_entry_lo = VTD_ROOT_PRESENT |
 			page_map_hvirt2phys(context_entry_table);
 		flush_cache(root_entry_lo, sizeof(u64));
 	}
 
-	context_entry = &context_entry_table[PCI_DEVFN(device->bdf)];
+	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 	if (context_entry->lo_word & VTD_CTX_PRESENT)
 		return true;
-
-	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
-	       PCI_BDF_PARAMS(device->bdf), cell->config->name);
 
 	context_entry->lo_word = VTD_CTX_PRESENT | VTD_CTX_TTYPE_MLP_UNTRANS |
 		page_map_hvirt2phys(cell->vtd.pg_structs.root_table);
@@ -318,29 +319,29 @@ static bool vtd_add_device_to_cell(struct cell *cell,
 		(cell->id << VTD_CTX_DID_SHIFT);
 	flush_cache(context_entry, sizeof(*context_entry));
 
-	return true;
+	return 0;
 }
 
-static void
-vtd_remove_device_from_cell(struct cell *cell,
-			    const struct jailhouse_pci_device *device)
+void vtd_remove_pci_device(struct pci_device *device)
 {
-	u64 *root_entry_lo = &root_entry_table[PCI_BUS(device->bdf)].lo_word;
+	u16 bdf = device->info->bdf;
+	u64 *root_entry_lo = &root_entry_table[PCI_BUS(bdf)].lo_word;
 	struct vtd_entry *context_entry_table;
 	struct vtd_entry *context_entry;
 	unsigned int n;
+
+	// HACK for QEMU
+	if (dmar_units == 0)
+		return;
 
 	if (!(*root_entry_lo & VTD_ROOT_PRESENT))
 		return;
 
 	context_entry_table = page_map_phys2hvirt(*root_entry_lo & PAGE_MASK);
-	context_entry = &context_entry_table[PCI_DEVFN(device->bdf)];
+	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 
 	if (!(context_entry->lo_word & VTD_CTX_PRESENT))
 		return;
-
-	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
-	       PCI_BDF_PARAMS(device->bdf), cell->config->name);
 
 	context_entry->lo_word &= ~VTD_CTX_PRESENT;
 	flush_cache(&context_entry->lo_word, sizeof(u64));
@@ -356,10 +357,6 @@ vtd_remove_device_from_cell(struct cell *cell,
 
 int vtd_cell_init(struct cell *cell)
 {
-	const struct jailhouse_pci_device *dev =
-		jailhouse_cell_pci_devices(cell->config);
-	int n;
-
 	// HACK for QEMU
 	if (dmar_units == 0)
 		return 0;
@@ -371,14 +368,6 @@ int vtd_cell_init(struct cell *cell)
 	cell->vtd.pg_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!cell->vtd.pg_structs.root_table)
 		return -ENOMEM;
-
-	for (n = 0; n < cell->config->num_pci_devices; n++) {
-		vtd_remove_device_from_cell(&root_cell, &dev[n]);
-		if (!vtd_add_device_to_cell(cell, &dev[n])) {
-			vtd_cell_exit(cell);
-			return -ENOMEM;
-		}
-	}
 
 	vtd_init_fault_nmi();
 
@@ -421,37 +410,11 @@ int vtd_unmap_memory_region(struct cell *cell,
 				mem->size, PAGE_MAP_COHERENT);
 }
 
-static bool
-vtd_return_device_to_root_cell(const struct jailhouse_pci_device *dev)
-{
-	const struct jailhouse_pci_device *root_cell_dev =
-		jailhouse_cell_pci_devices(root_cell.config);
-	unsigned int n;
-
-	for (n = 0; n < root_cell.config->num_pci_devices; n++)
-		if (root_cell_dev[n].domain == dev->domain &&
-		    root_cell_dev[n].bdf == dev->bdf)
-			return vtd_add_device_to_cell(&root_cell,
-						      &root_cell_dev[n]);
-	return true;
-}
-
 void vtd_cell_exit(struct cell *cell)
 {
-	const struct jailhouse_pci_device *dev =
-		jailhouse_cell_pci_devices(cell->config);
-	unsigned int n;
-
 	// HACK for QEMU
 	if (dmar_units == 0)
 		return;
-
-	for (n = 0; n < cell->config->num_pci_devices; n++) {
-		vtd_remove_device_from_cell(cell, &dev[n]);
-		if (!vtd_return_device_to_root_cell(&dev[n]))
-			printk("WARNING: Failed to re-assign PCI device to "
-			       "root cell\n");
-	}
 
 	page_free(&mem_pool, cell->vtd.pg_structs.root_table, 1);
 }

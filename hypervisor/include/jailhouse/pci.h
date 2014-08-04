@@ -48,4 +48,7 @@ void pci_cell_exit(struct cell *cell);
 u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size);
 void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size);
 
+int arch_pci_add_device(struct cell *cell, struct pci_device *device);
+void arch_pci_remove_device(struct pci_device *device);
+
 #endif /* !_JAILHOUSE_PCI_H */

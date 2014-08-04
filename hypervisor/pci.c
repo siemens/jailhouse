@@ -12,6 +12,7 @@
  */
 
 #include <jailhouse/acpi.h>
+#include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
@@ -125,7 +126,8 @@ struct pci_device *pci_get_assigned_device(const struct cell *cell, u16 bdf)
 	 * locality. */
 	for (n = 0; n < cell->config->num_pci_devices; n++)
 		if (dev_info[n].bdf == bdf)
-			return &cell->pci_devices[n];
+			return cell->pci_devices[n].cell ?
+				&cell->pci_devices[n] : NULL;
 
 	return NULL;
 }
@@ -316,14 +318,29 @@ invalid_access:
 
 }
 
+static int pci_add_device(struct cell *cell, struct pci_device *device)
+{
+	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
+	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
+	return arch_pci_add_device(cell, device);
+}
+
+static void pci_remove_device(struct pci_device *device)
+{
+	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
+	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
+	arch_pci_remove_device(device);
+}
+
 int pci_cell_init(struct cell *cell)
 {
 	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
 					      sizeof(struct pci_device));
 	const struct jailhouse_pci_device *dev_infos =
 		jailhouse_cell_pci_devices(cell->config);
-	struct pci_device *device;
+	struct pci_device *device, *root_device;
 	unsigned int ndev;
+	int err;
 
 	cell->pci_devices = page_alloc(&mem_pool, array_size / PAGE_SIZE);
 	if (!cell->pci_devices)
@@ -333,21 +350,67 @@ int pci_cell_init(struct cell *cell)
 	 * We order device states in the same way as the static information
 	 * so that we can use the index of the latter to find the former. For
 	 * the other way around and for obtaining the owner cell, we use more
-	 * handy pointers.
+	 * handy pointers. The cell pointer also encodes active ownership.
 	 */
 	for (ndev = 0; ndev < cell->config->num_pci_devices; ndev++) {
 		device = &cell->pci_devices[ndev];
 		device->info = &dev_infos[ndev];
+
+		root_device = pci_get_assigned_device(&root_cell,
+						      dev_infos[ndev].bdf);
+		if (root_device) {
+			pci_remove_device(root_device);
+			root_device->cell = NULL;
+		}
+
+		err = pci_add_device(cell, device);
+		if (err) {
+			pci_cell_exit(cell);
+			return err;
+		}
+
 		device->cell = cell;
 	}
 
 	return 0;
 }
 
+static void pci_return_device_to_root_cell(struct pci_device *device)
+{
+	struct pci_device *root_device = root_cell.pci_devices;
+	unsigned int n;
+
+	for (n = 0; n < root_cell.config->num_pci_devices; n++, root_device++)
+		if (root_device->info->domain == device->info->domain &&
+		    root_device->info->bdf == device->info->bdf) {
+			if (pci_add_device(&root_cell, root_device) < 0)
+				printk("WARNING: Failed to re-assign PCI "
+				       "device to root cell\n");
+			else
+				root_device->cell = &root_cell;
+			break;
+		}
+}
+
 void pci_cell_exit(struct cell *cell)
 {
 	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
 					      sizeof(struct pci_device));
+	unsigned int n;
+
+	/*
+	 * Do not destroy the root cell. We will shut down the complete
+	 * hypervisor instead.
+	 */
+	if (cell == &root_cell)
+		return;
+
+	for (n = 0; n < cell->config->num_pci_devices; n++) {
+		if (!cell->pci_devices[n].cell)
+			continue;
+		pci_remove_device(&cell->pci_devices[n]);
+		pci_return_device_to_root_cell(&cell->pci_devices[n]);
+	}
 
 	page_free(&mem_pool, cell->pci_devices, array_size / PAGE_SIZE);
 }

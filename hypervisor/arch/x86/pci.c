@@ -12,9 +12,11 @@
  */
 
 #include <jailhouse/pci.h>
+#include <jailhouse/printk.h>
 #include <jailhouse/utils.h>
 #include <asm/io.h>
 #include <asm/pci.h>
+#include <asm/vtd.h>
 
 /* protects the root bridge's PIO interface to the PCI config space */
 static DEFINE_SPINLOCK(pci_lock);
@@ -210,4 +212,14 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 	}
 
 	return result;
+}
+
+int arch_pci_add_device(struct cell *cell, struct pci_device *device)
+{
+	return vtd_add_pci_device(cell, device);
+}
+
+void arch_pci_remove_device(struct pci_device *device)
+{
+	vtd_remove_pci_device(device);
 }
