@@ -34,6 +34,11 @@ struct acpi_mcfg_table {
 	struct acpi_mcfg_alloc alloc_structs[];
 } __attribute__((packed));
 
+#define for_each_configured_pci_device(dev, cell)			\
+	for ((dev) = (cell)->pci_devices;				\
+	     (dev) - (cell)->pci_devices < (cell)->config->num_pci_devices; \
+	     (dev)++)
+
 /* entry for PCI config space whitelist (granting access) */
 struct pci_cfg_access {
 	u32 reg_num; /** Register number (4-byte aligned) */
@@ -377,10 +382,9 @@ int pci_cell_init(struct cell *cell)
 
 static void pci_return_device_to_root_cell(struct pci_device *device)
 {
-	struct pci_device *root_device = root_cell.pci_devices;
-	unsigned int n;
+	struct pci_device *root_device;
 
-	for (n = 0; n < root_cell.config->num_pci_devices; n++, root_device++)
+	for_each_configured_pci_device(root_device, &root_cell)
 		if (root_device->info->domain == device->info->domain &&
 		    root_device->info->bdf == device->info->bdf) {
 			if (pci_add_device(&root_cell, root_device) < 0)
@@ -396,7 +400,7 @@ void pci_cell_exit(struct cell *cell)
 {
 	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
 					      sizeof(struct pci_device));
-	unsigned int n;
+	struct pci_device *device;
 
 	/*
 	 * Do not destroy the root cell. We will shut down the complete
@@ -405,11 +409,11 @@ void pci_cell_exit(struct cell *cell)
 	if (cell == &root_cell)
 		return;
 
-	for (n = 0; n < cell->config->num_pci_devices; n++) {
-		if (!cell->pci_devices[n].cell)
+	for_each_configured_pci_device(device, cell) {
+		if (!device->cell)
 			continue;
-		pci_remove_device(&cell->pci_devices[n]);
-		pci_return_device_to_root_cell(&cell->pci_devices[n]);
+		pci_remove_device(device);
+		pci_return_device_to_root_cell(device);
 	}
 
 	page_free(&mem_pool, cell->pci_devices, array_size / PAGE_SIZE);
