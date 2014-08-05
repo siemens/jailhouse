@@ -35,6 +35,7 @@ void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs);
+bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn);
 void arch_reset_self(struct per_cpu *cpu_data);
 void arch_shutdown_self(struct per_cpu *cpu_data);
 

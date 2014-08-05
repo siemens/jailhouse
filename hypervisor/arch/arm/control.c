@@ -16,6 +16,7 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
+#include <asm/platform.h>
 #include <asm/processor.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
@@ -289,6 +290,22 @@ unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id)
 	}
 
 	return -1;
+}
+
+/*
+ * Handle the maintenance interrupt, the rest is injected into the cell.
+ * Return true when the IRQ has been handled by the hyp.
+ */
+bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
+{
+	if (irqn == MAINTENANCE_IRQ) {
+		irqchip_inject_pending(cpu_data);
+		return true;
+	}
+
+	irqchip_set_pending(cpu_data, irqn, true);
+
+	return false;
 }
 
 int arch_cell_create(struct cell *cell)

@@ -245,53 +245,17 @@ static int gic_send_sgi(struct sgi *sgi)
 int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir)
 {
 	struct sgi sgi;
-	struct cell *cell = cpu_data->cell;
-	unsigned int cpu, virt_id;
-	unsigned long this_cpu = cpu_data->cpu_id;
 	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
-	unsigned long targets = sgir & ICC_SGIR_TARGET_MASK;
-	u32 irq = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
 	/* FIXME: clusters are not supported yet. */
-	sgi.targets = 0;
+	sgi.targets = sgir & ICC_SGIR_TARGET_MASK;
 	sgi.routing_mode = routing_mode;
 	sgi.aff1 = sgir >> ICC_SGIR_AFF1_SHIFT & 0xff;
 	sgi.aff2 = sgir >> ICC_SGIR_AFF2_SHIFT & 0xff;
 	sgi.aff3 = sgir >> ICC_SGIR_AFF3_SHIFT & 0xff;
-	sgi.id = SGI_INJECT;
+	sgi.id = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
-	for_each_cpu_except(cpu, cell->cpu_set, this_cpu) {
-		virt_id = arm_cpu_phys2virt(cpu);
-
-		if (routing_mode == 0 && !test_bit(virt_id, &targets))
-			continue;
-		else if (routing_mode == 1 && cpu == this_cpu)
-			continue;
-
-		irqchip_set_pending(per_cpu(cpu), irq, false);
-		sgi.targets |= (1 << cpu);
-	}
-
-	/* Let the other CPUS inject their SGIs */
-	gic_send_sgi(&sgi);
-
-	return TRAP_HANDLED;
-}
-
-/*
- * Handle the maintenance interrupt, the rest is injected into the cell.
- * Return true when the IRQ has been handled by the hyp.
- */
-static bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
-{
-	if (irqn == MAINTENANCE_IRQ) {
-		irqchip_inject_pending(cpu_data);
-		return true;
-	}
-
-	irqchip_set_pending(cpu_data, irqn, true);
-
-	return false;
+	return gic_handle_sgir_write(cpu_data, &sgi, true);
 }
 
 static void gic_eoi_irq(u32 irq_id, bool deactivate)
@@ -299,36 +263,6 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 	arm_write_sysreg(ICC_EOIR1_EL1, irq_id);
 	if (deactivate)
 		arm_write_sysreg(ICC_DIR_EL1, irq_id);
-}
-
-static void gic_handle_irq(struct per_cpu *cpu_data)
-{
-	bool handled = false;
-	u32 irq_id;
-
-	while (1) {
-		/* Read ICC_IAR1: set 'active' state */
-		arm_read_sysreg(ICC_IAR1_EL1, irq_id);
-
-		if (irq_id == 0x3ff) /* Spurious IRQ */
-			break;
-
-		/* Handle IRQ */
-		if (is_sgi(irq_id)) {
-			arch_handle_sgi(cpu_data, irq_id);
-			handled = true;
-		} else {
-			handled = arch_handle_phys_irq(cpu_data, irq_id);
-		}
-
-		/*
-		 * Write ICC_EOIR1: drop priority, but stay active if handled is
-		 * false.
-		 * This allows to not be re-interrupted by a level-triggered
-		 * interrupt that needs handling in the guest (e.g. timer)
-		 */
-		gic_eoi_irq(irq_id, handled);
-	}
 }
 
 static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)

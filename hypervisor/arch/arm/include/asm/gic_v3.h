@@ -252,6 +252,14 @@ static inline void gic_write_lr(unsigned int n, u64 val)
 	}
 }
 
+static inline u32 gic_read_iar(void)
+{
+	u32 irq_id;
+
+	arm_read_sysreg(ICC_IAR1_EL1, irq_id);
+	return irq_id;
+}
+
 struct per_cpu;
 int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir);
 

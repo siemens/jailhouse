@@ -45,9 +45,13 @@
 
 struct arm_mmio_access;
 struct per_cpu;
+struct sgi;
 
 int gic_handle_dist_access(struct per_cpu *cpu_data,
 			   struct mmio_access *access);
+int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
+			  bool virt_input);
+void gic_handle_irq(struct per_cpu *cpu_data);
 
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

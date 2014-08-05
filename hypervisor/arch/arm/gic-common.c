@@ -13,6 +13,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <asm/cell.h>
+#include <asm/control.h>
 #include <asm/gic_common.h>
 #include <asm/irqchip.h>
 #include <asm/percpu.h>
@@ -142,6 +143,38 @@ static int handle_irq_route(struct per_cpu *cpu_data,
 	}
 }
 
+int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
+			  bool virt_input)
+{
+	unsigned int cpu;
+	unsigned long targets;
+	unsigned int this_cpu = cpu_data->cpu_id;
+	struct cell *cell = cpu_data->cell;
+	bool is_target = false;
+
+	targets = sgi->targets;
+	sgi->targets = 0;
+
+	/* Filter the targets */
+	for_each_cpu_except(cpu, cell->cpu_set, this_cpu) {
+		if (virt_input)
+			is_target = !!test_bit(arm_cpu_phys2virt(cpu),
+					       &targets);
+
+		if (sgi->routing_mode == 0 && !is_target)
+			continue;
+
+		irqchip_set_pending(per_cpu(cpu), sgi->id, false);
+		sgi->targets |= (1 << cpu);
+	}
+
+	/* Let the other CPUS inject their SGIs */
+	sgi->id = SGI_INJECT;
+	irqchip_send_sgi(sgi);
+
+	return TRAP_HANDLED;
+}
+
 int gic_handle_dist_access(struct per_cpu *cpu_data,
 			   struct mmio_access *access)
 {
@@ -201,4 +234,34 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 	}
 
 	return ret;
+}
+
+void gic_handle_irq(struct per_cpu *cpu_data)
+{
+	bool handled = false;
+	u32 irq_id;
+
+	while (1) {
+		/* Read IAR1: set 'active' state */
+		irq_id = gic_read_iar();
+
+		if (irq_id == 0x3ff) /* Spurious IRQ */
+			break;
+
+		/* Handle IRQ */
+		if (is_sgi(irq_id)) {
+			arch_handle_sgi(cpu_data, irq_id);
+			handled = true;
+		} else {
+			handled = arch_handle_phys_irq(cpu_data, irq_id);
+		}
+
+		/*
+		 * Write EOIR1: drop priority, but stay active if handled is
+		 * false.
+		 * This allows to not be re-interrupted by a level-triggered
+		 * interrupt that needs handling in the guest (e.g. timer)
+		 */
+		irqchip_eoi_irq(irq_id, handled);
+	}
 }
