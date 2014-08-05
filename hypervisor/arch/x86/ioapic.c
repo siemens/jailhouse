@@ -66,16 +66,11 @@ void ioapic_cell_init(struct cell *cell)
 	const struct jailhouse_irqchip *irqchip =
 		ioapic_find_config(cell->config);
 
-	if (irqchip)
+	if (irqchip) {
 		cell->ioapic_pin_bitmap = irqchip->pin_bitmap;
-}
-
-void ioapic_root_cell_shrink(struct jailhouse_cell_desc *config)
-{
-	const struct jailhouse_irqchip *irqchip = ioapic_find_config(config);
-
-	if (irqchip)
-		root_cell.ioapic_pin_bitmap &= ~irqchip->pin_bitmap;
+		if (cell != &root_cell)
+			root_cell.ioapic_pin_bitmap &= ~irqchip->pin_bitmap;
+	}
 }
 
 void ioapic_cell_exit(struct cell *cell)

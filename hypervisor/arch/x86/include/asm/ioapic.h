@@ -15,7 +15,6 @@
 int ioapic_init(void);
 
 void ioapic_cell_init(struct cell *cell);
-void ioapic_root_cell_shrink(struct jailhouse_cell_desc *config);
 void ioapic_cell_exit(struct cell *cell);
 
 int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
