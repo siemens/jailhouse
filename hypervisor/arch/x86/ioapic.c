@@ -17,6 +17,15 @@
 
 #include <jailhouse/cell-config.h>
 
+#define IOAPIC_BASE_ADDR	0xfec00000
+#define IOAPIC_REG_INDEX	0x00
+#define IOAPIC_REG_DATA		0x10
+#define IOAPIC_REG_EOI		0x40
+#define IOAPIC_ID		0x00
+#define IOAPIC_VER		0x01
+#define IOAPIC_REDIR_TBL_START	0x10
+#define IOAPIC_REDIR_TBL_END	0x3f
+
 static DEFINE_SPINLOCK(ioapic_lock);
 static void *ioapic;
 
