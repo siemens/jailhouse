@@ -82,7 +82,7 @@ class PCICapability:
     @staticmethod
     def parse_pcicaps(dir):
         caps = []
-        f = input_open(dir + '/config', 'rb')
+        f = input_open(os.path.join(dir, 'config'), 'rb')
         f.seek(0x06)
         (status,) = struct.unpack('<H', f.read(2))
         # capability list supported?
@@ -140,8 +140,8 @@ class PCIDevice:
 
     @staticmethod
     def parse_pcidevice_sysfsdir(basedir, dir):
-        dpath = basedir + '/' + dir
-        dclass = input_readline(dpath + '/class')
+        dpath = os.path.join(basedir, dir)
+        dclass = input_readline(os.path.join(dpath, 'class'))
         if re.match(r'0x0604..', dclass):
             type = 'JAILHOUSE_PCI_TYPE_BRIDGE'
         else:
@@ -294,7 +294,7 @@ def input_readline(name, optional=False):
 
 def input_listdir(dir, wildcards):
     for w in wildcards:
-        inputs['dirs'].add(dir + '/' + w)
+        inputs['dirs'].add(os.path.join(dir, w))
     if options.generate_collector:
         return []
     dirs = os.listdir(options.root + dir)
