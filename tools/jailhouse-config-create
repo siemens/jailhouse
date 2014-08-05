@@ -20,6 +20,8 @@ import argparse
 import struct
 from mako.template import Template
 
+abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
+
 # pretend to be part of the jailhouse tool
 sys.argv[0] = sys.argv[0].replace('-', ' ')
 
@@ -32,6 +34,12 @@ parser.add_argument('-r', '--root',
                     help='gather information in ROOT/, the default is "/" '
                          'which means creating a config for localhost',
                     default='/',
+                    action='store',
+                    type=str)
+parser.add_argument('-t', '--template-dir',
+                    help='the directory where the templates are located,'
+                         'the default is "' + abspath + '"',
+                    default=abspath,
                     action='store',
                     type=str)
 
@@ -494,10 +502,12 @@ if options.generate_collector:
     filelist = ' '.join(inputs['files'].union(inputs['dirs']))
     filelist_opt = ' '.join(inputs['files_opt'])
 
-    tmpl = Template(filename='jailhouse-config-collect.tmpl')
+    tmpl = Template(filename=os.path.join(options.template_dir,
+                                          'jailhouse-config-collect.tmpl'))
     f.write(tmpl.render(filelist=filelist, filelist_opt=filelist_opt))
 else:
-    tmpl = Template(filename='root-cell-config.c.tmpl')
+    tmpl = Template(filename=os.path.join(options.template_dir,
+                                          'root-cell-config.c.tmpl'))
     f.write(tmpl.render(regions=regions,
                         ourmem=ourmem,
                         argstr=' '.join(sys.argv),
