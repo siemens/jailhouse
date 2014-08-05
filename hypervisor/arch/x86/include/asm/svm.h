@@ -244,6 +244,21 @@ enum vm_exit_code {
 	VMEXIT_INVALID			=  -1
 };
 
+enum clean_bits {
+	CLEAN_BITS_I	= 1 << 0,
+	CLEAN_BITS_IOPM	= 1 << 1,
+	CLEAN_BITS_ASID	= 1 << 2,
+	CLEAN_BITS_TPR	= 1 << 3,
+	CLEAN_BITS_NP	= 1 << 4,
+	CLEAN_BITS_CRX	= 1 << 5,
+	CLEAN_BITS_DRX	= 1 << 6,
+	CLEAN_BITS_DT	= 1 << 7,
+	CLEAN_BITS_SEG	= 1 << 8,
+	CLEAN_BITS_CR2	= 1 << 9,
+	CLEAN_BITS_LBR	= 1 << 10,
+	CLEAN_BITS_AVIC	= 1 << 11
+};
+
 typedef u64 vintr_t;
 typedef u64 eventinj_t;
 typedef u64 lbrctrl_t;
@@ -279,7 +294,7 @@ struct vmcb {
 	eventinj_t	eventinj;	/* offset 0xA8 */
 	u64 n_cr3;			/* offset 0xB0 */
 	lbrctrl_t lbr_control;		/* offset 0xB8 */
-	u64 res09;			/* offset 0xC0 */
+	u64 clean_bits;			/* offset 0xC0 */
 	u64 nextrip;			/* offset 0xC8 */
 	u8 bytes_fetched;		/* offset 0xD0 */
 	u8 guest_bytes[15];
