@@ -8,25 +8,72 @@
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
+ *
+ * Copied from arch/arm/include/asm/spinlock.h in Linux
  */
+#ifndef _JAILHOUSE_ASM_SPINLOCK_H
+#define _JAILHOUSE_ASM_SPINLOCK_H
 
 #include <asm/bitops.h>
 #include <asm/processor.h>
 
-typedef struct {
-	unsigned long state;
-} spinlock_t;
+#ifndef __ASSEMBLY__
 
 #define DEFINE_SPINLOCK(name)	spinlock_t (name)
+#define TICKET_SHIFT		16
+
+typedef struct {
+	union {
+		u32 slock;
+		struct __raw_tickets {
+			u16 owner;
+			u16 next;
+		} tickets;
+	};
+} spinlock_t;
 
 static inline void spin_lock(spinlock_t *lock)
 {
-//	while (test_and_set_bit(0, &lock->state))
-//		cpu_relax();
+	unsigned long tmp;
+	u32 newval;
+	spinlock_t lockval;
+
+	/* Take the lock by updating the high part atomically */
+	asm volatile (
+"	.arch_extension mp\n"
+"	pldw	[%3]\n"
+"1:	ldrex	%0, [%3]\n"
+"	add	%1, %0, %4\n"
+"	strex	%2, %1, [%3]\n"
+"	teq	%2, #0\n"
+"	bne	1b"
+	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+	: "r" (&lock->slock), "I" (1 << TICKET_SHIFT)
+	: "cc");
+
+	while (lockval.tickets.next != lockval.tickets.owner)
+		asm volatile (
+		"wfe\n"
+		"ldrh	%0, [%1]\n"
+		: "=r" (lockval.tickets.owner)
+		: "r" (&lock->tickets.owner));
+
+	/* Ensure we have the lock before doing any more memory ops */
+	dmb(ish);
 }
 
 static inline void spin_unlock(spinlock_t *lock)
 {
-//	asm volatile("": : :"memory");
-//	clear_bit(0, &lock->state);
+	/* Ensure all memory ops are finished before releasing the lock */
+	dmb(ish);
+
+	/* No need for an exclusive, since only one CPU can unlock at a time. */
+	lock->tickets.owner++;
+
+	/* Ensure the spinlock is updated before notifying other CPUs */
+	dsb(ishst);
+	sev();
 }
+
+#endif /* !__ASSEMBLY__ */
+#endif /* !_JAILHOUSE_ASM_SPINLOCK_H */
