@@ -26,6 +26,10 @@ KBUILD_CPPFLAGS += -m64
 BUILD_VARIANTS := amd intel
 endif
 
+ifeq ($(SRCARCH),arm)
+KBUILD_CFLAGS += -marm
+endif
+
 ifneq ($(wildcard $(obj)/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(obj)/include/jailhouse/config.h
 endif

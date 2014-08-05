@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <asm/head.h>
 #include <asm/percpu.h>
 
 /* Entry point for Linux loader module on JAILHOUSE_ENABLE */
