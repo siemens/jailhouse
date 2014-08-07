@@ -40,6 +40,7 @@ struct {
 				0xfed91000,
 			},
 		},
+		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "H87I-PLUS",
 
@@ -116,6 +117,7 @@ struct {
 	.irqchips = {
 		/* IOAPIC */ {
 			.address = 0xfec00000,
+			.id = 0xf0f8,
 			.pin_bitmap = 0xffffff,
 		},
 	},
