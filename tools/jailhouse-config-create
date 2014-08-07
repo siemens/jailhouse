@@ -450,6 +450,13 @@ class MMConfig:
         return MMConfig(base, end_bus)
 
 
+if (
+    (options.generate_collector is False) and (options.root is '/')
+    and (os.geteuid() is not 0)
+):
+    print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
+    sys.exit(1)
+
 (pcidevices, pcicaps) = parse_pcidevices()
 
 product = [input_readline('/sys/class/dmi/id/sys_vendor',

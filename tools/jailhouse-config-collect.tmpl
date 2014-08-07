@@ -24,6 +24,11 @@
 
 set -e
 
+if test $UID -ne 0; then
+	echo "Please run as root" 1>&2
+	exit 1
+fi
+
 if test -z "$1"; then
 	echo "Usage: $0 mytarget.tar" 1>&2
 	exit 1
