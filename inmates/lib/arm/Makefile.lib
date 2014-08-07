@@ -1,0 +1,37 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) ARM Limited, 2014
+#
+# Authors:
+#  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+-include $(obj)/../../../hypervisor/include/jailhouse/config.mk
+
+KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include
+KBUILD_AFLAGE				+= -I$(INMATES_LIB)/include
+
+mach-$(CONFIG_ARCH_VEXPRESS)		:= vexpress
+
+gic-$(CONFIG_ARM_GIC)			:= gic-v2.o
+gic-$(CONFIG_ARM_GIC_V3)		:= gic-v3.o
+uart-$(CONFIG_SERIAL_AMBA_PL011) 	:= uart-pl011.o
+
+MACHINE					:= mach-$(mach-y)
+DRIVERS					:= $(gic-y) $(uart-y)
+KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
+KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
+
+# prevent deleting intermediate files which would cause rebuilds
+.SECONDARY: $(addprefix $(obj)/,$(targets))
+
+.SECONDEXPANSION:
+$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y))
+	$(call if_changed,ld)
+
+$(obj)/%.bin: $(obj)/%-linked.o
+	$(call if_changed,objcopy)
