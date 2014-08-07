@@ -13,6 +13,7 @@
 #include <jailhouse/mmio.h>
 #include <asm/irqchip.h>
 #include <asm/processor.h>
+#include <asm/smp.h>
 #include <asm/traps.h>
 
 /* Taken from the ARM ARM pseudocode for taking a data abort */
@@ -139,6 +140,8 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 	access.size = size;
 
 	ret = irqchip_mmio_access(cpu_data, &access);
+	if (ret == TRAP_UNHANDLED)
+		ret = arch_smp_mmio_access(cpu_data, &access);
 
 	if (ret == TRAP_HANDLED) {
 		/* Put the read value into the dest register */

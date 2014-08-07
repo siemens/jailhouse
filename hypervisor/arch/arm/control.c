@@ -117,11 +117,11 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	if (err)
 		printk("IRQ setup failed\n");
 
-	if (cpu_data->cell == &root_cell)
-		/* Wait for the driver to call cpu_up */
-		reset_address = arch_cpu_spin();
+	/* Wait for the driver to call cpu_up */
+	if (cell == &root_cell)
+		reset_address = arch_smp_spin(cpu_data, root_cell.arch.smp);
 	else
-		reset_address = 0;
+		reset_address = arch_smp_spin(cpu_data, cell->arch.smp);
 
 	/* Set the new MPIDR */
 	arm_write_sysreg(VMPIDR_EL2, cpu_data->virt_id | MPIDR_MP_BIT);
@@ -301,6 +301,8 @@ int arch_cell_create(struct cell *cell)
 
 	irqchip_cell_init(cell);
 	irqchip_root_cell_shrink(cell);
+
+	register_smp_ops(cell);
 
 	return 0;
 }

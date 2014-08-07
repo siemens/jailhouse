@@ -86,10 +86,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	/* Setup guest traps */
 	arm_write_sysreg(HCR, hcr);
 
-	err = arch_spin_init();
-	if (err)
-		return err;
-
 	err = arch_mmu_cpu_cell_init(cpu_data);
 	if (err)
 		return err;
@@ -105,8 +101,17 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 int arch_init_late(void)
 {
+	int err;
+
 	/* Setup the SPI bitmap */
 	irqchip_cell_init(&root_cell);
+
+	/* Platform-specific SMP operations */
+	register_smp_ops(&root_cell);
+
+	err = root_cell.arch.smp->init(&root_cell);
+	if (err)
+		return err;
 
 	return map_root_memory_regions();
 }

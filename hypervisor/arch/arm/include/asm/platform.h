@@ -35,7 +35,7 @@
 # endif /* GIC */
 
 # define MAINTENANCE_IRQ 25
-# define HOTPLUG_MBOX	((void *)0x1c010030)
+# define SYSREGS_BASE	0x1c010000
 
 #endif /* CONFIG_ARCH_VEXPRESS */
 
