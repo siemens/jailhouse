@@ -92,6 +92,8 @@ struct jailhouse_system {
 			__u64 dmar_unit_base[JAILHOUSE_MAX_DMAR_UNITS];
 		} x86;
 	} platform_info;
+	__u32 device_limit;
+	__u32 interrupt_limit;
 	struct jailhouse_cell_desc root_cell;
 } __attribute__((packed));
 
