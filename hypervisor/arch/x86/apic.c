@@ -23,6 +23,7 @@
 #define XAPIC_REG(x2apic_reg)		((x2apic_reg) << 4)
 
 bool using_x2apic;
+u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
 
 /* Initialized for x2APIC, adjusted for xAPIC during init */
 static u32 apic_reserved_bits[] = {
@@ -45,7 +46,6 @@ static u32 apic_reserved_bits[] = {
 	[0x3e]		= 0xfffffff4,	/* DCR */
 	[0x3f]		= 0xffffff00,	/* Self IPI */
 };
-static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
 static void *xapic_page;
 
 static struct {

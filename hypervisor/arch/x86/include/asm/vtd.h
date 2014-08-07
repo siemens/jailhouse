@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -53,15 +53,19 @@ struct vtd_entry {
 #define  VTD_CAP_NFR_MASK		BIT_MASK(47, 40)
 #define VTD_ECAP_REG			0x10
 # define VTD_ECAP_QI			(1UL << 1)
+# define VTD_ECAP_IR			(1UL << 3)
 #define VTD_GCMD_REG			0x18
+# define VTD_GCMD_SIRTP			(1UL << 24)
+# define VTD_GCMD_IRE			(1UL << 25)
 # define VTD_GCMD_QIE			(1UL << 26)
 # define VTD_GCMD_SRTP			(1UL << 30)
 # define VTD_GCMD_TE			(1UL << 31)
 #define VTD_GSTS_REG			0x1c
+# define VTD_GSTS_IRES			(1UL << 25)
 # define VTD_GSTS_QIES			(1UL << 26)
 # define VTD_GSTS_TES			(1UL << 31)
 # define VTD_GSTS_USED_CTRLS \
-	(VTD_GSTS_QIES | VTD_GSTS_TES)
+	(VTD_GSTS_IRES | VTD_GSTS_QIES | VTD_GSTS_TES)
 #define VTD_RTADDR_REG			0x20
 #define VTD_FSTS_REG			0x34
 # define VTD_FSTS_PFO			(1UL << 0)
@@ -81,6 +85,7 @@ struct vtd_entry {
 #define VTD_IQT_REG			0x88
 # define VTD_IQT_QT_MASK		BIT_MASK(18, 4)
 #define VTD_IQA_REG			0x90
+#define VTD_IRTA_REG			0xb8
 
 #define VTD_REQ_INV_CONTEXT		0x01
 # define VTD_INV_CONTEXT_GLOBAL		(1UL << 4)
@@ -93,6 +98,11 @@ struct vtd_entry {
 # define VTD_INV_IOTLB_DW		(1UL << 6)
 # define VTD_INV_IOTLB_DR		(1UL << 7)
 # define VTD_INV_IOTLB_DOMAIN_SHIFT	16
+
+#define VTD_REQ_INV_INT			0x04
+# define VTD_INV_INT_GLOBAL		(0UL << 4)
+# define VTD_INV_INT_INDEX		(1UL << 4)
+# define VTD_INV_INT_IIDX_SHIFT		32
 
 #define VTD_REQ_INV_WAIT		0x05
 #define  VTD_INV_WAIT_SW		(1UL << 5)
@@ -107,6 +117,31 @@ struct vtd_entry {
 #define  VTD_FRCD_HI_TYPE		(1L << (126-64))
 #define  VTD_FRCD_HI_F			(1L << (127-64))
 #define  VTD_FRCD_HI_F_CLEAR		1
+
+union vtd_irte {
+	struct {
+		u8 p:1;
+		u8 fpd:1;
+		u8 dest_logical:1;
+		u8 redir_hint:1;
+		u8 level_triggered:1;
+		u8 delivery_mode:3;
+		u8 assigned:1;
+		u8 reserved:7;
+		u8 vector;
+		u8 reserved2;
+		u32 destination;
+		u16 sid;
+		u16 sq:2;
+		u16 svt:2;
+		u16 reserved3:12;
+		u32 reserved4;
+	} __attribute__((packed)) field;
+	u64 raw[2];
+} __attribute__((packed));
+
+#define VTD_IRTE_SQ_VERIFY_FULL_SID	0x0
+#define VTD_IRTE_SVT_VERIFY_SID_SQ	0x1
 
 int vtd_init(void);
 

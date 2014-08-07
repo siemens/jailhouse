@@ -119,6 +119,10 @@ union x86_msi_vector {
 
 #define MSI_ADDRESS_VALUE		0xfee
 
+/* APIC IRQ message: delivery modes */
+#define APIC_MSG_DLVR_FIXED		0x0
+#define APIC_MSG_DLVR_LOWPRI		0x1
+
 struct apic_irq_message {
 	u8 vector;
 	u8 delivery_mode:3;
@@ -129,6 +133,7 @@ struct apic_irq_message {
 };
 
 extern bool using_x2apic;
+extern u8 apic_to_cpu_id[];
 
 int apic_init(void);
 int apic_cpu_init(struct per_cpu *cpu_data);
