@@ -12,6 +12,7 @@
 
 #include <jailhouse/pci.h>
 #include <jailhouse/utils.h>
+#include <asm/apic.h>
 #include <asm/cell.h>
 
 #include <jailhouse/cell-config.h>
@@ -116,6 +117,8 @@ int vtd_unmap_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem);
 int vtd_add_pci_device(struct cell *cell, struct pci_device *device);
 void vtd_remove_pci_device(struct pci_device *device);
+int vtd_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
+		      struct apic_irq_message irq_msg);
 void vtd_cell_exit(struct cell *cell);
 
 void vtd_config_commit(struct cell *cell_added_removed);

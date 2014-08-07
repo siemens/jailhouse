@@ -10,6 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef _JAILHOUSE_ASM_APIC_H
+#define _JAILHOUSE_ASM_APIC_H
+
 #include <jailhouse/paging.h>
 #include <jailhouse/utils.h>
 #include <asm/percpu.h>
@@ -138,3 +141,5 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 bool x2apic_handle_write(struct registers *guest_regs,
 			 struct per_cpu *cpu_data);
 void x2apic_handle_read(struct registers *guest_regs);
+
+#endif /* !_JAILHOUSE_ASM_APIC_H */

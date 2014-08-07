@@ -16,7 +16,6 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
-#include <asm/apic.h>
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
 #include <asm/vtd.h>
@@ -435,6 +434,12 @@ int vtd_unmap_memory_region(struct cell *cell,
 
 	return page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
 				mem->size, PAGE_MAP_COHERENT);
+}
+
+int vtd_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
+		      struct apic_irq_message irq_msg)
+{
+	return -ENOSYS;
 }
 
 void vtd_cell_exit(struct cell *cell)
