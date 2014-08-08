@@ -29,6 +29,30 @@
 static DEFINE_SPINLOCK(ioapic_lock);
 static void *ioapic;
 
+static u32 ioapic_reg_read(unsigned int reg)
+{
+	u32 value;
+
+	spin_lock(&ioapic_lock);
+
+	mmio_write32(ioapic + IOAPIC_REG_INDEX, reg);
+	value = mmio_read32(ioapic + IOAPIC_REG_DATA);
+
+	spin_unlock(&ioapic_lock);
+
+	return value;
+}
+
+static void ioapic_reg_write(unsigned int reg, u32 value)
+{
+	spin_lock(&ioapic_lock);
+
+	mmio_write32(ioapic + IOAPIC_REG_INDEX, reg);
+	mmio_write32(ioapic + IOAPIC_REG_DATA, value);
+
+	spin_unlock(&ioapic_lock);
+}
+
 int ioapic_init(void)
 {
 	int err;
@@ -111,24 +135,27 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 		return 1;
 	case IOAPIC_REG_DATA:
 		index = cell->ioapic_index_reg_val;
-		if (index >= IOAPIC_REDIR_TBL_START &&
-		    index <= IOAPIC_REDIR_TBL_END) {
-			entry = (index - IOAPIC_REDIR_TBL_START) / 2;
-			/* Note: we only support one IOAPIC per system */
-			if ((cell->ioapic_pin_bitmap & (1UL << entry)) == 0)
+
+		if (index == IOAPIC_ID || index == IOAPIC_VER) {
+			if (is_write)
 				goto invalid_access;
-			// TODO validate written value, virtualize
-		} else if ((index != IOAPIC_ID && index != IOAPIC_VER) ||
-			   is_write)
+			*value = ioapic_reg_read(index);
+			return 1;
+		}
+
+		if (index < IOAPIC_REDIR_TBL_START ||
+		    index > IOAPIC_REDIR_TBL_END)
 			goto invalid_access;
 
-		spin_lock(&ioapic_lock);
-		mmio_write32(ioapic + IOAPIC_REG_INDEX, index);
+		entry = (index - IOAPIC_REDIR_TBL_START) / 2;
+		/* Note: we only support one IOAPIC per system */
+		if ((cell->ioapic_pin_bitmap & (1UL << entry)) == 0)
+			goto invalid_access;
+
 		if (is_write)
-			mmio_write32(ioapic + IOAPIC_REG_DATA, *value);
+			ioapic_reg_write(index, *value);
 		else
-			*value = mmio_read32(ioapic + IOAPIC_REG_DATA);
-		spin_unlock(&ioapic_lock);
+			*value = ioapic_reg_read(index);
 		return 1;
 	case IOAPIC_REG_EOI:
 		if (!is_write)
