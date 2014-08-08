@@ -460,7 +460,7 @@ void vtd_config_commit(struct cell *cell_added_removed)
 	if (dmar_units == 0)
 		return;
 
-	if (cell_added_removed)
+	if (cell_added_removed && cell_added_removed != &root_cell)
 		vtd_flush_domain_caches(cell_added_removed->id);
 	vtd_flush_domain_caches(root_cell.id);
 

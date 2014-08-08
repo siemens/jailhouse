@@ -137,7 +137,7 @@ static void init_late(struct per_cpu *cpu_data)
 			return;
 	}
 
-	arch_config_commit(cpu_data, NULL);
+	arch_config_commit(cpu_data, &root_cell);
 
 	page_map_dump_stats("after late setup");
 	printk("Initializing remaining processors:\n");

@@ -104,7 +104,7 @@ void arch_config_commit(struct per_cpu *cpu_data,
 	for_each_cpu_except(cpu, root_cell.cpu_set, cpu_data->cpu_id)
 		per_cpu(cpu)->flush_virt_caches = true;
 
-	if (cell_added_removed)
+	if (cell_added_removed && cell_added_removed != &root_cell)
 		for_each_cpu_except(cpu, cell_added_removed->cpu_set,
 				    cpu_data->cpu_id)
 			per_cpu(cpu)->flush_virt_caches = true;
