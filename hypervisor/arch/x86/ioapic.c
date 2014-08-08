@@ -158,9 +158,15 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 			*value = ioapic_reg_read(index);
 		return 1;
 	case IOAPIC_REG_EOI:
-		if (!is_write)
+		if (!is_write || cell->ioapic_pin_bitmap == 0)
 			goto invalid_access;
-		// TODO: virtualize
+		/*
+		 * Just write the EOI if the cell has any assigned pin. It
+		 * would be complex to virtualize it in a way that cells are
+		 * unable to ack vectors of other cells. It is therefore not
+		 * recommended to use level-triggered IOAPIC interrupts in
+		 * non-root cells.
+		 */
 		mmio_write32(ioapic + IOAPIC_REG_EOI, *value);
 		return 1;
 	}
