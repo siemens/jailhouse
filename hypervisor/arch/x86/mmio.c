@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -13,6 +15,9 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
+#include <asm/vcpu.h>
+
+#define X86_MAX_INST_LEN	15
 
 union opcode {
 	u8 raw;
@@ -32,33 +37,56 @@ union opcode {
 	} __attribute__((packed)) sib;
 };
 
-/* If current_page is non-NULL, pc must have been increased exactly by 1. */
-static u8 *map_code_page(const struct guest_paging_structures *pg_structs,
-			 unsigned long pc, u8 *current_page)
+struct parse_context {
+	unsigned int remaining;
+	unsigned int size;
+	const u8 *inst;
+};
+
+static void ctx_move_next_byte(struct parse_context *ctx)
 {
-	/* If page offset is 0, previous pc was pointing to a different page,
-	 * and we have to map a new one now. */
-	if (current_page && ((pc & ~PAGE_MASK) != 0))
-		return current_page;
-	return paging_get_guest_pages(pg_structs, pc, 1, PAGE_READONLY_FLAGS);
+	ctx->inst++;
+	ctx->size--;
+}
+
+static bool ctx_maybe_get_bytes(struct parse_context *ctx,
+				unsigned long *pc,
+				const struct guest_paging_structures *pg)
+{
+	if (!ctx->size) {
+		ctx->size = ctx->remaining;
+		ctx->inst = vcpu_get_inst_bytes(pg, *pc, &ctx->size);
+		if (!ctx->inst)
+			return false;
+		ctx->remaining -= ctx->size;
+		*pc += ctx->size;
+	}
+	return true;
+}
+
+static bool ctx_advance(struct parse_context *ctx,
+			unsigned long *pc,
+			const struct guest_paging_structures *pg)
+{
+	ctx_move_next_byte(ctx);
+	return ctx_maybe_get_bytes(ctx, pc, pg);
 }
 
 struct mmio_access mmio_parse(unsigned long pc,
 			      const struct guest_paging_structures *pg_structs,
 			      bool is_write)
 {
+	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
 	struct mmio_access access = { .inst_len = 0 };
 	union opcode op[3] = { };
 	bool has_rex_r = false;
 	bool does_write;
-	u8 *page = NULL;
 
 restart:
-	page = map_code_page(pg_structs, pc, page);
-	if (!page)
-		goto error_nopage;
+	if (!ctx_maybe_get_bytes(&ctx, &pc, pg_structs))
+		goto error_noinst;
 
-	op[0].raw = page[pc & PAGE_OFFS_MASK];
+	op[0].raw = *(ctx.inst);
 	if (op[0].rex.code == X86_REX_CODE) {
 		/* REX.W is simply over-read since it is only affects the
 		 * memory address in our supported modes which we get from the
@@ -68,7 +96,7 @@ restart:
 		if (op[0].rex.x)
 			goto error_unsupported;
 
-		pc++;
+		ctx_move_next_byte(&ctx);
 		access.inst_len++;
 		goto restart;
 	}
@@ -87,12 +115,10 @@ restart:
 		goto error_unsupported;
 	}
 
-	pc++;
-	page = map_code_page(pg_structs, pc, page);
-	if (!page)
-		goto error_nopage;
+	if (!ctx_advance(&ctx, &pc, pg_structs))
+		goto error_noinst;
 
-	op[1].raw = page[pc & PAGE_OFFS_MASK];
+	op[1].raw = *(ctx.inst);
 	switch (op[1].modrm.mod) {
 	case 0:
 		if (op[1].modrm.rm == 5) /* 32-bit displacement */
@@ -101,12 +127,10 @@ restart:
 			break;
 		access.inst_len++;
 
-		pc++;
-		page = map_code_page(pg_structs, pc, page);
-		if (!page)
-			goto error_nopage;
+		if (!ctx_advance(&ctx, &pc, pg_structs))
+			goto error_noinst;
 
-		op[2].raw = page[pc & PAGE_OFFS_MASK];
+		op[2].raw = *(ctx.inst);
 		if (op[2].sib.base == 5)
 			access.inst_len += 4;
 		break;
@@ -131,8 +155,8 @@ restart:
 
 	return access;
 
-error_nopage:
-	panic_printk("FATAL: unable to map MMIO instruction page\n");
+error_noinst:
+	panic_printk("FATAL: unable to get MMIO instruction\n");
 	goto error;
 
 error_unsupported:

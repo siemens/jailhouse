@@ -42,4 +42,19 @@ void vcpu_tlb_flush(void);
 
 void vcpu_entry_failure(struct per_cpu *cpu_data);
 
+/*
+ * vcpu_map_inst() and vcpu_get_inst_bytes() contract:
+ *
+ * On input, *size gives the number of bytes to get.
+ * On output, *size is the number of bytes available.
+ *
+ * If the function fails (returns NULL), *size is undefined.
+ */
+
+const u8 *vcpu_map_inst(const struct guest_paging_structures *pg_structs,
+			unsigned long pc, unsigned int *size);
+
+const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
+			      unsigned long pc, unsigned int *size);
+
 #endif
