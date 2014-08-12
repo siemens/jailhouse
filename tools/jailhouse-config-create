@@ -156,11 +156,14 @@ class PCIDevice:
 
 
 class MemRegion:
-    def __init__(self, start, stop, typestr, comments=[]):
+    def __init__(self, start, stop, typestr, comments=None):
         self.start = start
         self.stop = stop
         self.typestr = typestr
-        self.comments = comments
+        if comments is None:
+            self.comments = []
+        else:
+            self.comments = comments
 
     def __str__(self):
         return 'MemRegion: %08x-%08x : %s' % \
@@ -186,48 +189,135 @@ class MemRegion:
             return s
         return 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE'
 
-    @staticmethod
-    # return the first region with the given typestr
-    def find_region(regions, typestr):
-        for r in regions:
-            if (r.typestr == typestr):
-                return r
-        return None
+
+class IOMemRegionTree:
+    def __init__(self, region, level, linenum):
+        self.region = region
+        self.linenum = linenum
+        self.level = level
+        self.parent = None
+        self.children = set()
+
+    def __str__(self):
+        s = ''
+        if (self.region):
+            s = (' ' * (self.level - 1)) + str(self.region) + ' line %d' \
+                % (self.linenum)
+            if self.parent and self.parent.region:
+                s += '--> ' + self.parent.region.typestr + ' line %d' \
+                    % (self.parent.linenum)
+            s += '\n'
+        for c in self.children:
+            s += str(c)
+        return s
 
     @staticmethod
     def parse_iomem_line(line):
         a = line.split(':', 1)
-        # HPET may be part of in reserved region
-        if a[0].startswith(' ') and a[1].find("HPET") < 0:
-            return None
+        level = int(a[0].count(' ') / 2) + 1
         region = a[0].split('-', 1)
         a[1] = a[1].strip()
-        return MemRegion(int(region[0], 16), int(region[1], 16), a[1])
+        return level, MemRegion(int(region[0], 16), int(region[1], 16), a[1])
+
+    @staticmethod
+    def parse_iomem_file():
+        root = IOMemRegionTree(None, 0, -1)
+        f = input_open('/proc/iomem')
+        lastlevel = 0
+        lastnode = root
+        linenum = 0
+        for line in f:
+            (level, r) = IOMemRegionTree.parse_iomem_line(line)
+            t = IOMemRegionTree(r, level, linenum)
+            if (t.level > lastlevel):
+                t.parent = lastnode
+            if (t.level == lastlevel):
+                t.parent = lastnode.parent
+            if (t.level < lastlevel):
+                p = lastnode.parent
+                while(t.level < p.level):
+                    p = p.parent
+                t.parent = p.parent
+
+            t.parent.children.add(t)
+            lastnode = t
+            lastlevel = t.level
+            linenum += 1
+        f.close()
+
+        return linenum, root
+
+    # recurse down the tree
+    @staticmethod
+    def parse_iomem_tree(tree):
+        regions = []
+        linenumbers = []
+
+        for tree in tree.children:
+            r = tree.region
+            s = r.typestr
+
+            # System RAM on first level will be added without digging deeper
+            if (tree.level == 1 and s == 'System RAM'):
+                regions.append(r)
+                linenumbers.append(tree.linenum)
+                continue
+
+            # blacklisted on all levels
+            if (
+                (s.find('PCI MMCONFIG') >= 0) or
+                (s.find('APIC') >= 0)
+            ):
+                continue
+
+            # generally blacklisted, unless we find an HPET right behind it
+            # on the next level
+            if (s == 'reserved'):
+                for subtree in tree.children:
+                    r2 = subtree.region
+                    if (r2.typestr.find('HPET') >= 0):
+                        regions.append(r2)
+                        linenumbers.append(subtree.linenum)
+                continue
+
+            # if the tree continues recurse further down ...
+            if (len(tree.children) > 0):
+                ln2, r2 = IOMemRegionTree.parse_iomem_tree(tree)
+                linenumbers.extend(ln2)
+                regions.extend(r2)
+                continue
+
+            # add all remaining leaves
+            regions.append(r)
+            linenumbers.append(tree.linenum)
+
+        return linenumbers, regions
 
 
 def parse_iomem():
-    regions = []
-    f = input_open('/proc/iomem')
-    for line in f:
-        r = MemRegion.parse_iomem_line(line)
-        ## XXX what else to ignore??
-        if (
-            r is not None and
-            r.typestr != 'Local APIC' and
-            r.typestr != 'reserved'
-        ):
-            regions.append(r)
-    f.close()
+    (maxsz, tree) = IOMemRegionTree.parse_iomem_file()
+
+    # create a spare array so we can easiely keep the order from the file
+    regions = [None for x in range(maxsz)]
+
+    lines, regs = IOMemRegionTree.parse_iomem_tree(tree)
+    i = 0
+    for l in lines:
+        regions[l] = regs[i]
+        i += 1
+
+    # now prepare a non-sparse array for a return value
+    ret = []
+    for r in regions:
+        if r:
+            ret.append(r)
 
     # newer Linux kernels will report the first page as reserved
     # it is needed for CPU init so include it anyways
-    if (
-        regions[0].typestr == 'System RAM' and
-        regions[0].start == 0x1000
-    ):
-        regions[0].start = 0
+    if (ret[0].typestr == 'System RAM' and ret[0].start == 0x1000):
+        ret[0].start = 0
 
-    return regions
+    return ret
 
 
 def parse_pcidevices():
