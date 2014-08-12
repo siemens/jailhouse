@@ -40,7 +40,11 @@ struct {
 			.mmconfig_base = 0xb0000000,
 			.mmconfig_end_bus = 0xff,
 			.pm_timer_address = 0x608,
+			.dmar_unit_base = {
+				0xfed90000,
+			},
 		},
+		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "QEMU Linux VM",
 
@@ -89,6 +93,7 @@ struct {
 	.irqchips = {
 		/* IOAPIC */ {
 			.address = 0xfec00000,
+			.id = 0xff01,
 			.pin_bitmap = 0xffffff,
 		},
 	},

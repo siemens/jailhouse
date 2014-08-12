@@ -42,6 +42,9 @@ struct vtd_entry {
 
 #define VTD_MAX_PAGE_DIR_LEVELS		4
 
+#define VTD_VER_REG			0x00
+# define VTD_VER_MASK			BIT_MASK(7, 0)
+# define VTD_VER_MIN			0x10
 #define VTD_CAP_REG			0x08
 # define VTD_CAP_NUM_DID_MASK		BIT_MASK(2, 0)
 # define VTD_CAP_CM			(1UL << 7)

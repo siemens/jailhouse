@@ -249,7 +249,7 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 
 int vtd_init(void)
 {
-	unsigned long size, caps, ecaps, sllps_caps = ~0UL;
+	unsigned long size, version, caps, ecaps, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
 	void *reg_base, *inv_queue;
 	u64 base_addr;
@@ -270,15 +270,8 @@ int vtd_init(void)
 
 	for (n = 0; n < JAILHOUSE_MAX_DMAR_UNITS; n++) {
 		base_addr = system_config->platform_info.x86.dmar_unit_base[n];
-		if (base_addr == 0) {
-			if (dmar_units == 0)
-				//return -ENODEV;
-				// HACK for QEMU
-				printk("WARNING: No VT-d support found!\n");
+		if (base_addr == 0)
 			break;
-		}
-
-		printk("Found DMAR @%p\n", base_addr);
 
 		reg_base = page_alloc(&remap_pool, 1);
 		inv_queue = page_alloc(&mem_pool, 1);
@@ -299,6 +292,16 @@ int vtd_init(void)
 				      PAGE_MAP_NON_COHERENT);
 		if (err)
 			return err;
+
+		version = mmio_read64(reg_base + VTD_VER_REG) & VTD_VER_MASK;
+		if (version < VTD_VER_MIN || version == 0xff) {
+			//return -EIO;
+			// HACK for QEMU
+			printk("WARNING: No VT-d support found!\n");
+			return 0;
+		}
+
+		printk("Found DMAR @%p\n", base_addr);
 
 		caps = mmio_read64(reg_base + VTD_CAP_REG);
 		if (caps & VTD_CAP_SAGAW39)
@@ -331,6 +334,9 @@ int vtd_init(void)
 
 		vtd_init_unit(reg_base, inv_queue);
 	}
+
+	if (dmar_units == 0)
+		return -EINVAL;
 
 	/*
 	 * Derive vdt_paging from very similar x86_64_paging,
