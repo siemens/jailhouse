@@ -135,6 +135,9 @@ struct {
 			.bdf = 0x0018,
 			.caps_start = 0,
 			.num_caps = 1,
+			.num_msix_vectors = 2,
+			.msix_region_size = 0x1000,
+			.msix_address = 0xfebf1000,
 		},
 		{ /* ISA bridge */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,

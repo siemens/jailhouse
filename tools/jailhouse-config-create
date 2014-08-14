@@ -111,12 +111,13 @@ def input_listdir(dir, wildcards):
 
 
 class PCICapability:
-    def __init__(self, id, start, len, flags, content):
+    def __init__(self, id, start, len, flags, content, msix_address):
         self.id = id
         self.start = start
         self.len = len
         self.flags = flags
         self.content = content
+        self.msix_address = msix_address
         self.comments = []
 
     def __eq__(self, other):
@@ -141,6 +142,7 @@ class PCICapability:
         (next,) = struct.unpack('B', f.read(1))
         while next != 0:
             cap = next
+            msix_address = 0
             f.seek(cap)
             (id, next) = struct.unpack('<BB', f.read(2))
             if id == 0x01:  # Power Management
@@ -159,6 +161,14 @@ class PCICapability:
             elif id == 0x11:  # MSI-X
                 # access will be moderated by hypervisor
                 len = 12
+                (table,) = struct.unpack('<xxI', f.read(6))
+                f.seek(0x10 + (table & 7) * 4)
+                (bar,) = struct.unpack('<I', f.read(4))
+                if (bar & 0x3) != 0:
+                    raise RuntimeError('Invalid MSI-X BAR found')
+                if (bar & 0x4) != 0:
+                    bar |= struct.unpack('<I', f.read(4))[0] << 32
+                msix_address = (bar & 0xfffffffffffffff0) + table & 0xfffffff8
                 flags = PCICapability.RW
             else:
                 # unknown/unhandled cap, mark its existence
@@ -166,7 +176,8 @@ class PCICapability:
                 flags = PCICapability.RD
             f.seek(cap + 2)
             content = f.read(len - 2)
-            caps.append(PCICapability(id, cap, len, flags, content))
+            caps.append(PCICapability(id, cap, len, flags, content,
+                                      msix_address))
         return caps
 
 
@@ -182,12 +193,20 @@ class PCIDevice:
         self.num_caps = len(caps)
         self.num_msi_vectors = 0
         self.msi_64bits = 0
+        self.num_msix_vectors = 0
+        self.msix_region_size = 0
+        self.msix_address = 0
         for c in caps:
             if c.id in (0x05, 0x11):
                 msg_ctrl = struct.unpack('<H', c.content[:2])[0]
                 if c.id == 0x05:  # MSI
                     self.num_msi_vectors = 1 << ((msg_ctrl >> 1) & 0x7)
                     self.msi_64bits = (msg_ctrl >> 7) & 1
+                else:  # MSI-X
+                    vectors = (msg_ctrl & 0x7ff) + 1
+                    self.num_msix_vectors = vectors
+                    self.msix_region_size = (vectors * 16 + 0xfff) & 0xf000
+                    self.msix_address = c.msix_address
 
     def __str__(self):
         return 'PCIDevice: %02x:%02x.%x' % (self.bus, self.dev, self.fn)
