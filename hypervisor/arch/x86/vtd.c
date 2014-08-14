@@ -245,6 +245,9 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_context);
 	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_iotlb);
 	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_int);
+
+	vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 1);
+	vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 1);
 }
 
 int vtd_init(void)
@@ -331,8 +334,6 @@ int vtd_init(void)
 			dmar_num_did = num_did;
 
 		dmar_units++;
-
-		vtd_init_unit(reg_base, inv_queue);
 	}
 
 	if (dmar_units == 0)
@@ -669,6 +670,7 @@ void vtd_cell_exit(struct cell *cell)
 
 void vtd_config_commit(struct cell *cell_added_removed)
 {
+	void *inv_queue = unit_inv_queue;
 	void *reg_base = dmar_reg_base;
 	int n;
 
@@ -676,16 +678,16 @@ void vtd_config_commit(struct cell *cell_added_removed)
 	if (dmar_units == 0)
 		return;
 
-	if (cell_added_removed && cell_added_removed != &root_cell)
-		vtd_flush_domain_caches(cell_added_removed->id);
-	vtd_flush_domain_caches(root_cell.id);
-
-	if (mmio_read32(reg_base + VTD_GSTS_REG) & VTD_GSTS_TES)
-		return;
-
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 1);
-		vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 1);
+	if (cell_added_removed == &root_cell) {
+		for (n = 0; n < dmar_units; n++) {
+			vtd_init_unit(reg_base, inv_queue);
+			reg_base += PAGE_SIZE;
+			inv_queue += PAGE_SIZE;
+		}
+	} else {
+		if (cell_added_removed)
+			vtd_flush_domain_caches(cell_added_removed->id);
+		vtd_flush_domain_caches(root_cell.id);
 	}
 }
 
