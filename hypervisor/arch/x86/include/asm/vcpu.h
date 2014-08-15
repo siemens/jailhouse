@@ -16,18 +16,27 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/types.h>
 #include <asm/cell.h>
 #include <asm/percpu.h>
 #include <asm/processor.h>
 
+struct vcpu_io_bitmap {
+	u8 *data;
+	u32 size;
+};
+
 int vcpu_vendor_init(void);
 
 int vcpu_cell_init(struct cell *cell);
+int vcpu_vendor_cell_init(struct cell *cell);
+
 int vcpu_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem);
 int vcpu_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem);
 void vcpu_cell_exit(struct cell *cell);
+void vcpu_vendor_cell_exit(struct cell *cell);
 
 int vcpu_init(struct per_cpu *cpu_data);
 void vcpu_exit(struct per_cpu *cpu_data);
@@ -59,6 +68,9 @@ const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size);
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len);
+
+void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
+		                    struct vcpu_io_bitmap *out);
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
