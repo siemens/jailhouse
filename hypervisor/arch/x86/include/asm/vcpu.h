@@ -26,6 +26,13 @@ struct vcpu_io_bitmap {
 	u32 size;
 };
 
+struct vcpu_execution_state {
+	u64 efer;
+	u64 rflags;
+	u16 cs;
+	u64 rip;
+};
+
 int vcpu_vendor_init(void);
 
 int vcpu_cell_init(struct cell *cell);
@@ -42,6 +49,9 @@ int vcpu_init(struct per_cpu *cpu_data);
 void vcpu_exit(struct per_cpu *cpu_data);
 
 void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data);
+void __attribute__((noreturn))
+vcpu_deactivate_vmm(struct registers *guest_regs);
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data);
 
 void vcpu_park(struct per_cpu *cpu_data);
@@ -71,6 +81,11 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len);
 
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *out);
+
+void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state);
+
+void vcpu_handle_hypercall(struct registers *guest_regs,
+			   struct vcpu_execution_state *x_state);
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 

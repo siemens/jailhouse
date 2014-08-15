@@ -622,8 +622,8 @@ void vcpu_activate_vmm(struct per_cpu *cpu_data)
 	panic_stop();
 }
 
-static void __attribute__((noreturn))
-vmx_cpu_deactivate_vmm(struct registers *guest_regs)
+void __attribute__((noreturn))
+vcpu_deactivate_vmm(struct registers *guest_regs)
 {
 	unsigned long *stack = (unsigned long *)vmcs_read64(GUEST_RSP);
 	unsigned long linux_ip = vmcs_read64(GUEST_RIP);
@@ -814,30 +814,6 @@ static void update_efer(void)
 	vmcs_write64(GUEST_IA32_EFER, efer);
 	vmcs_write32(VM_ENTRY_CONTROLS,
 		     vmcs_read32(VM_ENTRY_CONTROLS) | VM_ENTRY_IA32E_MODE);
-}
-
-static void vcpu_handle_hypercall(struct registers *guest_regs)
-{
-	bool ia32e_mode = !!(vmcs_read64(GUEST_IA32_EFER) & EFER_LMA);
-	unsigned long arg_mask = ia32e_mode ? (u64)-1 : (u32)-1;
-	unsigned long code = guest_regs->rax;
-
-	vcpu_skip_emulated_instruction(X86_INST_LEN_VMCALL);
-
-	if ((!ia32e_mode && vmcs_read64(GUEST_RFLAGS) & X86_RFLAGS_VM) ||
-	    (vmcs_read16(GUEST_CS_SELECTOR) & 3) != 0) {
-		guest_regs->rax = -EPERM;
-		return;
-	}
-
-	guest_regs->rax = hypercall(code, guest_regs->rdi & arg_mask,
-				    guest_regs->rsi & arg_mask);
-	if (guest_regs->rax == -ENOSYS)
-		printk("CPU %d: Unknown vmcall %d, RIP: %p\n", this_cpu_id(),
-		       code, vmcs_read64(GUEST_RIP) - X86_INST_LEN_VMCALL);
-
-	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
-		vmx_cpu_deactivate_vmm(guest_regs);
 }
 
 static bool vmx_handle_cr(struct registers *guest_regs,
@@ -1043,6 +1019,7 @@ invalid_access:
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
+	struct vcpu_execution_state x_state;
 	int sipi_vector;
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
@@ -1073,7 +1050,8 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			(u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
-		vcpu_handle_hypercall(guest_regs);
+		vcpu_vendor_get_execution_state(&x_state);
+		vcpu_handle_hypercall(guest_regs, &x_state);
 		return;
 	case EXIT_REASON_CR_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
@@ -1158,4 +1136,12 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 {
 	iobm->data = cell->vmx.io_bitmap;
 	iobm->size = sizeof(cell->vmx.io_bitmap);
+}
+
+void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
+{
+	x_state->efer = vmcs_read64(GUEST_IA32_EFER);
+	x_state->rflags = vmcs_read64(GUEST_RFLAGS);
+	x_state->cs = vmcs_read16(GUEST_CS_SELECTOR);
+	x_state->rip = vmcs_read64(GUEST_RIP);
 }
