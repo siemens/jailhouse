@@ -50,6 +50,7 @@ struct cell {
 	struct cell *next;
 
 	struct pci_device *pci_devices;
+	struct pci_device *msix_device_list;
 	u32 pci_addr_port_val;
 
 	u32 ioapic_index_reg_val;

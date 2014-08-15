@@ -22,6 +22,8 @@
 #define PCI_CAP_MSI			0x05
 #define PCI_CAP_MSIX			0x11
 
+#define MSIX_VECTOR_CTRL_DWORD		3
+
 #define for_each_configured_pci_device(dev, cell)			\
 	for ((dev) = (cell)->pci_devices;				\
 	     (dev) - (cell)->pci_devices < (cell)->config->num_pci_devices; \
@@ -192,6 +194,20 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 	return PCI_ACCESS_PERFORM;
 }
 
+static int pci_update_msix(struct pci_device *device,
+			   const struct jailhouse_pci_capability *cap)
+{
+	unsigned int n;
+	int result;
+
+	for (n = 0; n < device->info->num_msix_vectors; n++) {
+		result = pci_update_msix_vector(device, n);
+		if (result < 0)
+			return result;
+	}
+	return 0;
+}
+
 /**
  * pci_cfg_write_moderate() - Moderate config space write access
  * @device:	The device to be accessed; if NULL, access will be rejected
@@ -208,8 +224,8 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	/* initialize list to work around wrong compiler warning */
 	const struct pci_cfg_access *list = NULL;
 	unsigned int bias_shift = (address % 4) * 8;
+	u32 mask = BYTE_MASK(size) << bias_shift;
 	unsigned int n, cap_offs, len = 0;
-	u32 mask = BYTE_MASK(size);
 
 	if (!device)
 		return PCI_ACCESS_REJECT;
@@ -225,7 +241,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 
 		for (n = 0; n < len; n++) {
 			if (list[n].reg_num == (address & 0xffc) &&
-			    ((list[n].mask >> bias_shift) & mask) == mask)
+			    (list[n].mask & mask) == mask)
 				return PCI_ACCESS_PERFORM;
 		}
 
@@ -236,11 +252,11 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))
 		return PCI_ACCESS_REJECT;
 
+	value <<= bias_shift;
+
 	cap_offs = address - cap->start;
 	if (cap->id == PCI_CAP_MSI &&
 	    (cap_offs < 10 || (device->info->msi_64bits && cap_offs < 14))) {
-		value <<= bias_shift;
-		mask <<= bias_shift;
 		device->msi_registers.raw[cap_offs / 4] &= ~mask;
 		device->msi_registers.raw[cap_offs / 4] |= value;
 
@@ -253,6 +269,12 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 		 */
 		if (cap_offs >= 4)
 			return PCI_ACCESS_DONE;
+	} else if (cap->id == PCI_CAP_MSIX && cap_offs < 4) {
+		device->msix_registers.raw &= ~mask;
+		device->msix_registers.raw |= value;
+
+		if (pci_update_msix(device, cap) < 0)
+			return PCI_ACCESS_REJECT;
 	}
 
 	return PCI_ACCESS_PERFORM;
@@ -290,6 +312,62 @@ int pci_init(void)
 			       PAGE_MAP_NON_COHERENT);
 }
 
+static int pci_msix_access_handler(const struct cell *cell, bool is_write,
+				   u64 addr, u32 *value)
+{
+	unsigned int dword = (addr % sizeof(union pci_msix_vector)) >> 2;
+	struct pci_device *device = cell->msix_device_list;
+	unsigned int index;
+	u64 offs;
+
+	while (device) {
+		if (addr >= device->info->msix_address &&
+		    addr < device->info->msix_address +
+			   device->info->msix_region_size)
+			goto found;
+		device = device->next_msix_device;
+	}
+	return 0;
+
+found:
+	/* access must be DWORD-aligned */
+	if (addr & 0x3)
+		goto invalid_access;
+
+	offs = addr - device->info->msix_address;
+	index = offs / sizeof(union pci_msix_vector);
+
+	if (is_write) {
+		/*
+		 * The PBA may share a page with the MSI-X table. Writing to
+		 * PBA entries is undefined. We declare it as invalid.
+		 */
+		if (index >= device->info->num_msix_vectors)
+			goto invalid_access;
+		if (dword == MSIX_VECTOR_CTRL_DWORD) {
+			mmio_write32(&device->msix_table[index].field.ctrl,
+				     *value);
+		} else {
+			device->msix_vectors[index].raw[dword] = *value;
+			if (pci_update_msix_vector(device, index) < 0)
+				goto invalid_access;
+		}
+	} else {
+		if (index >= device->info->num_msix_vectors ||
+		    dword == MSIX_VECTOR_CTRL_DWORD)
+			*value =
+			    mmio_read32(((void *)device->msix_table) + offs);
+		else
+			*value = device->msix_vectors[index].raw[dword];
+	}
+	return 1;
+
+invalid_access:
+	panic_printk("FATAL: Invalid PCI MSIX BAR write, device "
+		     "%02x:%02x.%x\n", PCI_BDF_PARAMS(device->info->bdf));
+	return -1;
+}
+
 /**
  * pci_mmio_access_handler() - Handler for MMIO-accesses to PCI config space
  * @cell:	Request issuing cell
@@ -307,7 +385,7 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	enum pci_access access;
 
 	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end)
-		return 0;
+		return pci_msix_access_handler(cell, is_write, addr, value);
 
 	mmcfg_offset = addr - mmcfg_start;
 	reg_addr = mmcfg_offset & 0xfff;
@@ -365,6 +443,43 @@ static void pci_restore_msi(struct pci_device *device,
 				 device->msi_registers.raw[n], 4);
 }
 
+static void pci_suppress_msix(struct pci_device *device,
+			      const struct jailhouse_pci_capability *cap,
+			      bool suppressed)
+{
+	union pci_msix_registers regs = device->msix_registers;
+
+	if (suppressed)
+		regs.field.fmask = 1;
+	pci_write_config(device->info->bdf, cap->start, regs.raw, 4);
+}
+
+static void pci_save_msix(struct pci_device *device,
+			  const struct jailhouse_pci_capability *cap)
+{
+	unsigned int n, r;
+
+	device->msix_registers.raw =
+		pci_read_config(device->info->bdf, cap->start, 4);
+
+	for (n = 0; n < device->info->num_msix_vectors; n++)
+		for (r = 0; r < 3; r++)
+			device->msix_vectors[n].raw[r] =
+				mmio_read32(&device->msix_table[n].raw[r]);
+}
+
+static void pci_restore_msix(struct pci_device *device,
+			     const struct jailhouse_pci_capability *cap)
+{
+	unsigned int n, r;
+
+	for (n = 0; n < device->info->num_msix_vectors; n++)
+		for (r = 0; r < 3; r++)
+			mmio_write32(&device->msix_table[n].raw[r],
+				     device->msix_vectors[n].raw[r]);
+	pci_suppress_msix(device, cap, false);
+}
+
 /**
  * pci_prepare_handover() - Prepare the handover of PCI devices to Jailhouse or
  *                          back to Linux
@@ -383,24 +498,75 @@ void pci_prepare_handover(void)
 			for_each_pci_cap(cap, device, n)
 				if (cap->id == PCI_CAP_MSI)
 					pci_suppress_msi(device, cap);
-				// TODO: MSI-X
+				else if (cap->id == PCI_CAP_MSIX)
+					pci_suppress_msix(device, cap, true);
 	}
 }
 
 static int pci_add_device(struct cell *cell, struct pci_device *device)
 {
+	unsigned int size = device->info->msix_region_size;
+	int err;
+
 	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
-	return arch_pci_add_device(cell, device);
+
+	err = arch_pci_add_device(cell, device);
+
+	if (!err && device->info->msix_address) {
+		device->msix_table = page_alloc(&remap_pool, size / PAGE_SIZE);
+		if (!device->msix_table) {
+			err = -ENOMEM;
+			goto error_remove_dev;
+		}
+
+		err = page_map_create(&hv_paging_structs,
+				      device->info->msix_address, size,
+				      (unsigned long)device->msix_table,
+				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				      PAGE_MAP_NON_COHERENT);
+		if (err)
+			goto error_page_free;
+
+		device->next_msix_device = cell->msix_device_list;
+		cell->msix_device_list = device;
+	}
+	return 0;
+
+error_page_free:
+	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
+error_remove_dev:
+	arch_pci_remove_device(device);
+	return err;
 }
 
 static void pci_remove_device(struct pci_device *device)
 {
+	unsigned int size = device->info->msix_region_size;
+	struct pci_device *prev_msix_device;
+
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
 	arch_pci_remove_device(device);
 	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
 			 PCI_CMD_INTX_OFF, 2);
+
+	if (!device->msix_table)
+		return;
+
+	/* cannot fail, destruction of same size as construction */
+	page_map_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
+			 size, PAGE_MAP_NON_COHERENT);
+	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
+
+	prev_msix_device = device->cell->msix_device_list;
+	if (prev_msix_device == device) {
+		device->cell->msix_device_list = NULL;
+	} else {
+		while (prev_msix_device->next_msix_device != device)
+			prev_msix_device = prev_msix_device->next_msix_device;
+		prev_msix_device->next_msix_device = NULL;
+	}
 }
 
 int pci_cell_init(struct cell *cell)
@@ -425,6 +591,11 @@ int pci_cell_init(struct cell *cell)
 	 * handy pointers. The cell pointer also encodes active ownership.
 	 */
 	for (ndev = 0; ndev < cell->config->num_pci_devices; ndev++) {
+		if (dev_infos[ndev].num_msix_vectors > PCI_MAX_MSIX_VECTORS) {
+			pci_cell_exit(cell);
+			return -ERANGE;
+		}
+
 		device = &cell->pci_devices[ndev];
 		device->info = &dev_infos[ndev];
 
@@ -447,9 +618,7 @@ int pci_cell_init(struct cell *cell)
 			if (cap->id == PCI_CAP_MSI)
 				pci_save_msi(device, cap);
 			else if (cap->id == PCI_CAP_MSIX)
-				// TODO: Handle
-				printk("MSI-X left out @%02x:%02x.%x!\n",
-				       PCI_BDF_PARAMS(device->info->bdf));
+				pci_save_msix(device, cap);
 	}
 
 	if (cell == &root_cell)
@@ -509,9 +678,12 @@ void pci_config_commit(struct cell *cell_added_removed)
 	for_each_configured_pci_device(device, &root_cell)
 		if (device->cell)
 			for_each_pci_cap(cap, device, n) {
-				if (cap->id == PCI_CAP_MSI)
+				if (cap->id == PCI_CAP_MSI) {
 					err = pci_update_msi(device, cap);
-				// TODO: MSI-X
+				} else if (cap->id == PCI_CAP_MSIX) {
+					err = pci_update_msix(device, cap);
+					pci_suppress_msix(device, cap, false);
+				}
 				if (err)
 					goto error;
 			}
@@ -537,5 +709,6 @@ void pci_shutdown(void)
 			for_each_pci_cap(cap, device, n)
 				if (cap->id == PCI_CAP_MSI)
 					pci_restore_msi(device, cap);
-				// TODO: MSI-X
+				else if (cap->id == PCI_CAP_MSIX)
+					pci_restore_msix(device, cap);
 }

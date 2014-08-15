@@ -446,7 +446,8 @@ static void vtd_free_int_remap_region(u16 device_id, unsigned int length)
 
 int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
 {
-	unsigned int max_vectors = device->info->num_msi_vectors;
+	unsigned int max_vectors = MAX(device->info->num_msi_vectors,
+				       device->info->num_msix_vectors);
 	u16 bdf = device->info->bdf;
 	u64 *root_entry_lo = &root_entry_table[PCI_BUS(bdf)].lo_word;
 	struct vtd_entry *context_entry_table, *context_entry;
@@ -505,7 +506,8 @@ void vtd_remove_pci_device(struct pci_device *device)
 	context_entry->lo_word &= ~VTD_CTX_PRESENT;
 	flush_cache(&context_entry->lo_word, sizeof(u64));
 
-	vtd_free_int_remap_region(bdf, device->info->num_msi_vectors);
+	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
+					   device->info->num_msi_vectors));
 
 	for (n = 0; n < 256; n++)
 		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)

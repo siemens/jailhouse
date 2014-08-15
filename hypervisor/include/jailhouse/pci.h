@@ -24,6 +24,8 @@
 # define PCI_CMD_MASTER		(1 << 2)
 # define PCI_CMD_INTX_OFF	(1 << 10)
 
+#define PCI_MAX_MSIX_VECTORS	16
+
 enum pci_access { PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM, PCI_ACCESS_DONE };
 
 union pci_msi_registers {
@@ -44,11 +46,35 @@ union pci_msi_registers {
 	u32 raw[4];
 } __attribute__((packed));
 
+union pci_msix_registers {
+	struct {
+		u16 padding;
+		u16 ignore:14,
+		    fmask:1,
+		    enable:1;
+	} __attribute__((packed)) field;
+	u32 raw;
+} __attribute__((packed));
+
+union pci_msix_vector {
+	struct {
+		u64 address;
+		u32 data;
+		u32 ctrl;
+	} __attribute__((packed)) field;
+	u32 raw[4];
+} __attribute__((packed));
+
 struct pci_device {
 	const struct jailhouse_pci_device *info;
 	struct cell *cell;
 
 	union pci_msi_registers msi_registers;
+
+	union pci_msix_registers msix_registers;
+	struct pci_device *next_msix_device;
+	union pci_msix_vector *msix_table;
+	union pci_msix_vector msix_vectors[PCI_MAX_MSIX_VECTORS];
 };
 
 int pci_init(void);
@@ -77,6 +103,7 @@ void pci_suppress_msi(struct pci_device *device,
 		      const struct jailhouse_pci_capability *cap);
 int pci_update_msi(struct pci_device *device,
 		   const struct jailhouse_pci_capability *cap);
+int pci_update_msix_vector(struct pci_device *device, unsigned int index);
 
 void pci_prepare_handover(void);
 void pci_shutdown(void);
