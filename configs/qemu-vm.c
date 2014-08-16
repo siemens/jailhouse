@@ -25,7 +25,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[5];
+	struct jailhouse_memory mem_regions[9];
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[6];
@@ -75,14 +75,50 @@ struct {
 			.size = 0x30000,
 			.flags = JAILHOUSE_MEM_READ,
 		},
-		/* PCI */ {
-			.phys_start = 0xc0000000,
-			.virt_start = 0xc0000000,
-			.size = 0x3ec00000,
+		/* MemRegion: fc000000-fc3fffff : vesafb */
+		{
+			.phys_start = 0xfc000000,
+			.virt_start = 0xfc000000,
+			.size = 0x400000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* not safe until we catch MSIs via interrupt remapping */
-		/* HPET */ {
+		/* MemRegion: feb80000-febbffff : 0000:00:02.0 */
+		{
+			.phys_start = 0xfeb80000,
+			.virt_start = 0xfeb80000,
+			.size = 0x40000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: febc0000-febdffff : e1000 */
+		{
+			.phys_start = 0xfebc0000,
+			.virt_start = 0xfebc0000,
+			.size = 0x20000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: febe0000-febeffff : 0000:00:01.0 */
+		{
+			.phys_start = 0xfebe0000,
+			.virt_start = 0xfebe0000,
+			.size = 0x10000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: febf0000-febf0fff : 0000:00:01.0 */
+		{
+			.phys_start = 0xfebf0000,
+			.virt_start = 0xfebf0000,
+			.size = 0x1000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: febf2000-febf2fff : ahci */
+		{
+			.phys_start = 0xfebf2000,
+			.virt_start = 0xfebf2000,
+			.size = 0x1000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: fed00000-fed003ff : PNP0103:00 */
+		{
 			.phys_start = 0xfed00000,
 			.virt_start = 0xfed00000,
 			.size = 0x1000,

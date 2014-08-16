@@ -366,7 +366,7 @@ class IOMemRegionTree:
         return linenumbers, regions
 
 
-def parse_iomem():
+def parse_iomem(pcidevices):
     (maxsz, tree) = IOMemRegionTree.parse_iomem_file()
 
     # create a spare array so we can easiely keep the order from the file
@@ -378,11 +378,25 @@ def parse_iomem():
         regions[l] = regs[i]
         i += 1
 
-    # now prepare a non-sparse array for a return value
+    # now prepare a non-sparse array for a return value,
+    # also filtering out MSI-X pages
     ret = []
     for r in regions:
         if r:
-            ret.append(r)
+            for d in pcidevices:
+                if d.msix_address >= r.start and d.msix_address <= r.stop:
+                    if d.msix_address > r.start:
+                        head_r = MemRegion(r.start, d.msix_address - 1,
+                                           r.typestr, r.comments)
+                        ret.append(head_r)
+                    if d.msix_address + d.msix_region_size < r.stop:
+                        tail_r = MemRegion(d.msix_address + d.msix_region_size,
+                                           r.stop, r.typestr, r.comments)
+                        ret.append(tail_r)
+                    r = None
+                    break
+            if r:
+                ret.append(r)
 
     # newer Linux kernels will report the first page as reserved
     # it is needed for CPU init so include it anyways
@@ -593,7 +607,7 @@ product = [input_readline('/sys/class/dmi/id/sys_vendor',
 inmatemem = kmg_multiply_str(options.mem_inmates)
 hvmem = [0, kmg_multiply_str(options.mem_hv)]
 
-regions = parse_iomem()
+regions = parse_iomem(pcidevices)
 ourmem = parse_cmdline()
 total = hvmem[1] + inmatemem
 

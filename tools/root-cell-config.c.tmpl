@@ -73,9 +73,9 @@ struct {
 		/* ${c} */
 		% endfor
 		{
-			.phys_start = ${hex(r.start)},
-			.virt_start = ${hex(r.start)},
-			.size = ${hex(r.size())},
+			.phys_start = ${hex(r.start).strip('L')},
+			.virt_start = ${hex(r.start).strip('L')},
+			.size = ${hex(r.size()).strip('L')},
 			.flags = ${r.flagstr('\t\t')},
 		},
 		% endfor
