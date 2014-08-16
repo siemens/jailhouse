@@ -23,7 +23,6 @@
 #include <jailhouse/pci.h>
 #include <asm/apic.h>
 #include <asm/control.h>
-#include <asm/i8042.h>
 #include <asm/io.h>
 #include <asm/ioapic.h>
 #include <asm/iommu.h>
@@ -934,39 +933,6 @@ static void dump_guest_regs(struct registers *guest_regs)
 	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
-static bool vcpu_handle_io_access(struct registers *guest_regs,
-				 struct per_cpu *cpu_data)
-{
-	/* parse exit qualification for I/O instructions (see SDM, 27.2.1 ) */
-	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
-	u16 port = (exitq >> 16) & 0xFFFF;
-	bool dir_in = (exitq & 0x8) >> 3;
-	unsigned int size = (exitq & 0x3) + 1;
-	int result = 0;
-
-	/* string and REP-prefixed instructions are not supported */
-	if (exitq & 0x30)
-		goto invalid_access;
-
-	result = x86_pci_config_handler(guest_regs, cpu_data->cell, port,
-					dir_in, size);
-	if (result == 0)
-		result = i8042_access_handler(guest_regs, port, dir_in, size);
-
-	if (result == 1) {
-		vcpu_skip_emulated_instruction(
-				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
-		return true;
-	}
-
-invalid_access:
-	/* report only unhandled access failures */
-	if (result == 0)
-		panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
-			     dir_in ? "read" : "write", port, size);
-	return false;
-}
-
 static bool vcpu_handle_pt_violation(struct registers *guest_regs,
 				     struct per_cpu *cpu_data)
 {
@@ -1016,10 +982,23 @@ invalid_access:
 	return false;
 }
 
+static void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
+{
+	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
+
+	/* parse exit qualification for I/O instructions (see SDM, 27.2.1 ) */
+	out->port = (exitq >> 16) & 0xFFFF;
+	out->size = (exitq & 0x3) + 1;
+	out->in = !!((exitq & 0x8) >> 3);
+	out->inst_len = vmcs_read64(VM_EXIT_INSTRUCTION_LEN);
+	out->rep_or_str = !!(exitq & 0x30);
+}
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	struct vcpu_execution_state x_state;
+	struct vcpu_io_intercept io;
 	int sipi_vector;
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
@@ -1104,7 +1083,8 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
-		if (vcpu_handle_io_access(guest_regs, cpu_data))
+		vcpu_vendor_get_io_intercept(&io);
+		if (vcpu_handle_io_access(guest_regs, &io))
 			return;
 		break;
 	case EXIT_REASON_EPT_VIOLATION:

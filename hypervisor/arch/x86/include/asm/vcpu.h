@@ -33,6 +33,14 @@ struct vcpu_execution_state {
 	u64 rip;
 };
 
+struct vcpu_io_intercept {
+	u16 port;
+	unsigned int size;
+	bool in;
+	unsigned int inst_len;
+	bool rep_or_str;
+};
+
 int vcpu_vendor_init(void);
 
 int vcpu_cell_init(struct cell *cell);
@@ -86,6 +94,9 @@ void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state);
 
 void vcpu_handle_hypercall(struct registers *guest_regs,
 			   struct vcpu_execution_state *x_state);
+
+bool vcpu_handle_io_access(struct registers *guest_regs,
+			   struct vcpu_io_intercept *io);
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
