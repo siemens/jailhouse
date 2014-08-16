@@ -266,7 +266,8 @@ class IOMemRegionTree:
             # blacklisted on all levels
             if (
                 (s.find('PCI MMCONFIG') >= 0) or
-                (s.find('APIC') >= 0)
+                (s.find('APIC') >= 0) or  # covers both APIC and IOAPIC
+                (s.find('dmar') >= 0)
             ):
                 continue
 
