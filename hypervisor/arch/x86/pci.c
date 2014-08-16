@@ -292,6 +292,19 @@ void pci_suppress_msi(struct pci_device *device,
 	}
 }
 
+static u32 pci_get_x86_msi_remap_address(unsigned int index)
+{
+	union x86_msi_vector msi = {
+		.remap.int_index15 = index >> 15,
+		.remap.shv = 1,
+		.remap.remapped = 1,
+		.remap.int_index = index,
+		.remap.address = MSI_ADDRESS_VALUE,
+	};
+
+	return (u32)msi.raw.address;
+}
+
 int pci_update_msi(struct pci_device *device,
 		   const struct jailhouse_pci_capability *cap)
 {
@@ -326,11 +339,8 @@ int pci_update_msi(struct pci_device *device,
 
 	if (info->msi_64bits)
 		pci_write_config(bdf, cap->start + 8, 0, 4);
-	msi.remap.int_index15 = result >> 15;
-	msi.remap.shv = 1;
-	msi.remap.remapped = 1;
-	msi.remap.int_index = result;
-	pci_write_config(bdf, cap->start + 4, (u32)msi.raw.address, 4);
+	pci_write_config(bdf, cap->start + 4,
+			 pci_get_x86_msi_remap_address(result), 4);
 
 	return 0;
 }
