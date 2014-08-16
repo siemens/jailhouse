@@ -281,6 +281,10 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 
 	mmcfg_offset = addr - mmcfg_start;
 	reg_addr = mmcfg_offset & 0xfff;
+	/* access must be DWORD-aligned */
+	if (reg_addr & 0x3)
+		goto invalid_access;
+
 	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
 
 	if (is_write) {
