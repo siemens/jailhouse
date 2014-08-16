@@ -13,11 +13,15 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
 #include <jailhouse/types.h>
 #include <asm/i8042.h>
+#include <asm/ioapic.h>
+#include <asm/iommu.h>
 #include <asm/pci.h>
 #include <asm/percpu.h>
 #include <asm/vcpu.h>
@@ -182,5 +186,52 @@ invalid_access:
 		     io->in ? "read" : "write", io->port, io->size);
 	panic_printk("PCI address port: %x\n",
 		     cpu_data->cell->pci_addr_port_val);
+	return false;
+}
+
+bool vcpu_handle_pt_violation(struct registers *guest_regs,
+			      struct vcpu_pf_intercept *pf)
+{
+	struct per_cpu *cpu_data = this_cpu_data();
+	struct guest_paging_structures pg_structs;
+	struct vcpu_execution_state x_state;
+	struct mmio_access access;
+	int result = 0;
+	u32 val;
+
+	vcpu_vendor_get_execution_state(&x_state);
+
+	if (!vcpu_get_guest_paging_structs(&pg_structs))
+		goto invalid_access;
+
+	access = mmio_parse(x_state.rip, &pg_structs, pf->is_write);
+	if (!access.inst_len || access.size != 4)
+		goto invalid_access;
+
+	if (pf->is_write)
+		val = ((unsigned long *)guest_regs)[access.reg];
+
+	result = ioapic_access_handler(cpu_data->cell, pf->is_write,
+			               pf->phys_addr, &val);
+	if (result == 0)
+		result = pci_mmio_access_handler(cpu_data->cell, pf->is_write,
+						 pf->phys_addr, &val);
+
+	if (result == 0)
+		result = iommu_mmio_access_handler(pf->is_write,
+				                   pf->phys_addr, &val);
+
+	if (result == 1) {
+		if (!pf->is_write)
+			((unsigned long *)guest_regs)[access.reg] = val;
+		vcpu_skip_emulated_instruction(access.inst_len);
+		return true;
+	}
+
+invalid_access:
+	/* report only unhandled access failures */
+	if (result == 0)
+		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
+			     pf->is_write ? "write" : "read", pf->phys_addr);
 	return false;
 }

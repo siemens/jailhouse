@@ -19,12 +19,9 @@
 #include <jailhouse/string.h>
 #include <jailhouse/control.h>
 #include <jailhouse/hypercall.h>
-#include <jailhouse/mmio.h>
-#include <jailhouse/pci.h>
 #include <asm/apic.h>
 #include <asm/control.h>
 #include <asm/io.h>
-#include <asm/ioapic.h>
 #include <asm/iommu.h>
 #include <asm/pci.h>
 #include <asm/vcpu.h>
@@ -933,55 +930,6 @@ static void dump_guest_regs(struct registers *guest_regs)
 	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
-static bool vcpu_handle_pt_violation(struct registers *guest_regs,
-				     struct per_cpu *cpu_data)
-{
-	u64 phys_addr = vmcs_read64(GUEST_PHYSICAL_ADDRESS);
-	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
-	struct guest_paging_structures pg_structs;
-	struct mmio_access access;
-	int result = 0;
-	bool is_write;
-	u32 val;
-
-	/* We don't enable dirty/accessed bit updated in EPTP, so only read
-	 * of write flags can be set, not both. */
-	is_write = !!(exitq & 0x2);
-
-	if (!vcpu_get_guest_paging_structs(&pg_structs))
-		goto invalid_access;
-
-	access = mmio_parse(vmcs_read64(GUEST_RIP), &pg_structs, is_write);
-	if (!access.inst_len || access.size != 4)
-		goto invalid_access;
-
-	if (is_write)
-		val = ((unsigned long *)guest_regs)[access.reg];
-
-	result = ioapic_access_handler(cpu_data->cell, is_write, phys_addr,
-				       &val);
-	if (result == 0)
-		result = pci_mmio_access_handler(cpu_data->cell, is_write,
-						 phys_addr, &val);
-	if (result == 0)
-		result = iommu_mmio_access_handler(is_write, phys_addr, &val);
-
-	if (result == 1) {
-		if (!is_write)
-			((unsigned long *)guest_regs)[access.reg] = val;
-		vcpu_skip_emulated_instruction(
-				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
-		return true;
-	}
-
-invalid_access:
-	/* report only unhandled access failures */
-	if (result == 0)
-		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
-			     is_write ? "write" : "read", phys_addr);
-	return false;
-}
-
 static void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
 {
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
@@ -994,11 +942,22 @@ static void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
 	out->rep_or_str = !!(exitq & 0x30);
 }
 
+static void vcpu_vendor_get_pf_intercept(struct vcpu_pf_intercept *out)
+{
+	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
+
+	out->phys_addr = vmcs_read64(GUEST_PHYSICAL_ADDRESS);
+	/* We don't enable dirty/accessed bit updated in EPTP,
+	 * so only read of write flags can be set, not both. */
+	out->is_write = !!(exitq & 0x2);
+}
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	struct vcpu_execution_state x_state;
 	struct vcpu_io_intercept io;
+	struct vcpu_pf_intercept pf;
 	int sipi_vector;
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
@@ -1089,7 +1048,8 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_EPT_VIOLATION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
-		if (vcpu_handle_pt_violation(guest_regs, cpu_data))
+		vcpu_vendor_get_pf_intercept(&pf);
+		if (vcpu_handle_pt_violation(guest_regs, &pf))
 			return;
 		break;
 	default:

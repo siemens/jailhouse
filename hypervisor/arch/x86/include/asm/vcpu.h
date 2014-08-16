@@ -41,6 +41,11 @@ struct vcpu_io_intercept {
 	bool rep_or_str;
 };
 
+struct vcpu_pf_intercept {
+	u64 phys_addr;
+	bool is_write;
+};
+
 int vcpu_vendor_init(void);
 
 int vcpu_cell_init(struct cell *cell);
@@ -99,5 +104,8 @@ bool vcpu_handle_io_access(struct registers *guest_regs,
 			   struct vcpu_io_intercept *io);
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
+
+bool vcpu_handle_pt_violation(struct registers *guest_regs,
+			      struct vcpu_pf_intercept *pf);
 
 #endif
