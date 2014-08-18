@@ -79,13 +79,13 @@ static void vtd_init_fault_nmi(void)
 	union x86_msi_vector msi = { .native.address = MSI_ADDRESS_VALUE };
 	void *reg_base = dmar_reg_base;
 	struct per_cpu *cpu_data;
-	int i;
+	unsigned int n;
 
 	/* Assume that at least one bit is set somewhere as
 	 * we don't support configurations when Linux is left with no CPUs */
-	for (i = 0; root_cell.cpu_set->bitmap[i] == 0; i++)
+	for (n = 0; root_cell.cpu_set->bitmap[n] == 0; n++)
 		/* Empty loop */;
-	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[i]));
+	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[n]));
 
 	/* We only support 8-bit APIC IDs. */
 	msi.native.destination = (u8)cpu_data->apic_id;
@@ -94,7 +94,7 @@ static void vtd_init_fault_nmi(void)
 	 * case from different CPUs */
 	fault_reporting_cpu_id = cpu_data->cpu_id;
 
-	for (i = 0; i < dmar_units; i++, reg_base += PAGE_SIZE) {
+	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 		/* Mask events */
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
 
