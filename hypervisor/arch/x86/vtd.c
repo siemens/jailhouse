@@ -254,7 +254,8 @@ int vtd_init(void)
 {
 	unsigned long size, version, caps, ecaps, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
-	void *reg_base, *inv_queue;
+	unsigned int units = 0;
+	void *reg_base;
 	u64 base_addr;
 	int err;
 
@@ -271,23 +272,20 @@ int vtd_init(void)
 
 	int_remap_table_size_log2 = n;
 
-	for (n = 0; n < JAILHOUSE_MAX_DMAR_UNITS; n++) {
+	while (system_config->platform_info.x86.dmar_unit_base[units])
+		units++;
+	if (units == 0)
+		return -EINVAL;
+
+	dmar_reg_base = page_alloc(&remap_pool, units);
+	unit_inv_queue = page_alloc(&mem_pool, units);
+	if (!dmar_reg_base || !unit_inv_queue)
+		return -ENOMEM;
+
+	for (n = 0; n < units; n++) {
 		base_addr = system_config->platform_info.x86.dmar_unit_base[n];
-		if (base_addr == 0)
-			break;
 
-		reg_base = page_alloc(&remap_pool, 1);
-		inv_queue = page_alloc(&mem_pool, 1);
-		if (!reg_base || !inv_queue)
-			return -ENOMEM;
-
-		if (dmar_units == 0) {
-			dmar_reg_base = reg_base;
-			unit_inv_queue = inv_queue;
-		}
-		if (reg_base != dmar_reg_base + dmar_units * PAGE_SIZE ||
-		    inv_queue != unit_inv_queue + dmar_units * PAGE_SIZE)
-			return -ENOMEM;
+		reg_base = dmar_reg_base + n * PAGE_SIZE;
 
 		err = page_map_create(&hv_paging_structs, base_addr, PAGE_SIZE,
 				      (unsigned long)reg_base,
@@ -332,12 +330,9 @@ int vtd_init(void)
 		num_did = 1 << (4 + (caps & VTD_CAP_NUM_DID_MASK) * 2);
 		if (num_did < dmar_num_did)
 			dmar_num_did = num_did;
-
-		dmar_units++;
 	}
 
-	if (dmar_units == 0)
-		return -EINVAL;
+	dmar_units = units;
 
 	/*
 	 * Derive vdt_paging from very similar x86_64_paging,
