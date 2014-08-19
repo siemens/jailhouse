@@ -435,7 +435,10 @@ def parse_dmar_devscope(f):
 # parsing of DMAR ACPI Table
 # see Intel VT-d Spec chapter 8
 def parse_dmar():
-    f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb')
+    f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb', True)
+    if get_cpu_vendor() == 'AuthenticAMD':
+        print('WARNING: AMD IOMMU support is not implemented yet')
+        return [], 0, []
     signature = f.read(4)
     if signature != b'DMAR':
         if options.generate_collector:
@@ -542,6 +545,16 @@ if (
 ):
     print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
     sys.exit(1)
+
+def get_cpu_vendor():
+    with input_open('/proc/cpuinfo', 'r') as f:
+        for line in f:
+            if not line.strip():
+                continue
+            key, value = line.split(':')
+            if key.strip() == 'vendor_id':
+                return value.strip()
+
 
 (pcidevices, pcicaps) = parse_pcidevices()
 
