@@ -243,7 +243,20 @@ static struct apic_irq_message
 pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
 			 unsigned int legacy_vectors, union x86_msi_vector msi)
 {
-	struct apic_irq_message irq_msg;
+	struct apic_irq_message irq_msg = { .valid = 0 };
+	unsigned int idx;
+
+	if (device->cell->vtd.ir_emulation) {
+		if (!msi.remap.remapped)
+			return irq_msg;
+
+		idx = msi.remap.int_index | (msi.remap.int_index15 << 15);
+		if (msi.remap.shv)
+			idx += msi.remap.subhandle;
+		return vtd_get_remapped_root_int(device->info->iommu,
+						 device->info->bdf,
+						 vector, idx);
+	}
 
 	irq_msg.vector = msi.native.vector;
 	if (legacy_vectors > 1) {
@@ -254,6 +267,7 @@ pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
 	irq_msg.level_triggered = 0;
 	irq_msg.dest_logical = msi.native.dest_logical;
 	irq_msg.redir_hint = msi.native.redir_hint;
+	irq_msg.valid = 1;
 	irq_msg.destination = msi.native.destination;
 
 	return irq_msg;

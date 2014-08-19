@@ -129,6 +129,7 @@ struct apic_irq_message {
 	u8 dest_logical:1;
 	u8 level_triggered:1;
 	u8 redir_hint:1;
+	u8 valid:1;
 	u32 destination;
 };
 

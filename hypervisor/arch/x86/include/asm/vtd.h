@@ -57,6 +57,7 @@ struct vtd_entry {
 #define VTD_ECAP_REG			0x10
 # define VTD_ECAP_QI			(1UL << 1)
 # define VTD_ECAP_IR			(1UL << 3)
+# define VTD_ECAP_EIM			(1UL << 4)
 #define VTD_GCMD_REG			0x18
 # define VTD_GCMD_SIRTP			(1UL << 24)
 # define VTD_GCMD_IRE			(1UL << 25)
@@ -85,10 +86,19 @@ struct vtd_entry {
 #define VTD_PLMLIMIT_REG		0x6c
 #define VTD_PHMBASE_REG			0x70
 #define VTD_PHMLIMIT_REG		0x78
+#define VTD_IQH_REG			0x80
+# define VTD_IQH_QH_SHIFT		4
 #define VTD_IQT_REG			0x88
 # define VTD_IQT_QT_MASK		BIT_MASK(18, 4)
+# define VTD_IQT_QT_SHIFT		4
 #define VTD_IQA_REG			0x90
+# define VTD_IQA_ADDR_MASK		BIT_MASK(63, 12)
 #define VTD_IRTA_REG			0xb8
+# define VTD_IRTA_SIZE_MASK		BIT_MASK(3, 0)
+# define VTD_IRTA_EIME			(1UL << 11)
+# define VTD_IRTA_ADDR_MASK		BIT_MASK(63, 12)
+
+#define VTD_REQ_INV_MASK		BIT_MASK(3, 0)
 
 #define VTD_REQ_INV_CONTEXT		0x01
 # define VTD_INV_CONTEXT_GLOBAL		(1UL << 4)
@@ -105,9 +115,13 @@ struct vtd_entry {
 #define VTD_REQ_INV_INT			0x04
 # define VTD_INV_INT_GLOBAL		(0UL << 4)
 # define VTD_INV_INT_INDEX		(1UL << 4)
+# define VTD_INV_INT_IM_MASK		BIT_MASK(31, 27)
+# define VTD_INV_INT_IM_SHIFT		27
+# define VTD_INV_INT_IIDX_MASK		BIT_MASK(47, 32)
 # define VTD_INV_INT_IIDX_SHIFT		32
 
 #define VTD_REQ_INV_WAIT		0x05
+#define  VTD_INV_WAIT_IF		(1UL << 4)
 #define  VTD_INV_WAIT_SW		(1UL << 5)
 #define  VTD_INV_WAIT_FN		(1UL << 6)
 #define  VTD_INV_WAIT_SDATA_SHIFT	32
@@ -155,6 +169,9 @@ int vtd_unmap_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem);
 int vtd_add_pci_device(struct cell *cell, struct pci_device *device);
 void vtd_remove_pci_device(struct pci_device *device);
+struct apic_irq_message
+vtd_get_remapped_root_int(unsigned int iommu, u16 device_id,
+			  unsigned int vector, unsigned int remap_index);
 int vtd_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 		      struct apic_irq_message irq_msg);
 void vtd_cell_exit(struct cell *cell);
@@ -164,3 +181,5 @@ void vtd_config_commit(struct cell *cell_added_removed);
 void vtd_shutdown(void);
 
 void vtd_check_pending_faults(struct per_cpu *cpu_data);
+
+int vtd_mmio_access_handler(bool is_write, u64 addr, u32 *value);

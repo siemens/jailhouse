@@ -61,9 +61,22 @@ static void ioapic_reg_write(unsigned int reg, u32 value)
 }
 
 static struct apic_irq_message
-ioapic_translate_redir_entry(union ioapic_redir_entry entry)
+ioapic_translate_redir_entry(struct cell *cell, unsigned int pin,
+			     union ioapic_redir_entry entry)
 {
-	struct apic_irq_message irq_msg;
+	struct apic_irq_message irq_msg = { .valid = 0 };
+	unsigned int idx;
+
+	if (cell->vtd.ir_emulation) {
+		if (!entry.remap.remapped)
+			return irq_msg;
+
+		idx = entry.remap.int_index | (entry.remap.int_index15 << 15);
+
+		return vtd_get_remapped_root_int(root_cell.ioapic_iommu,
+						 root_cell.ioapic_id, pin,
+						 idx);
+	}
 
 	irq_msg.vector = entry.native.vector;
 	irq_msg.delivery_mode = entry.native.delivery_mode;
@@ -71,6 +84,7 @@ ioapic_translate_redir_entry(union ioapic_redir_entry entry)
 	irq_msg.dest_logical = entry.native.dest_logical;
 	/* align redir_hint and dest_logical - required by vtd_map_interrupt */
 	irq_msg.redir_hint = irq_msg.dest_logical;
+	irq_msg.valid = 1;
 	irq_msg.destination = entry.native.destination;
 
 	return irq_msg;
@@ -99,7 +113,7 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 		return 0;
 	}
 
-	irq_msg = ioapic_translate_redir_entry(entry);
+	irq_msg = ioapic_translate_redir_entry(cell, pin, entry);
 
 	result = vtd_map_interrupt(cell, cell->ioapic_id, pin, irq_msg);
 	// HACK for QEMU
@@ -119,7 +133,8 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 	return 0;
 }
 
-static void ioapic_mask_pins(u64 pin_bitmap, enum ioapic_handover handover)
+static void ioapic_mask_pins(struct cell *cell, u64 pin_bitmap,
+			     enum ioapic_handover handover)
 {
 	union ioapic_redir_entry entry;
 	unsigned int pin, reg;
@@ -145,7 +160,8 @@ static void ioapic_mask_pins(u64 pin_bitmap, enum ioapic_handover handover)
 			 * interrupts.
 			 */
 			entry = shadow_redir_table[pin];
-			apic_send_irq(ioapic_translate_redir_entry(entry));
+			apic_send_irq(ioapic_translate_redir_entry(cell, pin,
+								   entry));
 		}
 	}
 }
@@ -201,9 +217,9 @@ void ioapic_prepare_handover(void)
 		return;
 	if (irqchip) {
 		pin_bitmap = irqchip->pin_bitmap;
-		ioapic_mask_pins(pin_bitmap, PINS_ACTIVE);
+		ioapic_mask_pins(&root_cell, pin_bitmap, PINS_ACTIVE);
 	}
-	ioapic_mask_pins(~pin_bitmap, PINS_MASKED);
+	ioapic_mask_pins(&root_cell, ~pin_bitmap, PINS_MASKED);
 }
 
 void ioapic_cell_init(struct cell *cell)
@@ -218,7 +234,8 @@ void ioapic_cell_init(struct cell *cell)
 
 		if (cell != &root_cell) {
 			root_cell.ioapic_pin_bitmap &= ~irqchip->pin_bitmap;
-			ioapic_mask_pins(irqchip->pin_bitmap, PINS_MASKED);
+			ioapic_mask_pins(cell, irqchip->pin_bitmap,
+					 PINS_MASKED);
 		}
 	}
 }
@@ -233,7 +250,7 @@ void ioapic_cell_exit(struct cell *cell)
 	if (!cell_irqchip)
 		return;
 
-	ioapic_mask_pins(cell_irqchip->pin_bitmap, PINS_MASKED);
+	ioapic_mask_pins(cell, cell_irqchip->pin_bitmap, PINS_MASKED);
 	if (root_irqchip)
 		root_cell.ioapic_pin_bitmap |= cell_irqchip->pin_bitmap &
 			root_irqchip->pin_bitmap;

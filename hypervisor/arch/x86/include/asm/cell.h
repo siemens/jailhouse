@@ -36,6 +36,7 @@ struct cell {
 
 	struct {
 		struct paging_structures pg_structs;
+		bool ir_emulation;
 	} vtd;
 
 	unsigned int id;

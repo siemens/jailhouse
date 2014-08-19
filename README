@@ -51,10 +51,13 @@ currently:
    (except when running inside QEMU)
  - at least 2 logical CPUs
  - x86-64 Linux kernel (tested against >= 3.9)
-    - VT-d usage has to be disabled in the Linux kernel, e.g. via command
-      line parameters:
+    - VT-d IOMMU usage (DMAR) has to be disabled in the Linux kernel, e.g. via
+      the command line parameter:
 
-        intel_iommu=off intremap=off
+          intel_iommu=off
+
+    - To exploit the faster x2APIC, interrupt remapping needs to be on in the
+      kernel (check for CONFIG_IRQ_REMAP)
 
 
 Build

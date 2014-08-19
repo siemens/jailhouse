@@ -1074,6 +1074,8 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	if (result == 0)
 		result = pci_mmio_access_handler(cpu_data->cell, is_write,
 						 phys_addr, &val);
+	if (result == 0)
+		result = vtd_mmio_access_handler(is_write, phys_addr, &val);
 
 	if (result == 1) {
 		if (!is_write)
