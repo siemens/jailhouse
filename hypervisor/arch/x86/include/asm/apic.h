@@ -16,7 +16,7 @@
 
 /* currently our limit due to fixed-size APID ID map */
 #define APIC_MAX_PHYS_ID		254
-#define APIC_INVALID_ID			255
+#define CPU_ID_INVALID			255
 
 #define XAPIC_BASE			0xfee00000
 

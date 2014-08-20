@@ -45,7 +45,7 @@ static u32 apic_reserved_bits[] = {
 	[0x3e]		= 0xfffffff4,	/* DCR */
 	[0x3f]		= 0xffffff00,	/* Self IPI */
 };
-static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = APIC_INVALID_ID };
+static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
 static void *xapic_page;
 
 static struct {
@@ -114,9 +114,9 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 
 	printk("(APIC ID %d) ", apic_id);
 
-	if (apic_id > APIC_MAX_PHYS_ID)
+	if (apic_id > APIC_MAX_PHYS_ID || cpu_id == CPU_ID_INVALID)
 		return -ERANGE;
-	if (apic_to_cpu_id[apic_id] != APIC_INVALID_ID)
+	if (apic_to_cpu_id[apic_id] != CPU_ID_INVALID)
 		return -EBUSY;
 	/* only flat mode with LDR corresponding to logical ID supported */
 	if (!using_x2apic) {
@@ -270,8 +270,7 @@ static bool apic_valid_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
 static void apic_send_ipi(struct per_cpu *cpu_data, unsigned int target_cpu_id,
 			  u32 orig_icr_hi, u32 icr_lo)
 {
-	if (target_cpu_id == APIC_INVALID_ID ||
-	    !cell_owns_cpu(cpu_data->cell, target_cpu_id)) {
+	if (!cell_owns_cpu(cpu_data->cell, target_cpu_id)) {
 		printk("WARNING: CPU %d specified IPI destination outside "
 		       "cell boundaries, ICR.hi=%x\n",
 		       cpu_data->cpu_id, orig_icr_hi);
@@ -299,7 +298,7 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 				       unsigned long dest, u32 lo_val,
 				       u32 hi_val)
 {
-	unsigned int target_cpu_id = APIC_INVALID_ID;
+	unsigned int target_cpu_id = CPU_ID_INVALID;
 	unsigned int logical_id;
 	unsigned int cluster_id;
 	unsigned int apic_id;
@@ -349,7 +348,7 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 		lo_val &= ~APIC_ICR_DEST_LOGICAL;
 		apic_send_logical_dest_ipi(cpu_data, dest, lo_val, hi_val);
 	} else {
-		target_cpu_id = APIC_INVALID_ID;
+		target_cpu_id = CPU_ID_INVALID;
 		if (dest <= APIC_MAX_PHYS_ID)
 			target_cpu_id = apic_to_cpu_id[dest];
 		apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
