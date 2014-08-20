@@ -80,7 +80,7 @@ static void init_early(unsigned int cpu_id)
 	}
 
 	page_map_dump_stats("after early setup");
-	printk("Initializing first processor:\n");
+	printk("Initializing processors:\n");
 }
 
 static void cpu_init(struct per_cpu *cpu_data)
@@ -100,9 +100,11 @@ static void cpu_init(struct per_cpu *cpu_data)
 
 	printk("OK\n");
 
-	/* If this CPU is last, make sure everything was committed before we
+	/*
+	 * If this CPU is last, make sure everything was committed before we
 	 * signal the other CPUs spinning on initialized_cpus that they can
-	 * continue. */
+	 * continue.
+	 */
 	memory_barrier();
 	initialized_cpus++;
 	return;
@@ -140,11 +142,11 @@ static void init_late(struct per_cpu *cpu_data)
 	arch_config_commit(cpu_data, &root_cell);
 
 	page_map_dump_stats("after late setup");
-	printk("Initializing remaining processors:\n");
 }
 
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 {
+	static volatile bool activate;
 	bool master = false;
 
 	cpu_data->cpu_id = cpu_id;
@@ -156,17 +158,28 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 		init_early(cpu_id);
 	}
 
-	if (!error) {
+	if (!error)
 		cpu_init(cpu_data);
-
-		if (master && !error)
-			init_late(cpu_data);
-	}
 
 	spin_unlock(&init_lock);
 
 	while (!error && initialized_cpus < hypervisor_header.online_cpus)
 		cpu_relax();
+
+	if (!error && master) {
+		init_late(cpu_data);
+		if (!error) {
+			/*
+			 * Make sure everything was committed before we signal
+			 * the other CPUs that they can continue.
+			 */
+			memory_barrier();
+			activate = true;
+		}
+	} else {
+		while (!error && !activate)
+			cpu_relax();
+	}
 
 	if (error) {
 		if (master)
