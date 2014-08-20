@@ -271,6 +271,7 @@ static void apic_send_ipi(struct per_cpu *cpu_data, unsigned int target_cpu_id,
 			  u32 orig_icr_hi, u32 icr_lo)
 {
 	if (target_cpu_id == APIC_INVALID_ID ||
+	    target_cpu_id > cpu_data->cell->cpu_set->max_cpu_id ||
 	    !test_bit(target_cpu_id, cpu_data->cell->cpu_set->bitmap)) {
 		printk("WARNING: CPU %d specified IPI destination outside "
 		       "cell boundaries, ICR.hi=%x\n",
