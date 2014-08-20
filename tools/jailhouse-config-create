@@ -425,11 +425,11 @@ def count_cpus():
 
 
 def parse_dmar_devscope(f):
-    offset = 0
     (scope_type, scope_len, bus, dev, fn) = \
         struct.unpack('<BBxxxBBB', f.read(8))
-    offset += 8
-    return (offset, scope_type, scope_len, bus, dev, fn)
+    if scope_len != 8:
+        raise RuntimeError('Unsupported DMAR Device Scope Structure')
+    return (scope_type, scope_len, bus, dev, fn)
 
 
 # parsing of DMAR ACPI Table
@@ -465,16 +465,14 @@ def parse_dmar():
             units.append(base)
             offset += 16 - offset
             while offset < struct_len:
-                (off, scope_type, scope_len, bus, dev, fn) =\
+                (scope_type, scope_len, bus, dev, fn) =\
                     parse_dmar_devscope(f)
-                offset += off
                 if scope_type == 3:
                     if ioapic_id != 0:
                         raise RuntimeError('We do not support more '
                                            'than 1 IOAPIC')
                     ioapic_id = (bus << 8) | (dev << 3) | fn
-                f.seek(scope_len - 8, os.SEEK_CUR)
-                offset += scope_len - 8
+                offset += scope_len
 
         # Reserved Memory Region Reporting Structure
         if struct_type == 1:
@@ -485,17 +483,14 @@ def parse_dmar():
 
             comments = []
             while offset < struct_len:
-                (off, scope_type, scope_len, bus, dev, fn) =\
+                (scope_type, scope_len, bus, dev, fn) =\
                     parse_dmar_devscope(f)
-                offset += off
-                npath = (scope_len - 6)/2
-                if scope_type == 1 and npath == 1:
+                if scope_type == 1:
                     comments.append('PCI device: %02x:%02x.%x' %
                                     (bus, dev, fn))
                 else:
                     comments.append('DMAR parser could not decode device path')
-                f.seek(scope_len - off, os.SEEK_CUR)
-                offset += scope_len - off
+                offset += scope_len
 
             reg = MemRegion(base, limit, 'ACPI DMAR RMRR', comments)
             regions.append(reg)
