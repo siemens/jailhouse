@@ -300,7 +300,7 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 				       unsigned long dest, u32 lo_val,
 				       u32 hi_val)
 {
-	unsigned int target_cpu_id;
+	unsigned int target_cpu_id = APIC_INVALID_ID;
 	unsigned int logical_id;
 	unsigned int cluster_id;
 	unsigned int apic_id;
@@ -314,7 +314,8 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 			dest &= ~(1UL << logical_id);
 			apic_id = logical_id |
 				(cluster_id << X2APIC_CLUSTER_ID_SHIFT);
-			target_cpu_id = apic_to_cpu_id[apic_id];
+			if (apic_id <= APIC_MAX_PHYS_ID)
+				target_cpu_id = apic_to_cpu_id[apic_id];
 			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
 		}
 	} else
