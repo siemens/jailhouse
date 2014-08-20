@@ -443,7 +443,7 @@ def parse_dmar():
     if signature != b'DMAR':
         if options.generate_collector:
             return [], 0, []
-        raise RuntimeError('incorrect input file format %s' % signature)
+        raise RuntimeError('DMAR: incorrect input file format %s' % signature)
     (length,) = struct.unpack('<I', f.read(4))
     f.seek(48)
     length -= 48
@@ -526,7 +526,8 @@ class MMConfig:
         if signature != b'MCFG':
             if options.generate_collector:
                 return MMConfig(0, 0)
-            raise RuntimeError('incorrect input file format %s' % signature)
+            raise RuntimeError('MCFG: incorrect input file format %s' %
+                               signature)
         (length,) = struct.unpack('<I', f.read(4))
         if length > 60:
             raise RuntimeError('Multiple MMCONFIG regions found! '
