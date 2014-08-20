@@ -64,6 +64,52 @@ options = parser.parse_args()
 inputs = {'files': set(), 'files_opt': set(), 'dirs': set()}
 
 
+def kmg_multiply(value, kmg):
+    if (kmg == 'K' or kmg == 'k'):
+        return 1024 * value
+    if (kmg == 'M' or kmg == 'm'):
+        return 1024**2 * value
+    if (kmg == 'G' or kmg == 'g'):
+        return 1024**3 * value
+    return value
+
+
+def kmg_multiply_str(str):
+    m = re.match(r'([0-9a-fA-FxX]+)([KMG]?)', str)
+    if m is not None:
+        return kmg_multiply(int(m.group(1)), m.group(2))
+    raise RuntimeError('kmg_multiply_str can not parse input "' + str + '"')
+    return 0
+
+
+def input_open(name, mode='r', optional=False):
+    inputs['files_opt' if optional else 'files'].add(name)
+    try:
+        f = open(options.root + name, mode)
+    except Exception as e:
+        if optional or options.generate_collector:
+            return open("/dev/null", mode)
+        raise e
+    return f
+
+
+def input_readline(name, optional=False):
+    f = input_open(name, optional=optional)
+    line = f.readline()
+    f.close()
+    return line
+
+
+def input_listdir(dir, wildcards):
+    for w in wildcards:
+        inputs['dirs'].add(os.path.join(dir, w))
+    if options.generate_collector:
+        return []
+    dirs = os.listdir(options.root + dir)
+    dirs.sort()
+    return dirs
+
+
 class PCICapability:
     def __init__(self, id, start, len, flags):
         self.id = id
@@ -345,52 +391,6 @@ def parse_pcidevices():
                     caps.extend(d.caps)
             devices.append(d)
     return (devices, caps)
-
-
-def kmg_multiply(value, kmg):
-    if (kmg == 'K' or kmg == 'k'):
-        return 1024 * value
-    if (kmg == 'M' or kmg == 'm'):
-        return 1024**2 * value
-    if (kmg == 'G' or kmg == 'g'):
-        return 1024**3 * value
-    return value
-
-
-def kmg_multiply_str(str):
-    m = re.match(r'([0-9a-fA-FxX]+)([KMG]?)', str)
-    if m is not None:
-        return kmg_multiply(int(m.group(1)), m.group(2))
-    raise RuntimeError('kmg_multiply_str can not parse input "' + str + '"')
-    return 0
-
-
-def input_open(name, mode='r', optional=False):
-    inputs['files_opt' if optional else 'files'].add(name)
-    try:
-        f = open(options.root + name, mode)
-    except Exception as e:
-        if optional or options.generate_collector:
-            return open("/dev/null", mode)
-        raise e
-    return f
-
-
-def input_readline(name, optional=False):
-    f = input_open(name, optional=optional)
-    line = f.readline()
-    f.close()
-    return line
-
-
-def input_listdir(dir, wildcards):
-    for w in wildcards:
-        inputs['dirs'].add(os.path.join(dir, w))
-    if options.generate_collector:
-        return []
-    dirs = os.listdir(options.root + dir)
-    dirs.sort()
-    return dirs
 
 
 def parse_cmdline():
