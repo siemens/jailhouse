@@ -357,19 +357,14 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_free_cell;
 
 	/* don't assign the CPU we are currently running on */
-	if (cpu_data->cpu_id <= cell->cpu_set->max_cpu_id &&
-	    test_bit(cpu_data->cpu_id, cell->cpu_set->bitmap)) {
+	if (cell_owns_cpu(cell, cpu_data->cpu_id)) {
 		err = -EBUSY;
 		goto err_free_cpu_set;
 	}
 
 	/* the root cell's cpu set must be super-set of new cell's set */
-	if (root_cell.cpu_set->max_cpu_id < cell->cpu_set->max_cpu_id) {
-		err = -EBUSY;
-		goto err_free_cpu_set;
-	}
 	for_each_cpu(cpu, cell->cpu_set)
-		if (!test_bit(cpu, root_cell.cpu_set->bitmap)) {
+		if (!cell_owns_cpu(&root_cell, cpu)) {
 			err = -EBUSY;
 			goto err_free_cpu_set;
 		}
@@ -709,8 +704,7 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 	 * left this hypercall.
 	 */
 	if (cpu_data->cell != &root_cell &&
-	    (cpu_id > cpu_data->cell->cpu_set->max_cpu_id ||
-	     !test_bit(cpu_id, cpu_data->cell->cpu_set->bitmap)))
+	    !cell_owns_cpu(cpu_data->cell, cpu_id))
 		return -EPERM;
 
 	if (type == JAILHOUSE_CPU_INFO_STATE) {
