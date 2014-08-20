@@ -55,6 +55,7 @@ struct cell {
 
 	u32 ioapic_index_reg_val;
 	u16 ioapic_id;
+	u8 ioapic_iommu;
 	u64 ioapic_pin_bitmap;
 
 	union {

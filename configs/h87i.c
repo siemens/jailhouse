@@ -117,7 +117,7 @@ struct {
 	.irqchips = {
 		/* IOAPIC */ {
 			.address = 0xfec00000,
-			.id = 0xf0f8,
+			.id = 0x1f0f8,
 			.pin_bitmap = 0xffffff,
 		},
 	},
@@ -139,6 +139,7 @@ struct {
 		/* PCIDevice: 00:00.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0x0,
 			.caps_start = 0,
@@ -147,6 +148,7 @@ struct {
 		/* PCIDevice: 00:01.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0x8,
 			.caps_start = 1,
@@ -156,6 +158,7 @@ struct {
 		/* PCIDevice: 00:02.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 0,
 			.domain = 0x0,
 			.bdf = 0x10,
 			.caps_start = 5,
@@ -165,6 +168,7 @@ struct {
 		/* PCIDevice: 00:03.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0x18,
 			.caps_start = 8,
@@ -174,6 +178,7 @@ struct {
 		/* PCIDevice: 00:14.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xa0,
 			.caps_start = 11,
@@ -184,6 +189,7 @@ struct {
 		/* PCIDevice: 00:16.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xb0,
 			.caps_start = 13,
@@ -194,6 +200,7 @@ struct {
 		/* PCIDevice: 00:19.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xc8,
 			.caps_start = 15,
@@ -204,6 +211,7 @@ struct {
 		/* PCIDevice: 00:1a.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xd0,
 			.caps_start = 18,
@@ -212,6 +220,7 @@ struct {
 		/* PCIDevice: 00:1b.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xd8,
 			.caps_start = 21,
@@ -222,6 +231,7 @@ struct {
 		/* PCIDevice: 00:1d.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xe8,
 			.caps_start = 18,
@@ -230,6 +240,7 @@ struct {
 		/* PCIDevice: 00:1f.0 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xf8,
 			.caps_start = 0,
@@ -238,6 +249,7 @@ struct {
 		/* PCIDevice: 00:1f.2 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xfa,
 			.caps_start = 24,
@@ -247,6 +259,7 @@ struct {
 		/* PCIDevice: 00:1f.3 */
 		{
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xfb,
 			.caps_start = 0,

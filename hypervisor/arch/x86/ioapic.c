@@ -212,7 +212,8 @@ void ioapic_cell_init(struct cell *cell)
 		ioapic_find_config(cell->config);
 
 	if (irqchip) {
-		cell->ioapic_id = irqchip->id;
+		cell->ioapic_id = (u16)irqchip->id;
+		cell->ioapic_iommu = (u8)(irqchip->id >> 16);
 		cell->ioapic_pin_bitmap = irqchip->pin_bitmap;
 
 		if (cell != &root_cell) {

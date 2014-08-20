@@ -184,6 +184,7 @@ class PCICapability:
 class PCIDevice:
     def __init__(self, type, domain, bus, dev, fn, caps):
         self.type = type
+        self.iommu = None
         self.domain = domain
         self.bus = bus
         self.dev = dev
@@ -473,7 +474,7 @@ def parse_dmar_devscope(f):
 
 # parsing of DMAR ACPI Table
 # see Intel VT-d Spec chapter 8
-def parse_dmar():
+def parse_dmar(pcidevices):
     f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb', True)
     if get_cpu_vendor() == 'AuthenticAMD':
         print('WARNING: AMD IOMMU support is not implemented yet')
@@ -498,22 +499,34 @@ def parse_dmar():
 
         # DMA Remapping Hardware Unit Definition
         if struct_type == 0:
-            (segment, base) = struct.unpack('<xxHQ', f.read(12))
+            (flags, segment, base) = struct.unpack('<BxHQ', f.read(12))
             if segment != 0:
                 raise RuntimeError('We do not support multiple PCI segments')
             if len(units) >= 8:
                 raise RuntimeError('Too many DMAR units. '
                                    'Raise JAILHOUSE_MAX_DMAR_UNITS.')
             units.append(base)
+            if flags & 1:
+                for d in pcidevices:
+                    if d.iommu == None:
+                        d.iommu = len(units) - 1
             offset += 16 - offset
             while offset < struct_len:
                 (scope_type, scope_len, bus, dev, fn) =\
                     parse_dmar_devscope(f)
-                if scope_type == 3:
+                if scope_type == 1:
+                    for d in pcidevices:
+                        if d.bus == bus and d.dev == dev and d.fn == fn:
+                            d.iommu = len(units) - 1
+                elif scope_type == 2:
+                    raise RuntimeError('Unsupported DMAR Device Scope type')
+                elif scope_type == 3:
                     if ioapic_id != 0:
                         raise RuntimeError('We do not support more '
                                            'than 1 IOAPIC')
-                    ioapic_id = (bus << 8) | (dev << 3) | fn
+                    # encode the DMAR unit number into the device ID
+                    ioapic_id = ((len(units) - 1) << 16) | \
+                        (bus << 8) | (dev << 3) | fn
                 offset += scope_len
 
         # Reserved Memory Region Reporting Structure
@@ -613,8 +626,15 @@ total = hvmem[1] + inmatemem
 
 mmconfig = MMConfig.parse()
 
-(dmar_units, ioapic_id, rmrr_regs) = parse_dmar()
+(dmar_units, ioapic_id, rmrr_regs) = parse_dmar(pcidevices)
 regions += rmrr_regs
+
+for d in pcidevices:
+    if get_cpu_vendor() == 'AuthenticAMD':
+        d.iommu = 0  # temporary workaround
+    if d.iommu == None:
+        raise RuntimeError('PCI device %02x:%02x.%x outside the scope of an '
+                           'IOMMU' % (d.bus, d.dev, d.fn))
 
 # kernel does not have memmap region, pick one
 if ourmem is None:

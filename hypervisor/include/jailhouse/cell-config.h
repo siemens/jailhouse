@@ -60,7 +60,8 @@ struct jailhouse_irqchip {
 #define JAILHOUSE_PCI_TYPE_BRIDGE	0x02
 
 struct jailhouse_pci_device {
-	__u16 type;
+	__u8 type;
+	__u8 iommu;
 	__u16 domain;
 	__u16 bdf;
 	__u16 caps_start;
