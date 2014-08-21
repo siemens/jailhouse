@@ -221,11 +221,6 @@ class MemRegion:
 
     def flagstr(self, p=''):
         if (
-            self.typestr == 'ACPI Tables' or
-            self.typestr == 'ACPI Non-volatile Storage'
-        ):
-            return 'JAILHOUSE_MEM_READ'
-        if (
             self.typestr == 'System RAM' or
             self.typestr == 'RAM buffer' or
             self.typestr == 'ACPI DMAR RMRR'
