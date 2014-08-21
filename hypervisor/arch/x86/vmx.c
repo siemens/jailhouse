@@ -474,7 +474,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write16(HOST_TR_SELECTOR, GDT_DESC_TSS * 8);
 
 	ok &= vmcs_write64(HOST_FS_BASE, 0);
-	ok &= vmcs_write64(HOST_GS_BASE, 0);
+	ok &= vmcs_write64(HOST_GS_BASE, read_msr(MSR_GS_BASE));
 	ok &= vmcs_write64(HOST_TR_BASE, 0);
 
 	read_gdtr(&dtr);

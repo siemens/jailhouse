@@ -43,6 +43,7 @@ struct per_cpu {
 	u8 stack[PAGE_SIZE];
 	unsigned long linux_sp;
 
+	struct per_cpu *cpu_data;
 	unsigned int cpu_id;
 	u32 apic_id;
 	struct cell *cell;
@@ -93,6 +94,22 @@ struct per_cpu {
 	struct vmcs vmxon_region __attribute__((aligned(PAGE_SIZE)));
 	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));
 } __attribute__((aligned(PAGE_SIZE)));
+
+#define DECLARE_PER_CPU_ACCESSOR(field)					    \
+static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	    \
+{									    \
+	typeof(((struct per_cpu *)0)->field) tmp;			    \
+									    \
+	asm volatile(							    \
+		"mov %%gs:%1,%0\n\t"					    \
+		: "=&q" (tmp)						    \
+		: "m" (*(u8 *)__builtin_offsetof(struct per_cpu, field)));  \
+	return tmp;							    \
+}
+
+DECLARE_PER_CPU_ACCESSOR(cpu_data)
+DECLARE_PER_CPU_ACCESSOR(cpu_id)
+DECLARE_PER_CPU_ACCESSOR(cell)
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)
 {

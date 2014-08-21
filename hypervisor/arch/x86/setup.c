@@ -152,6 +152,10 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	read_descriptor(cpu_data, &cpu_data->linux_gs);
 	cpu_data->linux_gs.base = read_msr(MSR_GS_BASE);
 
+	/* set up per-CPU helpers */
+	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
+	cpu_data->cpu_data = cpu_data;
+
 	/* read registers to restore on first VM-entry */
 	for (n = 0; n < NUM_ENTRY_REGS; n++)
 		cpu_data->linux_reg[n] =
