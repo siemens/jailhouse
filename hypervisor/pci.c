@@ -571,8 +571,8 @@ static void pci_remove_device(struct pci_device *device)
 
 int pci_cell_init(struct cell *cell)
 {
-	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
-					      sizeof(struct pci_device));
+	unsigned int devlist_pages = PAGES(cell->config->num_pci_devices *
+					   sizeof(struct pci_device));
 	const struct jailhouse_pci_device *dev_infos =
 		jailhouse_cell_pci_devices(cell->config);
 	const struct jailhouse_pci_capability *cap;
@@ -580,7 +580,7 @@ int pci_cell_init(struct cell *cell)
 	unsigned int ndev, ncap;
 	int err;
 
-	cell->pci_devices = page_alloc(&mem_pool, array_size / PAGE_SIZE);
+	cell->pci_devices = page_alloc(&mem_pool, devlist_pages);
 	if (!cell->pci_devices)
 		return -ENOMEM;
 
@@ -645,8 +645,8 @@ static void pci_return_device_to_root_cell(struct pci_device *device)
 
 void pci_cell_exit(struct cell *cell)
 {
-	unsigned long array_size = PAGE_ALIGN(cell->config->num_pci_devices *
-					      sizeof(struct pci_device));
+	unsigned int devlist_pages = PAGES(cell->config->num_pci_devices *
+					   sizeof(struct pci_device));
 	struct pci_device *device;
 
 	/*
@@ -662,7 +662,7 @@ void pci_cell_exit(struct cell *cell)
 			pci_return_device_to_root_cell(device);
 		}
 
-	page_free(&mem_pool, cell->pci_devices, array_size / PAGE_SIZE);
+	page_free(&mem_pool, cell->pci_devices, devlist_pages);
 }
 
 void pci_config_commit(struct cell *cell_added_removed)

@@ -309,8 +309,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_resume;
 	}
 
-	cfg_pages = PAGE_ALIGN(sizeof(struct jailhouse_cell_desc) +
-			       cfg_page_offs) / PAGE_SIZE;
+	cfg_pages = PAGES(cfg_page_offs + sizeof(struct jailhouse_cell_desc));
 	cfg_mapping = page_map_get_guest_pages(NULL, config_address, cfg_pages,
 					       PAGE_READONLY_FLAGS);
 	if (!cfg_mapping) {
@@ -327,7 +326,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		}
 
 	cfg_total_size = jailhouse_cell_config_size(cfg);
-	cfg_pages = PAGE_ALIGN(cfg_total_size + cfg_page_offs) / PAGE_SIZE;
+	cfg_pages = PAGES(cfg_page_offs + cfg_total_size);
 	if (cfg_pages > NUM_TEMPORARY_PAGES) {
 		err = -E2BIG;
 		goto err_resume;
@@ -343,7 +342,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_resume;
 
-	cell_pages = PAGE_ALIGN(sizeof(*cell) + cfg_total_size) / PAGE_SIZE;
+	cell_pages = PAGES(sizeof(*cell) + cfg_total_size);
 	cell = page_alloc(&mem_pool, cell_pages);
 	if (!cell) {
 		err = -ENOMEM;

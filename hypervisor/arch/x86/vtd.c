@@ -252,7 +252,7 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 
 int vtd_init(void)
 {
-	unsigned long size, version, caps, ecaps, sllps_caps = ~0UL;
+	unsigned long version, caps, ecaps, sllps_caps = ~0UL;
 	unsigned int pt_levels, num_did, n;
 	unsigned int units = 0;
 	void *reg_base;
@@ -265,8 +265,8 @@ int vtd_init(void)
 	if (n >= 16)
 		return -EINVAL;
 
-	size = PAGE_ALIGN(sizeof(union vtd_irte) << n);
-	int_remap_table = page_alloc(&mem_pool, size / PAGE_SIZE);
+	int_remap_table =
+		page_alloc(&mem_pool, PAGES(sizeof(union vtd_irte) << n));
 	if (!int_remap_table)
 		return -ENOMEM;
 

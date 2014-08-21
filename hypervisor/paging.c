@@ -365,8 +365,7 @@ int paging_init(void)
 
 	system_config = (struct jailhouse_system *)
 		(__page_pool + per_cpu_pages * PAGE_SIZE);
-	config_pages = (jailhouse_system_config_size(system_config) +
-			PAGE_SIZE - 1) / PAGE_SIZE;
+	config_pages = PAGES(jailhouse_system_config_size(system_config));
 
 	page_offset = JAILHOUSE_BASE -
 		system_config->hypervisor_memory.phys_start;
