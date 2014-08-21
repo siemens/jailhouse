@@ -289,13 +289,13 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
-	unsigned long mapping_addr = TEMPORARY_MAPPING_CPU_BASE(cpu_data);
 	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
-	unsigned long cfg_header_size, cfg_total_size;
+	unsigned int cfg_pages, cell_pages, cpu, n;
 	const struct jailhouse_memory *mem;
 	struct jailhouse_cell_desc *cfg;
-	unsigned int cell_pages, cpu, n;
+	unsigned long cfg_total_size;
 	struct cell *cell, *last;
+	void *cfg_mapping;
 	int err;
 
 	/* We do not support creation over non-root cells. */
@@ -309,21 +309,16 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_resume;
 	}
 
-	cfg_header_size = (config_address & ~PAGE_MASK) +
-		sizeof(struct jailhouse_cell_desc);
-
-	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
-			      cfg_header_size, mapping_addr,
-			      PAGE_READONLY_FLAGS, PAGE_MAP_NON_COHERENT);
-	if (err)
-		goto err_resume;
-
-	cfg = (struct jailhouse_cell_desc *)(mapping_addr + cfg_page_offs);
-	cfg_total_size = jailhouse_cell_config_size(cfg);
-	if (cfg_total_size + cfg_page_offs > NUM_TEMPORARY_PAGES * PAGE_SIZE) {
-		err = -E2BIG;
+	cfg_pages = PAGE_ALIGN(sizeof(struct jailhouse_cell_desc) +
+			       cfg_page_offs) / PAGE_SIZE;
+	cfg_mapping = page_map_get_guest_pages(NULL, config_address, cfg_pages,
+					       PAGE_READONLY_FLAGS);
+	if (!cfg_mapping) {
+		err = -ENOMEM;
 		goto err_resume;
 	}
+
+	cfg = (struct jailhouse_cell_desc *)(cfg_mapping + cfg_page_offs);
 
 	for_each_cell(cell)
 		if (strcmp(cell->config->name, cfg->name) == 0) {
@@ -331,11 +326,18 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			goto err_resume;
 		}
 
-	err = page_map_create(&hv_paging_structs, config_address & PAGE_MASK,
-			      cfg_total_size + cfg_page_offs, mapping_addr,
-			      PAGE_READONLY_FLAGS, PAGE_MAP_NON_COHERENT);
-	if (err)
+	cfg_total_size = jailhouse_cell_config_size(cfg);
+	cfg_pages = PAGE_ALIGN(cfg_total_size + cfg_page_offs) / PAGE_SIZE;
+	if (cfg_pages > NUM_TEMPORARY_PAGES) {
+		err = -E2BIG;
 		goto err_resume;
+	}
+
+	if (!page_map_get_guest_pages(NULL, config_address, cfg_pages,
+				      PAGE_READONLY_FLAGS)) {
+		err = -ENOMEM;
+		goto err_resume;
+	}
 
 	err = check_mem_regions(cfg);
 	if (err)
