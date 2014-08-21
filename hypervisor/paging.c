@@ -117,7 +117,7 @@ void page_free(struct page_pool *pool, void *page, unsigned int num)
 }
 
 unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
-				 unsigned long virt)
+				 unsigned long virt, unsigned long flags)
 {
 	const struct paging *paging = pg_structs->root_paging;
 	page_table_t pt = pg_structs->root_table;
@@ -126,7 +126,7 @@ unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
 
 	while (1) {
 		pte = paging->get_entry(pt, virt);
-		if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
+		if (!paging->entry_valid(pte, flags))
 			return INVALID_PHYS_ADDR;
 		phys = paging->get_phys(pte, virt);
 		if (phys != INVALID_PHYS_ADDR)
@@ -288,7 +288,8 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 
 static unsigned long
 page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
-		     unsigned long gvirt, unsigned long tmp_page)
+		     unsigned long gvirt, unsigned long tmp_page,
+		     unsigned long flags)
 {
 	unsigned long page_table_gphys = pg_structs->root_table_gphys;
 	const struct paging *paging = pg_structs->root_paging;
@@ -299,7 +300,8 @@ page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 	while (1) {
 		/* map guest page table */
 		phys = arch_page_map_gphys2phys(this_cpu_data(),
-						page_table_gphys);
+						page_table_gphys,
+						PAGE_READONLY_FLAGS);
 		if (phys == INVALID_PHYS_ADDR)
 			return INVALID_PHYS_ADDR;
 		err = page_map_create(&hv_paging_structs, phys,
@@ -311,7 +313,7 @@ page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 
 		/* evaluate page table entry */
 		pte = paging->get_entry((page_table_t)tmp_page, gvirt);
-		if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
+		if (!paging->entry_valid(pte, flags))
 			return INVALID_PHYS_ADDR;
 		gphys = paging->get_phys(pte, gvirt);
 		if (gphys != INVALID_PHYS_ADDR)
@@ -336,11 +338,11 @@ page_map_get_guest_pages(const struct guest_paging_structures *pg_structs,
 	while (num-- > 0) {
 		if (pg_structs)
 			gphys = page_map_gvirt2gphys(pg_structs, gaddr,
-						     page_virt);
+						     page_virt, flags);
 		else
 			gphys = gaddr;
 
-		phys = arch_page_map_gphys2phys(this_cpu_data(), gphys);
+		phys = arch_page_map_gphys2phys(this_cpu_data(), gphys, flags);
 		if (phys == INVALID_PHYS_ADDR)
 			return NULL;
 		/* map guest page */

@@ -107,10 +107,11 @@ static inline void *page_map_phys2hvirt(unsigned long phys)
 }
 
 unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
-				 unsigned long virt);
+				 unsigned long virt, unsigned long flags);
 
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
-				       unsigned long gphys);
+				       unsigned long gphys,
+				       unsigned long flags);
 
 int page_map_create(const struct paging_structures *pg_structs,
 		    unsigned long phys, unsigned long size, unsigned long virt,

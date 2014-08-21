@@ -253,9 +253,11 @@ int vmx_init(void)
 }
 
 unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
-				       unsigned long gphys)
+				       unsigned long gphys,
+				       unsigned long flags)
 {
-	return page_map_virt2phys(&cpu_data->cell->vmx.ept_structs, gphys);
+	return page_map_virt2phys(&cpu_data->cell->vmx.ept_structs, gphys,
+				  flags);
 }
 
 int vmx_cell_init(struct cell *cell)
