@@ -157,4 +157,6 @@ bool x2apic_handle_write(struct registers *guest_regs,
 			 struct per_cpu *cpu_data);
 void x2apic_handle_read(struct registers *guest_regs);
 
+u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination);
+
 #endif /* !_JAILHOUSE_ASM_APIC_H */

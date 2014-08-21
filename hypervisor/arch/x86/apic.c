@@ -481,3 +481,30 @@ void x2apic_handle_read(struct registers *guest_regs)
 	if (reg == APIC_REG_ICR)
 		guest_regs->rdx |= apic_ops.read(reg + 1);
 }
+
+/**
+ * x2apic_filter_logical_dest() - Filter a logical destination mask against the
+ * 				  cell's CPU set
+ * @cell:		Target cell
+ * @destination:	Logical destination mask (redirection hint enabled)
+ *
+ * Return: Logical destination mask with invalid target CPUs removed.
+ */
+u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination)
+{
+	unsigned int apic_id, logical_id, cluster_id;
+	u32 dest;
+
+	cluster_id = (destination & X2APIC_DEST_CLUSTER_ID_MASK) >>
+		X2APIC_DEST_CLUSTER_ID_SHIFT;
+	dest = destination & X2APIC_DEST_LOGICAL_ID_MASK;
+	while (dest != 0) {
+		logical_id = ffsl(dest);
+		dest &= ~(1UL << logical_id);
+		apic_id = logical_id | (cluster_id << X2APIC_CLUSTER_ID_SHIFT);
+		if (apic_id > APIC_MAX_PHYS_ID ||
+		    !cell_owns_cpu(cell, apic_to_cpu_id[apic_id]))
+			destination &= ~(1UL << logical_id);
+	}
+	return destination;
+}
