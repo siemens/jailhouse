@@ -17,9 +17,9 @@
 
 struct paging hv_paging[MAX_PAGE_DIR_LEVELS];
 
-static bool x86_64_entry_valid(pt_entry_t pte)
+static bool x86_64_entry_valid(pt_entry_t pte, unsigned long flags)
 {
-	return *pte & 1;
+	return (*pte & flags) == flags;
 }
 
 static unsigned long x86_64_get_flags(pt_entry_t pte)
@@ -43,7 +43,7 @@ static bool x86_64_page_table_empty(page_table_t page_table)
 	int n;
 
 	for (n = 0, pte = page_table; n < PAGE_SIZE / sizeof(u64); n++, pte++)
-		if (x86_64_entry_valid(pte))
+		if (x86_64_entry_valid(pte, PAGE_FLAG_PRESENT))
 			return false;
 	return true;
 }
@@ -170,9 +170,9 @@ void arch_paging_init(void)
 		hv_paging[1].page_size = 0;
 }
 
-static bool i386_entry_valid(pt_entry_t pte)
+static bool i386_entry_valid(pt_entry_t pte, unsigned long flags)
 {
-	return *(u32 *)pte & 1;
+	return (*(u32 *)pte & flags) == flags;
 }
 
 static pt_entry_t i386_get_entry_l2(page_table_t page_table,

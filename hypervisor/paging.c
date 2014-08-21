@@ -126,7 +126,7 @@ unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
 
 	while (1) {
 		pte = paging->get_entry(pt, virt);
-		if (!paging->entry_valid(pte))
+		if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
 			return INVALID_PHYS_ADDR;
 		phys = paging->get_phys(pte, virt);
 		if (phys != INVALID_PHYS_ADDR)
@@ -202,7 +202,7 @@ int page_map_create(const struct paging_structures *pg_structs,
 				flush_pt_entry(pte, coherent);
 				break;
 			}
-			if (paging->entry_valid(pte)) {
+			if (paging->entry_valid(pte, PAGE_PRESENT_FLAGS)) {
 				err = split_hugepage(paging, pte, virt,
 						     coherent);
 				if (err)
@@ -247,7 +247,7 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 		pt[0] = pg_structs->root_table;
 		while (1) {
 			pte = paging->get_entry(pt[n], virt);
-			if (!paging->entry_valid(pte))
+			if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
 				break;
 			if (paging->get_phys(pte, virt) != INVALID_PHYS_ADDR) {
 				if (paging->page_size > size) {
@@ -311,7 +311,7 @@ page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 
 		/* evaluate page table entry */
 		pte = paging->get_entry((page_table_t)tmp_page, gvirt);
-		if (!paging->entry_valid(pte))
+		if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
 			return INVALID_PHYS_ADDR;
 		gphys = paging->get_phys(pte, gvirt);
 		if (gphys != INVALID_PHYS_ADDR)

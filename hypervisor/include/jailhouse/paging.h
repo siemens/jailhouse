@@ -45,8 +45,9 @@ struct paging {
 	/** Get entry in given table corresponding to virt address. */
 	pt_entry_t (*get_entry)(page_table_t page_table, unsigned long virt);
 
-	/** Returns true if entry is a valid (terminal or non-terminal). */
-	bool (*entry_valid)(pt_entry_t pte);
+	/** Returns true if entry is a valid and supports the provided access
+	 * flags (terminal or non-terminal). */
+	bool (*entry_valid)(pt_entry_t pte, unsigned long flags);
 
 	/** Set terminal entry to physical address and access flags. */
 	void (*set_terminal)(pt_entry_t pte, unsigned long phys,
