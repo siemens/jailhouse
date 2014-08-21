@@ -20,9 +20,6 @@
 #define PAGE_ALIGN(s)		(((s) + PAGE_SIZE-1) & PAGE_MASK)
 
 #define TEMPORARY_MAPPING_BASE	REMAP_BASE
-#define TEMPORARY_MAPPING_CPU_BASE(cpu_data)				\
-	(TEMPORARY_MAPPING_BASE + (cpu_data)->cpu_id * PAGE_SIZE *	\
-	 NUM_TEMPORARY_PAGES)
 
 struct page_pool {
 	void *base_address;
