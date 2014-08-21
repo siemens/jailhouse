@@ -120,9 +120,11 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 		     unsigned long virt, unsigned long size,
 		     enum page_map_coherent coherent);
 
-void *page_map_get_guest_page(struct per_cpu *cpu_data,
-			      const struct guest_paging_structures *pg_structs,
-			      unsigned long virt, unsigned long flags);
+void *
+page_map_get_guest_pages(struct per_cpu *cpu_data,
+			 const struct guest_paging_structures *pg_structs,
+			 unsigned long gaddr, unsigned int num,
+			 unsigned long flags);
 
 int paging_init(void);
 void arch_paging_init(void);

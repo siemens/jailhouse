@@ -41,8 +41,8 @@ static u8 *map_code_page(struct per_cpu *cpu_data,
 	 * and we have to map a new one now. */
 	if (current_page && ((pc & ~PAGE_MASK) != 0))
 		return current_page;
-	return page_map_get_guest_page(cpu_data, pg_structs, pc,
-				       PAGE_READONLY_FLAGS);
+	return page_map_get_guest_pages(cpu_data, pg_structs, pc, 1,
+				        PAGE_READONLY_FLAGS);
 }
 
 struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
