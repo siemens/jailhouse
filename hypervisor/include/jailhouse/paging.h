@@ -121,8 +121,7 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 		     enum page_map_coherent coherent);
 
 void *
-page_map_get_guest_pages(struct per_cpu *cpu_data,
-			 const struct guest_paging_structures *pg_structs,
+page_map_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			 unsigned long gaddr, unsigned int num,
 			 unsigned long flags);
 

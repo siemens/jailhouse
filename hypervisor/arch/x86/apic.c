@@ -406,7 +406,7 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 	struct mmio_access access;
 	u32 val;
 
-	access = mmio_parse(cpu_data, rip, pg_structs, is_write);
+	access = mmio_parse(rip, pg_structs, is_write);
 	if (access.inst_len == 0)
 		return 0;
 	if (access.size != 4) {

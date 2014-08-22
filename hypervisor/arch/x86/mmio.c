@@ -33,19 +33,18 @@ union opcode {
 };
 
 /* If current_page is non-NULL, pc must have been increased exactly by 1. */
-static u8 *map_code_page(struct per_cpu *cpu_data,
-			 const struct guest_paging_structures *pg_structs,
+static u8 *map_code_page(const struct guest_paging_structures *pg_structs,
 			 unsigned long pc, u8 *current_page)
 {
 	/* If page offset is 0, previous pc was pointing to a different page,
 	 * and we have to map a new one now. */
 	if (current_page && ((pc & ~PAGE_MASK) != 0))
 		return current_page;
-	return page_map_get_guest_pages(cpu_data, pg_structs, pc, 1,
+	return page_map_get_guest_pages(pg_structs, pc, 1,
 				        PAGE_READONLY_FLAGS);
 }
 
-struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
+struct mmio_access mmio_parse(unsigned long pc,
 			      const struct guest_paging_structures *pg_structs,
 			      bool is_write)
 {
@@ -56,7 +55,7 @@ struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
 	u8 *page = NULL;
 
 restart:
-	page = map_code_page(cpu_data, pg_structs, pc, page);
+	page = map_code_page(pg_structs, pc, page);
 	if (!page)
 		goto error_nopage;
 
@@ -90,7 +89,7 @@ restart:
 	}
 
 	pc++;
-	page = map_code_page(cpu_data, pg_structs, pc, page);
+	page = map_code_page(pg_structs, pc, page);
 	if (!page)
 		goto error_nopage;
 
@@ -104,7 +103,7 @@ restart:
 		access.inst_len++;
 
 		pc++;
-		page = map_code_page(cpu_data, pg_structs, pc, page);
+		page = map_code_page(pg_structs, pc, page);
 		if (!page)
 			goto error_nopage;
 

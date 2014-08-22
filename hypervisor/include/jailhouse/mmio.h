@@ -14,7 +14,6 @@
 #define _JAILHOUSE_MMIO_H
 
 #include <jailhouse/paging.h>
-#include <asm/percpu.h>
 
 struct mmio_access {
 	unsigned int inst_len;
@@ -42,7 +41,7 @@ DEFINE_MMIO_WRITE(16)
 DEFINE_MMIO_WRITE(32)
 DEFINE_MMIO_WRITE(64)
 
-struct mmio_access mmio_parse(struct per_cpu *cpu_data, unsigned long pc,
+struct mmio_access mmio_parse(unsigned long pc,
 			      const struct guest_paging_structures *pg_structs,
 			      bool is_write);
 

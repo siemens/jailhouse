@@ -287,8 +287,7 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 }
 
 static unsigned long
-page_map_gvirt2gphys(struct per_cpu *cpu_data,
-		     const struct guest_paging_structures *pg_structs,
+page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 		     unsigned long gvirt, unsigned long tmp_page)
 {
 	unsigned long page_table_gphys = pg_structs->root_table_gphys;
@@ -299,7 +298,8 @@ page_map_gvirt2gphys(struct per_cpu *cpu_data,
 
 	while (1) {
 		/* map guest page table */
-		phys = arch_page_map_gphys2phys(cpu_data, page_table_gphys);
+		phys = arch_page_map_gphys2phys(this_cpu_data(),
+						page_table_gphys);
 		if (phys == INVALID_PHYS_ADDR)
 			return INVALID_PHYS_ADDR;
 		err = page_map_create(&hv_paging_structs, phys,
@@ -322,13 +322,12 @@ page_map_gvirt2gphys(struct per_cpu *cpu_data,
 }
 
 void *
-page_map_get_guest_pages(struct per_cpu *cpu_data,
-			 const struct guest_paging_structures *pg_structs,
+page_map_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			 unsigned long gaddr, unsigned int num,
 			 unsigned long flags)
 {
 	unsigned long page_base = TEMPORARY_MAPPING_BASE +
-		cpu_data->cpu_id * PAGE_SIZE * NUM_TEMPORARY_PAGES;
+		this_cpu_id() * PAGE_SIZE * NUM_TEMPORARY_PAGES;
 	unsigned long phys, gphys, page_virt = page_base;
 	int err;
 
@@ -336,12 +335,12 @@ page_map_get_guest_pages(struct per_cpu *cpu_data,
 		return NULL;
 	while (num-- > 0) {
 		if (pg_structs)
-			gphys = page_map_gvirt2gphys(cpu_data, pg_structs,
-						     gaddr, page_virt);
+			gphys = page_map_gvirt2gphys(pg_structs, gaddr,
+						     page_virt);
 		else
 			gphys = gaddr;
 
-		phys = arch_page_map_gphys2phys(cpu_data, gphys);
+		phys = arch_page_map_gphys2phys(this_cpu_data(), gphys);
 		if (phys == INVALID_PHYS_ADDR)
 			return NULL;
 		/* map guest page */

@@ -1060,8 +1060,7 @@ static bool vmx_handle_ept_violation(struct registers *guest_regs,
 	if (!vmx_get_guest_paging_structs(&pg_structs))
 		goto invalid_access;
 
-	access = mmio_parse(cpu_data, vmcs_read64(GUEST_RIP),
-			    &pg_structs, is_write);
+	access = mmio_parse(vmcs_read64(GUEST_RIP), &pg_structs, is_write);
 	if (!access.inst_len || access.size != 4)
 		goto invalid_access;
 
