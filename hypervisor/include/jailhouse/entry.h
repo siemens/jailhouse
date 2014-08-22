@@ -40,6 +40,8 @@ void vm_exit(void);
 
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data);
 
+int map_root_memory_regions(void);
+
 int arch_init_early(void);
 int arch_cpu_init(struct per_cpu *cpu_data);
 int arch_init_late(void);

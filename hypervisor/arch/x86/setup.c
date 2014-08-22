@@ -217,6 +217,10 @@ int arch_init_late()
 	if (err)
 		return err;
 
+	err = map_root_memory_regions();
+	if (err)
+		return err;
+
 	err = pci_init();
 	if (err)
 		return err;
