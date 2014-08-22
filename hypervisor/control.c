@@ -748,7 +748,8 @@ long hypercall(struct per_cpu *cpu_data, unsigned long code,
 
 void panic_stop(void)
 {
-	panic_printk("Stopping CPU %d\n", this_cpu_id());
+	panic_printk("Stopping CPU %d (Cell: \"%s\")\n", this_cpu_id(),
+		     this_cell()->config->name);
 	this_cpu_data()->cpu_stopped = true;
 
 	if (phys_processor_id() == panic_cpu)
@@ -763,7 +764,8 @@ void panic_halt(void)
 	bool cell_failed = true;
 	unsigned int cpu;
 
-	panic_printk("Parking CPU %d\n", this_cpu_id());
+	panic_printk("Parking CPU %d (Cell: \"%s\")\n", this_cpu_id(),
+		     cell->config->name);
 
 	this_cpu_data()->failed = true;
 	for_each_cpu(cpu, cell->cpu_set)
