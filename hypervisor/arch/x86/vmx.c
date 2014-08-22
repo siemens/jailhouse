@@ -396,7 +396,7 @@ void vmx_invept(void)
 	if (!ok) {
 		panic_printk("FATAL: invept failed, error %d\n",
 			     vmcs_read32(VM_INSTRUCTION_ERROR));
-		panic_stop(NULL);
+		panic_stop();
 	}
 }
 
@@ -675,7 +675,7 @@ void vmx_cpu_activate_vmm(struct per_cpu *cpu_data)
 
 	panic_printk("FATAL: vmlaunch failed, error %d\n",
 		     vmcs_read32(VM_INSTRUCTION_ERROR));
-	panic_stop(cpu_data);
+	panic_stop();
 }
 
 static void __attribute__((noreturn))
@@ -823,7 +823,7 @@ static void vmx_cpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 
 	if (!ok) {
 		panic_printk("FATAL: CPU reset failed\n");
-		panic_stop(cpu_data);
+		panic_stop();
 	}
 }
 
@@ -1196,12 +1196,12 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	}
 	dump_guest_regs(guest_regs);
-	panic_halt(cpu_data);
+	panic_halt();
 }
 
 void vmx_entry_failure(struct per_cpu *cpu_data)
 {
 	panic_printk("FATAL: vmresume failed, error %d\n",
 		     vmcs_read32(VM_INSTRUCTION_ERROR));
-	panic_stop(cpu_data);
+	panic_stop();
 }

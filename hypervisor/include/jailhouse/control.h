@@ -48,8 +48,8 @@ int cell_init(struct cell *cell);
 long hypercall(struct per_cpu *cpu_data, unsigned long code,
 	       unsigned long arg1, unsigned long arg2);
 
-void __attribute__((noreturn)) panic_stop(struct per_cpu *cpu_data);
-void panic_halt(struct per_cpu *cpu_data);
+void __attribute__((noreturn)) panic_stop(void);
+void panic_halt(void);
 
 void arch_suspend_cpu(unsigned int cpu_id);
 void arch_resume_cpu(unsigned int cpu_id);
@@ -70,5 +70,5 @@ void arch_config_commit(struct per_cpu *cpu_data,
 
 void arch_shutdown(void);
 
-void __attribute__((noreturn)) arch_panic_stop(struct per_cpu *cpu_data);
-void arch_panic_halt(struct per_cpu *cpu_data);
+void __attribute__((noreturn)) arch_panic_stop(void);
+void arch_panic_halt(void);

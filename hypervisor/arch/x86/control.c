@@ -280,17 +280,19 @@ void x86_exception_handler(struct exception_frame *frame)
 	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", frame->rip, frame->rsp,
 		     frame->flags);
 
-	panic_stop(NULL);
+	panic_stop();
 }
 
-void arch_panic_stop(struct per_cpu *cpu_data)
+void arch_panic_stop(void)
 {
 	asm volatile("1: hlt; jmp 1b");
 	__builtin_unreachable();
 }
 
-void arch_panic_halt(struct per_cpu *cpu_data)
+void arch_panic_halt(void)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	spin_lock(&cpu_data->control_lock);
 	x86_enter_wait_for_sipi(cpu_data);
 	spin_unlock(&cpu_data->control_lock);

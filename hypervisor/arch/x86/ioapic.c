@@ -280,7 +280,7 @@ void ioapic_config_commit(struct cell *cell_added_removed)
 					    entry.raw[0]) < 0) {
 			panic_printk("FATAL: Unsupported IOAPIC state, "
 				     "pin %d\n", pin);
-			panic_stop(NULL);
+			panic_stop();
 		}
 	}
 }

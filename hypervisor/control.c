@@ -746,30 +746,26 @@ long hypercall(struct per_cpu *cpu_data, unsigned long code,
 	}
 }
 
-void panic_stop(struct per_cpu *cpu_data)
+void panic_stop(void)
 {
-	panic_printk("Stopping CPU");
-	if (cpu_data) {
-		panic_printk(" %d", cpu_data->cpu_id);
-		cpu_data->cpu_stopped = true;
-	}
-	panic_printk("\n");
+	panic_printk("Stopping CPU %d\n", this_cpu_id());
+	this_cpu_data()->cpu_stopped = true;
 
 	if (phys_processor_id() == panic_cpu)
 		panic_in_progress = 0;
 
-	arch_panic_stop(cpu_data);
+	arch_panic_stop();
 }
 
-void panic_halt(struct per_cpu *cpu_data)
+void panic_halt(void)
 {
-	struct cell *cell = cpu_data->cell;
+	struct cell *cell = this_cell();
 	bool cell_failed = true;
 	unsigned int cpu;
 
-	panic_printk("Parking CPU %d\n", cpu_data->cpu_id);
+	panic_printk("Parking CPU %d\n", this_cpu_id());
 
-	cpu_data->failed = true;
+	this_cpu_data()->failed = true;
 	for_each_cpu(cpu, cell->cpu_set)
 		if (!per_cpu(cpu)->failed) {
 			cell_failed = false;
@@ -778,7 +774,7 @@ void panic_halt(struct per_cpu *cpu_data)
 	if (cell_failed)
 		cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_FAILED;
 
-	arch_panic_halt(cpu_data);
+	arch_panic_halt();
 
 	if (phys_processor_id() == panic_cpu)
 		panic_in_progress = 0;

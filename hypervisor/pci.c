@@ -692,7 +692,7 @@ void pci_config_commit(struct cell *cell_added_removed)
 error:
 	panic_printk("FATAL: Unsupported MSI/MSI-X state, device %02x:%02x.%x,"
 		     " cap %d\n", PCI_BDF_PARAMS(device->info->bdf), cap->id);
-	panic_stop(NULL);
+	panic_stop();
 }
 
 void pci_shutdown(void)

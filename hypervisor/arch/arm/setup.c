@@ -71,5 +71,5 @@ void arch_paging_init(void) { }
 
 const struct paging arm_paging[1];
 
-void arch_panic_stop(struct per_cpu *cpu_data) {__builtin_unreachable();}
-void arch_panic_halt(struct per_cpu *cpu_data) {}
+void arch_panic_stop(void) {__builtin_unreachable();}
+void arch_panic_halt(void) {}
