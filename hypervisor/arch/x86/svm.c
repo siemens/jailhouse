@@ -1094,7 +1094,7 @@ void vcpu_park(struct per_cpu *cpu_data)
 	vcpu_tlb_flush();
 }
 
-void vcpu_nmi_handler(struct per_cpu *cpu_data)
+void vcpu_nmi_handler(void)
 {
 }
 

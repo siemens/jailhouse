@@ -773,11 +773,11 @@ static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	}
 }
 
-void vcpu_nmi_handler(struct per_cpu *cpu_data)
+void vcpu_nmi_handler(void)
 {
 	u32 pin_based_ctrl;
 
-	if (cpu_data->vmx_state != VMCS_READY)
+	if (this_cpu_data()->vmx_state != VMCS_READY)
 		return;
 
 	pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);

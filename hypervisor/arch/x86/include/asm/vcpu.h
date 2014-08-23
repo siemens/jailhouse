@@ -69,7 +69,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data);
 
 void vcpu_park(struct per_cpu *cpu_data);
 
-void vcpu_nmi_handler(struct per_cpu *cpu_data);
+void vcpu_nmi_handler(void);
 
 void vcpu_tlb_flush(void);
 

@@ -109,8 +109,6 @@ vector=10
 	push %r10
 	push %r11
 
-	mov %rsp,%rdi
-	and $PAGE_MASK,%rdi
 	call \func
 
 	pop %r11

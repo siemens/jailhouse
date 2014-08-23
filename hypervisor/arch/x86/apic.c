@@ -202,8 +202,10 @@ void apic_send_irq(struct apic_irq_message irq_msg)
 			  APIC_ICR_SH_NONE);
 }
 
-void apic_irq_handler(struct per_cpu *cpu_data)
+void apic_irq_handler(void)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	cpu_data->num_clear_apic_irqs++;
 	if (cpu_data->num_clear_apic_irqs > 256)
 		/*
