@@ -55,5 +55,4 @@ vmx_vmexit:
 
 	vmresume
 
-	lea -PERCPU_STACK_END(%rsp),%rdi
 	jmp vmx_entry_failure

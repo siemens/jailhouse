@@ -1069,7 +1069,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	panic_park();
 }
 
-void vmx_entry_failure(struct per_cpu *cpu_data)
+void vmx_entry_failure(void)
 {
 	panic_printk("FATAL: vmresume failed, error %d\n",
 		     vmcs_read32(VM_INSTRUCTION_ERROR));

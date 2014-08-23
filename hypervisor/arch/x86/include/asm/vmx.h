@@ -297,7 +297,7 @@ enum vmx_state { VMXOFF = 0, VMXON, VMCS_READY };
 #define APIC_ACCESS_TYPE_LINEAR_READ		0x00000000
 #define APIC_ACCESS_TYPE_LINEAR_WRITE		0x00001000
 
-void vmx_entry_failure(struct per_cpu *cpu_data);
+void vmx_entry_failure(void);
 
 void vmx_vmexit(void);
 
