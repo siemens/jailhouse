@@ -149,10 +149,10 @@ int apic_init(void)
 		xapic_page = page_alloc(&remap_pool, 1);
 		if (!xapic_page)
 			return -ENOMEM;
-		err = page_map_create(&hv_paging_structs, XAPIC_BASE,
-				      PAGE_SIZE, (unsigned long)xapic_page,
-				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				      PAGE_MAP_NON_COHERENT);
+		err = paging_create(&hv_paging_structs, XAPIC_BASE, PAGE_SIZE,
+				    (unsigned long)xapic_page,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				    PAGING_NON_COHERENT);
 		if (err)
 			return err;
 		apic_ops.read = read_xapic;

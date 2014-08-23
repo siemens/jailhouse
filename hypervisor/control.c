@@ -310,8 +310,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	}
 
 	cfg_pages = PAGES(cfg_page_offs + sizeof(struct jailhouse_cell_desc));
-	cfg_mapping = page_map_get_guest_pages(NULL, config_address, cfg_pages,
-					       PAGE_READONLY_FLAGS);
+	cfg_mapping = paging_get_guest_pages(NULL, config_address, cfg_pages,
+					     PAGE_READONLY_FLAGS);
 	if (!cfg_mapping) {
 		err = -ENOMEM;
 		goto err_resume;
@@ -332,8 +332,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_resume;
 	}
 
-	if (!page_map_get_guest_pages(NULL, config_address, cfg_pages,
-				      PAGE_READONLY_FLAGS)) {
+	if (!paging_get_guest_pages(NULL, config_address, cfg_pages,
+				    PAGE_READONLY_FLAGS)) {
 		err = -ENOMEM;
 		goto err_resume;
 	}
@@ -417,7 +417,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	printk("Created cell \"%s\"\n", cell->config->name);
 
-	page_map_dump_stats("after cell creation");
+	paging_dump_stats("after cell creation");
 
 	cell_resume(cpu_data);
 
@@ -582,7 +582,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	num_cells--;
 
 	page_free(&mem_pool, cell, cell->data_pages);
-	page_map_dump_stats("after cell destruction");
+	paging_dump_stats("after cell destruction");
 
 	cell_reconfig_completed();
 

@@ -73,7 +73,7 @@ static bool vmxon(struct per_cpu *cpu_data)
 	unsigned long vmxon_addr;
 	u8 ok;
 
-	vmxon_addr = page_map_hvirt2phys(&cpu_data->vmxon_region);
+	vmxon_addr = paging_hvirt2phys(&cpu_data->vmxon_region);
 	asm volatile(
 		"vmxon (%1)\n\t"
 		"seta %0"
@@ -85,7 +85,7 @@ static bool vmxon(struct per_cpu *cpu_data)
 
 static bool vmcs_clear(struct per_cpu *cpu_data)
 {
-	unsigned long vmcs_addr = page_map_hvirt2phys(&cpu_data->vmcs);
+	unsigned long vmcs_addr = paging_hvirt2phys(&cpu_data->vmcs);
 	u8 ok;
 
 	asm volatile(
@@ -99,7 +99,7 @@ static bool vmcs_clear(struct per_cpu *cpu_data)
 
 static bool vmcs_load(struct per_cpu *cpu_data)
 {
-	unsigned long vmcs_addr = page_map_hvirt2phys(&cpu_data->vmcs);
+	unsigned long vmcs_addr = paging_hvirt2phys(&cpu_data->vmcs);
 	u8 ok;
 
 	asm volatile(
@@ -253,12 +253,11 @@ int vmx_init(void)
 	return vmx_cell_init(&root_cell);
 }
 
-unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
-				       unsigned long gphys,
-				       unsigned long flags)
+unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
+				     unsigned long gphys, unsigned long flags)
 {
-	return page_map_virt2phys(&cpu_data->cell->vmx.ept_structs, gphys,
-				  flags);
+	return paging_virt2phys(&cpu_data->cell->vmx.ept_structs, gphys,
+				flags);
 }
 
 int vmx_cell_init(struct cell *cell)
@@ -280,11 +279,11 @@ int vmx_cell_init(struct cell *cell)
 	if (!cell->vmx.ept_structs.root_table)
 		return -ENOMEM;
 
-	err = page_map_create(&cell->vmx.ept_structs,
-			      page_map_hvirt2phys(apic_access_page),
-			      PAGE_SIZE, XAPIC_BASE,
-			      EPT_FLAG_READ|EPT_FLAG_WRITE|EPT_FLAG_WB_TYPE,
-			      PAGE_MAP_NON_COHERENT);
+	err = paging_create(&cell->vmx.ept_structs,
+			    paging_hvirt2phys(apic_access_page),
+			    PAGE_SIZE, XAPIC_BASE,
+			    EPT_FLAG_READ | EPT_FLAG_WRITE|EPT_FLAG_WB_TYPE,
+			    PAGING_NON_COHERENT);
 	if (err) {
 		vmx_cell_exit(cell);
 		return err;
@@ -338,17 +337,17 @@ int vmx_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_EXECUTE)
 		flags |= EPT_FLAG_EXECUTE;
 	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
-		phys_start = page_map_hvirt2phys(&cell->comm_page);
+		phys_start = paging_hvirt2phys(&cell->comm_page);
 
-	return page_map_create(&cell->vmx.ept_structs, phys_start, mem->size,
-			       mem->virt_start, flags, PAGE_MAP_NON_COHERENT);
+	return paging_create(&cell->vmx.ept_structs, phys_start, mem->size,
+			     mem->virt_start, flags, PAGING_NON_COHERENT);
 }
 
 int vmx_unmap_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem)
 {
-	return page_map_destroy(&cell->vmx.ept_structs, mem->virt_start,
-				mem->size, PAGE_MAP_NON_COHERENT);
+	return paging_destroy(&cell->vmx.ept_structs, mem->virt_start,
+			      mem->size, PAGING_NON_COHERENT);
 }
 
 void vmx_cell_exit(struct cell *cell)
@@ -359,8 +358,8 @@ void vmx_cell_exit(struct cell *cell)
 	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
 	u8 *b;
 
-	page_map_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
-			 PAGE_MAP_NON_COHERENT);
+	paging_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
+		       PAGING_NON_COHERENT);
 
 	if (root_cell.config->pio_bitmap_size < pio_bitmap_size)
 		pio_bitmap_size = root_cell.config->pio_bitmap_size;
@@ -437,12 +436,12 @@ static bool vmx_set_cell_config(struct cell *cell)
 	bool ok = true;
 
 	io_bitmap = cell->vmx.io_bitmap;
-	ok &= vmcs_write64(IO_BITMAP_A, page_map_hvirt2phys(io_bitmap));
+	ok &= vmcs_write64(IO_BITMAP_A, paging_hvirt2phys(io_bitmap));
 	ok &= vmcs_write64(IO_BITMAP_B,
-			   page_map_hvirt2phys(io_bitmap + PAGE_SIZE));
+			   paging_hvirt2phys(io_bitmap + PAGE_SIZE));
 
 	ok &= vmcs_write64(EPT_POINTER,
-			page_map_hvirt2phys(cell->vmx.ept_structs.root_table) |
+			paging_hvirt2phys(cell->vmx.ept_structs.root_table) |
 			EPT_TYPE_WRITEBACK | EPT_PAGE_WALK_LEN);
 
 	return ok;
@@ -555,7 +554,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	val &= ~(CPU_BASED_CR3_LOAD_EXITING | CPU_BASED_CR3_STORE_EXITING);
 	ok &= vmcs_write32(CPU_BASED_VM_EXEC_CONTROL, val);
 
-	ok &= vmcs_write64(MSR_BITMAP, page_map_hvirt2phys(msr_bitmap));
+	ok &= vmcs_write64(MSR_BITMAP, paging_hvirt2phys(msr_bitmap));
 
 	val = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2);
 	val |= SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES |
@@ -564,7 +563,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(SECONDARY_VM_EXEC_CONTROL, val);
 
 	ok &= vmcs_write64(APIC_ACCESS_ADDR,
-			   page_map_hvirt2phys(apic_access_page));
+			   paging_hvirt2phys(apic_access_page));
 
 	ok &= vmx_set_cell_config(cpu_data->cell);
 

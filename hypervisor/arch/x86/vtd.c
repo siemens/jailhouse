@@ -84,7 +84,7 @@ static void vtd_submit_iq_request(void *reg_base, void *inv_queue,
 	struct vtd_entry inv_wait = {
 		.lo_word = VTD_REQ_INV_WAIT | VTD_INV_WAIT_SW |
 			VTD_INV_WAIT_FN | (1UL << VTD_INV_WAIT_SDATA_SHIFT),
-		.hi_word = page_map_hvirt2phys(&completed),
+		.hi_word = paging_hvirt2phys(&completed),
 	};
 	unsigned int index;
 
@@ -277,8 +277,8 @@ static int vtd_emulate_qi_request(unsigned int unit_no,
 		    !(inv_desc.lo_word & VTD_INV_WAIT_SW))
 			return -EINVAL;
 
-		status_page = page_map_get_guest_pages(NULL, inv_desc.hi_word,
-						       1, PAGE_DEFAULT_FLAGS);
+		status_page = paging_get_guest_pages(NULL, inv_desc.hi_word, 1,
+						     PAGE_DEFAULT_FLAGS);
 		if (!status_page)
 			return -EINVAL;
 
@@ -308,8 +308,8 @@ static int vtd_unit_access_handler(unsigned int unit_no, bool is_write,
 	if (reg == VTD_IQT_REG && is_write) {
 		while (unit->iqh != (*value & ~PAGE_MASK)) {
 			inv_desc_page =
-				page_map_get_guest_pages(NULL, unit->iqa, 1,
-							 PAGE_READONLY_FLAGS);
+				paging_get_guest_pages(NULL, unit->iqa, 1,
+						       PAGE_READONLY_FLAGS);
 			if (!inv_desc_page)
 				goto invalid_iq_entry;
 
@@ -374,19 +374,19 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 
 	/* Set root entry table pointer */
 	mmio_write64(reg_base + VTD_RTADDR_REG,
-		     page_map_hvirt2phys(root_entry_table));
+		     paging_hvirt2phys(root_entry_table));
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_SRTP, 1);
 
 	/* Set interrupt remapping table pointer */
 	mmio_write64(reg_base + VTD_IRTA_REG,
-		     page_map_hvirt2phys(int_remap_table) |
+		     paging_hvirt2phys(int_remap_table) |
 		     (using_x2apic ? VTD_IRTA_EIME : 0) |
 		     (int_remap_table_size_log2 - 1));
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_SIRTP, 1);
 
 	/* Setup and activate invalidation queue */
 	mmio_write64(reg_base + VTD_IQT_REG, 0);
-	mmio_write64(reg_base + VTD_IQA_REG, page_map_hvirt2phys(inv_queue));
+	mmio_write64(reg_base + VTD_IQA_REG, paging_hvirt2phys(inv_queue));
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 1);
 
 	vtd_submit_iq_request(reg_base, inv_queue, &inv_global_context);
@@ -467,10 +467,10 @@ int vtd_init(void)
 
 		reg_base = dmar_reg_base + n * PAGE_SIZE;
 
-		err = page_map_create(&hv_paging_structs, base_addr, PAGE_SIZE,
-				      (unsigned long)reg_base,
-				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				      PAGE_MAP_NON_COHERENT);
+		err = paging_create(&hv_paging_structs, base_addr, PAGE_SIZE,
+				    (unsigned long)reg_base,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				    PAGING_NON_COHERENT);
 		if (err)
 			return err;
 
@@ -650,19 +650,19 @@ int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
 
 	if (*root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
-			page_map_phys2hvirt(*root_entry_lo & PAGE_MASK);
+			paging_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	} else {
 		context_entry_table = page_alloc(&mem_pool, 1);
 		if (!context_entry_table)
 			goto error_nomem;
 		*root_entry_lo = VTD_ROOT_PRESENT |
-			page_map_hvirt2phys(context_entry_table);
+			paging_hvirt2phys(context_entry_table);
 		flush_cache(root_entry_lo, sizeof(u64));
 	}
 
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 	context_entry->lo_word = VTD_CTX_PRESENT | VTD_CTX_TTYPE_MLP_UNTRANS |
-		page_map_hvirt2phys(cell->vtd.pg_structs.root_table);
+		paging_hvirt2phys(cell->vtd.pg_structs.root_table);
 	context_entry->hi_word =
 		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
 		(cell->id << VTD_CTX_DID_SHIFT);
@@ -687,7 +687,7 @@ void vtd_remove_pci_device(struct pci_device *device)
 	if (dmar_units == 0)
 		return;
 
-	context_entry_table = page_map_phys2hvirt(*root_entry_lo & PAGE_MASK);
+	context_entry_table = paging_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 
 	context_entry->lo_word &= ~VTD_CTX_PRESENT;
@@ -756,9 +756,9 @@ int vtd_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		flags |= VTD_PAGE_WRITE;
 
-	return page_map_create(&cell->vtd.pg_structs, mem->phys_start,
-			       mem->size, mem->virt_start, flags,
-			       PAGE_MAP_COHERENT);
+	return paging_create(&cell->vtd.pg_structs, mem->phys_start,
+			     mem->size, mem->virt_start, flags,
+			     PAGING_COHERENT);
 }
 
 int vtd_unmap_memory_region(struct cell *cell,
@@ -771,8 +771,8 @@ int vtd_unmap_memory_region(struct cell *cell,
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
 
-	return page_map_destroy(&cell->vtd.pg_structs, mem->virt_start,
-				mem->size, PAGE_MAP_COHERENT);
+	return paging_destroy(&cell->vtd.pg_structs, mem->virt_start,
+			      mem->size, PAGING_COHERENT);
 }
 
 struct apic_irq_message
@@ -800,8 +800,8 @@ vtd_get_remapped_root_int(unsigned int iommu, u16 device_id,
 
 	irte_addr = (unit->irta & VTD_IRTA_ADDR_MASK) +
 		remap_index * sizeof(union vtd_irte);
-	irte_page = page_map_get_guest_pages(NULL, irte_addr, 1,
-					     PAGE_READONLY_FLAGS);
+	irte_page = paging_get_guest_pages(NULL, irte_addr, 1,
+					   PAGE_READONLY_FLAGS);
 	if (!irte_page)
 		return irq_msg;
 
@@ -959,8 +959,8 @@ static void vtd_restore_ir(unsigned int unit_no, void *reg_base)
 	 * until the hardware is in sync with the Linux state again.
 	 */
 	iqh =unit->iqh;
-	root_inv_queue = page_map_get_guest_pages(NULL, unit->iqa, 1,
-						  PAGE_DEFAULT_FLAGS);
+	root_inv_queue = paging_get_guest_pages(NULL, unit->iqa, 1,
+						PAGE_DEFAULT_FLAGS);
 	if (root_inv_queue)
 		while (mmio_read64(reg_base + VTD_IQH_REG) != iqh)
 			vtd_submit_iq_request(reg_base, root_inv_queue, NULL);

@@ -134,7 +134,7 @@ const struct paging x86_64_paging[] = {
 		X86_64_PAGING_COMMON,
 		.get_entry	= x86_64_get_entry_l4,
 		/* set_terminal not valid */
-		.get_phys	= page_map_get_phys_invalid,
+		.get_phys	= paging_get_phys_invalid,
 		.get_next_pt	= x86_64_get_next_pt_l4,
 	},
 	{

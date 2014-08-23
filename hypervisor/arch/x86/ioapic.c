@@ -175,10 +175,10 @@ int ioapic_init(void)
 	ioapic_page = page_alloc(&remap_pool, 1);
 	if (!ioapic_page)
 		return -ENOMEM;
-	err = page_map_create(&hv_paging_structs, IOAPIC_BASE_ADDR, PAGE_SIZE,
-			      (unsigned long)ioapic_page,
-			      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-			      PAGE_MAP_NON_COHERENT);
+	err = paging_create(&hv_paging_structs, IOAPIC_BASE_ADDR, PAGE_SIZE,
+			    (unsigned long)ioapic_page,
+			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+			    PAGING_NON_COHERENT);
 	if (err)
 		return err;
 	ioapic = ioapic_page;

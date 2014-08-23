@@ -188,7 +188,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 	/* swap CR3 */
 	cpu_data->linux_cr3 = read_cr3();
-	write_cr3(page_map_hvirt2phys(hv_paging_structs.root_table));
+	write_cr3(paging_hvirt2phys(hv_paging_structs.root_table));
 
 	cpu_data->linux_efer = read_msr(MSR_EFER);
 

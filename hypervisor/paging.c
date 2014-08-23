@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -34,7 +34,7 @@ struct page_pool remap_pool = {
 
 struct paging_structures hv_paging_structs;
 
-unsigned long page_map_get_phys_invalid(pt_entry_t pte, unsigned long virt)
+unsigned long paging_get_phys_invalid(pt_entry_t pte, unsigned long virt)
 {
 	return INVALID_PHYS_ADDR;
 }
@@ -116,8 +116,8 @@ void page_free(struct page_pool *pool, void *page, unsigned int num)
 	}
 }
 
-unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
-				 unsigned long virt, unsigned long flags)
+unsigned long paging_virt2phys(const struct paging_structures *pg_structs,
+			       unsigned long virt, unsigned long flags)
 {
 	const struct paging *paging = pg_structs->root_paging;
 	page_table_t pt = pg_structs->root_table;
@@ -131,19 +131,19 @@ unsigned long page_map_virt2phys(const struct paging_structures *pg_structs,
 		phys = paging->get_phys(pte, virt);
 		if (phys != INVALID_PHYS_ADDR)
 			return phys;
-		pt = page_map_phys2hvirt(paging->get_next_pt(pte));
+		pt = paging_phys2hvirt(paging->get_next_pt(pte));
 		paging++;
 	}
 }
 
-static void flush_pt_entry(pt_entry_t pte, enum page_map_coherent coherent)
+static void flush_pt_entry(pt_entry_t pte, enum paging_coherent coherent)
 {
-	if (coherent == PAGE_MAP_COHERENT)
+	if (coherent == PAGING_COHERENT)
 		flush_cache(pte, sizeof(*pte));
 }
 
 static int split_hugepage(const struct paging *paging, pt_entry_t pte,
-			  unsigned long virt, enum page_map_coherent coherent)
+			  unsigned long virt, enum paging_coherent coherent)
 {
 	unsigned long phys = paging->get_phys(pte, virt);
 	struct paging_structures sub_structs;
@@ -162,16 +162,16 @@ static int split_hugepage(const struct paging *paging, pt_entry_t pte,
 	sub_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!sub_structs.root_table)
 		return -ENOMEM;
-	paging->set_next_pt(pte, page_map_hvirt2phys(sub_structs.root_table));
+	paging->set_next_pt(pte, paging_hvirt2phys(sub_structs.root_table));
 	flush_pt_entry(pte, coherent);
 
-	return page_map_create(&sub_structs, phys, paging->page_size, virt,
-			       flags, coherent);
+	return paging_create(&sub_structs, phys, paging->page_size, virt,
+			     flags, coherent);
 }
 
-int page_map_create(const struct paging_structures *pg_structs,
-		    unsigned long phys, unsigned long size, unsigned long virt,
-		    unsigned long flags, enum page_map_coherent coherent)
+int paging_create(const struct paging_structures *pg_structs,
+		  unsigned long phys, unsigned long size, unsigned long virt,
+		  unsigned long flags, enum paging_coherent coherent)
 {
 	phys &= PAGE_MASK;
 	virt &= PAGE_MASK;
@@ -195,9 +195,9 @@ int page_map_create(const struct paging_structures *pg_structs,
 				 * boundaries.
 				 */
 				if (paging->page_size > PAGE_SIZE)
-					page_map_destroy(pg_structs, virt,
-							 paging->page_size,
-							 coherent);
+					paging_destroy(pg_structs, virt,
+						       paging->page_size,
+						       coherent);
 				paging->set_terminal(pte, phys, flags);
 				flush_pt_entry(pte, coherent);
 				break;
@@ -207,14 +207,14 @@ int page_map_create(const struct paging_structures *pg_structs,
 						     coherent);
 				if (err)
 					return err;
-				pt = page_map_phys2hvirt(
+				pt = paging_phys2hvirt(
 						paging->get_next_pt(pte));
 			} else {
 				pt = page_alloc(&mem_pool, 1);
 				if (!pt)
 					return -ENOMEM;
 				paging->set_next_pt(pte,
-						    page_map_hvirt2phys(pt));
+						    paging_hvirt2phys(pt));
 				flush_pt_entry(pte, coherent);
 			}
 			paging++;
@@ -229,9 +229,9 @@ int page_map_create(const struct paging_structures *pg_structs,
 	return 0;
 }
 
-int page_map_destroy(const struct paging_structures *pg_structs,
-		     unsigned long virt, unsigned long size,
-		     enum page_map_coherent coherent)
+int paging_destroy(const struct paging_structures *pg_structs,
+		   unsigned long virt, unsigned long size,
+		   enum paging_coherent coherent)
 {
 	size = PAGE_ALIGN(size);
 
@@ -258,8 +258,7 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 				} else
 					break;
 			}
-			pt[++n] = page_map_phys2hvirt(
-					paging->get_next_pt(pte));
+			pt[++n] = paging_phys2hvirt(paging->get_next_pt(pte));
 			paging++;
 		}
 		/* advance by page size of current level paging */
@@ -287,9 +286,9 @@ int page_map_destroy(const struct paging_structures *pg_structs,
 }
 
 static unsigned long
-page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
-		     unsigned long gvirt, unsigned long tmp_page,
-		     unsigned long flags)
+paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
+		   unsigned long gvirt, unsigned long tmp_page,
+		   unsigned long flags)
 {
 	unsigned long page_table_gphys = pg_structs->root_table_gphys;
 	const struct paging *paging = pg_structs->root_paging;
@@ -299,15 +298,14 @@ page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 
 	while (1) {
 		/* map guest page table */
-		phys = arch_page_map_gphys2phys(this_cpu_data(),
+		phys = arch_paging_gphys2phys(this_cpu_data(),
 						page_table_gphys,
 						PAGE_READONLY_FLAGS);
 		if (phys == INVALID_PHYS_ADDR)
 			return INVALID_PHYS_ADDR;
-		err = page_map_create(&hv_paging_structs, phys,
-				      PAGE_SIZE, tmp_page,
-				      PAGE_READONLY_FLAGS,
-				      PAGE_MAP_NON_COHERENT);
+		err = paging_create(&hv_paging_structs, phys, PAGE_SIZE,
+				    tmp_page, PAGE_READONLY_FLAGS,
+				    PAGING_NON_COHERENT);
 		if (err)
 			return INVALID_PHYS_ADDR;
 
@@ -323,10 +321,9 @@ page_map_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 	}
 }
 
-void *
-page_map_get_guest_pages(const struct guest_paging_structures *pg_structs,
-			 unsigned long gaddr, unsigned int num,
-			 unsigned long flags)
+void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
+			     unsigned long gaddr, unsigned int num,
+			     unsigned long flags)
 {
 	unsigned long page_base = TEMPORARY_MAPPING_BASE +
 		this_cpu_id() * PAGE_SIZE * NUM_TEMPORARY_PAGES;
@@ -337,17 +334,17 @@ page_map_get_guest_pages(const struct guest_paging_structures *pg_structs,
 		return NULL;
 	while (num-- > 0) {
 		if (pg_structs)
-			gphys = page_map_gvirt2gphys(pg_structs, gaddr,
-						     page_virt, flags);
+			gphys = paging_gvirt2gphys(pg_structs, gaddr,
+						   page_virt, flags);
 		else
 			gphys = gaddr;
 
-		phys = arch_page_map_gphys2phys(this_cpu_data(), gphys, flags);
+		phys = arch_paging_gphys2phys(this_cpu_data(), gphys, flags);
 		if (phys == INVALID_PHYS_ADDR)
 			return NULL;
 		/* map guest page */
-		err = page_map_create(&hv_paging_structs, phys, PAGE_SIZE,
-				      page_virt, flags, PAGE_MAP_NON_COHERENT);
+		err = paging_create(&hv_paging_structs, phys, PAGE_SIZE,
+				    page_virt, flags, PAGING_NON_COHERENT);
 		if (err)
 			return NULL;
 		gaddr += PAGE_SIZE;
@@ -401,20 +398,20 @@ int paging_init(void)
 		goto error_nomem;
 
 	/* Replicate hypervisor mapping of Linux */
-	err = page_map_create(&hv_paging_structs,
-			      page_map_hvirt2phys(&hypervisor_header),
-			      system_config->hypervisor_memory.size,
-			      (unsigned long)&hypervisor_header,
-			      PAGE_DEFAULT_FLAGS, PAGE_MAP_NON_COHERENT);
+	err = paging_create(&hv_paging_structs,
+			     paging_hvirt2phys(&hypervisor_header),
+			     system_config->hypervisor_memory.size,
+			     (unsigned long)&hypervisor_header,
+			     PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
 	if (err)
 		goto error_nomem;
 
 	/* Make sure any remappings to the temporary regions can be performed
 	 * without allocations of page table pages. */
-	err = page_map_create(&hv_paging_structs, 0,
-			      remap_pool.used_pages * PAGE_SIZE,
-			      TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
-			      PAGE_MAP_NON_COHERENT);
+	err = paging_create(&hv_paging_structs, 0,
+			    remap_pool.used_pages * PAGE_SIZE,
+			    TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
+			    PAGING_NON_COHERENT);
 	if (err)
 		goto error_nomem;
 
@@ -425,7 +422,7 @@ error_nomem:
 	return -ENOMEM;
 }
 
-void page_map_dump_stats(const char *when)
+void paging_dump_stats(const char *when)
 {
 	printk("Page pool usage %s: mem %d/%d, remap %d/%d\n", when,
 	       mem_pool.used_pages, mem_pool.pages,

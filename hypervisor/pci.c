@@ -317,10 +317,10 @@ int pci_init(void)
 	if (!pci_space)
 		return -ENOMEM;
 
-	return page_map_create(&hv_paging_structs, mmcfg_start, mmcfg_size,
-			       (unsigned long)pci_space,
-			       PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-			       PAGE_MAP_NON_COHERENT);
+	return paging_create(&hv_paging_structs, mmcfg_start, mmcfg_size,
+			     (unsigned long)pci_space,
+			     PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+			     PAGING_NON_COHERENT);
 }
 
 static int pci_msix_access_handler(const struct cell *cell, bool is_write,
@@ -536,11 +536,11 @@ static int pci_add_device(struct cell *cell, struct pci_device *device)
 			goto error_remove_dev;
 		}
 
-		err = page_map_create(&hv_paging_structs,
-				      device->info->msix_address, size,
-				      (unsigned long)device->msix_table,
-				      PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
-				      PAGE_MAP_NON_COHERENT);
+		err = paging_create(&hv_paging_structs,
+				    device->info->msix_address, size,
+				    (unsigned long)device->msix_table,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				    PAGING_NON_COHERENT);
 		if (err)
 			goto error_page_free;
 
@@ -571,8 +571,8 @@ static void pci_remove_device(struct pci_device *device)
 		return;
 
 	/* cannot fail, destruction of same size as construction */
-	page_map_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
-			 size, PAGE_MAP_NON_COHERENT);
+	paging_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
+		       size, PAGING_NON_COHERENT);
 	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
 
 	prev_msix_device = device->cell->msix_device_list;

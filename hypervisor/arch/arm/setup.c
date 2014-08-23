@@ -63,9 +63,8 @@ void arch_config_commit(struct per_cpu *cpu_data,
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
 void arch_dbg_write(const char *msg) {}
 void arch_shutdown(void) {}
-unsigned long arch_page_map_gphys2phys(struct per_cpu *cpu_data,
-				       unsigned long gphys,
-				       unsigned long flags)
+unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
+				     unsigned long gphys, unsigned long flags)
 { return INVALID_PHYS_ADDR; }
 void arch_paging_init(void) { }
 

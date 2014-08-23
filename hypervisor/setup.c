@@ -67,8 +67,8 @@ static void init_early(unsigned int cpu_id)
 	 * pages for Linux. This allows to fault-in the hypervisor region into
 	 * Linux' page table before shutdown without triggering violations.
 	 */
-	hv_page.phys_start = page_map_hvirt2phys(empty_page);
-	hv_page.virt_start = page_map_hvirt2phys(&hypervisor_header);
+	hv_page.phys_start = paging_hvirt2phys(empty_page);
+	hv_page.virt_start = paging_hvirt2phys(&hypervisor_header);
 	hv_page.size = PAGE_SIZE;
 	hv_page.flags = JAILHOUSE_MEM_READ;
 	core_and_percpu_size = (unsigned long)system_config - JAILHOUSE_BASE;
@@ -80,7 +80,7 @@ static void init_early(unsigned int cpu_id)
 		hv_page.virt_start += PAGE_SIZE;
 	}
 
-	page_map_dump_stats("after early setup");
+	paging_dump_stats("after early setup");
 	printk("Initializing processors:\n");
 }
 
@@ -149,7 +149,7 @@ static void init_late(struct per_cpu *cpu_data)
 
 	arch_config_commit(cpu_data, &root_cell);
 
-	page_map_dump_stats("after late setup");
+	paging_dump_stats("after late setup");
 }
 
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
