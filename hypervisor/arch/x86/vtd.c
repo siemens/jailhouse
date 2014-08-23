@@ -128,7 +128,7 @@ static void vtd_print_fault_record_reg_status(void *reg_base)
 	printk("VT-d fault event occurred:\n");
 	printk(" Source Identifier (bus:dev.func): %02x:%02x.%x\n",
 	       PCI_BDF_PARAMS(sid));
-	printk(" Fault Reason: 0x%x Fault Info: %x Type %d\n", fr, fi, type);
+	printk(" Fault Reason: 0x%x Fault Info: %lx Type %d\n", fr, fi, type);
 }
 
 void vtd_check_pending_faults(struct per_cpu *cpu_data)
