@@ -682,10 +682,11 @@ void vmx_cpu_activate_vmm(struct per_cpu *cpu_data)
 }
 
 static void __attribute__((noreturn))
-vmx_cpu_deactivate_vmm(struct registers *guest_regs, struct per_cpu *cpu_data)
+vmx_cpu_deactivate_vmm(struct registers *guest_regs)
 {
 	unsigned long *stack = (unsigned long *)vmcs_read64(GUEST_RSP);
 	unsigned long linux_ip = vmcs_read64(GUEST_RIP);
+	struct per_cpu *cpu_data = this_cpu_data();
 
 	cpu_data->linux_cr3 = vmcs_read64(GUEST_CR3);
 
@@ -874,8 +875,7 @@ static void update_efer(void)
 		     vmcs_read32(VM_ENTRY_CONTROLS) | VM_ENTRY_IA32E_MODE);
 }
 
-static void vmx_handle_hypercall(struct registers *guest_regs,
-				 struct per_cpu *cpu_data)
+static void vmx_handle_hypercall(struct registers *guest_regs)
 {
 	bool ia32e_mode = !!(vmcs_read64(GUEST_IA32_EFER) & EFER_LMA);
 	unsigned long arg_mask = ia32e_mode ? (u64)-1 : (u32)-1;
@@ -889,15 +889,14 @@ static void vmx_handle_hypercall(struct registers *guest_regs,
 		return;
 	}
 
-	guest_regs->rax = hypercall(cpu_data, code, guest_regs->rdi & arg_mask,
+	guest_regs->rax = hypercall(code, guest_regs->rdi & arg_mask,
 				    guest_regs->rsi & arg_mask);
 	if (guest_regs->rax == -ENOSYS)
-		printk("CPU %d: Unknown vmcall %d, RIP: %p\n",
-		       cpu_data->cpu_id, code,
-		       vmcs_read64(GUEST_RIP) - X86_INST_LEN_VMCALL);
+		printk("CPU %d: Unknown vmcall %d, RIP: %p\n", this_cpu_id(),
+		       code, vmcs_read64(GUEST_RIP) - X86_INST_LEN_VMCALL);
 
 	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
-		vmx_cpu_deactivate_vmm(guest_regs, cpu_data);
+		vmx_cpu_deactivate_vmm(guest_regs);
 }
 
 static bool vmx_handle_cr(struct registers *guest_regs,
@@ -1134,7 +1133,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			(u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
-		vmx_handle_hypercall(guest_regs, cpu_data);
+		vmx_handle_hypercall(guest_regs);
 		return;
 	case EXIT_REASON_CR_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;

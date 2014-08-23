@@ -719,9 +719,10 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 		return -EINVAL;
 }
 
-long hypercall(struct per_cpu *cpu_data, unsigned long code,
-	       unsigned long arg1, unsigned long arg2)
+long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_HYPERCALL]++;
 
 	switch (code) {

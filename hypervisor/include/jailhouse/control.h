@@ -45,8 +45,7 @@ bool cpu_id_valid(unsigned long cpu_id);
 int check_mem_regions(const struct jailhouse_cell_desc *config);
 int cell_init(struct cell *cell);
 
-long hypercall(struct per_cpu *cpu_data, unsigned long code,
-	       unsigned long arg1, unsigned long arg2);
+long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2);
 
 void __attribute__((noreturn)) panic_stop(void);
 void panic_halt(void);
