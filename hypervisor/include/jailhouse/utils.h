@@ -18,3 +18,5 @@
 /* create 64-bit mask with all bits in [last:first] set */
 #define BIT_MASK(last, first) \
 	((0xffffffffffffffffULL >> (64 - ((last) + 1 - (first)))) << (first))
+
+#define MAX(a, b)		((a) >= (b) ? (a) : (b))
