@@ -21,6 +21,7 @@
 #include <jailhouse/pci.h>
 #include <asm/apic.h>
 #include <asm/control.h>
+#include <asm/i8042.h>
 #include <asm/io.h>
 #include <asm/ioapic.h>
 #include <asm/pci.h>
@@ -298,6 +299,9 @@ int vmx_cell_init(struct cell *cell)
 		pio_bitmap += size;
 		pio_bitmap_size -= size;
 	}
+
+	/* moderation access to i8042 command register */
+	cell->vmx.io_bitmap[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
 
 	if (cell != &root_cell) {
 		/*
@@ -1032,6 +1036,8 @@ static bool vmx_handle_io_access(struct registers *guest_regs,
 
 	result = x86_pci_config_handler(guest_regs, cpu_data->cell, port,
 					dir_in, size);
+	if (result == 0)
+		result = i8042_access_handler(guest_regs, port, dir_in, size);
 
 	if (result == 1) {
 		vmx_skip_emulated_instruction(
