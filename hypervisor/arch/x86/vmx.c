@@ -1024,23 +1024,26 @@ static bool vmx_handle_io_access(struct registers *guest_regs,
 	u16 port = (exitq >> 16) & 0xFFFF;
 	bool dir_in = (exitq & 0x8) >> 3;
 	unsigned int size = (exitq & 0x3) + 1;
+	int result = 0;
 
 	/* string and REP-prefixed instructions are not supported */
 	if (exitq & 0x30)
 		goto invalid_access;
 
-	if (x86_pci_config_handler(guest_regs, cpu_data->cell, port, dir_in,
-				   size) == 1) {
+	result = x86_pci_config_handler(guest_regs, cpu_data->cell, port,
+					dir_in, size);
+
+	if (result == 1) {
 		vmx_skip_emulated_instruction(
 				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
 		return true;
 	}
 
 invalid_access:
-	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
-		     dir_in ? "read" : "write", port, size);
-	panic_printk("PCI address port: %x\n",
-		     cpu_data->cell->pci_addr_port_val);
+	/* report only unhandled access failures */
+	if (result == 0)
+		panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
+			     dir_in ? "read" : "write", port, size);
 	return false;
 }
 

@@ -178,7 +178,7 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 	if (port == PCI_REG_ADDR_PORT) {
 		/* only 4-byte accesses are valid */
 		if (size != 4)
-			return -1;
+			goto invalid_access;
 
 		if (dir_in)
 			set_rax_reg(guest_regs, cell->pci_addr_port_val, size);
@@ -190,7 +190,7 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 		   port < (PCI_REG_DATA_PORT + 4)) {
 		/* overflowing accesses are invalid */
 		if (port + size > PCI_REG_DATA_PORT + 4)
-			return -1;
+			goto invalid_access;
 
 		/*
 		 * Decode which register in PCI config space is accessed. It is
@@ -212,9 +212,18 @@ int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 		else
 			result = data_port_out_handler(guest_regs, device,
 						       address, size);
+		if (result < 0)
+			goto invalid_access;
 	}
 
 	return result;
+
+invalid_access:
+	panic_printk("FATAL: Invalid PCI config %s, port: %x, size %d, "
+		     "address port: %x\n", dir_in ? "read" : "write", port,
+		     size, cell->pci_addr_port_val);
+	return -1;
+
 }
 
 int arch_pci_add_device(struct cell *cell, struct pci_device *device)
