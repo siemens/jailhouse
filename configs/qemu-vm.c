@@ -25,11 +25,11 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[9];
+	struct jailhouse_memory mem_regions[10];
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
-	struct jailhouse_pci_device pci_devices[6];
-	struct jailhouse_pci_capability pci_caps[3];
+	struct jailhouse_pci_device pci_devices[7];
+	struct jailhouse_pci_capability pci_caps[5];
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
@@ -103,17 +103,24 @@ struct {
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febf0000-febf0fff : 0000:00:01.0 */
+		/* MemRegion: febf0000-febf3fff : ICH HD audio */
 		{
 			.phys_start = 0xfebf0000,
 			.virt_start = 0xfebf0000,
+			.size = 0x4000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: febf4000-febf4fff : 0000:00:01.0 */
+		{
+			.phys_start = 0xfebf4000,
+			.virt_start = 0xfebf4000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febf2000-febf2fff : ahci */
+		/* MemRegion: febf5000-febf5fff : ahci */
 		{
-			.phys_start = 0xfebf2000,
-			.virt_start = 0xfebf2000,
+			.phys_start = 0xfebf5000,
+			.virt_start = 0xfebf5000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
@@ -165,15 +172,14 @@ struct {
 			.domain = 0x0000,
 			.bdf = 0x0010,
 		},
-		{ /* virtio-9p-pci */
+		{ /* ICH HD audio */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
 			.domain = 0x0000,
-			.bdf = 0x0018,
+			.bdf = 0x00d8,
 			.caps_start = 0,
-			.num_caps = 1,
-			.num_msix_vectors = 2,
-			.msix_region_size = 0x1000,
-			.msix_address = 0xfebf1000,
+			.num_caps = 2,
+			.num_msi_vectors = 1,
+			.msi_64bits = 1,
 		},
 		{ /* ISA bridge */
 			.type = JAILHOUSE_PCI_TYPE_DEVICE,
@@ -194,13 +200,28 @@ struct {
 			.domain = 0x0000,
 			.bdf = 0x00fb,
 		},
+		{ /* virtio-9p-pci */
+			.type = JAILHOUSE_PCI_TYPE_DEVICE,
+			.domain = 0x0000,
+			.bdf = 0x00ff,
+			.caps_start = 4,
+			.num_caps = 1,
+			.num_msix_vectors = 2,
+			.msix_region_size = 0x1000,
+			.msix_address = 0xfebf6000,
+		},
 	},
 
 	.pci_caps = {
-		{ /* virtio-9p-pci */
-			.id = 0x11,
+		{ /* ICH HD audio */
+			.id = 0x5,
+			.start = 0x60,
+			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{ /* non-cap registers: HDCTL, TCSEL, DCKCTL, DCKSTS */
 			.start = 0x40,
-			.len = 12,
+			.len = 0x10,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{ /* AHCI */
@@ -213,6 +234,12 @@ struct {
 			.id = 0x5,
 			.start = 0x50,
 			.len = 14,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
+		},
+		{ /* virtio-9p-pci */
+			.id = 0x11,
+			.start = 0x40,
+			.len = 12,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 	},
