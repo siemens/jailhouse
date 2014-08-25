@@ -24,7 +24,7 @@ struct {
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[13];
-	struct jailhouse_pci_capability pci_caps[27];
+	struct jailhouse_pci_capability pci_caps[28];
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
@@ -224,7 +224,7 @@ struct {
 			.domain = 0x0,
 			.bdf = 0xd8,
 			.caps_start = 21,
-			.num_caps = 3,
+			.num_caps = 4,
 			.num_msi_vectors = 1,
 			.msi_64bits = 1,
 		},
@@ -252,7 +252,7 @@ struct {
 			.iommu = 1,
 			.domain = 0x0,
 			.bdf = 0xfa,
-			.caps_start = 24,
+			.caps_start = 25,
 			.num_caps = 3,
 			.num_msi_vectors = 1,
 		},
@@ -422,6 +422,11 @@ struct {
 			.start = 0x70,
 			.len = 2,
 			.flags = 0,
+		},
+		{ /* non-cap registers: HDCTL, TCSEL, DCKCTL,DCKSTS */
+			.start = 0x40,
+			.len = 0x10,
+			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		/* PCIDevice: 00:1f.2 */
 		{
