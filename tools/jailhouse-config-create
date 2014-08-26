@@ -446,7 +446,22 @@ def parse_cmdline():
 
 
 def alloc_mem(regions, size):
-    mem = [0, size]
+    mem = [0x3b000000, size]
+    for r in regions:
+        if (
+            r.typestr == 'System RAM' and
+            r.start <= mem[0] and
+            r.stop + 1 >= mem[0] + mem[1]
+           ):
+            if r.start < mem[0]:
+                head_r = MemRegion(r.start, mem[0] - 1, r.typestr, r.comments)
+                regions.insert(regions.index(r), head_r)
+            if r.stop + 1 > mem[0] + mem[1]:
+                tail_r = MemRegion(mem[0] + mem[1], r.stop, r.typestr,
+                                   r.comments)
+                regions.insert(regions.index(r), tail_r)
+            regions.remove(r)
+            return mem
     for r in reversed(regions):
         if (r.typestr == 'System RAM' and r.size() >= mem[1]):
             mem[0] = r.start
