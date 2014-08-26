@@ -90,8 +90,8 @@ struct jailhouse_system {
 			__u8 padding[5];
 			__u16 pm_timer_address;
 			__u64 dmar_unit_base[JAILHOUSE_MAX_DMAR_UNITS];
-		} x86;
-	} platform_info;
+		} __attribute__((packed)) x86;
+	} __attribute__((packed)) platform_info;
 	__u32 device_limit;
 	__u32 interrupt_limit;
 	struct jailhouse_cell_desc root_cell;
