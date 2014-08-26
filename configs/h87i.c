@@ -28,7 +28,7 @@ struct {
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
-			.phys_start = 0x3c000000,
+			.phys_start = 0x3b000000,
 			.size = 0x4000000,
 		},
 		.platform_info.x86 = {
@@ -61,14 +61,14 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
-			.size = 0x3c000000,
+			.size = 0x3b000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
-			.phys_start = 0x40000000,
-			.virt_start = 0x40000000,
-			.size = 0x8ca64000,
+			.phys_start = 0x3f000000,
+			.virt_start = 0x3f000000,
+			.size = 0x8da64000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},

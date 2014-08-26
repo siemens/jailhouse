@@ -111,7 +111,7 @@ The hypervisor requires a contiguous piece of RAM for itself and each
 additional cell. This currently has to be pre-allocated during boot-up. So you
 need to add
 
-    memmap=66M$0x3be00000
+    memmap=66M$0x3b000000
 
 as parameter to the command line of the virtual machine's kernel. Reboot the
 guest and load jailhouse.ko. Then enable Jailhouse like this:

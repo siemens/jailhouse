@@ -25,7 +25,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[10];
+	struct jailhouse_memory mem_regions[11];
 	struct jailhouse_irqchip irqchips[1];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[7];
@@ -33,8 +33,8 @@ struct {
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
-			.phys_start = 0x3c000000,
-			.size = 0x4000000 - 0x30000,
+			.phys_start = 0x3b000000,
+			.size = 0x4000000,
 		},
 		.platform_info.x86 = {
 			.mmconfig_base = 0xb0000000,
@@ -65,7 +65,14 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
-			.size = 0x3c000000,
+			.size = 0x3b000000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
+		},
+		/* RAM */ {
+			.phys_start = 0x3f000000,
+			.virt_start = 0x3f000000,
+			.size = 0xfdf000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
