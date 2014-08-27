@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -28,6 +28,7 @@
 #include <asm/cacheflush.h>
 
 #include "jailhouse.h"
+#include "jailhouse-version.h"
 #include <jailhouse/cell-config.h>
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
@@ -95,6 +96,7 @@ struct cell {
 MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
 MODULE_LICENSE("GPL");
 MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
+MODULE_VERSION(JAILHOUSE_VERSION);
 
 static struct device *jailhouse_dev;
 static DEFINE_MUTEX(lock);

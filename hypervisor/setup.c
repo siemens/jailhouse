@@ -16,6 +16,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
+#include <jailhouse/version.h>
 #include <asm/spinlock.h>
 
 extern u8 __text_start[], __hv_core_end[];
@@ -38,7 +39,8 @@ static void init_early(unsigned int cpu_id)
 
 	arch_dbg_write_init();
 
-	printk("\nInitializing Jailhouse hypervisor on CPU %d\n", cpu_id);
+	printk("\nInitializing Jailhouse hypervisor %s on CPU %d\n",
+	       JAILHOUSE_VERSION, cpu_id);
 	printk("Code location: %p\n", __text_start);
 
 	error = paging_init();

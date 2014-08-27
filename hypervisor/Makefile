@@ -34,6 +34,17 @@ hypervisor-y := setup.o printk.o paging.o control.o lib.o \
 	arch/$(SRCARCH)/built-in.o hypervisor.lds
 targets += $(hypervisor-y)
 
+define filechk_version
+	$(src)/../scripts/gen_version_h $(src)/..
+endef
+
+clean-files := $(obj)/include/jailhouse/version.h
+
+$(obj)/include/jailhouse/version.h: $(src)/Makefile FORCE
+	$(call filechk,version)
+
+$(obj)/setup.o: $(obj)/include/jailhouse/version.h
+
 HYPERVISOR_OBJS = $(addprefix $(obj)/,$(hypervisor-y))
 
 LDFLAGS_hypervisor.o := -T
