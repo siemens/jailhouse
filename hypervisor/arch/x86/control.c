@@ -279,6 +279,8 @@ void x86_exception_handler(struct exception_frame *frame)
 	panic_printk("Physical CPU ID: %d\n", phys_processor_id());
 	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", frame->rip, frame->rsp,
 		     frame->flags);
+	if (frame->vector == PF_VECTOR)
+		panic_printk("CR2: %p\n", read_cr2());
 
 	panic_stop();
 }

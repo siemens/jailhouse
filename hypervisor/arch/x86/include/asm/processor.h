@@ -83,6 +83,7 @@
 #define X86_OP_MOV_FROM_MEM				0x8b
 
 #define NMI_VECTOR					2
+#define PF_VECTOR					14
 
 #define DESC_TSS_BUSY					(1UL << (9 + 32))
 #define DESC_PRESENT					(1UL << (15 + 32))
@@ -177,6 +178,14 @@ static inline unsigned long read_cr0(void)
 static inline void write_cr0(unsigned long val)
 {
 	asm volatile("mov %0,%%cr0" : : "r" (val), "m" (__force_order));
+}
+
+static inline unsigned long read_cr2(void)
+{
+	unsigned long cr2;
+
+	asm volatile("mov %%cr2,%0" : "=r" (cr2), "=m" (__force_order));
+	return cr2;
 }
 
 static inline unsigned long read_cr3(void)
