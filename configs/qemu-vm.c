@@ -46,7 +46,7 @@ struct {
 		},
 		.interrupt_limit = 256,
 		.root_cell = {
-			.name = "QEMU Linux VM",
+			.name = "QEMU-VM",
 
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
