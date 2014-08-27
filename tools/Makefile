@@ -14,6 +14,12 @@ prefix      ?= /usr/local
 exec_prefix ?= $(prefix)
 libexecdir  ?= $(exec_prefix)/libexec
 
+ifeq ($(V),1)
+	Q =
+else
+	Q = @
+endif
+
 CC = $(CROSS_COMPILE)gcc
 
 CFLAGS = -g -O3 -I.. -I../hypervisor/include -DLIBEXECDIR=\"$(libexecdir)\" \
@@ -38,7 +44,7 @@ jailhouse: jailhouse.c ../jailhouse.h ../hypervisor/include/jailhouse/cell-confi
 
 jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl
 	./$< -g $@
-	chmod +x $@
+	$(Q)chmod +x $@
 
 .PHONY: clean no_python_mako
 
