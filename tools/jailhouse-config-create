@@ -607,13 +607,6 @@ class MMConfig:
         return MMConfig(base, end_bus)
 
 
-if (
-    (options.generate_collector is False) and (options.root is '/')
-    and (os.geteuid() is not 0)
-):
-    print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
-    sys.exit(1)
-
 def get_cpu_vendor():
     with input_open('/proc/cpuinfo', 'r') as f:
         for line in f:
@@ -623,6 +616,21 @@ def get_cpu_vendor():
             if key.strip() == 'vendor_id':
                 return value.strip()
 
+
+if (
+    (options.generate_collector is False) and (options.root is '/')
+    and (os.geteuid() is not 0)
+):
+    print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
+    sys.exit(1)
+
+jh_enabled = input_readline('/sys/devices/jailhouse/enabled',
+                            True).rstrip()
+if options.generate_collector is False and jh_enabled == '1':
+    print('ERROR: Jailhouse was enabled when collecting input files! '
+          'Disable jailhouse and try again.',
+          file=sys.stderr)
+    sys.exit(1)
 
 (pcidevices, pcicaps) = parse_pcidevices()
 
@@ -668,14 +676,6 @@ regions.append(inmatereg)
 cpucount = count_cpus()
 
 pm_timer_base = parse_ioports()
-
-jh_enabled = input_readline('/sys/devices/jailhouse/enabled',
-                            True).rstrip()
-if options.generate_collector is False and jh_enabled == '1':
-    print('ERROR: Jailhouse was enabled when collecting input files! '
-          'Disable jailhouse and try again.',
-          file=sys.stderr)
-    sys.exit(1)
 
 f = open(options.file, 'w')
 
