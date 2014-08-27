@@ -20,7 +20,12 @@ import argparse
 import struct
 from mako.template import Template
 
-abspath = os.path.abspath(os.path.dirname(sys.argv[0]))
+datadir = None
+
+if datadir:
+    template_default_dir = datadir + "/jailhouse"
+else:
+    template_default_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 # pretend to be part of the jailhouse tool
 sys.argv[0] = sys.argv[0].replace('-', ' ')
@@ -38,8 +43,8 @@ parser.add_argument('-r', '--root',
                     type=str)
 parser.add_argument('-t', '--template-dir',
                     help='the directory where the templates are located,'
-                         'the default is "' + abspath + '"',
-                    default=abspath,
+                         'the default is "' + template_default_dir + '"',
+                    default=template_default_dir,
                     action='store',
                     type=str)
 
