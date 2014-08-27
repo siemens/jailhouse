@@ -49,9 +49,9 @@ struct mmio_access mmio_parse(unsigned long pc,
 			      bool is_write)
 {
 	struct mmio_access access = { .inst_len = 0 };
+	union opcode op[3] = { };
 	bool has_rex_r = false;
 	bool does_write;
-	union opcode op[3];
 	u8 *page = NULL;
 
 restart:
@@ -137,7 +137,8 @@ error_nopage:
 	goto error;
 
 error_unsupported:
-	panic_printk("FATAL: unsupported instruction\n");
+	panic_printk("FATAL: unsupported instruction (0x%02x 0x%02x 0x%02x)\n",
+		     op[0].raw, op[1].raw, op[2].raw);
 	goto error;
 
 error_inconsitent:
