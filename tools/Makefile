@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013
+# Copyright (c) Siemens AG, 2013, 2014
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,9 +10,13 @@
 # the COPYING file in the top-level directory.
 #
 
+prefix      ?= /usr/local
+exec_prefix ?= $(prefix)
+libexecdir  ?= $(exec_prefix)/libexec
+
 CC = $(CROSS_COMPILE)gcc
 
-CFLAGS = -g -O3 -I.. -I../hypervisor/include \
+CFLAGS = -g -O3 -I.. -I../hypervisor/include -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wmissing-declarations -Wmissing-prototypes
 
 TARGETS := jailhouse

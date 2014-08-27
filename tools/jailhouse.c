@@ -25,6 +25,8 @@
 
 #include <jailhouse.h>
 
+#define JAILHOUSE_EXEC_DIR	LIBEXECDIR "/jailhouse"
+
 enum shutdown_load_mode {LOAD, SHUTDOWN};
 
 struct extension {
@@ -76,7 +78,7 @@ static void call_extension_script(const char *cmd, int argc, char *argv[])
 			continue;
 
 		snprintf(new_path, sizeof(new_path), "PATH=%s:%s:%s",
-			dirname(argv[0]), "/usr/lib/jailhouse",
+			dirname(argv[0]), JAILHOUSE_EXEC_DIR,
 			getenv("PATH") ? : "");
 		putenv(new_path);
 
