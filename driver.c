@@ -28,11 +28,16 @@
 #include <asm/cacheflush.h>
 
 #include "jailhouse.h"
+#include <jailhouse/cell-config.h>
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
 
 #ifdef CONFIG_X86_32
 #error 64-bit kernel required!
+#endif
+
+#if JAILHOUSE_CELL_ID_NAMELEN != JAILHOUSE_CELL_NAME_MAXLEN
+# warning JAILHOUSE_CELL_ID_NAMELEN and JAILHOUSE_CELL_NAME_MAXLEN out of sync!
 #endif
 
 /* For compatibility with older kernel versions */
@@ -656,7 +661,7 @@ error_cell_delete:
 static int cell_management_prologue(struct jailhouse_cell_id *cell_id,
 				    struct cell **cell_ptr)
 {
-	cell_id->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
+	cell_id->name[JAILHOUSE_CELL_ID_NAMELEN] = 0;
 
 	if (mutex_lock_interruptible(&lock) != 0)
 		return -EINTR;

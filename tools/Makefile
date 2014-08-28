@@ -30,7 +30,7 @@ INSTALL_DIR     ?= $(INSTALL) -d -m 755
 
 CC = $(CROSS_COMPILE)gcc
 
-CFLAGS = -g -O3 -I.. -I../hypervisor/include -DLIBEXECDIR=\"$(libexecdir)\" \
+CFLAGS = -g -O3 -I.. -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wmissing-declarations -Wmissing-prototypes
 
 TARGETS := jailhouse
@@ -59,7 +59,7 @@ endef
 
 all: $(TARGETS)
 
-jailhouse: jailhouse.c ../jailhouse.h ../hypervisor/include/jailhouse/cell-config.h
+jailhouse: jailhouse.c ../jailhouse.h
 	$(CC) $(CFLAGS) -o $@ $<
 
 jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl

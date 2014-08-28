@@ -12,7 +12,8 @@
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
-#include <jailhouse/cell-config.h>
+
+#define JAILHOUSE_CELL_ID_NAMELEN	31
 
 struct jailhouse_cell_create {
 	__u64 config_address;
@@ -30,7 +31,7 @@ struct jailhouse_preload_image {
 struct jailhouse_cell_id {
 	__s32 id;
 	__u32 padding;
-	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
+	char name[JAILHOUSE_CELL_ID_NAMELEN + 1];
 };
 
 struct jailhouse_cell_load {
@@ -42,7 +43,7 @@ struct jailhouse_cell_load {
 
 #define JAILHOUSE_CELL_ID_UNUSED	(-1)
 
-#define JAILHOUSE_ENABLE		_IOW(0, 0, struct jailhouse_system)
+#define JAILHOUSE_ENABLE		_IOW(0, 0, void *)
 #define JAILHOUSE_DISABLE		_IO(0, 1)
 #define JAILHOUSE_CELL_CREATE		_IOW(0, 2, struct jailhouse_cell_create)
 #define JAILHOUSE_CELL_LOAD		_IOW(0, 3, struct jailhouse_cell_load)
