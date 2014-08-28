@@ -31,7 +31,8 @@ INSTALL_DIR     ?= $(INSTALL) -d -m 755
 CC = $(CROSS_COMPILE)gcc
 
 CFLAGS = -g -O3 -I.. -DLIBEXECDIR=\"$(libexecdir)\" \
-	-Wall -Wmissing-declarations -Wmissing-prototypes
+	-Wall -Wmissing-declarations -Wmissing-prototypes \
+	-DJAILHOUSE_VERSION=\"$(shell cat ../VERSION)\"
 
 TARGETS := jailhouse
 

@@ -46,7 +46,7 @@ static void __attribute__((noreturn)) help(char *prog, int exit_status)
 {
 	const struct extension *ext;
 
-	printf("Usage: %s { COMMAND | --help }\n"
+	printf("Usage: %s { COMMAND | --help || --version }\n"
 	       "\nAvailable commands:\n"
 	       "   enable SYSCONFIG\n"
 	       "   disable\n"
@@ -363,10 +363,14 @@ int main(int argc, char *argv[])
 	} else if (strcmp(argv[1], "config") == 0) {
 		call_extension_script(argv[1], argc, argv);
 		help(argv[0], 1);
+	} else if (strcmp(argv[1], "--version") == 0) {
+		printf("Jailhouse management tool %s\n", JAILHOUSE_VERSION);
+		return 0;
 	} else if (strcmp(argv[1], "--help") == 0) {
 		help(argv[0], 0);
-	} else
+	} else {
 		help(argv[0], 1);
+	}
 
 	return err ? 1 : 0;
 }
