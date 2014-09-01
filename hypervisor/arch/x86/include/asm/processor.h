@@ -73,7 +73,8 @@
 #define X86_INST_LEN_CPUID				2
 #define X86_INST_LEN_RDMSR				2
 #define X86_INST_LEN_WRMSR				2
-#define X86_INST_LEN_VMCALL				3
+/* This covers both VMCALL and VMMCALL */
+#define X86_INST_LEN_HYPERCALL				3
 #define X86_INST_LEN_MOV_TO_CR				3
 #define X86_INST_LEN_XSETBV				3
 
