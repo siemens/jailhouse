@@ -60,7 +60,7 @@ endef
 
 all: $(TARGETS)
 
-jailhouse: jailhouse.c ../jailhouse.h
+jailhouse: jailhouse.c ../jailhouse.h ../VERSION
 	$(CC) $(CFLAGS) -o $@ $<
 
 jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl
