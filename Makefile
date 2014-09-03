@@ -10,17 +10,11 @@
 # the COPYING file in the top-level directory.
 #
 
-firmwaredir ?= /lib/firmware
-
-# all directories listed here will be created using a generic rule below
-INSTALL_DIRECTORIES := $(DESTDIR)$(firmwaredir)
-
-INSTALL      ?= install
-INSTALL_DATA ?= $(INSTALL) -m 644
-INSTALL_DIR  ?= $(INSTALL) -d -m 755
-
 # no recipes above this one (also no includes)
 all: modules tools
+
+# includes installation-related variables and definitions
+include scripts/install.mk
 
 # out-of-tree build for our kernel-module, firmware and inmates
 KDIR ?= /lib/modules/`uname -r`/build
@@ -43,16 +37,12 @@ clean:
 	$(run-kbuild)
 	$(MAKE) -C tools $@
 
-# create all necessary install-directories
-$(INSTALL_DIRECTORIES):
-	$(INSTALL_DIR) $@
-
 modules_install: modules
 	$(run-kbuild)
 	depmod -aq
 
 firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
-	$(INSTALL_DATA) $(filter-out $(lastword $^),$^) $(lastword $^)
+	$(INSTALL_DATA) $^
 
 install: modules_install firmware_install
 	$(MAKE) -C tools $@

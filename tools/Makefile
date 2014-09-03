@@ -10,23 +10,11 @@
 # the COPYING file in the top-level directory.
 #
 
-prefix      ?= /usr/local
-exec_prefix ?= $(prefix)
-bindir      ?= $(exec_prefix)/bin
-libexecdir  ?= $(exec_prefix)/libexec
-datarootdir ?= $(prefix)/share
-datadir     ?= $(datarootdir)
-
 ifeq ($(V),1)
 	Q =
 else
 	Q = @
 endif
-
-INSTALL         ?= install
-INSTALL_PROGRAM ?= $(INSTALL)
-INSTALL_DATA    ?= $(INSTALL) -m 644
-INSTALL_DIR     ?= $(INSTALL) -d -m 755
 
 CC = $(CROSS_COMPILE)gcc
 
@@ -58,7 +46,11 @@ define patch_datadir_var
 	sed -i 's|^datadir = None|datadir = "$(datadir)"|' $1
 endef
 
+# no recipes above this one (also no includes)
 all: $(TARGETS)
+
+# includes installation-related variables and definitions
+include ../scripts/install.mk
 
 jailhouse: jailhouse.c ../jailhouse.h ../VERSION
 	$(CC) $(CFLAGS) -o $@ $<
@@ -67,19 +59,15 @@ jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl
 	./$< -g $@
 	$(Q)chmod +x $@
 
-install-bin: $(INST_TARGETS)
-	$(INSTALL_DIR) $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) $^ $(DESTDIR)$(bindir)
+install-bin: $(INST_TARGETS) $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) $^
 
-install-libexec: $(HELPERS)
-	$(INSTALL_DIR) $(DESTDIR)$(libexecdir)/jailhouse
-	$(INSTALL_PROGRAM) $^ $(DESTDIR)$(libexecdir)/jailhouse
-	$(Q)$(call patch_datadir_var, \
-	      $(DESTDIR)$(libexecdir)/jailhouse/jailhouse-config-create)
+install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
+	$(INSTALL_PROGRAM) $^
+	$(Q)$(call patch_datadir_var, $(lastword $^)/jailhouse-config-create)
 
-install-data: $(TEMPLATES)
-	$(INSTALL_DIR) $(DESTDIR)$(datadir)/jailhouse
-	$(INSTALL_DATA) $^ $(DESTDIR)$(datadir)/jailhouse
+install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
+	$(INSTALL_DATA) $^
 
 install: install-bin install-libexec install-data
 
