@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013
+# Copyright (c) Siemens AG, 2013, 2014
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,37 +10,22 @@
 # the COPYING file in the top-level directory.
 #
 
-subdir-y := hypervisor configs inmates
-
-obj-m := jailhouse.o
-
-ccflags-y := -I$(src)/hypervisor/arch/$(SRCARCH)/include \
-	     -I$(src)/hypervisor/include
-
-jailhouse-y := driver.o
-
-define filechk_version
-	$(src)/scripts/gen_version_h $(src)
-endef
-
-clean-files := jailhouse-version.h
+all: modules
 
 # out-of-tree build
-
-KERNELDIR = /lib/modules/`uname -r`/build
+KDIR ?= /lib/modules/`uname -r`/build
 
 modules modules_install clean:
-	$(MAKE) -C $(KERNELDIR) SUBDIRS=`pwd` $@
+	$(MAKE) -C $(KDIR) M=$$PWD $@
 
-$(obj)/jailhouse-version.h: $(src)/Makefile FORCE
-	$(call filechk,version)
+modules_install: modules
 
-$(obj)/driver.o: $(obj)/jailhouse-version.h
+hypervisor/jailhouse.bin: modules
 
-firmware_install:
-	cp hypervisor/jailhouse.bin /lib/firmware/
+firmware_install: hypervisor/jailhouse.bin
+	cp $< /lib/firmware/
 
 install: modules_install firmware_install
 	depmod -aq
 
-.PHONY: modules_install install clean firmware_install
+.PHONY: modules_install install clean firmware_install modules
