@@ -124,8 +124,9 @@ static ssize_t stats_show(struct kobject *kobj, struct kobj_attribute *attr,
 		container_of(attr, struct jailhouse_cpu_stats_attr, kattr);
 	unsigned int code = JAILHOUSE_CPU_INFO_STAT_BASE + stats_attr->code;
 	struct cell *cell = container_of(kobj, struct cell, kobj);
-	unsigned int cpu, value;
 	unsigned long sum = 0;
+	unsigned int cpu;
+	int value;
 
 	for_each_cpu(cpu, &cell->cpus_assigned) {
 		value = jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
