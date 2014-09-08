@@ -13,7 +13,7 @@
 
 prefix      ?= /usr/local
 exec_prefix ?= $(prefix)
-bindir      ?= $(exec_prefix)/bin
+sbindir     ?= $(exec_prefix)/sbin
 libexecdir  ?= $(exec_prefix)/libexec
 datarootdir ?= $(prefix)/share
 datadir     ?= $(datarootdir)
@@ -22,7 +22,7 @@ firmwaredir ?= /lib/firmware
 # all directories listed here will be created using a generic rule below
 INSTALL_DIRECTORIES := $(prefix)	\
 		       $(exec_prefix)	\
-		       $(bindir)	\
+		       $(sbindir)	\
 		       $(libexecdir)	\
 		       $(datarootdir)	\
 		       $(datadir)	\

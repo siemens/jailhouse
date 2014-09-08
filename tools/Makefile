@@ -59,7 +59,7 @@ jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl
 	./$< -g $@
 	$(Q)chmod +x $@
 
-install-bin: $(INST_TARGETS) $(DESTDIR)$(bindir)
+install-bin: $(INST_TARGETS) $(DESTDIR)$(sbindir)
 	$(INSTALL_PROGRAM) $^
 
 install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
