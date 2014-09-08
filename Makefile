@@ -19,6 +19,9 @@ include scripts/install.mk
 # out-of-tree build for our kernel-module, firmware and inmates
 KDIR ?= /lib/modules/`uname -r`/build
 
+INSTALL_MOD_PATH ?= $(DESTDIR)
+export INSTALL_MOD_PATH
+
 define run-kbuild =
 	$(MAKE) -C $(KDIR) M=$$PWD $@
 endef
