@@ -39,7 +39,6 @@ clean:
 
 modules_install: modules
 	$(run-kbuild)
-	depmod -aq
 
 firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
 	$(INSTALL_DATA) $^
