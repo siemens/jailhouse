@@ -470,7 +470,7 @@ def parse_pcidevices():
     return (devices, caps)
 
 
-def parse_cmdline():
+def parse_kernel_cmdline():
     line = input_readline('/proc/cmdline')
     m = re.match(r'.*memmap=([0-9a-fA-FxX]+)([KMG]?)\$'
                  '([0-9a-fA-FxX]+)([KMG]?).*',
@@ -700,7 +700,7 @@ inmatemem = kmg_multiply_str(options.mem_inmates)
 hvmem = [0, kmg_multiply_str(options.mem_hv)]
 
 regions = parse_iomem(pcidevices)
-ourmem = parse_cmdline()
+ourmem = parse_kernel_cmdline()
 total = hvmem[1] + inmatemem
 
 mmconfig = MMConfig.parse()
