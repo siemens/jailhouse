@@ -191,6 +191,7 @@ extern unsigned int printk_uart_base;
 void printk(const char *fmt, ...);
 
 void *memset(void *s, int c, unsigned long n);
+void *memcpy(void *d, const void *s, unsigned long n);
 
 typedef void(*int_handler_t)(void);
 
