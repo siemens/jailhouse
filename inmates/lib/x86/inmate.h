@@ -10,6 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#define NULL			((void *)0)
+
 #define HEAP_BASE		0x000000
 #define FSEGMENT_BASE		0x0f0000
 #define COMM_REGION_BASE	0x100000
