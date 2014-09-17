@@ -65,16 +65,12 @@ Build & Installation
 
 Simply run make, optionally specifying the target kernel directory:
 
-    make [KERNELDIR=/path/to/kernel/objects]
-
-The command line tool "jailhouse" requires a separate make run from within the
-tools/ directory.
+    make [KDIR=/path/to/kernel/objects]
 
 Except for the hypervisor image jailhouse.bin that has to be available in the
 firmware search path (invoke "make firmware_install" for this), you can run
 Jailhouse from the build directory. Alternatively, install everything on the
-target machine by calling "make install" both from the top-level directory and
-the tools directory.
+target machine by calling "make install" from the top-level directory.
 
 
 Configuration
