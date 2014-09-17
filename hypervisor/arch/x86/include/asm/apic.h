@@ -144,6 +144,7 @@ struct apic_irq_message {
 
 extern bool using_x2apic;
 extern u8 apic_to_cpu_id[];
+extern u32 apic_reserved_bits[];
 
 int apic_init(void);
 int apic_cpu_init(struct per_cpu *cpu_data);

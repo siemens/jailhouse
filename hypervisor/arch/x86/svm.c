@@ -17,6 +17,7 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/paging.h>
+#include <asm/apic.h>
 #include <asm/cell.h>
 #include <asm/paging.h>
 #include <asm/percpu.h>
@@ -34,7 +35,9 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 
 int vcpu_vendor_init(void)
 {
-	/* TODO: Implement */
+	/* Enable Extended Interrupt LVT (xAPIC, as it is AMD-only) */
+	if (!using_x2apic)
+		apic_reserved_bits[0x50] = 0;
 
 	return 0;
 }

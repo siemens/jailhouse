@@ -25,7 +25,7 @@ bool using_x2apic;
 u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
 
 /* Initialized for x2APIC, adjusted for xAPIC during init */
-static u32 apic_reserved_bits[] = {
+u32 apic_reserved_bits[] = {
 	[0x00 ... 0x07] = -1,
 	[0x08]          = 0xffffff00,	/* TPR */
 	[0x09 ... 0x0a] = -1,
