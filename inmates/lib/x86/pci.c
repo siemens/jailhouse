@@ -50,6 +50,47 @@ void pci_write_config(u16 bdf, unsigned int addr, u32 value, unsigned int size)
 	}
 }
 
+void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index)
+{
+	int cap = pci_find_cap(bdf, PCI_CAP_MSIX);
+	unsigned int bar;
+	u64 msix_table = 0;
+	u32 addr;
+	u16 ctrl;
+	u32 table;
+
+	if (cap < 0)
+		return;
+	ctrl = pci_read_config(bdf, cap + 1, 2);
+	/* bounds check */
+	if (index > (ctrl & 0x3ff))
+		return;
+	table = pci_read_config(bdf, cap + 4, 4);
+	bar = (table & 7) * 4 + PCI_CFG_BAR;
+	addr = pci_read_config(bdf, bar, 4);
+
+	if ((addr & 6) == PCI_BAR_64BIT) {
+		msix_table = pci_read_config(bdf, bar + 4, 4);
+		msix_table <<= 32;
+	}
+	msix_table |= addr & ~0xf;
+	msix_table += table & ~7;
+
+	/* enable and mask */
+	ctrl |= (MSIX_CTRL_ENABLE | MSIX_CTRL_FMASK);
+	pci_write_config(bdf, cap + 1, ctrl, 2);
+
+	msix_table += 16 * index;
+	mmio_write32((u32 *)msix_table, 0xfee00000 | cpu_id() << 12);
+	mmio_write32((u32 *)(msix_table + 4), 0);
+	mmio_write32((u32 *)(msix_table + 8), vector);
+	mmio_write32((u32 *)(msix_table + 12), 0);
+
+	/* enable and unmask */
+	ctrl &= ~MSIX_CTRL_FMASK;
+	pci_write_config(bdf, cap + 1, ctrl, 2);
+}
+
 void pci_msi_set_vector(u16 bdf, unsigned int vector)
 {
 	int cap = pci_find_cap(bdf, PCI_CAP_MSI);

@@ -45,11 +45,16 @@
 #define PCI_CFG_STATUS		0x006
 # define PCI_STS_INT		(1 << 3)
 #define PCI_CFG_BAR		0x010
+# define PCI_BAR_64BIT		0x4
 #define PCI_CFG_CAP_PTR		0x034
 
 #define PCI_ID_ANY		0xffff
 
 #define PCI_CAP_MSI		0x05
+#define PCI_CAP_MSIX		0x11
+
+#define MSIX_CTRL_ENABLE	0x8000
+#define MSIX_CTRL_FMASK		0x4000
 
 #ifndef __ASSEMBLY__
 typedef signed char s8;
@@ -229,4 +234,5 @@ void pci_write_config(u16 bdf, unsigned int addr, u32 value,
 int pci_find_device(u16 vendor, u16 device, u16 start_bdf);
 int pci_find_cap(u16 bdf, u16 cap);
 void pci_msi_set_vector(u16 bdf, unsigned int vector);
+void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index);
 #endif
