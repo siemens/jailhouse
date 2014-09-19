@@ -32,8 +32,8 @@ static volatile int error;
 
 static void init_early(unsigned int cpu_id)
 {
+	unsigned long core_and_percpu_size;
 	struct jailhouse_memory hv_page;
-	unsigned long core_percpu_size;
 
 	master_cpu_id = cpu_id;
 
@@ -71,13 +71,13 @@ static void init_early(unsigned int cpu_id)
 	hv_page.virt_start = page_map_hvirt2phys(&hypervisor_header);
 	hv_page.size = PAGE_SIZE;
 	hv_page.flags = JAILHOUSE_MEM_READ;
-	core_percpu_size = PAGE_ALIGN(hypervisor_header.core_size) +
+	core_and_percpu_size = PAGE_ALIGN(hypervisor_header.core_size) +
 		hypervisor_header.possible_cpus * sizeof(struct per_cpu);
-	while (core_percpu_size > 0) {
+	while (core_and_percpu_size > 0) {
 		error = arch_map_memory_region(&root_cell, &hv_page);
 		if (error)
 			return;
-		core_percpu_size -= PAGE_SIZE;
+		core_and_percpu_size -= PAGE_SIZE;
 		hv_page.virt_start += PAGE_SIZE;
 	}
 
