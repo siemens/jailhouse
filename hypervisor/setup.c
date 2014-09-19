@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -71,8 +71,7 @@ static void init_early(unsigned int cpu_id)
 	hv_page.virt_start = page_map_hvirt2phys(&hypervisor_header);
 	hv_page.size = PAGE_SIZE;
 	hv_page.flags = JAILHOUSE_MEM_READ;
-	core_and_percpu_size = PAGE_ALIGN(hypervisor_header.core_size) +
-		hypervisor_header.possible_cpus * sizeof(struct per_cpu);
+	core_and_percpu_size = (unsigned long)system_config - JAILHOUSE_BASE;
 	while (core_and_percpu_size > 0) {
 		error = arch_map_memory_region(&root_cell, &hv_page);
 		if (error)
