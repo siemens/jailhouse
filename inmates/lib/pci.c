@@ -10,12 +10,12 @@
  * the COPYING file in the top-level directory.
  */
 
-int pci_find_device(u16 vendor, u16 device)
+int pci_find_device(u16 vendor, u16 device, u16 start_bdf)
 {
 	unsigned int bdf;
 	u16 id;
 
-	for (bdf = 0; bdf < 0x10000; bdf++) {
+	for (bdf = start_bdf; bdf < 0x10000; bdf++) {
 		id = pci_read_config(bdf, PCI_CFG_VENDOR_ID, 2);
 		if (id == PCI_ID_ANY || (vendor != PCI_ID_ANY && vendor != id))
 			continue;

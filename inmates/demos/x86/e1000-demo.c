@@ -175,7 +175,7 @@ void inmate_main(void)
 
 	printk_uart_base = UART_BASE;
 
-	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY);
+	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY, 0);
 	if (bdf < 0) {
 		printk("No device found!\n");
 		return;

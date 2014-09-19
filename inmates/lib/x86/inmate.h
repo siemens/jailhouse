@@ -226,7 +226,7 @@ void map_range(void *start, unsigned long size, enum map_type map_type);
 u32 pci_read_config(u16 bdf, unsigned int addr, unsigned int size);
 void pci_write_config(u16 bdf, unsigned int addr, u32 value,
 		      unsigned int size);
-int pci_find_device(u16 vendor, u16 device);
+int pci_find_device(u16 vendor, u16 device, u16 start_bdf);
 int pci_find_cap(u16 bdf, u16 cap);
 void pci_msi_set_vector(u16 bdf, unsigned int vector);
 #endif

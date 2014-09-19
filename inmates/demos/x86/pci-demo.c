@@ -50,7 +50,7 @@ void inmate_main(void)
 	int_init();
 	int_set_handler(IRQ_VECTOR, irq_handler);
 
-	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY);
+	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY, 0);
 	if (bdf < 0) {
 		printk("No device found!\n");
 		return;
