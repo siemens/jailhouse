@@ -358,8 +358,7 @@ page_map_get_guest_pages(const struct guest_paging_structures *pg_structs,
 
 int paging_init(void)
 {
-	unsigned long per_cpu_pages, config_pages, bitmap_pages;
-	unsigned long n;
+	unsigned long n, per_cpu_pages, config_pages, bitmap_pages;
 	int err;
 
 	per_cpu_pages = hypervisor_header.possible_cpus *
