@@ -102,7 +102,7 @@ static struct device *jailhouse_dev;
 static DEFINE_MUTEX(lock);
 static bool enabled;
 static void *hypervisor_mem;
-static unsigned long hv_core_percpu_size;
+static unsigned long hv_core_and_percpu_size;
 static cpumask_t offlined_cpus;
 static atomic_t call_done;
 static int error_code;
@@ -412,10 +412,10 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		   sizeof(header->signature)) != 0)
 		goto error_release_fw;
 
-	hv_core_percpu_size = PAGE_ALIGN(header->core_size) +
+	hv_core_and_percpu_size = PAGE_ALIGN(header->core_size) +
 		num_possible_cpus() * header->percpu_size;
 	config_size = jailhouse_system_config_size(&config_header);
-	if (hv_mem->size <= hv_core_percpu_size + config_size)
+	if (hv_mem->size <= hv_core_and_percpu_size + config_size)
 		goto error_release_fw;
 
 	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, JAILHOUSE_BASE,
@@ -434,7 +434,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	header->possible_cpus = num_possible_cpus();
 
 	config = (struct jailhouse_system *)
-		(hypervisor_mem + hv_core_percpu_size);
+		(hypervisor_mem + hv_core_and_percpu_size);
 	if (copy_from_user(config, arg, config_size)) {
 		err = -EFAULT;
 		goto error_unmap;
@@ -505,7 +505,7 @@ static void leave_hypervisor(void *info)
 	/* Touch each hypervisor page we may need during the switch so that
 	 * the active mm definitely contains all mappings. At least x86 does
 	 * not support taking any faults while switching worlds. */
-	for (page = hypervisor_mem, size = hv_core_percpu_size; size > 0;
+	for (page = hypervisor_mem, size = hv_core_and_percpu_size; size > 0;
 	     size -= PAGE_SIZE, page += PAGE_SIZE)
 		readl(page);
 
