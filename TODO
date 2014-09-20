@@ -7,8 +7,15 @@ o x86 support
   - allow per cell (managing inter-core/inter-cell impacts)
  - NMI control/status port - moderation or emulation required?
 o ARM support
- - v7 (32-bit)
+ - v7 (32-bit) [WIP]
+  - System MMU support
+  - improve UART handover
+  - improve support for platform variations (device tree?)
  - v8 (64-bit)
+ - support for big endian
+  - infrastructure to support BE architectures (byte-swapping services)
+  - usage of that infrastructure in generic subsystems
+  - specific BE support for ARMv7, then v8
 o configuration
  - add official support to assign resources to multiple cells
    (shared pages, read-only PIO ports)?
