@@ -361,7 +361,7 @@ int paging_init(void)
 	unsigned long n, per_cpu_pages, config_pages, bitmap_pages;
 	int err;
 
-	per_cpu_pages = hypervisor_header.possible_cpus *
+	per_cpu_pages = hypervisor_header.max_cpus *
 		sizeof(struct per_cpu) / PAGE_SIZE;
 
 	system_config = (struct jailhouse_system *)
@@ -389,7 +389,7 @@ int paging_init(void)
 
 	remap_pool.used_bitmap = page_alloc(&mem_pool, NUM_REMAP_BITMAP_PAGES);
 	remap_pool.used_pages =
-		hypervisor_header.possible_cpus * NUM_TEMPORARY_PAGES;
+		hypervisor_header.max_cpus * NUM_TEMPORARY_PAGES;
 	for (n = 0; n < remap_pool.used_pages; n++)
 		set_bit(n, remap_pool.used_bitmap);
 

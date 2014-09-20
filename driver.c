@@ -338,6 +338,25 @@ static void delete_cell(struct cell *cell)
 	kobject_put(&cell->kobj);
 }
 
+static long get_max_cpus(u32 cpu_set_size,
+			 const struct jailhouse_system __user *system_config)
+{
+	u8 __user *cpu_set =
+		(u8 __user *)jailhouse_cell_cpu_set(&system_config->root_cell);
+	unsigned int pos = cpu_set_size;
+	long max_cpu_id;
+	u8 bitmap;
+
+	while (pos-- > 0) {
+		if (get_user(bitmap, cpu_set + pos))
+			return -EFAULT;
+		max_cpu_id = fls(bitmap);
+		if (max_cpu_id > 0)
+			return pos * 8 + max_cpu_id;
+	}
+	return -EINVAL;
+}
+
 static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 			       unsigned long size)
 {
@@ -385,11 +404,18 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
 	unsigned long config_size;
+	long max_cpus;
 	int err;
 
 	if (copy_from_user(&config_header, arg, sizeof(config_header)))
 		return -EFAULT;
 	config_header.root_cell.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
+
+	max_cpus = get_max_cpus(config_header.root_cell.cpu_set_size, arg);
+	if (max_cpus < 0)
+		return max_cpus;
+	if (max_cpus > UINT_MAX)
+		return -EINVAL;
 
 	if (mutex_lock_interruptible(&lock) != 0)
 		return -EINTR;
@@ -413,7 +439,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		goto error_release_fw;
 
 	hv_core_and_percpu_size = PAGE_ALIGN(header->core_size) +
-		num_possible_cpus() * header->percpu_size;
+		max_cpus * header->percpu_size;
 	config_size = jailhouse_system_config_size(&config_header);
 	if (hv_mem->size <= hv_core_and_percpu_size + config_size)
 		goto error_release_fw;
@@ -431,7 +457,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	       hv_mem->size - hypervisor->size);
 
 	header = (struct jailhouse_header *)hypervisor_mem;
-	header->possible_cpus = num_possible_cpus();
+	header->max_cpus = max_cpus;
 
 	config = (struct jailhouse_system *)
 		(hypervisor_mem + hv_core_and_percpu_size);
