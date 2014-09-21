@@ -14,7 +14,7 @@
 all: modules tools
 
 # includes installation-related variables and definitions
-include scripts/install.mk
+include scripts/include.mk
 
 # out-of-tree build for our kernel-module, firmware and inmates
 KDIR ?= /lib/modules/`uname -r`/build
@@ -23,7 +23,7 @@ INSTALL_MOD_PATH ?= $(DESTDIR)
 export INSTALL_MOD_PATH
 
 define run-kbuild =
-	$(MAKE) -C $(KDIR) M=$$PWD $@
+	$(Q)$(MAKE) -C $(KDIR) M=$$PWD $@
 endef
 
 modules:
@@ -33,12 +33,12 @@ hypervisor/jailhouse.bin: modules
 
 # recursive build of tools
 tools:
-	$(MAKE) -C tools
+	$(Q)$(MAKE) -C tools
 
 # clean up kernel and tools
 clean:
 	$(run-kbuild)
-	$(MAKE) -C tools $@
+	$(Q)$(MAKE) -C tools $@
 
 modules_install: modules
 	$(run-kbuild)
@@ -47,6 +47,6 @@ firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
 	$(INSTALL_DATA) $^
 
 install: modules_install firmware_install
-	$(MAKE) -C tools $@
+	$(Q)$(MAKE) -C tools $@
 
 .PHONY: modules_install install clean firmware_install modules tools

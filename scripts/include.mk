@@ -11,6 +11,12 @@
 # the COPYING file in the top-level directory.
 #
 
+ifeq ($(V),1)
+	Q =
+else
+	Q = @
+endif
+
 prefix      ?= /usr/local
 exec_prefix ?= $(prefix)
 sbindir     ?= $(exec_prefix)/sbin

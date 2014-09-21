@@ -10,12 +10,6 @@
 # the COPYING file in the top-level directory.
 #
 
-ifeq ($(V),1)
-	Q =
-else
-	Q = @
-endif
-
 CC = $(CROSS_COMPILE)gcc
 
 CFLAGS = -g -O3 -I.. -DLIBEXECDIR=\"$(libexecdir)\" \
@@ -50,7 +44,7 @@ endef
 all: $(TARGETS)
 
 # includes installation-related variables and definitions
-include ../scripts/install.mk
+include ../scripts/include.mk
 
 jailhouse: jailhouse.c ../jailhouse.h ../VERSION
 	$(CC) $(CFLAGS) -o $@ $<
