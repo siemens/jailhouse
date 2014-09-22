@@ -84,7 +84,6 @@ def kmg_multiply_str(str):
     if m is not None:
         return kmg_multiply(int(m.group(1)), m.group(2))
     raise RuntimeError('kmg_multiply_str can not parse input "' + str + '"')
-    return 0
 
 
 def input_open(name, mode='r', optional=False):
@@ -457,7 +456,7 @@ def alloc_mem(regions, size):
             r.typestr == 'System RAM' and
             r.start <= mem[0] and
             r.stop + 1 >= mem[0] + mem[1]
-           ):
+        ):
             if r.start < mem[0]:
                 head_r = MemRegion(r.start, mem[0] - 1, r.typestr, r.comments)
                 regions.insert(regions.index(r), head_r)
@@ -528,7 +527,7 @@ def parse_dmar(pcidevices):
             units.append(base)
             if flags & 1:
                 for d in pcidevices:
-                    if d.iommu == None:
+                    if d.iommu is None:
                         d.iommu = len(units) - 1
             offset += 16 - offset
             while offset < struct_len:
@@ -660,7 +659,7 @@ regions += rmrr_regs
 for d in pcidevices:
     if get_cpu_vendor() == 'AuthenticAMD':
         d.iommu = 0  # temporary workaround
-    if d.iommu == None:
+    if d.iommu is None:
         raise RuntimeError('PCI device %02x:%02x.%x outside the scope of an '
                            'IOMMU' % (d.bus, d.dev, d.fn))
 
