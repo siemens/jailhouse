@@ -12,14 +12,18 @@
 
 #define JAILHOUSE_SIGNATURE	"JAILHOUS"
 
+typedef int (*jailhouse_entry)(unsigned int);
+
 struct jailhouse_header {
 	/* filled at build time */
-	char signature[8];
-	unsigned long core_size;
-	unsigned long percpu_size;
-	int (*entry)(unsigned int);
+	__u8	signature[8];
+	__u64	core_size;
+	__u64	percpu_size;
+
+	/* jailhouse_entry */
+	__u64	entry;
 
 	/* filled by loader */
-	unsigned int max_cpus;
-	unsigned int online_cpus;
+	__u32	max_cpus;
+	__u32	online_cpus;
 };

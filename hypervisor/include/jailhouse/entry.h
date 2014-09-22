@@ -13,8 +13,8 @@
 #ifndef _JAILHOUSE_ENTRY_H
 #define _JAILHOUSE_ENTRY_H
 
-#include <jailhouse/header.h>
 #include <asm/types.h>
+#include <jailhouse/header.h>
 
 #include <jailhouse/cell-config.h>
 
