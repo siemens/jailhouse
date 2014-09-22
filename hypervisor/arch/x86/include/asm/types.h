@@ -15,7 +15,9 @@
 
 #define NULL				((void *)0)
 
+#ifndef BITS_PER_LONG
 #define BITS_PER_LONG			64
+#endif /* ! BITS_PER_LONG */
 
 #ifndef __ASSEMBLY__
 
@@ -28,8 +30,8 @@ typedef unsigned short u16;
 typedef signed int s32;
 typedef unsigned int u32;
 
-typedef signed long s64;
-typedef unsigned long u64;
+typedef signed long long s64;
+typedef unsigned long long u64;
 
 typedef s8 __s8;
 typedef u8 __u8;
