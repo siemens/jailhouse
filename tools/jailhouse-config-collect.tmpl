@@ -36,6 +36,7 @@ fi
 
 filelist="${filelist}"
 filelist_opt="${filelist_opt}"
+filelist_intel="${filelist_intel}"
 
 tmpdir=/tmp/jailhouse-config-collect.$$
 
@@ -55,6 +56,10 @@ copy_file()
 for f in $filelist; do
 	copy_file $f
 done
+grep GenuineIntel /proc/cpuinfo > /dev/null &&
+	for f in $filelist_intel; do
+		copy_file $f
+	done
 for f in $filelist_opt; do
 	if [ -f $f ]; then
 		copy_file $f

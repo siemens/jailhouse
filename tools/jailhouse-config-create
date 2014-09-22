@@ -18,6 +18,7 @@ import os
 import re
 import argparse
 import struct
+import fnmatch
 from mako.template import Template
 
 datadir = None
@@ -26,6 +27,8 @@ if datadir:
     template_default_dir = datadir + "/jailhouse"
 else:
     template_default_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+
+cpuvendor = None
 
 # pretend to be part of the jailhouse tool
 sys.argv[0] = sys.argv[0].replace('-', ' ')
@@ -66,7 +69,23 @@ parser.add_argument('file', metavar='FILE',
 
 options = parser.parse_args()
 
-inputs = {'files': set(), 'files_opt': set(), 'dirs': set()}
+inputs = {'files': set(), 'files_opt': set(), 'files_intel': set()}
+
+## required files
+inputs['files'].add('/proc/iomem')
+inputs['files'].add('/proc/cpuinfo')
+inputs['files'].add('/proc/cmdline')
+inputs['files'].add('/proc/ioports')
+inputs['files'].add('/sys/bus/pci/devices/*/config')
+inputs['files'].add('/sys/bus/pci/devices/*/class')
+inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
+inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
+## optional files
+inputs['files_opt'].add('/sys/class/dmi/id/product_name')
+inputs['files_opt'].add('/sys/class/dmi/id/sys_vendor')
+inputs['files_opt'].add('/sys/devices/jailhouse/enabled')
+## platform specific files
+inputs['files_intel'].add('/sys/firmware/acpi/tables/DMAR')
 
 
 def kmg_multiply(value, kmg):
@@ -86,12 +105,26 @@ def kmg_multiply_str(str):
     raise RuntimeError('kmg_multiply_str can not parse input "' + str + '"')
 
 
+def check_input_listed(name, optional=False):
+    set = inputs['files_opt']
+    if optional is False:
+        set = inputs['files']
+        global cpuvendor
+        if cpuvendor == 'GenuineIntel':
+            set = set.union(inputs['files_intel'])
+
+    for file in set:
+        if fnmatch.fnmatch(name, file):
+            return True
+    raise RuntimeError('"' + name + '" is not a listed input file')
+
+
 def input_open(name, mode='r', optional=False):
-    inputs['files_opt' if optional else 'files'].add(name)
+    check_input_listed(name, optional)
     try:
         f = open(options.root + name, mode)
     except Exception as e:
-        if optional or options.generate_collector:
+        if optional:
             return open("/dev/null", mode)
         raise e
     return f
@@ -106,9 +139,7 @@ def input_readline(name, optional=False):
 
 def input_listdir(dir, wildcards):
     for w in wildcards:
-        inputs['dirs'].add(os.path.join(dir, w))
-    if options.generate_collector:
-        return []
+        check_input_listed(os.path.join(dir, w))
     dirs = os.listdir(options.root + dir)
     dirs.sort()
     return dirs
@@ -494,14 +525,9 @@ def parse_dmar_devscope(f):
 # parsing of DMAR ACPI Table
 # see Intel VT-d Spec chapter 8
 def parse_dmar(pcidevices):
-    f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb', True)
-    if get_cpu_vendor() == 'AuthenticAMD':
-        print('WARNING: AMD IOMMU support is not implemented yet')
-        return [], 0, []
+    f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb')
     signature = f.read(4)
     if signature != b'DMAR':
-        if options.generate_collector:
-            return [], 0, []
         raise RuntimeError('DMAR: incorrect input file format %s' % signature)
     (length,) = struct.unpack('<I', f.read(4))
     f.seek(48)
@@ -595,8 +621,6 @@ class MMConfig:
         f = input_open('/sys/firmware/acpi/tables/MCFG', 'rb')
         signature = f.read(4)
         if signature != b'MCFG':
-            if options.generate_collector:
-                return MMConfig(0, 0)
             raise RuntimeError('MCFG: incorrect input file format %s' %
                                signature)
         (length,) = struct.unpack('<I', f.read(4))
@@ -612,25 +636,38 @@ class MMConfig:
 
 
 def get_cpu_vendor():
+    global cpuvendor
+    if cpuvendor is not None:
+        return cpuvendor
     with input_open('/proc/cpuinfo', 'r') as f:
         for line in f:
             if not line.strip():
                 continue
             key, value = line.split(':')
             if key.strip() == 'vendor_id':
-                return value.strip()
+                cpuvendor = value.strip()
+                return cpuvendor
 
 
-if (
-    (options.generate_collector is False) and (options.root is '/')
-    and (os.geteuid() is not 0)
-):
+if options.generate_collector:
+    f = open(options.file, 'w')
+    filelist = ' '.join(inputs['files'])
+    filelist_opt = ' '.join(inputs['files_opt'])
+    filelist_intel = ' '.join(inputs['files_intel'])
+
+    tmpl = Template(filename=os.path.join(options.template_dir,
+                                          'jailhouse-config-collect.tmpl'))
+    f.write(tmpl.render(filelist=filelist, filelist_opt=filelist_opt,
+            filelist_intel=filelist_intel))
+    f.close()
+    sys.exit(0)
+
+if ((options.root is '/') and (os.geteuid() is not 0)):
     print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
     sys.exit(1)
 
-jh_enabled = input_readline('/sys/devices/jailhouse/enabled',
-                            True).rstrip()
-if options.generate_collector is False and jh_enabled == '1':
+jh_enabled = input_readline('/sys/devices/jailhouse/enabled', True).rstrip()
+if jh_enabled == '1':
     print('ERROR: Jailhouse was enabled when collecting input files! '
           'Disable jailhouse and try again.',
           file=sys.stderr)
@@ -653,7 +690,10 @@ total = hvmem[1] + inmatemem
 
 mmconfig = MMConfig.parse()
 
-(dmar_units, ioapic_id, rmrr_regs) = parse_dmar(pcidevices)
+if get_cpu_vendor() == 'GenuineIntel':
+    (dmar_units, ioapic_id, rmrr_regs) = parse_dmar(pcidevices)
+else:
+    (dmar_units, ioapic_id, rmrr_regs) = [], 0, []
 regions += rmrr_regs
 
 for d in pcidevices:
@@ -681,29 +721,21 @@ cpucount = count_cpus()
 
 pm_timer_base = parse_ioports()
 
+
 f = open(options.file, 'w')
-
-if options.generate_collector:
-    filelist = ' '.join(inputs['files'].union(inputs['dirs']))
-    filelist_opt = ' '.join(inputs['files_opt'])
-
-    tmpl = Template(filename=os.path.join(options.template_dir,
-                                          'jailhouse-config-collect.tmpl'))
-    f.write(tmpl.render(filelist=filelist, filelist_opt=filelist_opt))
-else:
-    tmpl = Template(filename=os.path.join(options.template_dir,
-                                          'root-cell-config.c.tmpl'))
-    f.write(tmpl.render(regions=regions,
-                        ourmem=ourmem,
-                        argstr=' '.join(sys.argv),
-                        hvmem=hvmem,
-                        product=product,
-                        pcidevices=pcidevices,
-                        pcicaps=pcicaps,
-                        cpucount=cpucount,
-                        ioapic_id=ioapic_id,
-                        pm_timer_base=pm_timer_base,
-                        mmconfig=mmconfig,
-                        dmar_units=dmar_units))
+tmpl = Template(filename=os.path.join(options.template_dir,
+                                      'root-cell-config.c.tmpl'))
+f.write(tmpl.render(regions=regions,
+                    ourmem=ourmem,
+                    argstr=' '.join(sys.argv),
+                    hvmem=hvmem,
+                    product=product,
+                    pcidevices=pcidevices,
+                    pcicaps=pcicaps,
+                    cpucount=cpucount,
+                    ioapic_id=ioapic_id,
+                    pm_timer_base=pm_timer_base,
+                    mmconfig=mmconfig,
+                    dmar_units=dmar_units))
 
 f.close()
