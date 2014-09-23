@@ -18,7 +18,6 @@ if ! git rev-parse 2>/dev/null; then
 	version="`cat $1/VERSION`"
 else
 	cd $1 > /dev/null
-	git diff > diff.log
 	describe="`git describe --long --dirty --match "v[0-9].[0-9]*"`"
 	version="`echo $describe | sed -e 's/\([^-]*\)-\(.*\)/\1 (\2)/'`"
 	cd - > /dev/null
