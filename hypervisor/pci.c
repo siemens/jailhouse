@@ -201,7 +201,7 @@ static int pci_update_msix(struct pci_device *device,
 	int result;
 
 	for (n = 0; n < device->info->num_msix_vectors; n++) {
-		result = pci_update_msix_vector(device, n);
+		result = arch_pci_update_msix_vector(device, n);
 		if (result < 0)
 			return result;
 	}
@@ -260,7 +260,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 		device->msi_registers.raw[cap_offs / 4] &= ~mask;
 		device->msi_registers.raw[cap_offs / 4] |= value;
 
-		if (pci_update_msi(device, cap) < 0)
+		if (arch_pci_update_msi(device, cap) < 0)
 			return PCI_ACCESS_REJECT;
 
 		/*
@@ -349,7 +349,7 @@ found:
 				     *value);
 		} else {
 			device->msix_vectors[index].raw[dword] = *value;
-			if (pci_update_msix_vector(device, index) < 0)
+			if (arch_pci_update_msix_vector(device, index) < 0)
 				goto invalid_access;
 		}
 	} else {
@@ -497,7 +497,7 @@ void pci_prepare_handover(void)
 		if (device->cell)
 			for_each_pci_cap(cap, device, n)
 				if (cap->id == PCI_CAP_MSI)
-					pci_suppress_msi(device, cap);
+					arch_pci_suppress_msi(device, cap);
 				else if (cap->id == PCI_CAP_MSIX)
 					pci_suppress_msix(device, cap, true);
 	}
@@ -679,7 +679,7 @@ void pci_config_commit(struct cell *cell_added_removed)
 		if (device->cell)
 			for_each_pci_cap(cap, device, n) {
 				if (cap->id == PCI_CAP_MSI) {
-					err = pci_update_msi(device, cap);
+					err = arch_pci_update_msi(device, cap);
 				} else if (cap->id == PCI_CAP_MSIX) {
 					err = pci_update_msix(device, cap);
 					pci_suppress_msix(device, cap, false);

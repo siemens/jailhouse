@@ -282,8 +282,8 @@ pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
 	return irq_msg;
 }
 
-void pci_suppress_msi(struct pci_device *device,
-		      const struct jailhouse_pci_capability *cap)
+void arch_pci_suppress_msi(struct pci_device *device,
+			   const struct jailhouse_pci_capability *cap)
 {
 	unsigned int n, vectors = pci_enabled_msi_vectors(device);
 	const struct jailhouse_pci_device *info = device->info;
@@ -329,8 +329,8 @@ static u32 pci_get_x86_msi_remap_address(unsigned int index)
 	return (u32)msi.raw.address;
 }
 
-int pci_update_msi(struct pci_device *device,
-		   const struct jailhouse_pci_capability *cap)
+int arch_pci_update_msi(struct pci_device *device,
+			const struct jailhouse_pci_capability *cap)
 {
 	unsigned int n, vectors = pci_enabled_msi_vectors(device);
 	union x86_msi_vector msi = pci_get_x86_msi_vector(device);
@@ -369,7 +369,7 @@ int pci_update_msi(struct pci_device *device,
 	return 0;
 }
 
-int pci_update_msix_vector(struct pci_device *device, unsigned int index)
+int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 {
 	union x86_msi_vector msi = {
 		.raw.address = device->msix_vectors[index].field.address,

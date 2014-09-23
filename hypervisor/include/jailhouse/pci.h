@@ -99,12 +99,6 @@ void pci_config_commit(struct cell *cell_added_removed);
 
 unsigned int pci_enabled_msi_vectors(struct pci_device *device);
 
-void pci_suppress_msi(struct pci_device *device,
-		      const struct jailhouse_pci_capability *cap);
-int pci_update_msi(struct pci_device *device,
-		   const struct jailhouse_pci_capability *cap);
-int pci_update_msix_vector(struct pci_device *device, unsigned int index);
-
 void pci_prepare_handover(void);
 void pci_shutdown(void);
 
@@ -113,5 +107,11 @@ void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size);
 
 int arch_pci_add_device(struct cell *cell, struct pci_device *device);
 void arch_pci_remove_device(struct pci_device *device);
+
+void arch_pci_suppress_msi(struct pci_device *device,
+			   const struct jailhouse_pci_capability *cap);
+int arch_pci_update_msi(struct pci_device *device,
+			const struct jailhouse_pci_capability *cap);
+int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index);
 
 #endif /* !_JAILHOUSE_PCI_H */
