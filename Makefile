@@ -22,6 +22,8 @@ KDIR ?= /lib/modules/`uname -r`/build
 INSTALL_MOD_PATH ?= $(DESTDIR)
 export INSTALL_MOD_PATH
 
+DOXYGEN ?= doxygen
+
 define run-kbuild =
 	+$(Q)$(MAKE) -C $(KDIR) M=$$PWD $@
 endef
@@ -35,10 +37,15 @@ hypervisor/jailhouse.bin: modules
 tools:
 	$(Q)$(MAKE) -C tools
 
-# clean up kernel and tools
+# documentation, build needs to be triggered explicitly
+docs:
+	$(DOXYGEN) Documentation/Doxyfile
+
+# clean up kernel, tools and generated docs
 clean:
 	$(run-kbuild)
 	$(Q)$(MAKE) -C tools $@
+	rm -rf Documentation/generated
 
 modules_install: modules
 	$(run-kbuild)
@@ -49,4 +56,4 @@ firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
 install: modules_install firmware_install
 	$(Q)$(MAKE) -C tools $@
 
-.PHONY: modules_install install clean firmware_install modules tools
+.PHONY: modules_install install clean firmware_install modules tools docs

@@ -15,3 +15,4 @@ hypervisor/hypervisor.lds
 tools/jailhouse
 tools/jailhouse-config-collect
 configs/*.cell
+Documentation/generated
