@@ -26,7 +26,14 @@
 #define PCI_ADDR_BDF_SHIFT		8
 #define PCI_ADDR_REGNUM_MASK		BIT_MASK(7, 2)
 
+/**
+ * @ingroup PCI
+ * @defgroup PCI-X86 x86
+ * @{
+ */
+
 int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 			   u16 port, bool dir_in, unsigned int size);
 
+/** @} */
 #endif /* !_JAILHOUSE_ASM_PCI_H */

@@ -21,17 +21,9 @@
 #include <asm/pci.h>
 #include <asm/vtd.h>
 
-/* protects the root bridge's PIO interface to the PCI config space */
+/** Protects the root bridge's PIO interface to the PCI config space. */
 static DEFINE_SPINLOCK(pci_lock);
 
-/**
- * arch_pci_read_config() - Read from PCI config space via PIO method
- * @bdf:	16-bit bus/device/function ID of target
- * @address:	Config space access address
- * @size:	Access size (1, 2 or 4 bytes)
- *
- * Return: read value
- */
 u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size)
 {
 	u16 port = PCI_REG_DATA_PORT + (address & 0x3);
@@ -53,13 +45,6 @@ u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size)
 	return value;
 }
 
-/**
- * arch_pci_write_config() - Write to PCI config space via PIO method
- * @bdf:	16-bit bus/device/function ID of target
- * @address:	Config space access address
- * @value:	Value to be written
- * @size:	Access size (1, 2 or 4 bytes)
- */
 void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
 {
 	u16 port = PCI_REG_DATA_PORT + (address & 0x3);
@@ -79,10 +64,12 @@ void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
 }
 
 /**
- * set_rax_reg() - Set value of RAX in guest register set
- * @guest_regs:	Guest register set
- * @value_new:	New value to be written
- * @size:	Access size (1, 2 or 4 bytes)
+ * Set value of RAX in guest register set.
+ * @param guest_regs	Guest register set.
+ * @param value_new	New value to be written.
+ * @param size		Access size (1, 2 or 4 bytes).
+ *
+ * @private
  */
 static void set_rax_reg(struct registers *guest_regs,
 	u32 value_new, u8 size)
@@ -96,11 +83,13 @@ static void set_rax_reg(struct registers *guest_regs,
 }
 
 /**
- * get_rax_reg() - Get value of RAX from guest register set
- * @guest_regs:	Guest register set
- * @size:	Access size (1, 2 or 4 bytes)
+ * Get value of RAX from guest register set.
+ * @param guest_regs	Guest register set.
+ * @param size		Access size (1, 2 or 4 bytes).
  *
- * Return: Register value
+ * @return Register value.
+ *
+ * @private
  */
 static u32 get_rax_reg(struct registers *guest_regs, u8 size)
 {
@@ -108,13 +97,15 @@ static u32 get_rax_reg(struct registers *guest_regs, u8 size)
 }
 
 /**
- * data_port_in_handler() - Handler for IN accesses to data port
- * @guest_regs:		Guest register set
- * @device:		Structure describing PCI device
- * @address:		Config space access address
- * @size:		Access size (1, 2 or 4 bytes)
+ * Handler for IN accesses to data port.
+ * @param guest_regs	Guest register set.
+ * @param device	Structure describing PCI device.
+ * @param address	Config space access address.
+ * @param size		Access size (1, 2 or 4 bytes).
  *
- * Return: 1 if handled successfully, -1 on access error
+ * @return 1 if handled successfully, -1 on access error.
+ *
+ * @private
  */
 static int
 data_port_in_handler(struct registers *guest_regs, struct pci_device *device,
@@ -133,13 +124,15 @@ data_port_in_handler(struct registers *guest_regs, struct pci_device *device,
 }
 
 /**
- * data_port_out_handler() - Handler for OUT accesses to data port
- * @guest_regs:		Guest register set
- * @device:		Structure describing PCI device
- * @address:		Config space access address
- * @size:		Access size (1, 2 or 4 bytes)
+ * Handler for OUT accesses to data port.
+ * @param guest_regs	Guest register set.
+ * @param device	Structure describing PCI device.
+ * @param address	Config space access address.
+ * @param size		Access size (1, 2 or 4 bytes).
  *
- * Return: 1 if handled successfully, -1 on access error
+ * @return 1 if handled successfully, -1 on access error.
+ *
+ * @private
  */
 static int
 data_port_out_handler(struct registers *guest_regs, struct pci_device *device,
@@ -158,14 +151,14 @@ data_port_out_handler(struct registers *guest_regs, struct pci_device *device,
 }
 
 /**
- * x86_pci_config_handler() - Handler for accesses to PCI config space
- * @guest_regs:		Guest register set
- * @cell:		Issuing cell
- * @port:		I/O port number of this access
- * @dir_in:		True for input, false for output
- * @size:		Size of access in bytes (1, 2 or 4 bytes)
+ * Handler for accesses to PCI config space.
+ * @param guest_regs	Guest register set.
+ * @param cell		Issuing cell.
+ * @param port		I/O port number of this access.
+ * @param dir_in	True for input, false for output.
+ * @param size		Size of access in bytes (1, 2 or 4 bytes).
  *
- * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
+ * @return 1 if handled successfully, 0 if unhandled, -1 on access error.
  */
 int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
 			   u16 port, bool dir_in, unsigned int size)

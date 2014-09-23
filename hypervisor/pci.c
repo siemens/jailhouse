@@ -37,11 +37,11 @@
 
 /* entry for PCI config space whitelist (granting access) */
 struct pci_cfg_access {
-	u32 reg_num; /** Register number (4-byte aligned) */
-	u32 mask; /** Bit set: access allowed */
+	u32 reg_num; /* Register number (4-byte aligned) */
+	u32 mask; /* Bit set: access allowed */
 };
 
-/* --- Whilelist for writing to PCI config space registers --- */
+/* --- Whilelists for writing to PCI config space registers --- */
 /* Type 1: Endpoints */
 static const struct pci_cfg_access endpoint_write_access[] = {
 	{ 0x04, 0xffffffff }, /* Command, Status */
@@ -65,12 +65,14 @@ static void *pci_get_device_mmcfg_base(u16 bdf)
 }
 
 /**
- * pci_read_config() - Read from PCI config space
- * @bdf:	16-bit bus/device/function ID of target
- * @address:	Config space access address
- * @size:	Access size (1, 2 or 4 bytes)
+ * Read from PCI config space.
+ * @param bdf		16-bit bus/device/function ID of target.
+ * @param address	Config space access address.
+ * @param size		Access size (1, 2 or 4 bytes).
  *
- * Return: read value
+ * @return Read value.
+ *
+ * @see pci_write_config
  */
 u32 pci_read_config(u16 bdf, u16 address, unsigned int size)
 {
@@ -88,11 +90,13 @@ u32 pci_read_config(u16 bdf, u16 address, unsigned int size)
 }
 
 /**
- * pci_write_config() - Write to PCI config space
- * @bdf:	16-bit bus/device/function ID of target
- * @address:	Config space access address
- * @value:	Value to be written
- * @size:	Access size (1, 2 or 4 bytes)
+ * Write to PCI config space.
+ * @param bdf		16-bit bus/device/function ID of target.
+ * @param address	Config space access address.
+ * @param value		Value to be written.
+ * @param size		Access size (1, 2 or 4 bytes).
+ *
+ * @see pci_read_config
  */
 void pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
 {
@@ -110,11 +114,11 @@ void pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
 }
 
 /**
- * pci_get_assigned_device() - Look up device owned by a cell
- * @cell:	Owning cell
- * @bdf:	16-bit bus/device/function ID
+ * Look up device owned by a cell.
+ * @param[in] cell	Owning cell.
+ * @param bdf		16-bit bus/device/function ID.
  *
- * Return: Pointer to owned PCI device or NULL.
+ * @return Pointer to owned PCI device or NULL.
  */
 struct pci_device *pci_get_assigned_device(const struct cell *cell, u16 bdf)
 {
@@ -133,11 +137,13 @@ struct pci_device *pci_get_assigned_device(const struct cell *cell, u16 bdf)
 }
 
 /**
- * pci_find_capability() - Look up capability at given config space address
- * @device:	The device to be accessed
- * @address:	Config space access address
+ * Look up capability at given config space address.
+ * @param device	The device to be accessed.
+ * @param address	Config space access address.
  *
- * Return: Corresponding capability structure or NULL if none found.
+ * @return Corresponding capability structure or NULL if none found.
+ *
+ * @private
  */
 static const struct jailhouse_pci_capability *
 pci_find_capability(struct pci_device *device, u16 address)
@@ -155,15 +161,17 @@ pci_find_capability(struct pci_device *device, u16 address)
 }
 
 /**
- * pci_cfg_read_moderate() - Moderate config space read access
- * @device:	The device to be accessed; if NULL, access will be emulated,
- * 		returning a value of -1
- * @address:	Config space address
- * @size:	Access size (1, 2 or 4 bytes)
- * @value:	Pointer to buffer to receive the emulated value if
- * 		PCI_ACCESS_DONE is returned
+ * Moderate config space read access.
+ * @param device	The device to be accessed. If NULL, access will be
+ * 			emulated, returning a value of -1.
+ * @param address	Config space address.
+ * @param size		Access size (1, 2 or 4 bytes).
+ * @param value		Pointer to buffer to receive the emulated value if
+ * 			PCI_ACCESS_DONE is returned.
  *
- * Return: PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
+ * @return PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
+ *
+ * @see pci_cfg_write_moderate
  */
 enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 				      unsigned int size, u32 *value)
@@ -209,13 +217,16 @@ static int pci_update_msix(struct pci_device *device,
 }
 
 /**
- * pci_cfg_write_moderate() - Moderate config space write access
- * @device:	The device to be accessed; if NULL, access will be rejected
- * @address:	Config space address
- * @size:	Access size (1, 2 or 4 bytes)
- * @value:	Value to be written
+ * Moderate config space write access.
+ * @param device	The device to be accessed. If NULL, access will be
+ * 			rejected.
+ * @param address	Config space address.
+ * @param size		Access size (1, 2 or 4 bytes).
+ * @param value		Value to be written.
  *
- * Return: PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
+ * @return PCI_ACCESS_REJECT, PCI_ACCESS_PERFORM or PCI_ACCESS_DONE.
+ *
+ * @see pci_cfg_read_moderate
  */
 enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 				       unsigned int size, u32 value)
@@ -281,9 +292,9 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 }
 
 /**
- * pci_init() - Initialization of PCI module
+ * Initialization of PCI subsystem.
  *
- * Return: 0 - success, error code - if error.
+ * @return 0 on success, negative error code otherwise.
  */
 int pci_init(void)
 {
@@ -369,13 +380,13 @@ invalid_access:
 }
 
 /**
- * pci_mmio_access_handler() - Handler for MMIO-accesses to PCI config space
- * @cell:	Request issuing cell
- * @is_write:	True if write access
- * @addr:	Address accessed
- * @value:	Pointer to value for reading/writing
+ * Handler for MMIO-accesses to PCI config space.
+ * @param cell		Request issuing cell.
+ * @param is_write	True if write access.
+ * @param addr		Address accessed.
+ * @param value		Pointer to value for reading/writing.
  *
- * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
+ * @return 1 if handled successfully, 0 if unhandled, -1 on access error.
  */
 int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			    u64 addr, u32 *value)
@@ -416,6 +427,12 @@ invalid_access:
 
 }
 
+/**
+ * Retrieve number of enabled MSI vector of a device.
+ * @param device	The device to be examined.
+ *
+ * @return number of vectors.
+ */
 unsigned int pci_enabled_msi_vectors(struct pci_device *device)
 {
 	return device->msi_registers.msg32.enable ?
@@ -481,8 +498,7 @@ static void pci_restore_msix(struct pci_device *device,
 }
 
 /**
- * pci_prepare_handover() - Prepare the handover of PCI devices to Jailhouse or
- *                          back to Linux
+ * Prepare the handover of PCI devices to Jailhouse or back to Linux.
  */
 void pci_prepare_handover(void)
 {
@@ -569,6 +585,14 @@ static void pci_remove_device(struct pci_device *device)
 	}
 }
 
+/**
+ * Perform PCI-specific initialization for a new cell.
+ * @param cell	Cell to be initialized.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @see pci_cell_exit
+ */
 int pci_cell_init(struct cell *cell)
 {
 	unsigned int devlist_pages = PAGES(cell->config->num_pci_devices *
@@ -643,6 +667,12 @@ static void pci_return_device_to_root_cell(struct pci_device *device)
 		}
 }
 
+/**
+ * Perform PCI-specific cleanup for a cell under destruction.
+ * @param cell	Cell to be destructed.
+ *
+ * @see pci_cell_init
+ */
 void pci_cell_exit(struct cell *cell)
 {
 	unsigned int devlist_pages = PAGES(cell->config->num_pci_devices *
@@ -665,6 +695,11 @@ void pci_cell_exit(struct cell *cell)
 	page_free(&mem_pool, cell->pci_devices, devlist_pages);
 }
 
+/**
+ * Apply PCI-specific configuration changes.
+ * @param cell_added_removed	Cell that was added or removed to/from the
+ * 				system or NULL.
+ */
 void pci_config_commit(struct cell *cell_added_removed)
 {
 	const struct jailhouse_pci_capability *cap;
@@ -695,6 +730,9 @@ error:
 	panic_stop();
 }
 
+/**
+ * Shut down the PCI layer during hypervisor deactivation.
+ */
 void pci_shutdown(void)
 {
 	const struct jailhouse_pci_capability *cap;
