@@ -29,8 +29,6 @@ kbuild = -C $(KDIR) M=$$PWD $@
 modules:
 	$(Q)$(MAKE) $(kbuild)
 
-hypervisor/jailhouse.bin: modules
-
 # recursive build of tools
 tools:
 	$(Q)$(MAKE) -C tools
@@ -51,8 +49,8 @@ clean:	docs_clean
 modules_install: modules
 	$(Q)$(MAKE) $(kbuild)
 
-firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
-	$(INSTALL_DATA) $^
+firmware_install: $(DESTDIR)$(firmwaredir) modules
+	$(INSTALL_DATA) hypervisor/jailhouse*.bin $<
 
 install: modules_install firmware_install
 	$(Q)$(MAKE) -C tools $@

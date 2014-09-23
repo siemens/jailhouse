@@ -2,9 +2,11 @@
 # Jailhouse, a Linux-based partitioning hypervisor
 #
 # Copyright (c) Siemens AG, 2013
+# Copyright (c) Valentine Sinitsyn, 2014
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
+#  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
@@ -19,20 +21,12 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 ifeq ($(SRCARCH),x86)
 KBUILD_CFLAGS += -mcmodel=kernel
 KBUILD_CPPFLAGS += -m64
+BUILD_VARIANTS := amd intel
 endif
 
 ifneq ($(wildcard $(obj)/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(obj)/include/jailhouse/config.h
 endif
-
-$(obj)/arch/$(SRCARCH)/built-in.o: FORCE
-	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
-
-always := jailhouse.bin
-
-hypervisor-y := setup.o printk.o paging.o control.o lib.o \
-	arch/$(SRCARCH)/built-in.o hypervisor.lds
-targets += $(hypervisor-y)
 
 define filechk_version
 	$(src)/../scripts/gen_version_h $(src)/..
@@ -45,16 +39,42 @@ $(obj)/include/jailhouse/version.h: $(src)/Makefile FORCE
 
 $(obj)/setup.o: $(obj)/include/jailhouse/version.h
 
-HYPERVISOR_OBJS = $(addprefix $(obj)/,$(hypervisor-y))
+arch-builtin: FORCE
+	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
 
-LDFLAGS_hypervisor.o := -T
+always :=
 
-targets += hypervisor.o
-$(obj)/hypervisor.o: $(src)/hypervisor.lds $(HYPERVISOR_OBJS)
-	$(call if_changed,ld)
+define BUILD_JAILHOUSE_template
+always += jailhouse$(1).bin
 
-OBJCOPYFLAGS_jailhouse.bin := -O binary -R .eh_frame
+hypervisor$(1)-y := setup.o printk.o paging.o control.o lib.o \
+	arch/$$(SRCARCH)/built-in$(1).o hypervisor.lds
+targets += $$(hypervisor$(1)-y)
 
-targets += jailhouse.bin
-$(obj)/jailhouse.bin: $(obj)/hypervisor.o
-	$(call if_changed,objcopy)
+# Need fake recipe here so make will consider this a volatile target
+$$(obj)/arch/$$(SRCARCH)/built-in$(1).o: arch-builtin
+	@
+
+HYPERVISOR$(1)_OBJS = $$(addprefix $$(obj)/,$$(hypervisor$(1)-y))
+
+LDFLAGS_hypervisor$(1).o := -T
+
+targets += hypervisor$(1).o
+$$(obj)/hypervisor$(1).o: $$(src)/hypervisor.lds $$(HYPERVISOR$(1)_OBJS)
+	$$(call if_changed,ld)
+
+OBJCOPYFLAGS_jailhouse$(1).bin := -O binary -R .eh_frame
+
+targets += jailhouse$(1).bin
+$$(obj)/jailhouse$(1).bin: $$(obj)/hypervisor$(1).o
+	$$(call if_changed,objcopy)
+endef
+
+ifneq ($(BUILD_VARIANTS),)
+$(foreach variant,$(BUILD_VARIANTS),\
+	$(eval $(call BUILD_JAILHOUSE_template,-$(variant))))
+else
+$(eval $(call BUILD_JAILHOUSE_template,))
+endif
+
+.PHONY: arch-builtin
