@@ -24,16 +24,33 @@
 
 extern u8 __page_pool[];
 
+/**
+ * Offset between virtual and physical hypervisor addresses.
+ *
+ * @note Private, use page_map_hvirt2phys() or page_map_phys2hvirt() instead.
+ */
 unsigned long page_offset;
 
+/** Page pool containing physical pages for use by the hypervisor. */
 struct page_pool mem_pool;
+/** Page pool containing virtual pages for remappings by the hypervisor. */
 struct page_pool remap_pool = {
 	.base_address = (void *)REMAP_BASE,
 	.pages = BITS_PER_PAGE * NUM_REMAP_BITMAP_PAGES,
 };
 
+/** Descriptor of the hypervisor paging structures. */
 struct paging_structures hv_paging_structs;
 
+/**
+ * Trivial implementation of paging::get_phys (for non-terminal levels)
+ * @param pte See paging::get_phys.
+ * @param virt See paging::get_phys.
+ *
+ * @return @c INVALID_PHYS_ADDR.
+ *
+ * @see paging
+ */
 unsigned long paging_get_phys_invalid(pt_entry_t pte, unsigned long virt)
 {
 	return INVALID_PHYS_ADDR;
@@ -70,6 +87,15 @@ static unsigned long find_next_free_page(struct page_pool *pool,
 	return INVALID_PAGE_NR;
 }
 
+/**
+ * Allocate consecutive pages from the specified pool.
+ * @param pool	Page pool to allocate from.
+ * @param num	Number of pages.
+ *
+ * @return Pointer to first page or NULL if allocation failed.
+ *
+ * @see page_free
+ */
 void *page_alloc(struct page_pool *pool, unsigned int num)
 {
 	unsigned long start, last, next;
@@ -99,6 +125,14 @@ restart:
 	return pool->base_address + start * PAGE_SIZE;
 }
 
+/**
+ * Release pages to the specified pool.
+ * @param pool	Page pool to release to.
+ * @param page	Address of first page.
+ * @param num	Number of pages.
+ *
+ * @see page_alloc
+ */
 void page_free(struct page_pool *pool, void *page, unsigned int num)
 {
 	unsigned long page_nr;
@@ -116,6 +150,21 @@ void page_free(struct page_pool *pool, void *page, unsigned int num)
 	}
 }
 
+/**
+ * Translate virtual to physical address according to given paging structures.
+ * @param pg_structs	Paging structures to use for translation.
+ * @param virt		Virtual address.
+ * @param flags		Access flags that have to be supported by the mapping,
+ * 			see @ref PAGE_FLAGS.
+ *
+ * @return Physical address on success or @c INVALID_PHYS_ADDR if the virtual
+ * 	   address could not be translated or the requested access is not
+ * 	   supported by the mapping.
+ *
+ * @see paging_phys2hvirt
+ * @see paging_hvirt2phys
+ * @see arch_paging_gphys2phys
+ */
 unsigned long paging_virt2phys(const struct paging_structures *pg_structs,
 			       unsigned long virt, unsigned long flags)
 {
@@ -169,6 +218,24 @@ static int split_hugepage(const struct paging *paging, pt_entry_t pte,
 			     flags, coherent);
 }
 
+/**
+ * Create or modify a page map.
+ * @param pg_structs	Descriptor of paging structures to be used.
+ * @param phys		Physical address of the region to be mapped.
+ * @param size		Size of the region.
+ * @param virt		Virtual address the region should be mapped to.
+ * @param flags		Flags describing the permitted access, see
+ * 			@ref PAGE_FLAGS.
+ * @param coherent	Coherency of mapping.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @note The function aims at using the largest possible page size for the
+ * mapping but does not consolidate with neighboring mappings.
+ *
+ * @see paging_destroy
+ * @see paging_get_guest_pages
+ */
 int paging_create(const struct paging_structures *pg_structs,
 		  unsigned long phys, unsigned long size, unsigned long virt,
 		  unsigned long flags, enum paging_coherent coherent)
@@ -229,6 +296,22 @@ int paging_create(const struct paging_structures *pg_structs,
 	return 0;
 }
 
+/**
+ * Destroy a page map.
+ * @param pg_structs	Descriptor of paging structures to be used.
+ * @param virt		Virtual address the region to be unmapped.
+ * @param size		Size of the region.
+ * @param coherent	Coherency of mapping.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @note If required, this function tries to break up hugepages if they should
+ * be unmapped only partially. This may require allocating additional pages for
+ * the paging structures, thus can fail. Unmap request that covers only full
+ * pages never fail.
+ *
+ * @see paging_create
+ */
 int paging_destroy(const struct paging_structures *pg_structs,
 		   unsigned long virt, unsigned long size,
 		   enum paging_coherent coherent)
@@ -321,6 +404,23 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 	}
 }
 
+/**
+ * Map guest (cell) pages into the hypervisor address space.
+ * @param pg_structs	Descriptor of the guest paging structures.
+ * @param gaddr		Guest-physical address to the first page to be mapped.
+ * @param num		Number of pages to be mapped.
+ * @param flags		Access flags for the hypervisor mapping, see
+ * 			@ref PAGE_FLAGS.
+ *
+ * @return Pointer to first mapped page or @c NULL on error.
+ *
+ * @note The mapping is done only for the calling CPU and must thus only be
+ * used by the very same CPU.
+ *
+ * @note The mapping is only temporary, valid until the next invocation of
+ * page_map_get_guest_pages() on this CPU. It does not require explicit
+ * unmapping when it is no longer needed.
+ */
 void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			     unsigned long gaddr, unsigned int num,
 			     unsigned long flags)
@@ -353,6 +453,11 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 	return (void *)page_base;
 }
 
+/**
+ * Initialize the page mapping subsystem.
+ *
+ * @return 0 on success, negative error code otherwise.
+ */
 int paging_init(void)
 {
 	unsigned long n, per_cpu_pages, config_pages, bitmap_pages;
@@ -422,6 +527,10 @@ error_nomem:
 	return -ENOMEM;
 }
 
+/**
+ * Dump usage statistic of the page pools.
+ * @param when String that characterizes the associated event.
+ */
 void paging_dump_stats(const char *when)
 {
 	printk("Page pool usage %s: mem %d/%d, remap %d/%d\n", when,
