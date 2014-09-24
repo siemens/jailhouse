@@ -24,6 +24,7 @@ enum msg_type {MSG_REQUEST, MSG_INFORMATION};
 enum failure_mode {ABORT_ON_ERROR, WARN_ON_ERROR};
 enum management_task {CELL_START, CELL_SET_LOADABLE, CELL_DESTROY};
 
+/** System configuration as used while activating the hypervisor. */
 struct jailhouse_system *system_config;
 
 static DEFINE_SPINLOCK(shutdown_lock);
@@ -33,6 +34,17 @@ static unsigned int num_cells = 1;
 #define for_each_non_root_cell(c) \
 	for ((c) = root_cell.next; (c); (c) = (c)->next)
 
+/**
+ * CPU set iterator.
+ * @param cpu		Previous CPU ID.
+ * @param cpu_set	CPU set to iterate over.
+ * @param exception	CPU ID to skip if it is contained.
+ *
+ * @return Next CPU ID in the set.
+ *
+ * @note For internal use only. Use for_each_cpu() or for_each_cpu_except()
+ * instead.
+ */
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 {
 	do
@@ -42,6 +54,13 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
 	return cpu;
 }
 
+/**
+ * Check if a CPU ID is contained in the system's CPU set, i.e. the initial CPU
+ * set of the root cell.
+ * @param cpu_id	CPU ID to check.
+ *
+ * @return True if CPU ID is valid.
+ */
 bool cpu_id_valid(unsigned long cpu_id)
 {
 	const unsigned long *system_cpu_set =
@@ -68,15 +87,16 @@ static void cell_resume(struct per_cpu *cpu_data)
 }
 
 /**
- * cell_send_message - Deliver a message to cell and wait for the reply
- * @cell: target cell
- * @message: message code to be sent (JAILHOUSE_MSG_*)
- * @type: message type, defines the valid replies
+ * Deliver a message to cell and wait for the reply.
+ * @param cell		Target cell.
+ * @param message	Message code to be sent (JAILHOUSE_MSG_*).
+ * @param type		Message type, defines the valid replies.
  *
- * Returns true if a request message was approved or reception of an
- * information message was acknowledged by the target cell. It also return true
- * of the target cell does not support a communication region, is shut down or
- * in failed state. Return false on request denial or invalid replies.
+ * @return True if a request message was approved or reception of an
+ * 	   informational message was acknowledged by the target cell. It also
+ * 	   returns true if the target cell does not support an active
+ * 	   communication region, is shut down or in failed state. Returns
+ * 	   false on request denial or invalid replies.
  */
 static bool cell_send_message(struct cell *cell, u32 message,
 			      enum msg_type type)
@@ -143,7 +163,14 @@ retry:
 	return id;
 }
 
-/* cell must be zero-initialized */
+/**
+ * Initialize a new cell.
+ * @param cell	Cell to be initializes.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @note The cell data structure must be zero-initialized.
+ */
 int cell_init(struct cell *cell)
 {
 	const unsigned long *config_cpu_set =
@@ -176,6 +203,16 @@ static void destroy_cpu_set(struct cell *cell)
 		page_free(&mem_pool, cell->cpu_set, 1);
 }
 
+/**
+ * Perform basic validation of cell memory regions.
+ * @param config	Cell configuration description.
+ *
+ * @return 0 if the regions are valid, @c -EINVAL if the validation failed.
+ *
+ * Checks performed on the memory regions are:
+ * \li Page alignment of physical and virtual address and the size.
+ * \li Use of supported flags only.
+ */
 int check_mem_regions(const struct jailhouse_cell_desc *config)
 {
 	const struct jailhouse_memory *mem =
@@ -719,6 +756,16 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 		return -EINVAL;
 }
 
+/**
+ * Handle hypercall invoked by a cell.
+ * @param code		Hypercall code.
+ * @param arg1		First hypercall argument.
+ * @param arg2		Seconds hypercall argument.
+ *
+ * @return Value that shall be passed to the caller of the hypercall on return.
+ *
+ * @note If @c arg1 and @c arg2 are valid depends on the hypercall code.
+ */
 long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
@@ -747,6 +794,15 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 	}
 }
 
+/**
+ * Stops the current CPU on panic and prevents any execution on it until the
+ * system is rebooted.
+ *
+ * @note This service should be used when facing an unrecoverable error of the
+ * hypervisor.
+ *
+ * @see panic_park
+ */
 void panic_stop(void)
 {
 	panic_printk("Stopping CPU %d (Cell: \"%s\")\n", this_cpu_id(),
@@ -759,6 +815,15 @@ void panic_stop(void)
 	arch_panic_stop();
 }
 
+/**
+ * Parks the current CPU on panic, allowing to restart it by resetting the
+ * cell's CPU state.
+ *
+ * @note This service should be used when facing an error of a cell CPU, e.g. a
+ * cell boundary violation.
+ *
+ * @see panic_stop
+ */
 void panic_park(void)
 {
 	struct cell *cell = this_cell();

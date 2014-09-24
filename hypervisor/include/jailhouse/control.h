@@ -17,23 +17,58 @@
 #define SHUTDOWN_NONE			0
 #define SHUTDOWN_STARTED		1
 
+/**
+ * @defgroup Control Control Subsystem
+ *
+ * The control subsystem provides services for managing cells and the
+ * hypervisor during runtime. It implements the hypercall interface and
+ * performs the required access control and parameter validation for it.
+ *
+ * @{
+ */
+
 extern struct jailhouse_system *system_config;
 
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 		      int exception);
 
+/**
+ * Loop-generating macro for iterating over all CPUs in a set.
+ * @param cpu		Iteration variable holding the current CPU ID
+ * 			(unsigned int).
+ * @param set		CPU set to iterate over (struct cpu_set).
+ *
+ * @see for_each_cpu_except
+ */
 #define for_each_cpu(cpu, set)					\
 	for ((cpu) = -1;					\
 	     (cpu) = next_cpu((cpu), (set), -1),		\
 	     (cpu) <= (set)->max_cpu_id;			\
 	    )
 
+/**
+ * Loop-generating macro for iterating over all CPUs in a set, except the
+ * specified one.
+ * @param cpu		Iteration variable holding the current CPU ID
+ * 			(unsigned int).
+ * @param set		CPU set to iterate over (struct cpu_set).
+ * @param exception	CPU to skip if it is part of the set.
+ *
+* @see for_each_cpu
+ */
 #define for_each_cpu_except(cpu, set, exception)		\
 	for ((cpu) = -1;					\
 	     (cpu) = next_cpu((cpu), (set), (exception)),	\
 	     (cpu) <= (set)->max_cpu_id;			\
 	    )
 
+/**
+ * Check if the CPU is assigned to the specified cell.
+ * @param cell		Cell the CPU may belong to.
+ * @param cpu_id	ID of the CPU.
+ *
+ * @return True if the CPU is assigned to the cell.
+ */
 static inline bool cell_owns_cpu(struct cell *cell, unsigned int cpu_id)
 {
 	return (cpu_id <= cell->cpu_set->max_cpu_id &&
@@ -50,23 +85,160 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2);
 void __attribute__((noreturn)) panic_stop(void);
 void panic_park(void);
 
+/**
+ * Suspend a remote CPU.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * Suspension means that the target CPU is no longer executing cell code or
+ * arbitrary hypervisor code. It may actively wait in the hypervisor context,
+ * so the suspension time should be kept short.
+ *
+ * The function waits for the target CPU to enter suspended state.
+ *
+ * This service can be used to synchronize with other CPUs before performing
+ * management tasks.
+ *
+ * @note This function must not be invoked for the caller's CPU.
+ *
+ * @see arch_resume_cpu
+ * @see arch_reset_cpu
+ * @see arch_park_cpu
+ */
 void arch_suspend_cpu(unsigned int cpu_id);
+
+/**
+ * Resume a suspended remote CPU.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * @note This function must not be invoked for the caller's CPU.
+ *
+ * @see arch_suspend_cpu
+ */
 void arch_resume_cpu(unsigned int cpu_id);
+
+/**
+ * Reset a suspended remote CPU and resumes its execution.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * Sets the target CPU into the architecture-specific reset set and resumes its
+ * execution.
+ *
+ * @note This function must not be invoked for the caller's CPU or if the
+ * target CPU is not in suspend state.
+ *
+ * @see arch_suspend_cpu
+ */
 void arch_reset_cpu(unsigned int cpu_id);
+
+/**
+ * Park a suspended remote CPU.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * Parking means that the target CPU does not execute cell code but can handle
+ * asynchronous events again. Parking is not implemented as busy-waiting and
+ * may set the CPU into an appropriate power-saving mode. The CPU can therefore
+ * be left in this state for an undefined time.
+ *
+ * Parking may destroy the cell-visible CPU state and cannot be used to resume
+ * cell execution in the previous state without additional measures.
+ *
+ * @note This function must not be invoked for the caller's CPU or if the
+ * target CPU is not in suspend state.
+ *
+ * @see arch_suspend_cpu
+ */
 void arch_park_cpu(unsigned int cpu_id);
+
+/**
+ * Releases hypervisor control over the target CPU.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * @note This function must not be invoked for the caller's CPU.
+ *
+ * @note The target CPU need not be suspended before calling the function.
+ *
+ * @note The caller has to ensure that the target CPU has enough time to reach
+ * the shutdown position before destroying the code path it has to take to get
+ * there. This can be ensured by bringing the CPU online again under Linux
+ * before cleaning up the hypervisor.
+ */
 void arch_shutdown_cpu(unsigned int cpu_id);
 
+/**
+ * Performs the architecture-specific steps for mapping a memory region into a
+ * cell's address space.
+ * @param cell		Cell for which the mapping shall be done.
+ * @param mem		Memory region to map.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @see arch_unmap_memory_region
+ */
 int arch_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem);
+
+/**
+ * Performs the architecture-specific steps for unmapping a memory region from
+ * a cell's address space.
+ * @param cell		Cell for which the unmapping shall be done.
+ * @param mem		Memory region to unmap.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @see arch_map_memory_region
+ */
 int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem);
 
+/**
+ * Performs the architecture-specific steps for creating a new cell.
+ * @param cell		Data structure of the new cell.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @see arch_cell_destroy
+ */
 int arch_cell_create(struct cell *cell);
+
+/**
+ * Performs the architecture-specific steps for destroying a cell.
+ * @param cell		Cell to be destroyed.
+ *
+ * @see arch_cell_create
+ */
 void arch_cell_destroy(struct cell *cell);
 
+/**
+ * Performs the architecture-specific steps for applying configuration changes.
+ * @param cell_added_removed	Cell that was added or removed to/from the
+ * 				system or NULL.
+ *
+ * @see pci_config_commit
+ */
 void arch_config_commit(struct cell *cell_added_removed);
 
+/**
+ * Shutdown architecture-specific subsystems while disabling the hypervisor.
+ */
 void arch_shutdown(void);
 
+/**
+ * Performs the architecture-specifc steps to stop the current CPU on panic.
+ *
+ * @note This function never returns.
+ *
+ * @see panic_stop
+ */
 void __attribute__((noreturn)) arch_panic_stop(void);
+
+/**
+ * Performs the architecture-specific steps to park the current CPU on panic.
+ *
+ * @note This function only marks the CPU as parked and then returns to the
+ * caller.
+ *
+ * @see panic_park
+ */
 void arch_panic_park(void);
+
+/** @} */

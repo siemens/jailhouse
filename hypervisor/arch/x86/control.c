@@ -153,7 +153,6 @@ void arch_resume_cpu(unsigned int cpu_id)
 	per_cpu(cpu_id)->stop_cpu = false;
 }
 
-/* target cpu has to be stopped */
 void arch_reset_cpu(unsigned int cpu_id)
 {
 	per_cpu(cpu_id)->sipi_vector = APIC_BSP_PSEUDO_SIPI;
@@ -161,7 +160,6 @@ void arch_reset_cpu(unsigned int cpu_id)
 	arch_resume_cpu(cpu_id);
 }
 
-/* target cpu has to be stopped */
 void arch_park_cpu(unsigned int cpu_id)
 {
 	per_cpu(cpu_id)->init_signaled = true;
@@ -174,12 +172,6 @@ void arch_shutdown_cpu(unsigned int cpu_id)
 	arch_suspend_cpu(cpu_id);
 	per_cpu(cpu_id)->shutdown_cpu = true;
 	arch_resume_cpu(cpu_id);
-	/*
-	 * Note: The caller has to ensure that the target CPU has enough time
-	 * to reach the shutdown position before destroying the code path it
-	 * has to take to get there. This can be ensured by bringing the CPU
-	 * online again under Linux before cleaning up the hypervisor.
-	 */
 }
 
 void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,

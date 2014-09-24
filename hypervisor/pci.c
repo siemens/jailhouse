@@ -699,6 +699,8 @@ void pci_cell_exit(struct cell *cell)
  * Apply PCI-specific configuration changes.
  * @param cell_added_removed	Cell that was added or removed to/from the
  * 				system or NULL.
+ *
+ * @see arch_config_commit
  */
 void pci_config_commit(struct cell *cell_added_removed)
 {
