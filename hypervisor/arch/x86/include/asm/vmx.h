@@ -10,11 +10,16 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
+#ifndef _JAILHOUSE_ASM_VMX_H
+#define _JAILHOUSE_ASM_VMX_H
+
+#include <asm/cell.h>
 #include <asm/paging.h>
 #include <asm/processor.h>
 
 #include <jailhouse/cell-config.h>
+
+struct per_cpu;
 
 /* VMCS Encodings */
 enum vmcs_field {
@@ -173,6 +178,15 @@ enum vmcs_field {
 	HOST_RIP			= 0x00006c16,
 };
 
+struct vmcs {
+	u32 revision_id:31;
+	u32 shadow_indicator:1;
+	u32 abort_indicator;
+	u64 data[(PAGE_SIZE - 4 - 4) / 8];
+} __attribute__((packed));
+
+enum vmx_state { VMXOFF = 0, VMXON, VMCS_READY };
+
 #define GUEST_SEG_LIMIT			(GUEST_ES_LIMIT - GUEST_ES_SELECTOR)
 #define GUEST_SEG_AR_BYTES		(GUEST_ES_AR_BYTES - GUEST_ES_SELECTOR)
 #define GUEST_SEG_BASE			(GUEST_ES_BASE - GUEST_ES_SELECTOR)
@@ -309,3 +323,5 @@ void vmx_schedule_vmexit(struct per_cpu *cpu_data);
 void vmx_cpu_park(struct per_cpu *cpu_data);
 
 void vmx_vmexit(void);
+
+#endif /* !_JAILHOUSE_ASM_VMX_H */

@@ -30,13 +30,7 @@
 
 #include <asm/cell.h>
 #include <asm/spinlock.h>
-
-struct vmcs {
-	u32 revision_id:31;
-	u32 shadow_indicator:1;
-	u32 abort_indicator;
-	u64 data[(PAGE_SIZE - 4 - 4) / 8];
-} __attribute__((packed));
+#include <asm/vmx.h>
 
 struct per_cpu {
 	/* Keep these two in sync with defines above! */
@@ -66,7 +60,7 @@ struct per_cpu {
 	unsigned long linux_sysenter_eip;
 	unsigned long linux_sysenter_esp;
 	bool initialized;
-	enum { VMXOFF = 0, VMXON, VMCS_READY } vmx_state;
+	enum vmx_state vmx_state;
 
 	/*
 	 * protects the following per_cpu fields (unless CPU is stopped):
