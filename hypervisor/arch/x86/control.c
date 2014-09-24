@@ -290,7 +290,7 @@ void arch_panic_stop(void)
 	__builtin_unreachable();
 }
 
-void arch_panic_halt(void)
+void arch_panic_park(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 

@@ -759,7 +759,7 @@ void panic_stop(void)
 	arch_panic_stop();
 }
 
-void panic_halt(void)
+void panic_park(void)
 {
 	struct cell *cell = this_cell();
 	bool cell_failed = true;
@@ -777,7 +777,7 @@ void panic_halt(void)
 	if (cell_failed)
 		cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_FAILED;
 
-	arch_panic_halt();
+	arch_panic_park();
 
 	if (phys_processor_id() == panic_cpu)
 		panic_in_progress = 0;

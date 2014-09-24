@@ -1203,7 +1203,7 @@ void vmx_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	}
 	dump_guest_regs(guest_regs);
-	panic_halt();
+	panic_park();
 }
 
 void vmx_entry_failure(struct per_cpu *cpu_data)
