@@ -282,7 +282,7 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 			remap_to_root_cell(mem, WARN_ON_ERROR);
 	}
 
-	arch_cell_destroy(cpu_data, cell);
+	arch_cell_destroy(cell);
 
 	arch_config_commit(cpu_data, cell);
 }
@@ -370,7 +370,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			goto err_free_cpu_set;
 		}
 
-	err = arch_cell_create(cpu_data, cell);
+	err = arch_cell_create(cell);
 	if (err)
 		goto err_free_cpu_set;
 

@@ -61,8 +61,8 @@ int arch_map_memory_region(struct cell *cell,
 int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem);
 
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell);
-void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell);
+int arch_cell_create(struct cell *cell);
+void arch_cell_destroy(struct cell *cell);
 
 void arch_config_commit(struct per_cpu *cpu_data,
 			struct cell *cell_added_removed);

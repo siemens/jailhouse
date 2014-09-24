@@ -30,7 +30,7 @@ struct exception_frame {
 	u64 ss;
 };
 
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *cell)
+int arch_cell_create(struct cell *cell)
 {
 	int err;
 
@@ -87,7 +87,7 @@ int arch_unmap_memory_region(struct cell *cell,
 	return vmx_unmap_memory_region(cell, mem);
 }
 
-void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *cell)
+void arch_cell_destroy(struct cell *cell)
 {
 	ioapic_cell_exit(cell);
 	pci_cell_exit(cell);

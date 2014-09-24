@@ -49,7 +49,7 @@ void arch_resume_cpu(unsigned int cpu_id) {}
 void arch_reset_cpu(unsigned int cpu_id) {}
 void arch_park_cpu(unsigned int cpu_id) {}
 void arch_shutdown_cpu(unsigned int cpu_id) {}
-int arch_cell_create(struct per_cpu *cpu_data, struct cell *new_cell)
+int arch_cell_create(struct cell *new_cell)
 { return -ENOSYS; }
 int arch_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem)
@@ -57,7 +57,7 @@ int arch_map_memory_region(struct cell *cell,
 int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 { return -ENOSYS; }
-void arch_cell_destroy(struct per_cpu *cpu_data, struct cell *new_cell) {}
+void arch_cell_destroy(struct cell *new_cell) {}
 void arch_config_commit(struct per_cpu *cpu_data,
 			struct cell *cell_added_removed) {}
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
