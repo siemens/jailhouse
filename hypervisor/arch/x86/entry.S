@@ -137,9 +137,9 @@ irq_entry:
 	interrupt_entry apic_irq_handler
 
 
-/* VM-exit handling */
-	.globl vm_exit
-vm_exit:
+/* VMX VM-exit handling */
+	.globl vmx_vmexit
+vmx_vmexit:
 	push %rax
 	push %rcx
 	push %rdx

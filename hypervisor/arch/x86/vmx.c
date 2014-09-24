@@ -495,7 +495,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmcs_write64(HOST_RSP, (unsigned long)cpu_data->stack +
 			   sizeof(cpu_data->stack));
-	ok &= vmcs_write64(HOST_RIP, (unsigned long)vm_exit);
+	ok &= vmcs_write64(HOST_RIP, (unsigned long)vmx_vmexit);
 
 	ok &= vmx_set_guest_cr(0, read_cr0());
 	ok &= vmx_set_guest_cr(4, read_cr4());
