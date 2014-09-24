@@ -40,7 +40,7 @@ struct vtd_entry {
 #define VTD_PAGE_READ			0x00000001
 #define VTD_PAGE_WRITE			0x00000002
 
-#define VTD_MAX_PAGE_DIR_LEVELS		4
+#define VTD_MAX_PAGE_TABLE_LEVELS	4
 
 #define VTD_VER_REG			0x00
 # define VTD_VER_MASK			BIT_MASK(7, 0)

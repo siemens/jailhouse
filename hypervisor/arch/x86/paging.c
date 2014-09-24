@@ -15,7 +15,7 @@
 
 #define X86_FLAG_HUGEPAGE	0x80
 
-struct paging hv_paging[MAX_PAGE_DIR_LEVELS];
+struct paging hv_paging[MAX_PAGE_TABLE_LEVELS];
 
 static bool x86_64_entry_valid(pt_entry_t pte, unsigned long flags)
 {

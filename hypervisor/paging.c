@@ -237,7 +237,7 @@ int paging_destroy(const struct paging_structures *pg_structs,
 
 	while (size > 0) {
 		const struct paging *paging = pg_structs->root_paging;
-		page_table_t pt[MAX_PAGE_DIR_LEVELS];
+		page_table_t pt[MAX_PAGE_TABLE_LEVELS];
 		unsigned long page_size;
 		pt_entry_t pte;
 		int n = 0;

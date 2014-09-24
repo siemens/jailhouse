@@ -56,7 +56,7 @@ static struct vtd_entry __attribute__((aligned(PAGE_SIZE)))
 	root_entry_table[256];
 static union vtd_irte *int_remap_table;
 static unsigned int int_remap_table_size_log2;
-static struct paging vtd_paging[VTD_MAX_PAGE_DIR_LEVELS];
+static struct paging vtd_paging[VTD_MAX_PAGE_TABLE_LEVELS];
 static void *dmar_reg_base;
 static void *unit_inv_queue;
 static unsigned int dmar_units;
