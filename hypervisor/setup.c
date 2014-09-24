@@ -201,6 +201,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 	arch_cpu_activate_vmm(cpu_data);
 }
 
+/** Hypervisor description header. */
 struct jailhouse_header __attribute__((section(".header")))
 hypervisor_header = {
 	.signature = JAILHOUSE_SIGNATURE,

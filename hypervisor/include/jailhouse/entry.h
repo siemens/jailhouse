@@ -33,18 +33,101 @@
 struct per_cpu;
 struct cell;
 
+/**
+ * @defgroup Setup Setup Subsystem
+ *
+ * This subsystem coordinates the handover from Linux to the hypervisor.
+ *
+ * @{
+ */
+
 extern struct jailhouse_header hypervisor_header;
 
+/**
+ * Architecture-specific entry point for enabling the hypervisor.
+ * @param cpu_id	Logical ID of the calling CPU.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * The functions always returns the same value on each CPU it is invoked on.
+ *
+ * @note This function has to be called for every configures CPU or the setup
+ * will fail.
+ *
+ * @see entry
+ * @see jailhouse_entry
+ */
 int arch_entry(unsigned int cpu_id);
 
+/**
+ * Entry point for enabling the hypervisor.
+ * @param cpu_id	Logical ID of the calling CPU.
+ * @param cpu_data	Data structure of the calling CPU.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * The functions is called by arch_entry(). It always returns the same value on
+ * each CPU it is invoked on.
+ *
+ * @note This function has to be called for every configures CPU or the setup
+ * will fail.
+ *
+ * @see arch_entry
+ */
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data);
 
+/**
+ * Map the root cell's memory regions.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * Invoked by the architecture-specific setup code.
+ */
 int map_root_memory_regions(void);
 
+/**
+ * Perform architecture-specific early setup steps.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @note This is called over the master CPU that performs CPU-unrelated setup
+ * steps.
+ */
 int arch_init_early(void);
+
+/**
+ * Perform architecture-specific CPU setup steps.
+ * @param cpu_data	Data structure of the calling CPU.
+ *
+ * @return 0 on success, negative error code otherwise.
+ */
 int arch_cpu_init(struct per_cpu *cpu_data);
+
+/**
+ * Perform architecture-specific late setup steps.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @note This is called over the master CPU that performs CPU-unrelated setup
+ * steps.
+ */
 int arch_init_late(void);
+
+/**
+ * Perform architecture-specific activation of the hypervisor mode.
+ * @param cpu_data	Data structure of the calling CPU.
+ *
+ * @note This function does not return to the caller but rather resumes Linux
+ * in guest mode at the point arch_entry() would return to.
+ */
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data);
+
+/**
+ * Perform architecture-specific restoration of the CPU state on setup
+ * failures or after disabling the hypervisor.
+ * @param cpu_data	Data structure of the calling CPU.
+ */
 void arch_cpu_restore(struct per_cpu *cpu_data);
 
+/** @} */
 #endif /* !_JAILHOUSE_ENTRY_H */
