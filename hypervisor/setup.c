@@ -132,7 +132,7 @@ int map_root_memory_regions(void)
 	return 0;
 }
 
-static void init_late(struct per_cpu *cpu_data)
+static void init_late(void)
 {
 	unsigned int cpu, expected_cpus = 0;
 
@@ -147,7 +147,7 @@ static void init_late(struct per_cpu *cpu_data)
 	if (error)
 		return;
 
-	arch_config_commit(cpu_data, &root_cell);
+	arch_config_commit(&root_cell);
 
 	paging_dump_stats("after late setup");
 }
@@ -173,7 +173,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 		cpu_relax();
 
 	if (!error && master) {
-		init_late(cpu_data);
+		init_late();
 		if (!error) {
 			/*
 			 * Make sure everything was committed before we signal

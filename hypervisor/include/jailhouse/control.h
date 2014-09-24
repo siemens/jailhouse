@@ -64,8 +64,7 @@ int arch_unmap_memory_region(struct cell *cell,
 int arch_cell_create(struct cell *cell);
 void arch_cell_destroy(struct cell *cell);
 
-void arch_config_commit(struct per_cpu *cpu_data,
-			struct cell *cell_added_removed);
+void arch_config_commit(struct cell *cell_added_removed);
 
 void arch_shutdown(void);
 

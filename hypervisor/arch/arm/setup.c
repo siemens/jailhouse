@@ -58,8 +58,7 @@ int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 { return -ENOSYS; }
 void arch_cell_destroy(struct cell *new_cell) {}
-void arch_config_commit(struct per_cpu *cpu_data,
-			struct cell *cell_added_removed) {}
+void arch_config_commit(struct cell *cell_added_removed) {}
 void *memcpy(void *dest, const void *src, unsigned long n) { return NULL; }
 void arch_dbg_write(const char *msg) {}
 void arch_shutdown(void) {}

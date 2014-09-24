@@ -95,18 +95,17 @@ void arch_cell_destroy(struct cell *cell)
 	vmx_cell_exit(cell);
 }
 
-/* all root cell CPUs (except cpu_data) have to be stopped */
-void arch_config_commit(struct per_cpu *cpu_data,
-			struct cell *cell_added_removed)
+/* all root cell CPUs (except the calling one) have to be suspended */
+void arch_config_commit(struct cell *cell_added_removed)
 {
-	unsigned int cpu;
+	unsigned int cpu, current_cpu = this_cpu_id();
 
-	for_each_cpu_except(cpu, root_cell.cpu_set, cpu_data->cpu_id)
+	for_each_cpu_except(cpu, root_cell.cpu_set, current_cpu)
 		per_cpu(cpu)->flush_virt_caches = true;
 
 	if (cell_added_removed && cell_added_removed != &root_cell)
 		for_each_cpu_except(cpu, cell_added_removed->cpu_set,
-				    cpu_data->cpu_id)
+				    current_cpu)
 			per_cpu(cpu)->flush_virt_caches = true;
 
 	vmx_invept();
