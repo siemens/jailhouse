@@ -42,11 +42,11 @@
 
 typedef unsigned long *pt_entry_t;
 
-static inline void arch_tlb_flush_page(unsigned long addr)
+static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 {
 }
 
-static inline void flush_cache(void *addr, long size)
+static inline void arch_paging_flush_cpu_caches(void *addr, long size)
 {
 }
 

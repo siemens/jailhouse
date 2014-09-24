@@ -72,7 +72,7 @@ static unsigned int inv_queue_write(void *inv_queue, unsigned int index,
 	struct vtd_entry *entry = inv_queue;
 
 	entry[index] = content;
-	flush_cache(&entry[index], sizeof(*entry));
+	arch_paging_flush_cpu_caches(&entry[index], sizeof(*entry));
 
 	return (index + 1) % (PAGE_SIZE / sizeof(*entry));
 }
@@ -569,7 +569,7 @@ static void vtd_update_irte(unsigned int index, union vtd_irte content)
 		 */
 		irte->raw[0] = content.raw[0];
 	}
-	flush_cache(irte, sizeof(*irte));
+	arch_paging_flush_cpu_caches(irte, sizeof(*irte));
 
 	for (n = 0; n < dmar_units; n++) {
 		vtd_submit_iq_request(reg_base, inv_queue, &inv_int);
@@ -657,7 +657,7 @@ int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
 			goto error_nomem;
 		*root_entry_lo = VTD_ROOT_PRESENT |
 			paging_hvirt2phys(context_entry_table);
-		flush_cache(root_entry_lo, sizeof(u64));
+		arch_paging_flush_cpu_caches(root_entry_lo, sizeof(u64));
 	}
 
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
@@ -666,7 +666,7 @@ int vtd_add_pci_device(struct cell *cell, struct pci_device *device)
 	context_entry->hi_word =
 		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
 		(cell->id << VTD_CTX_DID_SHIFT);
-	flush_cache(context_entry, sizeof(*context_entry));
+	arch_paging_flush_cpu_caches(context_entry, sizeof(*context_entry));
 
 	return 0;
 
@@ -691,7 +691,7 @@ void vtd_remove_pci_device(struct pci_device *device)
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 
 	context_entry->lo_word &= ~VTD_CTX_PRESENT;
-	flush_cache(&context_entry->lo_word, sizeof(u64));
+	arch_paging_flush_cpu_caches(&context_entry->lo_word, sizeof(u64));
 
 	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
 					   device->info->num_msi_vectors));
@@ -701,7 +701,7 @@ void vtd_remove_pci_device(struct pci_device *device)
 			return;
 
 	*root_entry_lo &= ~VTD_ROOT_PRESENT;
-	flush_cache(root_entry_lo, sizeof(u64));
+	arch_paging_flush_cpu_caches(root_entry_lo, sizeof(u64));
 	page_free(&mem_pool, context_entry_table, 1);
 }
 

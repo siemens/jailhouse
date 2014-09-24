@@ -139,7 +139,7 @@ unsigned long paging_virt2phys(const struct paging_structures *pg_structs,
 static void flush_pt_entry(pt_entry_t pte, enum paging_coherent coherent)
 {
 	if (coherent == PAGING_COHERENT)
-		flush_cache(pte, sizeof(*pte));
+		arch_paging_flush_cpu_caches(pte, sizeof(*pte));
 }
 
 static int split_hugepage(const struct paging *paging, pt_entry_t pte,
@@ -220,7 +220,7 @@ int paging_create(const struct paging_structures *pg_structs,
 			paging++;
 		}
 		if (pg_structs == &hv_paging_structs)
-			arch_tlb_flush_page(virt);
+			arch_paging_flush_page_tlbs(virt);
 
 		phys += paging->page_size;
 		virt += paging->page_size;
@@ -275,7 +275,7 @@ int paging_destroy(const struct paging_structures *pg_structs,
 			pte = paging->get_entry(pt[--n], virt);
 		}
 		if (pg_structs == &hv_paging_structs)
-			arch_tlb_flush_page(virt);
+			arch_paging_flush_page_tlbs(virt);
 
 		if (page_size > size)
 			break;

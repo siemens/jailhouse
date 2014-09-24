@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -42,14 +42,14 @@
 
 typedef unsigned long *pt_entry_t;
 
-static inline void arch_tlb_flush_page(unsigned long addr)
+static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 {
-	asm volatile("invlpg (%0)" : : "r" (addr));
+	asm volatile("invlpg (%0)" : : "r" (page_addr));
 }
 
 extern unsigned long cache_line_size;
 
-static inline void flush_cache(void *addr, long size)
+static inline void arch_paging_flush_cpu_caches(void *addr, long size)
 {
 	for (; size > 0; size -= cache_line_size, addr += cache_line_size)
 		asm volatile("clflush %0" : "+m" (*(char *)addr));
