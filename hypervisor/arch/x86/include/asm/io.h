@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 static inline void outb(u8 v, u16 port)
 {

@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_BITOPS_H
 #define _JAILHOUSE_ASM_BITOPS_H
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 static inline __attribute__((always_inline)) void
 clear_bit(int nr, volatile unsigned long *addr)

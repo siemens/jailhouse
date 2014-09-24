@@ -14,8 +14,8 @@
 #ifndef _JAILHOUSE_ASM_PCI_H
 #define _JAILHOUSE_ASM_PCI_H
 
+#include <jailhouse/types.h>
 #include <asm/percpu.h>
-#include <asm/types.h>
 
 /* --- PCI configuration ports --- */
 #define PCI_REG_ADDR_PORT		0xcf8

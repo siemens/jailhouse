@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_PAGING_H
 #define _JAILHOUSE_ASM_PAGING_H
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 #include <asm/processor.h>
 
 #define PAGE_SIZE		4096

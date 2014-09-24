@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_CELL_H
 #define _JAILHOUSE_ASM_CELL_H
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 #include <asm/paging.h>
 
 #include <jailhouse/cell-config.h>

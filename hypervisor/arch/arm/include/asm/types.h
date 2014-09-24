@@ -13,8 +13,6 @@
 #ifndef _JAILHOUSE_ASM_TYPES_H
 #define _JAILHOUSE_ASM_TYPES_H
 
-#define NULL				((void *)0)
-
 #define BITS_PER_LONG			32
 
 #ifndef __ASSEMBLY__
@@ -42,15 +40,6 @@ typedef u32 __u32;
 
 typedef s64 __s64;
 typedef u64 __u64;
-
-typedef enum { true = 1, false = 0 } bool;
-
-struct cpu_set {
-	unsigned long max_cpu_id;
-	/* Note: The bitmap is supposed to be extended by embedding this
-	 * struct into a larger buffer. */
-	unsigned long bitmap[1];
-};
 
 #endif /* !__ASSEMBLY__ */
 

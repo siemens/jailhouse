@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 extern volatile unsigned long panic_in_progress;
 extern unsigned int panic_cpu;

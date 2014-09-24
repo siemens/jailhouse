@@ -11,7 +11,7 @@
  */
 
 #include <jailhouse/string.h>
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 void *memset(void *s, int c, unsigned long n)
 {

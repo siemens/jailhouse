@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_PROCESSOR_H
 #define _JAILHOUSE_ASM_PROCESSOR_H
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 #define X86_FEATURE_VMX					(1 << 5)
 #define X86_FEATURE_GBPAGES				(1 << 26)

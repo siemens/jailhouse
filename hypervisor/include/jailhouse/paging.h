@@ -14,7 +14,7 @@
 #define _JAILHOUSE_PAGING_H
 
 #include <jailhouse/entry.h>
-#include <asm/types.h>
+#include <jailhouse/types.h>
 #include <asm/paging.h>
 
 /**

@@ -14,7 +14,7 @@
 #define _JAILHOUSE_ENTRY_H
 
 #include <jailhouse/header.h>
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 #include <jailhouse/cell-config.h>
 

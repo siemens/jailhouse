@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_PERCPU_H
 #define _JAILHOUSE_ASM_PERCPU_H
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 #include <asm/paging.h>
 #include <asm/processor.h>
 
