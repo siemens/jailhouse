@@ -129,7 +129,7 @@ vector=10
 	.global nmi_entry
 	.balign 16
 nmi_entry:
-	interrupt_entry apic_nmi_handler
+	interrupt_entry vcpu_nmi_handler
 
 	.global irq_entry
 	.balign 16

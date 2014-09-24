@@ -144,7 +144,6 @@ void apic_clear(struct per_cpu *cpu_data);
 void apic_send_nmi_ipi(struct per_cpu *target_data);
 void apic_send_irq(struct apic_irq_message irq_msg);
 
-void apic_nmi_handler(struct per_cpu *cpu_data);
 void apic_irq_handler(struct per_cpu *cpu_data);
 
 bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val);

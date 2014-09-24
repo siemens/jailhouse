@@ -652,7 +652,7 @@ void vcpu_exit(struct per_cpu *cpu_data)
 		return;
 
 	cpu_data->vmx_state = VMXOFF;
-	/* Write vmx_state to ensure that vmx_schedule_vmexit stops accessing
+	/* Write vmx_state to ensure that vcpu_nmi_handler stops accessing
 	 * the VMCS (a compiler barrier would be sufficient, in fact). */
 	memory_barrier();
 
@@ -833,7 +833,7 @@ static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	}
 }
 
-void vmx_schedule_vmexit(struct per_cpu *cpu_data)
+void vcpu_nmi_handler(struct per_cpu *cpu_data)
 {
 	u32 pin_based_ctrl;
 

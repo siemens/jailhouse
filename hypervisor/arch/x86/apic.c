@@ -18,7 +18,6 @@
 #include <asm/apic.h>
 #include <asm/bitops.h>
 #include <asm/control.h>
-#include <asm/vmx.h>
 
 #define XAPIC_REG(x2apic_reg)		((x2apic_reg) << 4)
 
@@ -201,11 +200,6 @@ void apic_send_irq(struct apic_irq_message irq_msg)
 			  APIC_ICR_LV_ASSERT |
 			  (irq_msg.level_triggered ? APIC_ICR_TM_LEVEL : 0) |
 			  APIC_ICR_SH_NONE);
-}
-
-void apic_nmi_handler(struct per_cpu *cpu_data)
-{
-	vmx_schedule_vmexit(cpu_data);
 }
 
 void apic_irq_handler(struct per_cpu *cpu_data)
