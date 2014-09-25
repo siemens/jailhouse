@@ -386,11 +386,10 @@ static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 static void enter_hypervisor(void *info)
 {
 	struct jailhouse_header *header = info;
-	jailhouse_entry entry = (jailhouse_entry)header->entry;
 	int err;
 
 	/* either returns 0 or the same error code across all CPUs */
-	err = entry(smp_processor_id());
+	err = header->entry(smp_processor_id());
 	if (err)
 		error_code = err;
 
