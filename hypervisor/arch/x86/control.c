@@ -128,19 +128,19 @@ void arch_shutdown(void)
 void arch_suspend_cpu(unsigned int cpu_id)
 {
 	struct per_cpu *target_data = per_cpu(cpu_id);
-	bool target_stopped;
+	bool target_suspended;
 
 	spin_lock(&target_data->control_lock);
 
-	target_data->stop_cpu = true;
-	target_stopped = target_data->cpu_stopped;
+	target_data->suspend_cpu = true;
+	target_suspended = target_data->cpu_suspended;
 
 	spin_unlock(&target_data->control_lock);
 
-	if (!target_stopped) {
+	if (!target_suspended) {
 		apic_send_nmi_ipi(target_data);
 
-		while (!target_data->cpu_stopped)
+		while (!target_data->cpu_suspended)
 			cpu_relax();
 	}
 }
@@ -150,7 +150,7 @@ void arch_resume_cpu(unsigned int cpu_id)
 	/* make any state changes visible before releasing the CPU */
 	memory_barrier();
 
-	per_cpu(cpu_id)->stop_cpu = false;
+	per_cpu(cpu_id)->suspend_cpu = false;
 }
 
 void arch_reset_cpu(unsigned int cpu_id)
@@ -212,17 +212,17 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	spin_lock(&cpu_data->control_lock);
 
 	do {
-		if (cpu_data->init_signaled && !cpu_data->stop_cpu) {
+		if (cpu_data->init_signaled && !cpu_data->suspend_cpu) {
 			x86_enter_wait_for_sipi(cpu_data);
 			sipi_vector = -1;
 			break;
 		}
 
-		cpu_data->cpu_stopped = true;
+		cpu_data->cpu_suspended = true;
 
 		spin_unlock(&cpu_data->control_lock);
 
-		while (cpu_data->stop_cpu)
+		while (cpu_data->suspend_cpu)
 			cpu_relax();
 
 		if (cpu_data->shutdown_cpu) {
@@ -233,7 +233,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 		spin_lock(&cpu_data->control_lock);
 
-		cpu_data->cpu_stopped = false;
+		cpu_data->cpu_suspended = false;
 
 		if (cpu_data->sipi_vector >= 0) {
 			if (!cpu_data->failed) {

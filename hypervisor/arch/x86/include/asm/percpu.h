@@ -64,8 +64,8 @@ struct per_cpu {
 
 	/*
 	 * protects the following per_cpu fields (unless CPU is stopped):
-	 *  - stop_cpu
-	 *  - cpu_stopped (except for spinning on it to become true)
+	 *  - suspend_cpu
+	 *  - cpu_suspended (except for spinning on it to become true)
 	 *  - wait_for_sipi
 	 *  - init_signaled
 	 *  - sipi_vector
@@ -73,9 +73,9 @@ struct per_cpu {
 	 */
 	spinlock_t control_lock;
 
-	volatile bool stop_cpu;
+	volatile bool suspend_cpu;
 	volatile bool wait_for_sipi;
-	volatile bool cpu_stopped;
+	volatile bool cpu_suspended;
 	bool init_signaled;
 	int sipi_vector;
 	bool flush_virt_caches;
