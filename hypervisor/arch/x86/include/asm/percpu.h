@@ -89,7 +89,7 @@ struct per_cpu {
 	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));
 } __attribute__((aligned(PAGE_SIZE)));
 
-#define DECLARE_PER_CPU_ACCESSOR(field)					    \
+#define DEFINE_PER_CPU_ACCESSOR(field)					    \
 static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	    \
 {									    \
 	typeof(((struct per_cpu *)0)->field) tmp;			    \
@@ -101,9 +101,9 @@ static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	    \
 	return tmp;							    \
 }
 
-DECLARE_PER_CPU_ACCESSOR(cpu_data)
-DECLARE_PER_CPU_ACCESSOR(cpu_id)
-DECLARE_PER_CPU_ACCESSOR(cell)
+DEFINE_PER_CPU_ACCESSOR(cpu_data)
+DEFINE_PER_CPU_ACCESSOR(cpu_id)
+DEFINE_PER_CPU_ACCESSOR(cell)
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)
 {
