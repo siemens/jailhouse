@@ -17,6 +17,8 @@ else
 	Q = @
 endif
 
+MAKEFLAGS += --no-print-directory
+
 prefix      ?= /usr/local
 exec_prefix ?= $(prefix)
 sbindir     ?= $(exec_prefix)/sbin
