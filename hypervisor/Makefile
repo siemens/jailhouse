@@ -32,11 +32,27 @@ endif
 
 CORE_OBJECTS = setup.o printk.o paging.o control.o lib.o
 
+define filechk_config_mk
+(									\
+	echo "\$$(foreach config,\$$(filter CONFIG_%,		\
+		\$$(.VARIABLES)), \$$(eval undefine \$$(config)))";	\
+	if [ -f $(src)/include/jailhouse/config.h ]; then		\
+		sed -e "/^#define \([^[:space:]]*\)[[:space:]]*1/!d"	\
+		    -e "s/^#define \([^[:space:]]*\)[[:space:]]*1/\1=y/" \
+			$(src)/include/jailhouse/config.h;		\
+	fi								\
+)
+endef
+
+$(obj)/include/jailhouse/config.mk: Makefile FORCE
+	$(call filechk,config_mk)
+
 define filechk_version
 	$(src)/../scripts/gen_version_h $(src)/..
 endef
 
-clean-files := $(obj)/include/jailhouse/version.h
+clean-files := $(obj)/include/jailhouse/config.mk \
+	$(obj)/include/jailhouse/version.h
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \
@@ -81,8 +97,9 @@ $(foreach co,$(CORE_OBJECTS),\
 
 $(obj)/setup.o: $(obj)/include/jailhouse/version.h
 
-arch-builtin: $(obj)/$(defines-file) FORCE
-	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
+arch-builtin: $(obj)/$(defines-file) $(obj)/include/jailhouse/config.mk FORCE
+	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH) \
+		CONFIG_MK=$(obj)/include/jailhouse/config.mk
 
 always :=
 
