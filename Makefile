@@ -23,7 +23,7 @@ INSTALL_MOD_PATH ?= $(DESTDIR)
 export INSTALL_MOD_PATH
 
 define run-kbuild =
-	$(Q)$(MAKE) -C $(KDIR) M=$$PWD $@
+	+$(Q)$(MAKE) -C $(KDIR) M=$$PWD $@
 endef
 
 modules:
