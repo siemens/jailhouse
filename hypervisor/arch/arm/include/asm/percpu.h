@@ -26,6 +26,7 @@
 #ifndef __ASSEMBLY__
 
 #include <asm/cell.h>
+#include <asm/sysregs.h>
 
 struct per_cpu {
 	/* Keep these two in sync with defines above! */
@@ -35,7 +36,6 @@ struct per_cpu {
 	unsigned long linux_flags;
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 
-	struct per_cpu *cpu_data;
 	unsigned int cpu_id;
 //	u32 apic_id;
 	struct cell *cell;
@@ -50,15 +50,20 @@ struct per_cpu {
 	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));
 
-#define DEFINE_PER_CPU_ACCESSOR(field)					    \
-static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	    \
-{									    \
-	typeof(((struct per_cpu *)0)->field) tmp = 0;			    \
-									    \
-	return tmp;							    \
+static inline struct per_cpu *this_cpu_data(void)
+{
+	struct per_cpu *cpu_data;
+
+	arm_read_sysreg(TPIDR_EL2, cpu_data);
+	return cpu_data;
 }
 
-DEFINE_PER_CPU_ACCESSOR(cpu_data)
+#define DEFINE_PER_CPU_ACCESSOR(field)					\
+static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	\
+{									\
+	return this_cpu_data()->field;					\
+}
+
 DEFINE_PER_CPU_ACCESSOR(cpu_id)
 DEFINE_PER_CPU_ACCESSOR(cell)
 
