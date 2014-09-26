@@ -31,6 +31,9 @@
 #define SVM_MSRPM_C001		2
 #define SVM_MSRPM_RESV		3
 
+#define SVM_TLB_FLUSH_ALL	0x01
+#define SVM_TLB_FLUSH_GUEST	0x03
+
 #define NPT_PAGE_DIR_LEVELS	4
 
 struct svm_segment {

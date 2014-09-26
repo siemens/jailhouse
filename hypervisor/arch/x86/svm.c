@@ -17,6 +17,7 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/apic.h>
@@ -219,8 +220,8 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys,
 				     unsigned long flags)
 {
-	/* TODO: Implement */
-	return INVALID_PHYS_ADDR;
+	return paging_virt2phys(&cpu_data->cell->svm.npt_structs,
+			gphys, flags);
 }
 
 static void npt_set_next_pt(pt_entry_t pte, unsigned long next_pt)
@@ -278,15 +279,27 @@ int vcpu_vendor_cell_init(struct cell *cell)
 int vcpu_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem)
 {
-	/* TODO: Implement */
-	return 0;
+	u64 phys_start = mem->phys_start;
+	u32 flags = PAGE_FLAG_US; /* See APMv2, Section 15.25.5 */
+
+	if (mem->flags & JAILHOUSE_MEM_READ)
+		flags |= PAGE_FLAG_PRESENT;
+	if (mem->flags & JAILHOUSE_MEM_WRITE)
+		flags |= PAGE_FLAG_RW;
+	if (mem->flags & JAILHOUSE_MEM_EXECUTE)
+		flags |= PAGE_FLAG_EXECUTE;
+	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
+		phys_start = paging_hvirt2phys(&cell->comm_page);
+
+	return paging_create(&cell->svm.npt_structs, phys_start, mem->size,
+			     mem->virt_start, flags, PAGING_NON_COHERENT);
 }
 
 int vcpu_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 {
-	/* TODO: Implement */
-	return 0;
+	return paging_destroy(&cell->svm.npt_structs, mem->virt_start,
+			      mem->size, PAGING_NON_COHERENT);
 }
 
 void vcpu_vendor_cell_exit(struct cell *cell)
@@ -360,8 +373,35 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
-	/* TODO: Implement */
-	return false;
+	struct per_cpu *cpu_data = this_cpu_data();
+	struct vmcb *vmcb = &cpu_data->vmcb;
+
+	if (vmcb->efer & EFER_LMA) {
+		pg_structs->root_paging = x86_64_paging;
+		pg_structs->root_table_gphys =
+			vmcb->cr3 & 0x000ffffffffff000UL;
+	} else if ((vmcb->cr0 & X86_CR0_PG) &&
+		   !(vmcb->cr4 & X86_CR4_PAE)) {
+		pg_structs->root_paging = i386_paging;
+		pg_structs->root_table_gphys =
+			vmcb->cr3 & 0xfffff000UL;
+	} else if (!(vmcb->cr0 & X86_CR0_PG)) {
+		/*
+		 * Can be in non-paged protected mode as well, but
+		 * the translation mechanism will stay the same ayway.
+		 */
+		pg_structs->root_paging = realmode_paging;
+		/*
+		 * This will make paging_get_guest_pages map the page
+		 * that also contains the bootstrap code and, thus, is
+		 * always present in a cell.
+		 */
+		pg_structs->root_table_gphys = 0xff000;
+	} else {
+		printk("FATAL: Unsupported paging mode\n");
+		return false;
+	}
+	return true;
 }
 
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
@@ -381,7 +421,13 @@ void vcpu_nmi_handler(struct per_cpu *cpu_data)
 
 void vcpu_tlb_flush(void)
 {
-	/* TODO: Implement */
+	struct per_cpu *cpu_data = this_cpu_data();
+	struct vmcb *vmcb = &cpu_data->vmcb;
+
+	if (has_flush_by_asid)
+		vmcb->tlb_control = SVM_TLB_FLUSH_GUEST;
+	else
+		vmcb->tlb_control = SVM_TLB_FLUSH_ALL;
 }
 
 const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
