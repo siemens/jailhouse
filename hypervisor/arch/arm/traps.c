@@ -321,9 +321,10 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 	switch (ret) {
 	case TRAP_UNHANDLED:
 	case TRAP_FORBIDDEN:
-		panic_printk("FATAL: %s on CPU%d\n", (ret == TRAP_UNHANDLED ?
-				"unhandled trap" : "forbidden access"),
-				cpu_data->cpu_id);
+		panic_printk("FATAL: %s (exception class 0x%02x)\n",
+			     (ret == TRAP_UNHANDLED ? "unhandled trap" :
+						      "forbidden access"),
+			     exception_class);
 		dump_guest_regs(cpu_data, &ctx);
 		panic_park();
 	}
