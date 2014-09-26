@@ -21,6 +21,12 @@
 #define X86_FEATURE_GBPAGES				(1 << 26)
 #define X86_FEATURE_RDTSCP				(1 << 27)
 
+#define X86_FEATURE_SVM					(1 << 2)
+#define X86_FEATURE_NP					(1 << 0)
+#define X86_FEATURE_FLUSH_BY_ASID			(1 << 6)
+#define X86_FEATURE_DECODE_ASSISTS			(1 << 7)
+#define X86_FEATURE_AVIC				(1 << 13)
+
 #define X86_RFLAGS_VM					(1 << 17)
 
 #define X86_CR0_PE					0x00000001

@@ -17,6 +17,7 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/apic.h>
 #include <asm/cell.h>
@@ -33,7 +34,11 @@
  */
 #define SVM_CR0_CLEARED_BITS	~X86_CR0_NW
 
+static bool has_avic, has_assists, has_flush_by_asid;
+
 static const struct segment invalid_seg;
+
+static struct paging npt_paging[NPT_PAGE_DIR_LEVELS];
 
 static u8 __attribute__((aligned(PAGE_SIZE))) msrpm[][0x2000/4] = {
 	[ SVM_MSRPM_0000 ] = {
@@ -71,6 +76,33 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msrpm[][0x2000/4] = {
 		[      0/4 ... 0x1fff/4 ] = 0,
 	}
 };
+
+static void *avic_page;
+
+static int svm_check_features(void)
+{
+	/* SVM is available */
+	if (!(cpuid_ecx(0x80000001) & X86_FEATURE_SVM))
+		return -ENODEV;
+
+	/* Nested paging */
+	if (!(cpuid_edx(0x8000000A) & X86_FEATURE_NP))
+		return -EIO;
+
+	/* Decode assists */
+	if ((cpuid_edx(0x8000000A) & X86_FEATURE_DECODE_ASSISTS))
+		has_assists = true;
+
+	/* AVIC support */
+	if (cpuid_edx(0x8000000A) & X86_FEATURE_AVIC)
+		has_avic = true;
+
+	/* TLB Flush by ASID support */
+	if (cpuid_edx(0x8000000A) & X86_FEATURE_FLUSH_BY_ASID)
+		has_flush_by_asid = true;
+
+	return 0;
+}
 
 static void set_svm_segment_from_dtr(struct svm_segment *svm_segment,
 				     const struct desc_table_reg *dtr)
@@ -191,13 +223,50 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 	return INVALID_PHYS_ADDR;
 }
 
+static void npt_set_next_pt(pt_entry_t pte, unsigned long next_pt)
+{
+	/* See APMv2, Section 15.25.5 */
+	*pte = (next_pt & 0x000ffffffffff000UL) |
+		(PAGE_DEFAULT_FLAGS | PAGE_FLAG_US);
+}
+
 int vcpu_vendor_init(void)
 {
-	/* Enable Extended Interrupt LVT (xAPIC, as it is AMD-only) */
-	if (!using_x2apic)
-		apic_reserved_bits[0x50] = 0;
+	unsigned long vm_cr;
+	int err, n;
 
-	return 0;
+	err = svm_check_features();
+	if (err)
+		return err;
+
+	vm_cr = read_msr(MSR_VM_CR);
+	if (vm_cr & VM_CR_SVMDIS)
+		/* SVM disabled in BIOS */
+		return -EPERM;
+
+	/* Nested paging is the same as the native one */
+	memcpy(npt_paging, x86_64_paging, sizeof(npt_paging));
+	for (n = 0; n < NPT_PAGE_DIR_LEVELS; n++)
+		npt_paging[n].set_next_pt = npt_set_next_pt;
+
+	/* This is always false for AMD now (except in nested SVM);
+	   see Sect. 16.3.1 in APMv2 */
+	if (using_x2apic) {
+		/* allow direct x2APIC access except for ICR writes */
+		memset(&msrpm[SVM_MSRPM_0000][MSR_X2APIC_BASE/4], 0,
+				(MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/4);
+		msrpm[SVM_MSRPM_0000][MSR_X2APIC_ICR/4] = 0x02;
+	} else {
+		/* Enable Extended Interrupt LVT */
+		apic_reserved_bits[0x50] = 0;
+		if (has_avic) {
+			avic_page = page_alloc(&remap_pool, 1);
+			if (!avic_page)
+				return -ENOMEM;
+		}
+	}
+
+	return vcpu_cell_init(&root_cell);
 }
 
 int vcpu_vendor_cell_init(struct cell *cell)
@@ -227,13 +296,48 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 
 int vcpu_init(struct per_cpu *cpu_data)
 {
-	/* TODO: Implement */
+	unsigned long efer;
+	int err;
+
+	err = svm_check_features();
+	if (err)
+		return err;
+
+	efer = read_msr(MSR_EFER);
+	if (efer & EFER_SVME)
+		return -EBUSY;
+
+	efer |= EFER_SVME;
+	write_msr(MSR_EFER, efer);
+
+	cpu_data->svm_state = SVMON;
+
+	if (!vmcb_setup(cpu_data))
+		return -EIO;
+
+	write_msr(MSR_VM_HSAVE_PA, paging_hvirt2phys(cpu_data->host_state));
+
+	/* Enable Extended Interrupt LVT (xAPIC, as it is AMD-only) */
+	if (!using_x2apic)
+		apic_reserved_bits[0x50] = 0;
+
 	return 0;
 }
 
 void vcpu_exit(struct per_cpu *cpu_data)
 {
-	/* TODO: Implement */
+	unsigned long efer;
+
+	if (cpu_data->svm_state == SVMOFF)
+		return;
+
+	cpu_data->svm_state = SVMOFF;
+
+	efer = read_msr(MSR_EFER);
+	efer &= ~EFER_SVME;
+	write_msr(MSR_EFER, efer);
+
+	write_msr(MSR_VM_HSAVE_PA, 0);
 }
 
 void vcpu_activate_vmm(struct per_cpu *cpu_data)
