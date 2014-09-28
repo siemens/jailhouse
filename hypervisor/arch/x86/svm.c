@@ -404,7 +404,9 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
 {
-	/* TODO: Implement */
+	struct per_cpu *cpu_data = this_cpu_data();
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	vmcb->rip += inst_len;
 }
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
