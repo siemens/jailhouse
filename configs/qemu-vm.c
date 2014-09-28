@@ -3,10 +3,17 @@
  *
  * Test configuration for QEMU Q35 VM, 1 GB RAM, 64 MB hypervisor (-192K ACPI)
  * Command line:
+ *
+ * For Intel-based setup:
  * qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
  *  -drive file=/path/to/image,id=disk,if=none -device ide-hd,drive=disk \
  *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
  *  -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic
+ *
+ * For AMD-based setups:
+ * qemu-system-x86_64 /path/to/image -m 1G -enable-kvm -smp 4 \
+ *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
+ *  -cpu host,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+svm,+x2apic
  *
  * Copyright (c) Siemens AG, 2013
  *
