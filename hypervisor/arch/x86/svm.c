@@ -489,6 +489,42 @@ out:
 	return result;
 }
 
+/*
+ * TODO: This handles unaccelerated (non-AVIC) access. AVIC should
+ * be treated separately in svm_handle_avic_access().
+ */
+static bool svm_handle_apic_access(struct registers *guest_regs,
+				   struct per_cpu *cpu_data)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	struct guest_paging_structures pg_structs;
+	unsigned int inst_len, offset;
+	bool is_write;
+
+	/* The caller is responsible for sanity checks */
+	is_write = !!(vmcb->exitinfo1 & 0x2);
+	offset = vmcb->exitinfo2 - XAPIC_BASE;
+
+	if (offset & 0x00f)
+		goto out_err;
+
+	if (!vcpu_get_guest_paging_structs(&pg_structs))
+		goto out_err;
+
+	inst_len = apic_mmio_access(guest_regs, cpu_data, vmcb->rip,
+				    &pg_structs, offset >> 4, is_write);
+	if (!inst_len)
+		goto out_err;
+
+	vcpu_skip_emulated_instruction(inst_len);
+	return true;
+
+out_err:
+	panic_printk("FATAL: Unhandled APIC access, offset %d, is_write: %d\n",
+		     offset, is_write);
+	return false;
+}
+
 static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
 {
 	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", vmcb->rip,
@@ -539,6 +575,23 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		if (res)
 			return;
 		break;
+	case VMEXIT_NPF:
+		if ((vmcb->exitinfo1 & 0x7) == 0x7 &&
+		     vmcb->exitinfo2 >= XAPIC_BASE &&
+		     vmcb->exitinfo2 < XAPIC_BASE + PAGE_SIZE) {
+			/* APIC access in non-AVIC mode */
+			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
+			if (svm_handle_apic_access(guest_regs, cpu_data))
+				return;
+		} else {
+			/* General MMIO (IOAPIC, PCI etc) */
+		}
+
+		panic_printk("FATAL: Unhandled Nested Page Fault for (%p), "
+			     "error code is %x\n", vmcb->exitinfo2,
+			     vmcb->exitinfo1 & 0xf);
+		break;
+	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:
 		panic_printk("FATAL: Unexpected #VMEXIT, exitcode %x, "
 			     "exitinfo1 %p exitinfo2 %p\n",
