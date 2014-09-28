@@ -463,6 +463,7 @@ static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
+	struct vcpu_execution_state x_state;
 
 	/* Restore GS value expected by per_cpu data accessors */
 	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
@@ -476,6 +477,10 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case VMEXIT_CPUID:
 		/* FIXME: We are not intercepting CPUID now */
+		return;
+	case VMEXIT_VMMCALL:
+		vcpu_vendor_get_execution_state(&x_state);
+		vcpu_handle_hypercall(guest_regs, &x_state);
 		return;
 	default:
 		panic_printk("FATAL: Unexpected #VMEXIT, exitcode %x, "
@@ -538,5 +543,10 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
 {
-	/* TODO: Implement */
+	struct per_cpu *cpu_data = this_cpu_data();
+
+	x_state->efer = cpu_data->vmcb.efer;
+	x_state->rflags = cpu_data->vmcb.rflags;
+	x_state->cs = cpu_data->vmcb.cs.selector;
+	x_state->rip = cpu_data->vmcb.rip;
 }
