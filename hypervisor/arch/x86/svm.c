@@ -16,6 +16,7 @@
 
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
+#include <jailhouse/control.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
@@ -439,9 +440,48 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 	return true;
 }
 
+static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
+{
+	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", vmcb->rip,
+		     vmcb->rsp, vmcb->rflags);
+	panic_printk("RAX: %p RBX: %p RCX: %p\n", guest_regs->rax,
+		     guest_regs->rbx, guest_regs->rcx);
+	panic_printk("RDX: %p RSI: %p RDI: %p\n", guest_regs->rdx,
+		     guest_regs->rsi, guest_regs->rdi);
+	panic_printk("CS: %x BASE: %p AR-BYTES: %x EFER.LMA %d\n",
+		     vmcb->cs.selector,
+		     vmcb->cs.base,
+		     vmcb->cs.access_rights,
+		     (vmcb->efer & EFER_LMA));
+	panic_printk("CR0: %p CR3: %p CR4: %p\n", vmcb->cr0,
+		     vmcb->cr3, vmcb->cr4);
+	panic_printk("EFER: %p\n", vmcb->efer);
+}
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
-	/* TODO: Implement */
+	struct vmcb *vmcb = &cpu_data->vmcb;
+
+	/* Restore GS value expected by per_cpu data accessors */
+	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
+
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+
+	switch (vmcb->exitcode) {
+	case VMEXIT_INVALID:
+		panic_printk("FATAL: VM-Entry failure, error %d\n",
+			     vmcb->exitcode);
+		break;
+	case VMEXIT_CPUID:
+		/* FIXME: We are not intercepting CPUID now */
+		return;
+	default:
+		panic_printk("FATAL: Unexpected #VMEXIT, exitcode %x, "
+			     "exitinfo1 %p exitinfo2 %p\n",
+			     vmcb->exitcode, vmcb->exitinfo1, vmcb->exitinfo2);
+	}
+	dump_guest_regs(guest_regs, vmcb);
+	panic_park();
 }
 
 void vcpu_park(struct per_cpu *cpu_data)
