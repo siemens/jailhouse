@@ -552,11 +552,26 @@ static void vcpu_vendor_get_pf_intercept(struct per_cpu *cpu_data,
 	out->is_write = !!(vmcb->exitinfo1 & 0x2);
 }
 
+static void vcpu_vendor_get_io_intercept(struct per_cpu *cpu_data,
+					 struct vcpu_io_intercept *out)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	u64 exitinfo = vmcb->exitinfo1;
+
+	/* parse exit info for I/O instructions (see APM, 15.10.2 ) */
+	out->port = (exitinfo >> 16) & 0xFFFF;
+	out->size = (exitinfo >> 4) & 0x7;
+	out->in = !!(exitinfo & 0x1);
+	out->inst_len = vmcb->exitinfo2 - vmcb->rip;
+	out->rep_or_str = !!(exitinfo & 0x0c);
+}
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	struct vcpu_execution_state x_state;
 	struct vcpu_pf_intercept pf;
+	struct vcpu_io_intercept io;
 	bool res = false;
 
 	/* Restore GS value expected by per_cpu data accessors */
@@ -604,6 +619,12 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		panic_printk("FATAL: Unhandled Nested Page Fault for (%p), "
 			     "error code is %x\n", vmcb->exitinfo2,
 			     vmcb->exitinfo1 & 0xf);
+		break;
+	case VMEXIT_IOIO:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
+		vcpu_vendor_get_io_intercept(cpu_data, &io);
+		if (vcpu_handle_io_access(guest_regs, &io))
+			return;
 		break;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:
