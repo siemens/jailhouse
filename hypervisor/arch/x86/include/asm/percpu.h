@@ -84,6 +84,8 @@ struct per_cpu {
 	union {
 		/** VMX initialization state */
 		enum vmx_state vmx_state;
+		/** SVM initialization state */
+		enum {SVMOFF = 0, SVMON} svm_state;
 	};
 
 	/**
@@ -135,6 +137,12 @@ struct per_cpu {
 				__attribute__((aligned(PAGE_SIZE)));
 			/** VMCS of this CPU, required by VMX. */
 			struct vmcs vmcs
+				__attribute__((aligned(PAGE_SIZE)));
+		};
+		struct {
+			/* TODO: Add VMCB block here */
+			/** SVM Host save area; opaque to us. */
+			u8 host_state[PAGE_SIZE]
 				__attribute__((aligned(PAGE_SIZE)));
 		};
 	};

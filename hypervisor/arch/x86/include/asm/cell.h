@@ -32,6 +32,12 @@ struct cell {
 			/** Paging structures used for cell CPUs. */
 			struct paging_structures ept_structs;
 		} vmx; /**< Intel VMX-specific fields. */
+		struct {
+			/** I/O Permissions Map. */
+			u8 *iopm;
+			/** Paging structures used for cell CPUs. */
+			struct paging_structures npt_structs;
+		} svm; /**< AMD SVM-specific fields. */
 	};
 
 	union {
@@ -42,6 +48,7 @@ struct cell {
 			 * cell. */
 			bool ir_emulation;
 		} vtd; /**< Intel VT-d specific fields. */
+		/* TODO: No struct vtd equivalent for SVM code yet. */
 	};
 
 	/** ID of the cell. */
