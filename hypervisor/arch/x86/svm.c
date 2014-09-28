@@ -23,6 +23,8 @@
 #include <jailhouse/string.h>
 #include <asm/apic.h>
 #include <asm/cell.h>
+#include <asm/control.h>
+#include <asm/iommu.h>
 #include <asm/paging.h>
 #include <asm/percpu.h>
 #include <asm/processor.h>
@@ -402,6 +404,101 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	__builtin_unreachable();
 }
 
+static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	unsigned long val;
+	bool ok = true;
+
+	vmcb->cr0 = X86_CR0_NW | X86_CR0_CD | X86_CR0_ET;
+	vmcb->cr3 = 0;
+	vmcb->cr4 = 0;
+
+	vmcb->rflags = 0x02;
+
+	val = 0;
+	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
+		val = 0xfff0;
+		sipi_vector = 0xf0;
+	}
+	vmcb->rip = val;
+	vmcb->rsp = 0;
+
+	vmcb->cs.selector = sipi_vector << 8;
+	vmcb->cs.base = sipi_vector << 12;
+	vmcb->cs.limit = 0xffff;
+	vmcb->cs.access_rights = 0x009b;
+
+	vmcb->ds.selector = 0;
+	vmcb->ds.base = 0;
+	vmcb->ds.limit = 0xffff;
+	vmcb->ds.access_rights = 0x0093;
+
+	vmcb->es.selector = 0;
+	vmcb->es.base = 0;
+	vmcb->es.limit = 0xffff;
+	vmcb->es.access_rights = 0x0093;
+
+	vmcb->fs.selector = 0;
+	vmcb->fs.base = 0;
+	vmcb->fs.limit = 0xffff;
+	vmcb->fs.access_rights = 0x0093;
+
+	vmcb->gs.selector = 0;
+	vmcb->gs.base = 0;
+	vmcb->gs.limit = 0xffff;
+	vmcb->gs.access_rights = 0x0093;
+
+	vmcb->ss.selector = 0;
+	vmcb->ss.base = 0;
+	vmcb->ss.limit = 0xffff;
+	vmcb->ss.access_rights = 0x0093;
+
+	vmcb->tr.selector = 0;
+	vmcb->tr.base = 0;
+	vmcb->tr.limit = 0xffff;
+	vmcb->tr.access_rights = 0x008b;
+
+	vmcb->ldtr.selector = 0;
+	vmcb->ldtr.base = 0;
+	vmcb->ldtr.limit = 0xffff;
+	vmcb->ldtr.access_rights = 0x0082;
+
+	vmcb->gdtr.selector = 0;
+	vmcb->gdtr.base = 0;
+	vmcb->gdtr.limit = 0xffff;
+	vmcb->gdtr.access_rights = 0;
+
+	vmcb->idtr.selector = 0;
+	vmcb->idtr.base = 0;
+	vmcb->idtr.limit = 0xffff;
+	vmcb->idtr.access_rights = 0;
+
+	vmcb->efer = EFER_SVME;
+
+	/* These MSRs are undefined on reset */
+	vmcb->star = 0;
+	vmcb->lstar = 0;
+	vmcb->cstar = 0;
+	vmcb->sfmask = 0;
+	vmcb->sysenter_cs = 0;
+	vmcb->sysenter_eip = 0;
+	vmcb->sysenter_esp = 0;
+	vmcb->kerngsbase = 0;
+
+	vmcb->g_pat = 0x0007040600070406;
+
+	vmcb->dr7 = 0x00000400;
+
+	ok &= vcpu_set_cell_config(cpu_data->cell, vmcb);
+
+	/* This is always false, but to be consistent with vmx.c... */
+	if (!ok) {
+		panic_printk("FATAL: CPU reset failed\n");
+		panic_stop();
+	}
+}
+
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
@@ -573,6 +670,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	struct vcpu_pf_intercept pf;
 	struct vcpu_io_intercept io;
 	bool res = false;
+	int sipi_vector;
 
 	/* Restore GS value expected by per_cpu data accessors */
 	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
@@ -584,6 +682,19 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		panic_printk("FATAL: VM-Entry failure, error %d\n",
 			     vmcb->exitcode);
 		break;
+	case VMEXIT_NMI:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
+		/* Temporarily enable GIF to consume pending NMI */
+		asm volatile("stgi; clgi" : : : "memory");
+		sipi_vector = x86_handle_events(cpu_data);
+		if (sipi_vector >= 0) {
+			printk("CPU %d received SIPI, vector %x\n",
+			       cpu_data->cpu_id, sipi_vector);
+			vcpu_reset(cpu_data, sipi_vector);
+			memset(guest_regs, 0, sizeof(*guest_regs));
+		}
+		iommu_check_pending_faults(cpu_data);
+		return;
 	case VMEXIT_CPUID:
 		/* FIXME: We are not intercepting CPUID now */
 		return;
@@ -643,7 +754,7 @@ void vcpu_park(struct per_cpu *cpu_data)
 
 void vcpu_nmi_handler(struct per_cpu *cpu_data)
 {
-	/* TODO: Implement */
+	printk("Consuming pending NMI on CPU %d\n", cpu_data->cpu_id);
 }
 
 void vcpu_tlb_flush(void)
