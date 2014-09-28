@@ -18,7 +18,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[6];
+	struct jailhouse_memory mem_regions[8];
 	struct jailhouse_irqchip irqchips[1];
 } __attribute__((packed)) config = {
 	.header = {
@@ -40,10 +40,24 @@ struct {
 	},
 
 	.mem_regions = {
+		/* SMC91x */ {
+			.phys_start = 0x1a000000,
+			.virt_start = 0x1a000000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_DMA,
+		},
 		/* SP810 */ {
 			.phys_start = 0x1c020000,
 			.virt_start = 0x1c020000,
 			.size = 0x00010000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_DMA,
+		},
+		/* MMC */ {
+			.phys_start = 0x1c050000,
+			.virt_start = 0x1c050000,
+			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_DMA,
 		},
