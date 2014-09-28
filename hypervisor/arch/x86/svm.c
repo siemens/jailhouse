@@ -21,6 +21,7 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
+#include <jailhouse/utils.h>
 #include <asm/apic.h>
 #include <asm/cell.h>
 #include <asm/control.h>
@@ -506,6 +507,23 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 	vmcb->rip += inst_len;
 }
 
+static void update_efer(struct per_cpu *cpu_data)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	unsigned long efer = vmcb->efer;
+
+	if ((efer & (EFER_LME | EFER_LMA)) != EFER_LME)
+		return;
+
+	efer |= EFER_LMA;
+
+	/* Flush TLB on LMA/LME change: See APMv2, Sect. 15.16 */
+	if ((vmcb->efer ^ efer) & EFER_LMA)
+		vcpu_tlb_flush();
+
+	vmcb->efer = efer;
+}
+
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
@@ -537,6 +555,121 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 		return false;
 	}
 	return true;
+}
+
+struct parse_context {
+	unsigned int remaining;
+	unsigned int size;
+	unsigned long cs_base;
+	const u8 *inst;
+};
+
+static bool ctx_advance(struct parse_context *ctx,
+			unsigned long *pc,
+			struct guest_paging_structures *pg_structs)
+{
+	if (!ctx->size) {
+		ctx->size = ctx->remaining;
+		ctx->inst = vcpu_map_inst(pg_structs, ctx->cs_base + *pc,
+					  &ctx->size);
+		if (!ctx->inst)
+			return false;
+		ctx->remaining -= ctx->size;
+		*pc += ctx->size;
+	}
+	return true;
+}
+
+static bool x86_parse_mov_to_cr(struct per_cpu *cpu_data,
+				unsigned long pc,
+				unsigned char reg,
+				unsigned long *gpr)
+{
+	struct guest_paging_structures pg_structs;
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	struct parse_context ctx = {};
+	/* No prefixes are supported yet */
+	u8 opcodes[] = {0x0f, 0x22}, modrm;
+	bool ok = false;
+	int n;
+
+	ctx.remaining = ARRAY_SIZE(opcodes);
+	if (!vcpu_get_guest_paging_structs(&pg_structs))
+		goto out;
+	ctx.cs_base = (vmcb->efer & EFER_LMA) ? 0 : vmcb->cs.base;
+
+	if (!ctx_advance(&ctx, &pc, &pg_structs))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(opcodes); n++, ctx.inst++) {
+		if (*(ctx.inst) != opcodes[n])
+			goto out;
+		if (!ctx_advance(&ctx, &pc, &pg_structs))
+			goto out;
+	}
+
+	if (!ctx_advance(&ctx, &pc, &pg_structs))
+		goto out;
+
+	modrm = *(ctx.inst);
+
+	if (((modrm & 0x38) >> 3) != reg)
+		goto out;
+
+	if (gpr)
+		*gpr = (modrm & 0x7);
+
+	ok = true;
+out:
+	return ok;
+}
+
+/*
+ * XXX: The only visible reason to have this function (vmx.c consistency
+ * aside) is to prevent cells from setting invalid CD+NW combinations that
+ * result in no more than VMEXIT_INVALID. Maybe we can get along without it
+ * altogether?
+ */
+static bool svm_handle_cr(struct registers *guest_regs,
+			  struct per_cpu *cpu_data)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	/* Workaround GCC 4.8 warning on uninitialized variable 'reg' */
+	unsigned long reg = -1, val, bits;
+	bool ok = true;
+
+	if (has_assists) {
+		if (!(vmcb->exitinfo1 & (1UL << 63))) {
+			panic_printk("FATAL: Unsupported CR access (LMSW or CLTS)\n");
+			ok = false;
+			goto out;
+		}
+		reg = vmcb->exitinfo1 & 0x07;
+	} else {
+		if (!x86_parse_mov_to_cr(cpu_data, vmcb->rip, 0, &reg)) {
+			panic_printk("FATAL: Unable to parse MOV-to-CR instruction\n");
+			ok = false;
+			goto out;
+		}
+	};
+
+	if (reg == 4)
+		val = vmcb->rsp;
+	else
+		val = ((unsigned long *)guest_regs)[15 - reg];
+
+	vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
+	/* Flush TLB on PG/WP/CD/NW change: See APMv2, Sect. 15.16 */
+	bits = (X86_CR0_PG | X86_CR0_WP | X86_CR0_CD | X86_CR0_NW);
+	if ((val ^ vmcb->cr0) & bits)
+		vcpu_tlb_flush();
+	/* TODO: better check for #GP reasons */
+	vmcb->cr0 = val & SVM_CR0_CLEARED_BITS;
+	if (val & X86_CR0_PG)
+		update_efer(cpu_data);
+
+out:
+	return ok;
 }
 
 static bool svm_handle_msr_read(struct registers *guest_regs,
@@ -702,6 +835,11 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		vcpu_vendor_get_execution_state(&x_state);
 		vcpu_handle_hypercall(guest_regs, &x_state);
 		return;
+	case VMEXIT_CR0_SEL_WRITE:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
+		if (svm_handle_cr(guest_regs, cpu_data))
+			return;
+		break;
 	case VMEXIT_MSR:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (!vmcb->exitinfo1)
