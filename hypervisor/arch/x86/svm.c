@@ -510,8 +510,23 @@ void vcpu_tlb_flush(void)
 const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size)
 {
-	/* TODO: Implement */
-	return NULL;
+	struct per_cpu *cpu_data = this_cpu_data();
+	struct vmcb *vmcb = &cpu_data->vmcb;
+	unsigned long start;
+
+	if (has_assists) {
+		if (!*size)
+			return NULL;
+		start = vmcb->rip - pc;
+		if (start < vmcb->bytes_fetched) {
+			*size = vmcb->bytes_fetched - start;
+			return &vmcb->guest_bytes[start];
+		} else {
+			return NULL;
+		}
+	} else {
+		return vcpu_map_inst(pg_structs, pc, size);
+	}
 }
 
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
