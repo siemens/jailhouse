@@ -77,6 +77,7 @@
 
 #define EFER_LME					0x00000100
 #define EFER_LMA					0x00000400
+#define EFER_NXE					0x00000800
 
 #define GDT_DESC_NULL					0
 #define GDT_DESC_CODE					1
