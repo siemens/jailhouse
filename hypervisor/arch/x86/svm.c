@@ -543,10 +543,20 @@ static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
 	panic_printk("EFER: %p\n", vmcb->efer);
 }
 
+static void vcpu_vendor_get_pf_intercept(struct per_cpu *cpu_data,
+					 struct vcpu_pf_intercept *out)
+{
+	struct vmcb *vmcb = &cpu_data->vmcb;
+
+	out->phys_addr = vmcb->exitinfo2;
+	out->is_write = !!(vmcb->exitinfo1 & 0x2);
+}
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	struct vcpu_execution_state x_state;
+	struct vcpu_pf_intercept pf;
 	bool res = false;
 
 	/* Restore GS value expected by per_cpu data accessors */
@@ -585,6 +595,10 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 				return;
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
+			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
+			vcpu_vendor_get_pf_intercept(cpu_data, &pf);
+			if (vcpu_handle_pt_violation(guest_regs, &pf))
+				return;
 		}
 
 		panic_printk("FATAL: Unhandled Nested Page Fault for (%p), "
