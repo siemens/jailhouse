@@ -23,8 +23,8 @@ struct {
 } __attribute__((packed)) config = {
 	.header = {
 		.hypervisor_memory = {
-			.phys_start = 0xa0000000,
-			.size = 0x4000000 - 0x2000,
+			.phys_start = 0xfc000000,
+			.size = 0x4000000,
 		},
 		.root_cell = {
 			.name = "VExpress Linux",
@@ -92,7 +92,7 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x80000000,
 			.virt_start = 0x80000000,
-			.size = 0x80000000,
+			.size = 0x7c000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},

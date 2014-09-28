@@ -44,9 +44,9 @@ struct {
 				JAILHOUSE_MEM_DMA,
 		},
 		/* RAM */ {
-			.phys_start = 0xa4000000,
+			.phys_start = 0xfbfe0000,
 			.virt_start = 0,
-			.size = 0x01000000,
+			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_LOADABLE,
 		},
