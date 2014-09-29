@@ -10,8 +10,6 @@
 # the COPYING file in the top-level directory.
 #
 
-KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
-
 include $(INMATES_LIB)/Makefile.lib
 
 LIBDIR := ../../lib/arm
@@ -24,6 +22,4 @@ gic-demo-y := gic-demo.o \
 uart-demo-y := uart-demo.o \
 	$(addprefix $(LIBDIR)/,header.o printk.o $(DRIVERS))
 
-
-targets += $(INMATES:.bin=-y) $(INMATES:.bin=-linked.o) $(INMATES)
-always := $(INMATES)
+$(eval $(call DECLARE_TARGETS,$(INMATES)))

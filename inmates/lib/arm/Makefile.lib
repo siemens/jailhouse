@@ -2,9 +2,11 @@
 # Jailhouse, a Linux-based partitioning hypervisor
 #
 # Copyright (c) ARM Limited, 2014
+# Copyright (c) Siemens AG, 2014
 #
 # Authors:
 #  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+#  Jan Kiszka <jan.kiszka@siemens.com>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
@@ -12,8 +14,18 @@
 
 -include $(obj)/../../../hypervisor/include/jailhouse/config.mk
 
+KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
+
 KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include
-KBUILD_AFLAGE				+= -I$(INMATES_LIB)/include
+KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include
+
+define DECLARE_TARGETS =
+ _TARGETS = $(1)
+ always := $$(_TARGETS)
+ # $(NAME-y) NAME-linked.o NAME.bin
+ targets += $$(foreach t,$$(_TARGETS:.bin=-y),$$($$t)) \
+            $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)
+endef
 
 mach-$(CONFIG_ARCH_VEXPRESS)		:= vexpress
 
