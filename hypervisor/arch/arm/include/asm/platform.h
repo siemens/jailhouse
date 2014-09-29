@@ -23,7 +23,7 @@
 #ifdef CONFIG_ARCH_VEXPRESS
 
 # define UART_BASE_PHYS	((void *)0x1c090000)
-# define UART_BASE_VIRT	((void *)0xf8090000)
+# define UART_BASE_VIRT	((void *)0xdf87c000)
 
 # ifdef CONFIG_ARM_GIC_V3
 #  define GICD_BASE	((void *)0x2f000000)
