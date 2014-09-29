@@ -20,8 +20,11 @@ def read_cpus(path):
 
 
 def finish_cpu_list(last_cpu, cpu):
-    if last_cpu is not None and cpu-last_cpu > 1:
-        return "%s%d," % ("-" if cpu-last_cpu > 2 else ",", cpu-1)
+    if last_cpu is not None:
+        if cpu-last_cpu > 1:
+            return "%s%d," % ("-" if cpu-last_cpu > 2 else ",", cpu-1)
+        else:
+            return ","
     else:
         return ""
 
