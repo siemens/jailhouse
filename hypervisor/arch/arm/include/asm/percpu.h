@@ -43,7 +43,6 @@ struct per_cpu {
 //	unsigned long linux_ip;
 	bool initialized;
 
-	volatile bool cpu_suspended;
 	bool flush_caches;
 	bool shutdown_cpu;
 	int shutdown_state;

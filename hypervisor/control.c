@@ -814,7 +814,6 @@ void panic_stop(void)
 {
 	panic_printk("Stopping CPU %d (Cell: \"%s\")\n", this_cpu_id(),
 		     this_cell()->config->name);
-	this_cpu_data()->cpu_suspended = true;
 
 	if (phys_processor_id() == panic_cpu)
 		panic_in_progress = 0;

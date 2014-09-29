@@ -289,6 +289,8 @@ void x86_exception_handler(struct exception_frame *frame)
 
 void arch_panic_stop(void)
 {
+	this_cpu_data()->cpu_suspended = true;
+	memory_barrier();
 	asm volatile("1: hlt; jmp 1b");
 	__builtin_unreachable();
 }
