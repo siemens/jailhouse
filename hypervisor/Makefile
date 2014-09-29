@@ -21,8 +21,8 @@ KBUILD_CFLAGS += -mcmodel=kernel
 KBUILD_CPPFLAGS += -m64
 endif
 
-ifneq ($(wildcard $(src)/include/jailhouse/config.h),)
-KBUILD_CFLAGS += -include $(src)/include/jailhouse/config.h
+ifneq ($(wildcard $(obj)/include/jailhouse/config.h),)
+KBUILD_CFLAGS += -include $(obj)/include/jailhouse/config.h
 endif
 
 $(obj)/arch/$(SRCARCH)/built-in.o: FORCE
