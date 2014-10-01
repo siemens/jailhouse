@@ -204,7 +204,7 @@ bool vcpu_handle_pt_violation(struct registers *guest_regs,
 	if (!vcpu_get_guest_paging_structs(&pg_structs))
 		goto invalid_access;
 
-	inst = mmio_parse(x_state.rip, &pg_structs, pf->is_write);
+	inst = x86_mmio_parse(x_state.rip, &pg_structs, pf->is_write);
 	if (!inst.inst_len || inst.access_size != 4)
 		goto invalid_access;
 

@@ -400,7 +400,7 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 	struct mmio_instruction inst;
 	u32 val;
 
-	inst = mmio_parse(rip, pg_structs, is_write);
+	inst = x86_mmio_parse(rip, pg_structs, is_write);
 	if (inst.inst_len == 0)
 		return 0;
 	if (inst.access_size != 4) {

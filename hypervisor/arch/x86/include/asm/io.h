@@ -14,7 +14,7 @@
 
 /**
  * @ingroup IO
- * @defgroup PIO x86 I/O Accessors
+ * @defgroup IO-X86 x86
  * @{
  */
 

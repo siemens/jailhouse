@@ -72,9 +72,8 @@ static bool ctx_advance(struct parse_context *ctx,
 	return ctx_maybe_get_bytes(ctx, pc, pg);
 }
 
-struct mmio_instruction
-mmio_parse(unsigned long pc, const struct guest_paging_structures *pg_structs,
-	   bool is_write)
+struct mmio_instruction x86_mmio_parse(unsigned long pc,
+	const struct guest_paging_structures *pg_structs, bool is_write)
 {
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
 	struct mmio_instruction inst = { .inst_len = 0 };
