@@ -72,12 +72,12 @@ static bool ctx_advance(struct parse_context *ctx,
 	return ctx_maybe_get_bytes(ctx, pc, pg);
 }
 
-struct mmio_access mmio_parse(unsigned long pc,
-			      const struct guest_paging_structures *pg_structs,
-			      bool is_write)
+struct mmio_instruction
+mmio_parse(unsigned long pc, const struct guest_paging_structures *pg_structs,
+	   bool is_write)
 {
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
-	struct mmio_access access = { .inst_len = 0 };
+	struct mmio_instruction inst = { .inst_len = 0 };
 	union opcode op[3] = { };
 	bool has_rex_r = false;
 	bool does_write;
@@ -97,18 +97,18 @@ restart:
 			goto error_unsupported;
 
 		ctx_move_next_byte(&ctx);
-		access.inst_len++;
+		inst.inst_len++;
 		goto restart;
 	}
 	switch (op[0].raw) {
 	case X86_OP_MOV_TO_MEM:
-		access.inst_len += 2;
-		access.size = 4;
+		inst.inst_len += 2;
+		inst.access_size = 4;
 		does_write = true;
 		break;
 	case X86_OP_MOV_FROM_MEM:
-		access.inst_len += 2;
-		access.size = 4;
+		inst.inst_len += 2;
+		inst.access_size = 4;
 		does_write = false;
 		break;
 	default:
@@ -125,35 +125,35 @@ restart:
 			goto error_unsupported;
 		else if (op[1].modrm.rm != 4) /* no SIB */
 			break;
-		access.inst_len++;
+		inst.inst_len++;
 
 		if (!ctx_advance(&ctx, &pc, pg_structs))
 			goto error_noinst;
 
 		op[2].raw = *(ctx.inst);
 		if (op[2].sib.base == 5)
-			access.inst_len += 4;
+			inst.inst_len += 4;
 		break;
 	case 1:
 	case 2:
 		if (op[1].modrm.rm == 4) /* SIB */
 			goto error_unsupported;
-		access.inst_len += op[1].modrm.mod == 1 ? 1 : 4;
+		inst.inst_len += op[1].modrm.mod == 1 ? 1 : 4;
 		break;
 	default:
 		goto error_unsupported;
 	}
 	if (has_rex_r)
-		access.reg = 7 - op[1].modrm.reg;
+		inst.reg_num = 7 - op[1].modrm.reg;
 	else if (op[1].modrm.reg == 4)
 		goto error_unsupported;
 	else
-		access.reg = 15 - op[1].modrm.reg;
+		inst.reg_num = 15 - op[1].modrm.reg;
 
 	if (does_write != is_write)
 		goto error_inconsitent;
 
-	return access;
+	return inst;
 
 error_noinst:
 	panic_printk("FATAL: unable to get MMIO instruction\n");
@@ -168,6 +168,6 @@ error_inconsitent:
 	panic_printk("FATAL: inconsistent access, expected %s instruction\n",
 		     is_write ? "write" : "read");
 error:
-	access.inst_len = 0;
-	return access;
+	inst.inst_len = 0;
+	return inst;
 }

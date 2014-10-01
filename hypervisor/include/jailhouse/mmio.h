@@ -24,16 +24,16 @@
  * @{
  */
 
-/** Information about interpreted MMIO access. */
-struct mmio_access {
+/** Information about MMIO instruction performing an access. */
+struct mmio_instruction {
 	/** Length of the MMIO access instruction, 0 for invalid or unsupported
 	 * access. */
 	unsigned int inst_len;
 	/** Size of the access. */
-	unsigned int size;
+	unsigned int access_size;
 	/** Architecture-specific number of the register that holds the output
 	 * value or should receive the input. */
-	unsigned int reg;
+	unsigned int reg_num;
 };
 
 /**
@@ -127,17 +127,17 @@ static inline void mmio_write64_field(void *address, u64 mask, u64 value)
 /** @} */
 
 /**
- * Parse an intercepted MMIO access of a cell CPU.
+ * Parse instruction causing an intercepted MMIO access on a cell CPU.
  * @param pc		Program counter of the access instruction.
  * @param pg_structs	Currently active guest (cell) paging structures.
  * @param is_write	True if write access, false for read.
  *
- * @return MMIO access information. mmio_access::inst_len is 0 on invalid or
- * 	   unsupported access.
+ * @return MMIO instruction information. mmio_instruction::inst_len is 0 on
+ * 	   invalid or unsupported access.
  */
-struct mmio_access mmio_parse(unsigned long pc,
-			      const struct guest_paging_structures *pg_structs,
-			      bool is_write);
+struct mmio_instruction
+mmio_parse(unsigned long pc, const struct guest_paging_structures *pg_structs,
+	   bool is_write);
 
 /** @} */
 #endif /* !_JAILHOUSE_MMIO_H */

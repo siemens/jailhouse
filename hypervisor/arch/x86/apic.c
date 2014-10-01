@@ -397,19 +397,19 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			      const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write)
 {
-	struct mmio_access access;
+	struct mmio_instruction inst;
 	u32 val;
 
-	access = mmio_parse(rip, pg_structs, is_write);
-	if (access.inst_len == 0)
+	inst = mmio_parse(rip, pg_structs, is_write);
+	if (inst.inst_len == 0)
 		return 0;
-	if (access.size != 4) {
+	if (inst.access_size != 4) {
 		panic_printk("FATAL: Unsupported APIC access width %d\n",
-			     access.size);
+			     inst.access_size);
 		return 0;
 	}
 	if (is_write) {
-		val = ((unsigned long *)guest_regs)[access.reg];
+		val = ((unsigned long *)guest_regs)[inst.reg_num];
 		if (apic_accessing_reserved_bits(reg, val))
 			return 0;
 
@@ -433,9 +433,9 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			apic_ops.write(reg, val);
 	} else {
 		val = apic_ops.read(reg);
-		((unsigned long *)guest_regs)[access.reg] = val;
+		((unsigned long *)guest_regs)[inst.reg_num] = val;
 	}
-	return access.inst_len;
+	return inst.inst_len;
 }
 
 bool x2apic_handle_write(struct registers *guest_regs,

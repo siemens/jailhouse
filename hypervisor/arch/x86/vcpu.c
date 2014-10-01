@@ -195,7 +195,7 @@ bool vcpu_handle_pt_violation(struct registers *guest_regs,
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct guest_paging_structures pg_structs;
 	struct vcpu_execution_state x_state;
-	struct mmio_access access;
+	struct mmio_instruction inst;
 	int result = 0;
 	u32 val;
 
@@ -204,12 +204,12 @@ bool vcpu_handle_pt_violation(struct registers *guest_regs,
 	if (!vcpu_get_guest_paging_structs(&pg_structs))
 		goto invalid_access;
 
-	access = mmio_parse(x_state.rip, &pg_structs, pf->is_write);
-	if (!access.inst_len || access.size != 4)
+	inst = mmio_parse(x_state.rip, &pg_structs, pf->is_write);
+	if (!inst.inst_len || inst.access_size != 4)
 		goto invalid_access;
 
 	if (pf->is_write)
-		val = ((unsigned long *)guest_regs)[access.reg];
+		val = ((unsigned long *)guest_regs)[inst.reg_num];
 
 	result = ioapic_access_handler(cpu_data->cell, pf->is_write,
 			               pf->phys_addr, &val);
@@ -223,8 +223,8 @@ bool vcpu_handle_pt_violation(struct registers *guest_regs,
 
 	if (result == 1) {
 		if (!pf->is_write)
-			((unsigned long *)guest_regs)[access.reg] = val;
-		vcpu_skip_emulated_instruction(access.inst_len);
+			((unsigned long *)guest_regs)[inst.reg_num] = val;
+		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
 	}
 
