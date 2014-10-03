@@ -859,7 +859,7 @@ static void vmx_disable_preemption_timer(void)
 	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
 }
 
-static void vmx_skip_emulated_instruction(unsigned int inst_len)
+void vcpu_skip_emulated_instruction(unsigned int inst_len)
 {
 	vmcs_write64(GUEST_RIP, vmcs_read64(GUEST_RIP) + inst_len);
 }
@@ -883,7 +883,7 @@ static void vcpu_handle_hypercall(struct registers *guest_regs)
 	unsigned long arg_mask = ia32e_mode ? (u64)-1 : (u32)-1;
 	unsigned long code = guest_regs->rax;
 
-	vmx_skip_emulated_instruction(X86_INST_LEN_VMCALL);
+	vcpu_skip_emulated_instruction(X86_INST_LEN_VMCALL);
 
 	if ((!ia32e_mode && vmcs_read64(GUEST_RFLAGS) & X86_RFLAGS_VM) ||
 	    (vmcs_read16(GUEST_CS_SELECTOR) & 3) != 0) {
@@ -918,7 +918,7 @@ static bool vmx_handle_cr(struct registers *guest_regs,
 			val = ((unsigned long *)guest_regs)[15 - reg];
 
 		if (cr == 0 || cr == 4) {
-			vmx_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
+			vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
 			/* TODO: check for #GP reasons */
 			vmx_set_guest_cr(cr, val);
 			if (cr == 0 && val & X86_CR0_PG)
@@ -981,7 +981,7 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 		if (!inst_len)
 			break;
 
-		vmx_skip_emulated_instruction(inst_len);
+		vcpu_skip_emulated_instruction(inst_len);
 		return true;
 	}
 	panic_printk("FATAL: Unhandled APIC access, "
@@ -1040,7 +1040,7 @@ static bool vcpu_handle_io_access(struct registers *guest_regs,
 		result = i8042_access_handler(guest_regs, port, dir_in, size);
 
 	if (result == 1) {
-		vmx_skip_emulated_instruction(
+		vcpu_skip_emulated_instruction(
 				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
 		return true;
 	}
@@ -1089,7 +1089,7 @@ static bool vcpu_handle_pt_violation(struct registers *guest_regs,
 	if (result == 1) {
 		if (!is_write)
 			((unsigned long *)guest_regs)[access.reg] = val;
-		vmx_skip_emulated_instruction(
+		vcpu_skip_emulated_instruction(
 				vmcs_read64(VM_EXIT_INSTRUCTION_LEN));
 		return true;
 	}
@@ -1126,7 +1126,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		iommu_check_pending_faults(cpu_data);
 		return;
 	case EXIT_REASON_CPUID:
-		vmx_skip_emulated_instruction(X86_INST_LEN_CPUID);
+		vcpu_skip_emulated_instruction(X86_INST_LEN_CPUID);
 		guest_regs->rax &= 0xffffffff;
 		guest_regs->rbx &= 0xffffffff;
 		guest_regs->rcx &= 0xffffffff;
@@ -1146,7 +1146,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 		    guest_regs->rcx <= MSR_X2APIC_END) {
-			vmx_skip_emulated_instruction(X86_INST_LEN_RDMSR);
+			vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
 			x2apic_handle_read(guest_regs);
 			return;
 		}
@@ -1159,7 +1159,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		    guest_regs->rcx <= MSR_X2APIC_END) {
 			if (!x2apic_handle_write(guest_regs, cpu_data))
 				break;
-			vmx_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
 		}
 		panic_printk("FATAL: Unhandled MSR write: %08x\n",
@@ -1175,7 +1175,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		if (guest_regs->rax & X86_XCR0_FP &&
 		    (guest_regs->rax & ~cpuid_eax(0x0d)) == 0 &&
 		    guest_regs->rcx == 0 && guest_regs->rdx == 0) {
-			vmx_skip_emulated_instruction(X86_INST_LEN_XSETBV);
+			vcpu_skip_emulated_instruction(X86_INST_LEN_XSETBV);
 			asm volatile(
 				"xsetbv"
 				: /* no output */

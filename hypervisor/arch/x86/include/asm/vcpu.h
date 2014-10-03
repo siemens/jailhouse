@@ -57,4 +57,6 @@ const u8 *vcpu_map_inst(const struct guest_paging_structures *pg_structs,
 const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size);
 
+void vcpu_skip_emulated_instruction(unsigned int inst_len);
+
 #endif
