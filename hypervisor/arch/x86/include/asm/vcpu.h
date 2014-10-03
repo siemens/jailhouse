@@ -15,6 +15,7 @@
 
 #include <jailhouse/entry.h>
 #include <jailhouse/cell-config.h>
+#include <jailhouse/paging.h>
 #include <asm/cell.h>
 #include <asm/percpu.h>
 #include <asm/processor.h>
@@ -58,5 +59,7 @@ const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size);
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len);
+
+bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
 #endif

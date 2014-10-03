@@ -934,8 +934,7 @@ static bool vmx_handle_cr(struct registers *guest_regs,
 	return false;
 }
 
-static bool
-vmx_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
+bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
 	if (vmcs_read32(VM_ENTRY_CONTROLS) & VM_ENTRY_IA32E_MODE) {
 		pg_structs->root_paging = x86_64_paging;
@@ -971,7 +970,7 @@ static bool vmx_handle_apic_access(struct registers *guest_regs,
 		if (offset & 0x00f)
 			break;
 
-		if (!vmx_get_guest_paging_structs(&pg_structs))
+		if (!vcpu_get_guest_paging_structs(&pg_structs))
 			break;
 
 		inst_len = apic_mmio_access(guest_regs, cpu_data,
@@ -1068,7 +1067,7 @@ static bool vcpu_handle_pt_violation(struct registers *guest_regs,
 	 * of write flags can be set, not both. */
 	is_write = !!(exitq & 0x2);
 
-	if (!vmx_get_guest_paging_structs(&pg_structs))
+	if (!vcpu_get_guest_paging_structs(&pg_structs))
 		goto invalid_access;
 
 	access = mmio_parse(vmcs_read64(GUEST_RIP), &pg_structs, is_write);
