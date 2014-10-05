@@ -242,7 +242,7 @@ struct {
 		},
 		{
 			.id = 0x5,
-			.start = 0x50,
+			.start = 0x80,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
