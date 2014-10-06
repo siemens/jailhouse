@@ -24,12 +24,10 @@ export INSTALL_MOD_PATH
 
 DOXYGEN ?= doxygen
 
-define run-kbuild =
-	+$(Q)$(MAKE) -C $(KDIR) M=$$PWD $@
-endef
+kbuild = -C $(KDIR) M=$$PWD $@
 
 modules:
-	$(run-kbuild)
+	$(Q)$(MAKE) $(kbuild)
 
 hypervisor/jailhouse.bin: modules
 
@@ -43,12 +41,12 @@ docs:
 
 # clean up kernel, tools and generated docs
 clean:
-	$(run-kbuild)
+	$(Q)$(MAKE) $(kbuild)
 	$(Q)$(MAKE) -C tools $@
 	rm -rf Documentation/generated
 
 modules_install: modules
-	$(run-kbuild)
+	$(Q)$(MAKE) $(kbuild)
 
 firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
 	$(INSTALL_DATA) $^
