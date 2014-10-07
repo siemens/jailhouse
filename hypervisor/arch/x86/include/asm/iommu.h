@@ -50,4 +50,6 @@ void iommu_check_pending_faults(struct per_cpu *cpu_data);
 
 int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value);
 
+bool iommu_cell_emulates_ir(struct cell *cell);
+
 #endif

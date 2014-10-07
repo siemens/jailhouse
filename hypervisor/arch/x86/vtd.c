@@ -994,3 +994,8 @@ void iommu_shutdown(void)
 			vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 0);
 	}
 }
+
+bool iommu_cell_emulates_ir(struct cell *cell)
+{
+	return cell->vtd.ir_emulation;
+}

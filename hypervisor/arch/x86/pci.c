@@ -248,7 +248,7 @@ pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
 	struct apic_irq_message irq_msg = { .valid = 0 };
 	unsigned int idx;
 
-	if (device->cell->vtd.ir_emulation) {
+	if (iommu_cell_emulates_ir(device->cell)) {
 		if (!msi.remap.remapped)
 			return irq_msg;
 

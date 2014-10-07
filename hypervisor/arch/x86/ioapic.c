@@ -67,7 +67,7 @@ ioapic_translate_redir_entry(struct cell *cell, unsigned int pin,
 	struct apic_irq_message irq_msg = { .valid = 0 };
 	unsigned int idx;
 
-	if (cell->vtd.ir_emulation) {
+	if (iommu_cell_emulates_ir(cell)) {
 		if (!entry.remap.remapped)
 			return irq_msg;
 
