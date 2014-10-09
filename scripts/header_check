@@ -1,0 +1,55 @@
+#!/bin/bash
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2014
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+if [ "$ARCH" == "" ]; then
+	ARCH=x86
+fi
+
+CFLAGS="-fno-builtin-ffsl -Wall -Wstrict-prototypes -Wtype-limits \
+	-Wmissing-declarations -Wmissing-prototypes \
+	-Ihypervisor/arch/$ARCH/include -Ihypervisor/include \
+	$EXTRA_CFLAGS"
+
+test_compile()
+{
+	header=`basename $2`
+	prepend=
+	case $header in
+	cell-config.h|header.h|hypercall.h)
+		prepend="#include <asm/types.h>"
+		;;
+	jailhouse_hypercall.h)
+		# only included directly for linker script
+		prepend="#define __ASSEMBLY__
+			 #include <asm/types.h>"
+		;;
+	esac
+
+	echo "$prepend" > .header_check.tmp.c
+	echo "#include <$1/$header>" >> .header_check.tmp.c
+
+	if ! ${CROSS_COMPILE}gcc -c -o .header_check.tmp.o .header_check.tmp.c $CFLAGS; then
+		exit 1;
+	fi
+	echo $1/$header - OK
+}
+
+for header in hypervisor/include/jailhouse/*.h; do
+	test_compile jailhouse $header
+done
+
+for header in hypervisor/arch/$ARCH/include/asm/*.h; do
+	test_compile asm $header
+done
+
+rm -f .header_check.tmp.[oc]
