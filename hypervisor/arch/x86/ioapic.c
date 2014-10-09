@@ -118,6 +118,12 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 	result = iommu_map_interrupt(cell, cell->ioapic_id, pin, irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {
+		/*
+		 * Upper 32 bits aren't written when the register is masked.
+		 * Write them unconditionally when unmasking to keep an entry
+		 * in the consistent state.
+		 */
+		ioapic_reg_write(reg | 1, entry.raw[1]);
 		ioapic_reg_write(reg, entry.raw[reg & 1]);
 		return 0;
 	}
