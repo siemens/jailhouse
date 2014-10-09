@@ -218,6 +218,7 @@ void ioapic_pin_set_vector(unsigned int pin,
 
 void inmate_main(void);
 
+void pm_timer_init(void);
 unsigned long pm_timer_read(void);
 void delay_us(unsigned long microsecs);
 unsigned long apic_timer_init(unsigned int vector);

@@ -26,6 +26,8 @@ void inmate_main(void)
 	printk_uart_base = UART_BASE;
 	printk("Hello from this tiny cell!\n");
 
+	pm_timer_init();
+
 	start = pm_timer_read();
 	for (n = 0; n < 10; n++) {
 		do {

@@ -51,6 +51,9 @@ int arch_cell_create(struct cell *cell)
 	cell->comm_page.comm_region.pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 
+	cell->comm_page.comm_region.pm_timer_val_ext =
+		system_config->platform_info.x86.pm_timer_val_ext;
+
 	return 0;
 
 error_iommu_exit:

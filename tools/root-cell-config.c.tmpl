@@ -36,6 +36,7 @@ struct {
 			.mmconfig_base = ${hex(mmconfig.base)},
 			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},
 			.pm_timer_address = ${hex(pm_timer_base)},
+			.pm_timer_val_ext = ${pm_timer_val_ext},
 			% if dmar_units:
 			.dmar_unit_base = {
 				% for d in dmar_units:

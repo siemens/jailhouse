@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -13,7 +15,6 @@
 #include <inmate.h>
 
 #define PM_TIMER_HZ		3579545
-#define PM_TIMER_OVERFLOW	((0x1000000 * 1000000000ULL) / PM_TIMER_HZ)
 
 #define X2APIC_LVTT		0x832
 #define X2APIC_TMICT		0x838
@@ -21,6 +22,18 @@
 #define X2APIC_TDCR		0x83e
 
 static unsigned long divided_apic_freq;
+static unsigned long pm_timer_overflow;
+
+void pm_timer_init(void)
+{
+	/* Initialize pm_timer overflow value, as per ACPI 5.0, Sect. 5.2.9. */
+	if (comm_region->pm_timer_val_ext)
+		pm_timer_overflow =
+			((0x100000000 * 1000000000ULL) / PM_TIMER_HZ);
+	else
+		pm_timer_overflow =
+			((0x1000000 * 1000000000ULL) / PM_TIMER_HZ);
+}
 
 unsigned long pm_timer_read(void)
 {
@@ -29,7 +42,7 @@ unsigned long pm_timer_read(void)
 
 	tmr = (inl(comm_region->pm_timer_address) * NS_PER_SEC) / PM_TIMER_HZ;
 	if (tmr < last)
-		overflows += PM_TIMER_OVERFLOW;
+		overflows += pm_timer_overflow;
 	last = tmr;
 	return tmr + overflows;
 }

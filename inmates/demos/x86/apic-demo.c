@@ -74,6 +74,7 @@ void inmate_main(void)
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
+	pm_timer_init();
 	init_apic();
 
 	while (!terminate) {
