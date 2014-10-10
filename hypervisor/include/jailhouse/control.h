@@ -191,6 +191,17 @@ int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem);
 
 /**
+ * Performs the architecture-specific steps for invalidating memory caches
+ * after memory regions have been unmapped from a cell.
+ * This function should be called after memory got unmapped or memory access
+ * got restricted, and the cell should keep running.
+ * @param cell		Cell for which the caches should get flushed
+ *
+ * @see per_cpu::flush_vcpu_caches
+ */
+void arch_flush_cell_vcpu_caches(struct cell *cell);
+
+/**
  * Performs the architecture-specific steps for creating a new cell.
  * @param cell		Data structure of the new cell.
  *

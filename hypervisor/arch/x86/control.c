@@ -87,6 +87,22 @@ int arch_unmap_memory_region(struct cell *cell,
 	return vcpu_unmap_memory_region(cell, mem);
 }
 
+void arch_flush_cell_vcpu_caches(struct cell *cell)
+{
+	unsigned int cpu;
+
+	for_each_cpu(cpu, cell->cpu_set)
+		if (cpu == this_cpu_id()) {
+			vcpu_tlb_flush();
+		} else {
+			per_cpu(cpu)->flush_vcpu_caches = true;
+			/* make sure the value is written before we kick
+			 * the remote core */
+			memory_barrier();
+			apic_send_nmi_ipi(per_cpu(cpu));
+		}
+}
+
 void arch_cell_destroy(struct cell *cell)
 {
 	ioapic_cell_exit(cell);
