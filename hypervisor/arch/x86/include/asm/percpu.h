@@ -92,7 +92,7 @@ struct per_cpu {
 	 * @li per_cpu::wait_for_sipi
 	 * @li per_cpu::init_signaled
 	 * @li per_cpu::sipi_vector
-	 * @li per_cpu::flush_virt_caches
+	 * @li per_cpu::flush_vcpu_caches
 	 */
 	spinlock_t control_lock;
 
@@ -106,8 +106,9 @@ struct per_cpu {
 	bool init_signaled;
 	/** Pending SIPI vector; -1 if none is pending. */
 	int sipi_vector;
-	/** Set to true for pending a flush of guest-related CPU caches. */
-	bool flush_virt_caches;
+	/** Set to true for a pending TLB flush for the paging layer that does
+	 *  host physical <-> guest physical memory mappings */
+	bool flush_vcpu_caches;
 	/** Set to true for instructing the CPU to disable hypervisor mode. */
 	bool shutdown_cpu;
 	/** State of the shutdown process. Possible values:

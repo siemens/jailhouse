@@ -101,12 +101,12 @@ void arch_config_commit(struct cell *cell_added_removed)
 	unsigned int cpu, current_cpu = this_cpu_id();
 
 	for_each_cpu_except(cpu, root_cell.cpu_set, current_cpu)
-		per_cpu(cpu)->flush_virt_caches = true;
+		per_cpu(cpu)->flush_vcpu_caches = true;
 
 	if (cell_added_removed && cell_added_removed != &root_cell)
 		for_each_cpu_except(cpu, cell_added_removed->cpu_set,
 				    current_cpu)
-			per_cpu(cpu)->flush_virt_caches = true;
+			per_cpu(cpu)->flush_vcpu_caches = true;
 
 	vcpu_tlb_flush();
 
@@ -244,8 +244,8 @@ int x86_handle_events(struct per_cpu *cpu_data)
 		}
 	} while (cpu_data->init_signaled);
 
-	if (cpu_data->flush_virt_caches) {
-		cpu_data->flush_virt_caches = false;
+	if (cpu_data->flush_vcpu_caches) {
+		cpu_data->flush_vcpu_caches = false;
 		vcpu_tlb_flush();
 	}
 
