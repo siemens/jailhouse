@@ -114,17 +114,9 @@ void arch_cell_destroy(struct cell *cell)
 /* all root cell CPUs (except the calling one) have to be suspended */
 void arch_config_commit(struct cell *cell_added_removed)
 {
-	unsigned int cpu, current_cpu = this_cpu_id();
-
-	for_each_cpu_except(cpu, root_cell.cpu_set, current_cpu)
-		per_cpu(cpu)->flush_vcpu_caches = true;
-
+	arch_flush_cell_vcpu_caches(&root_cell);
 	if (cell_added_removed && cell_added_removed != &root_cell)
-		for_each_cpu_except(cpu, cell_added_removed->cpu_set,
-				    current_cpu)
-			per_cpu(cpu)->flush_vcpu_caches = true;
-
-	vcpu_tlb_flush();
+		arch_flush_cell_vcpu_caches(cell_added_removed);
 
 	iommu_config_commit(cell_added_removed);
 	pci_config_commit(cell_added_removed);
