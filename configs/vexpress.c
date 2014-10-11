@@ -45,49 +45,49 @@ struct {
 			.virt_start = 0x1a000000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* SP810 */ {
 			.phys_start = 0x1c020000,
 			.virt_start = 0x1c020000,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* MMC */ {
 			.phys_start = 0x1c050000,
 			.virt_start = 0x1c050000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* Mouse */ {
 			.phys_start = 0x1c070000,
 			.virt_start = 0x1c070000,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* Keyboard */ {
 			.phys_start = 0x1c060000,
 			.virt_start = 0x1c060000,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* UARTs */ {
 			.phys_start = 0x1c090000,
 			.virt_start = 0x1c090000,
 			.size = 0x00040000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* Redistributors (ignore the mmio traps)*/ {
 			.phys_start = 0x2f100000,
 			.virt_start = 0x2f100000,
 			.size = 0x04000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* RAM */ {
 			.phys_start = 0x80000000,

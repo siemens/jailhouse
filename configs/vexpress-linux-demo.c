@@ -42,7 +42,7 @@ struct {
 			.virt_start = 0x1c090000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
+				JAILHOUSE_MEM_IO,
 		},
 		/* RAM load */ {
 			.phys_start = 0xa6000000,

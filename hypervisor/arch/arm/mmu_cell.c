@@ -26,10 +26,7 @@ int arch_map_memory_region(struct cell *cell,
 		flags |= S2_PTE_ACCESS_RO;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		flags |= S2_PTE_ACCESS_WO;
-	/*
-	 * `DMA' may be a bit misleading here: it is used to define MMIO regions
-	 */
-	if (mem->flags & JAILHOUSE_MEM_DMA)
+	if (mem->flags & JAILHOUSE_MEM_IO)
 		flags |= S2_PTE_FLAG_DEVICE;
 	else
 		flags |= S2_PTE_FLAG_NORMAL;

@@ -176,7 +176,7 @@ static void gic_cell_init(struct cell *cell)
 	 */
 	gicv_region.virt_start = (unsigned long)gicc_base;
 	gicv_region.size = gicc_size;
-	gicv_region.flags = JAILHOUSE_MEM_DMA | JAILHOUSE_MEM_READ
+	gicv_region.flags = JAILHOUSE_MEM_IO | JAILHOUSE_MEM_READ
 			  | JAILHOUSE_MEM_WRITE;
 
 	/*
