@@ -80,6 +80,8 @@ bool cpu_id_valid(unsigned long cpu_id);
 int check_mem_regions(const struct jailhouse_cell_desc *config);
 int cell_init(struct cell *cell);
 
+void config_commit(struct cell *cell_added_removed);
+
 long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2);
 
 void __attribute__((noreturn)) panic_stop(void);
@@ -224,6 +226,7 @@ void arch_cell_destroy(struct cell *cell);
  * @param cell_added_removed	Cell that was added or removed to/from the
  * 				system or NULL.
  *
+ * @see config_commit
  * @see pci_config_commit
  */
 void arch_config_commit(struct cell *cell_added_removed);

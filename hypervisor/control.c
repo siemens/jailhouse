@@ -235,6 +235,23 @@ int check_mem_regions(const struct jailhouse_cell_desc *config)
 	return 0;
 }
 
+/**
+ * Apply system configuration changes.
+ * @param cell_added_removed	Cell that was added or removed to/from the
+ * 				system or NULL.
+ *
+ * @see arch_config_commit
+ * @see pci_config_commit
+ */
+void config_commit(struct cell *cell_added_removed)
+{
+	arch_flush_cell_vcpu_caches(&root_cell);
+	if (cell_added_removed && cell_added_removed != &root_cell)
+		arch_flush_cell_vcpu_caches(cell_added_removed);
+
+	arch_config_commit(cell_added_removed);
+}
+
 static bool address_in_region(unsigned long addr,
 			      const struct jailhouse_memory *region)
 {
@@ -323,7 +340,7 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 
 	arch_cell_destroy(cell);
 
-	arch_config_commit(cell);
+	config_commit(cell);
 }
 
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
@@ -447,7 +464,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 			goto err_destroy_cell;
 	}
 
-	arch_config_commit(cell);
+	config_commit(cell);
 
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 
@@ -543,7 +560,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 					goto out_resume;
 			}
 
-		arch_config_commit(NULL);
+		config_commit(NULL);
 
 		cell->loadable = false;
 	}
@@ -596,7 +613,7 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 				goto out_resume;
 		}
 
-	arch_config_commit(NULL);
+	config_commit(NULL);
 
 	printk("Cell \"%s\" can be loaded\n", cell->config->name);
 

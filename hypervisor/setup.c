@@ -145,7 +145,7 @@ static void init_late(void)
 	if (error)
 		return;
 
-	arch_config_commit(&root_cell);
+	config_commit(&root_cell);
 
 	paging_dump_stats("after late setup");
 }

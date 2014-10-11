@@ -114,13 +114,8 @@ void arch_cell_destroy(struct cell *cell)
 	vcpu_cell_exit(cell);
 }
 
-/* all root cell CPUs (except the calling one) have to be suspended */
 void arch_config_commit(struct cell *cell_added_removed)
 {
-	arch_flush_cell_vcpu_caches(&root_cell);
-	if (cell_added_removed && cell_added_removed != &root_cell)
-		arch_flush_cell_vcpu_caches(cell_added_removed);
-
 	iommu_config_commit(cell_added_removed);
 	pci_config_commit(cell_added_removed);
 	ioapic_config_commit(cell_added_removed);
