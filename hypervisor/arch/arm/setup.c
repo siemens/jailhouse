@@ -13,11 +13,9 @@
 #include <asm/control.h>
 #include <asm/irqchip.h>
 #include <asm/percpu.h>
-#include <asm/platform.h>
 #include <asm/setup.h>
 #include <asm/sysregs.h>
 #include <jailhouse/control.h>
-#include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/string.h>
 
@@ -47,13 +45,7 @@ int arch_init_early(void)
 	if ((err = arch_check_features()) != 0)
 		return err;
 
-	err = arch_mmu_cell_init(&root_cell);
-	if (err)
-		return err;
-
-	err = arch_map_device(UART_BASE_PHYS, UART_BASE_VIRT, PAGE_SIZE);
-
-	return err;
+	return arch_mmu_cell_init(&root_cell);
 }
 
 int arch_cpu_init(struct per_cpu *cpu_data)
