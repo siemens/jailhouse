@@ -11,6 +11,8 @@
  */
 
 #include <asm/paging.h>
+#include <asm/sections.h>
+
 #include <asm/jailhouse_hypercall.h>
 
 SECTIONS
@@ -22,15 +24,13 @@ SECTIONS
 	__text_start = .;
 	.text		: { *(.text) }
 
-#ifdef ARCH_LINK
-#include <asm/sections.lds>
-#endif
-
 	. = ALIGN(16);
 	.rodata		: { *(.rodata) }
 
 	. = ALIGN(16);
 	.data		: { *(.data) }
+
+	ARCH_SECTIONS
 
 	. = ALIGN(16);
 	.bss		: { *(.bss) }
