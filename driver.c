@@ -523,6 +523,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	struct jailhouse_system *config;
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
+	void __iomem *uart = NULL;
 	unsigned long config_size;
 	const char *fw_name;
 	long max_cpus;
@@ -592,6 +593,19 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		goto error_unmap;
 	}
 
+	if (config->debug_uart.flags & JAILHOUSE_MEM_IO) {
+		uart = ioremap(config->debug_uart.phys_start,
+			       config->debug_uart.size);
+		if (!uart) {
+			err = -EINVAL;
+			pr_err("jailhouse: Unable to map hypervisor UART at "
+			       "%08lx\n",
+			       (unsigned long)config->debug_uart.phys_start);
+			goto error_unmap;
+		}
+		header->debug_uart_base = (void *)uart;
+	}
+
 	root_cell = create_cell(&config->root_cell);
 	if (IS_ERR(root_cell)) {
 		err = PTR_ERR(root_cell);
@@ -622,6 +636,9 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
 				     JAILHOUSE_PCI_ACTION_ADD);
 
+	if (uart)
+		iounmap(uart);
+
 	release_firmware(hypervisor);
 
 	enabled = true;
@@ -639,6 +656,8 @@ error_free_cell:
 
 error_unmap:
 	vunmap(hypervisor_mem);
+	if (uart)
+		iounmap(uart);
 
 error_release_fw:
 	release_firmware(hypervisor);

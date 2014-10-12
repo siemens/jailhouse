@@ -460,7 +460,7 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
  */
 int paging_init(void)
 {
-	unsigned long n, per_cpu_pages, config_pages, bitmap_pages;
+	unsigned long n, per_cpu_pages, config_pages, bitmap_pages, vaddr;
 	int err;
 
 	per_cpu_pages = hypervisor_header.max_cpus *
@@ -510,6 +510,22 @@ int paging_init(void)
 			     PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
 	if (err)
 		goto error_nomem;
+
+	if (system_config->debug_uart.flags & JAILHOUSE_MEM_IO) {
+		vaddr = (unsigned long)hypervisor_header.debug_uart_base;
+		if (vaddr + system_config->debug_uart.size >= REMAP_BASE &&
+		    vaddr < REMAP_BASE + remap_pool.pages * PAGE_SIZE) {
+			printk("FATAL: UART overlaps remapping region\n");
+			return -EINVAL;
+		}
+		err = paging_create(&hv_paging_structs,
+				    system_config->debug_uart.phys_start,
+				    system_config->debug_uart.size, vaddr,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
+				    PAGING_NON_COHERENT);
+		if (err)
+			goto error_nomem;
+	}
 
 	/* Make sure any remappings to the temporary regions can be performed
 	 * without allocations of page table pages. */

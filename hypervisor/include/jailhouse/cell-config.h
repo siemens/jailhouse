@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -93,6 +93,7 @@ struct jailhouse_pci_capability {
 
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
+	struct jailhouse_memory debug_uart;
 	union {
 		struct {
 			__u64 mmconfig_base;

@@ -45,4 +45,7 @@ struct jailhouse_header {
 	/** Number of online CPUs that will call the entry function.
 	 * @note Filled by Linux loader driver before entry. */
 	unsigned int online_cpus;
+	/** Virtual base address of debug UART (if used).
+	 * @note Filled by Linux loader driver before entry. */
+	void *debug_uart_base;
 };
