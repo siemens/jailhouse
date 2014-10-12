@@ -20,7 +20,6 @@
 /* Defines the bare minimum for debug writes */
 struct uart_chip {
 	void		*virt_base;
-	void		*phys_base;
 	unsigned int	baudrate;
 	bool		fifo_enabled;
 

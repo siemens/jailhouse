@@ -15,7 +15,6 @@
 void uart_chip_init(struct uart_chip *chip)
 {
 	chip->virt_base = UART_BASE;
-	chip->phys_base = UART_BASE;
 	chip->fifo_enabled = true;
 	chip->wait = uart_wait;
 	chip->write = uart_write;

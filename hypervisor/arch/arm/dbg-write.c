@@ -23,7 +23,6 @@ void arch_dbg_write_init(void)
 	uart.baudrate = 115200;
 	uart.fifo_enabled = true;
 	uart.virt_base = UART_BASE_VIRT;
-	uart.phys_base = UART_BASE_PHYS;
 
 	uart_chip_init(&uart);
 }
