@@ -186,7 +186,7 @@ int ioapic_init(void)
 		return -ENOMEM;
 	err = paging_create(&hv_paging_structs, IOAPIC_BASE_ADDR, PAGE_SIZE,
 			    (unsigned long)ioapic_page,
-			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 			    PAGING_NON_COHERENT);
 	if (err)
 		return err;

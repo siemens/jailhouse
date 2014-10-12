@@ -481,7 +481,7 @@ int iommu_init(void)
 
 		err = paging_create(&hv_paging_structs, base_addr, PAGE_SIZE,
 				    (unsigned long)reg_base,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);
 		if (err)
 			return err;

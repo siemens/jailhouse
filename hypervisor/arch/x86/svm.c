@@ -326,15 +326,13 @@ int vcpu_vendor_cell_init(struct cell *cell)
 		/*
 		 * Map xAPIC as is; reads are passed, writes are trapped.
 		 */
-		flags = PAGE_READONLY_FLAGS |
-			PAGE_FLAG_US |
-			PAGE_FLAG_UNCACHED;
+		flags = PAGE_READONLY_FLAGS | PAGE_FLAG_US | PAGE_FLAG_DEVICE;
 		err = paging_create(&cell->svm.npt_structs, XAPIC_BASE,
 				    PAGE_SIZE, XAPIC_BASE,
 				    flags,
 				    PAGING_NON_COHERENT);
 	} else {
-		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED;
+		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE;
 		err = paging_create(&cell->svm.npt_structs,
 				    paging_hvirt2phys(avic_page),
 				    PAGE_SIZE, XAPIC_BASE,

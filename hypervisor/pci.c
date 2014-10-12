@@ -325,7 +325,7 @@ int pci_init(void)
 
 	return paging_create(&hv_paging_structs, mmcfg_start, mmcfg_size,
 			     (unsigned long)pci_space,
-			     PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+			     PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 			     PAGING_NON_COHERENT);
 }
 
@@ -559,7 +559,7 @@ static int pci_add_device(struct cell *cell, struct pci_device *device)
 		err = paging_create(&hv_paging_structs,
 				    device->info->msix_address, size,
 				    (unsigned long)device->msix_table,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);
 		if (err)
 			goto error_page_free;

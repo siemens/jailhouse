@@ -175,7 +175,7 @@ int apic_init(void)
 			return -ENOMEM;
 		err = paging_create(&hv_paging_structs, XAPIC_BASE, PAGE_SIZE,
 				    (unsigned long)xapic_page,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_UNCACHED,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);
 		if (err)
 			return err;
