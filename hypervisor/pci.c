@@ -577,11 +577,11 @@ static void pci_remove_device(struct pci_device *device)
 
 	prev_msix_device = device->cell->msix_device_list;
 	if (prev_msix_device == device) {
-		device->cell->msix_device_list = NULL;
+		device->cell->msix_device_list = device->next_msix_device;
 	} else {
 		while (prev_msix_device->next_msix_device != device)
 			prev_msix_device = prev_msix_device->next_msix_device;
-		prev_msix_device->next_msix_device = NULL;
+		prev_msix_device->next_msix_device = device->next_msix_device;
 	}
 }
 
