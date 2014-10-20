@@ -39,11 +39,14 @@ tools:
 docs:
 	$(DOXYGEN) Documentation/Doxyfile
 
+# remove generated docs
+docs_clean:
+	rm -rf Documentation/generated
+
 # clean up kernel, tools and generated docs
-clean:
+clean:	docs_clean
 	$(Q)$(MAKE) $(kbuild)
 	$(Q)$(MAKE) -C tools $@
-	rm -rf Documentation/generated
 
 modules_install: modules
 	$(Q)$(MAKE) $(kbuild)
@@ -54,4 +57,5 @@ firmware_install: hypervisor/jailhouse.bin $(DESTDIR)$(firmwaredir)
 install: modules_install firmware_install
 	$(Q)$(MAKE) -C tools $@
 
-.PHONY: modules_install install clean firmware_install modules tools docs
+.PHONY: modules_install install clean firmware_install modules tools docs \
+	docs_clean
