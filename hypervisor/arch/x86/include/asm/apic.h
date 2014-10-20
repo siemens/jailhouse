@@ -85,6 +85,15 @@
 
 #define APIC_BSP_PSEUDO_SIPI		0x100
 
+/**
+ * @ingroup X86
+ * @defgroup X86-APIC APIC
+ *
+ * The x86 Advanced Programmable Interrupt Controller supports xAPIC and x2APIC.
+ *
+ * @{
+ */
+
 union x86_msi_vector {
 	struct {
 		u32 unused:2,
@@ -159,4 +168,5 @@ void x2apic_handle_read(struct registers *guest_regs);
 
 u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination);
 
+/** @} */
 #endif /* !_JAILHOUSE_ASM_APIC_H */

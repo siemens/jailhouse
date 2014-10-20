@@ -477,12 +477,11 @@ void x2apic_handle_read(struct registers *guest_regs)
 }
 
 /**
- * x2apic_filter_logical_dest() - Filter a logical destination mask against the
- * 				  cell's CPU set
- * @cell:		Target cell
- * @destination:	Logical destination mask (redirection hint enabled)
+ * Filter a logical destination mask against the cell's CPU set.
+ * @param cell		Target cell
+ * @param destination	Logical destination mask (redirection hint enabled)
  *
- * Return: Logical destination mask with invalid target CPUs removed.
+ * @return Logical destination mask with invalid target CPUs removed.
  */
 u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination)
 {
