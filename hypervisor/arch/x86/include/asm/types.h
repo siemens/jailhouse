@@ -13,6 +13,12 @@
 #ifndef _JAILHOUSE_ASM_TYPES_H
 #define _JAILHOUSE_ASM_TYPES_H
 
+/**
+ * @defgroup X86 x86 Architecture
+ *
+ * Documentation for the x86 processor architecture.
+ */
+
 #ifndef BITS_PER_LONG
 #define BITS_PER_LONG			64
 #endif /* ! BITS_PER_LONG */
