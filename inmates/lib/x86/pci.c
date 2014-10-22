@@ -61,7 +61,7 @@ void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index)
 
 	if (cap < 0)
 		return;
-	ctrl = pci_read_config(bdf, cap + 1, 2);
+	ctrl = pci_read_config(bdf, cap + 2, 2);
 	/* bounds check */
 	if (index > (ctrl & 0x3ff))
 		return;
@@ -78,7 +78,7 @@ void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index)
 
 	/* enable and mask */
 	ctrl |= (MSIX_CTRL_ENABLE | MSIX_CTRL_FMASK);
-	pci_write_config(bdf, cap + 1, ctrl, 2);
+	pci_write_config(bdf, cap + 2, ctrl, 2);
 
 	msix_table += 16 * index;
 	mmio_write32((u32 *)msix_table, 0xfee00000 | cpu_id() << 12);
@@ -88,7 +88,7 @@ void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index)
 
 	/* enable and unmask */
 	ctrl &= ~MSIX_CTRL_FMASK;
-	pci_write_config(bdf, cap + 1, ctrl, 2);
+	pci_write_config(bdf, cap + 2, ctrl, 2);
 }
 
 void pci_msi_set_vector(u16 bdf, unsigned int vector)
