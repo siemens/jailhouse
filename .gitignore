@@ -2,8 +2,7 @@
 *.mod.[co]
 *.cmd
 *.bin
-*.swp
-*.swo
+*.sw[pon]
 .tmp_versions
 Module.symvers
 modules.order
