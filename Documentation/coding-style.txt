@@ -1,0 +1,42 @@
+Coding style
+============
+
+This document sets the coding style for Jailhouse code contributions.
+In general, Jailhouse coding style for C is the same as for Linux kernel
+(checkable with scripts/checkpatch.pl and detailed in
+Documentation/CodingStyle), but with some notable variations and clarifications
+described here (in random order):
+
+* Align function arguments vertically when wrapping over line breaks:
+
+    void rather_long_function_name(struct another_rather_long_name *argument1,
+                                   struct yet_another_long_name *argument2);
+
+* Avoid conditional compilation (#ifdefs) where possible (and it's almost
+  always possible). Variations should be resolved during link time, or
+  (if absolutely necessary) in the runtime (but think about performance).
+
+* Do not explicitly initialize static variables you want zeroed. C standard
+  ensures this by default.
+
+* Do not insert blank lines in #include list, except to separate include blocks
+  where the second depends on the first one, e.g.
+
+    #include <jailhouse/types.h>
+
+    #include <jailhouse/cell-config.h>
+
+* Always include generic headers ("jailhouse/*.h") before architecture
+  headers ("asm/*.h").
+
+* Header files must be self-standing, i.e. must not rely on other headers being
+  included prior to them. Use scripts/header_check to validate.
+
+* Spaces in brackets are permitted for designated initializers in order to
+  improve readability via vertical alignment:
+
+    [     0/8 ...   0x1f/8] = 0, /* floppy DMA controller */
+    [  0x20/8 ...   0x3f/8] = -1,
+    [  0x40/8 ...   0x47/8] = 0xf0, /* PIT */
+
+For Python code, stick to PEP-8.
