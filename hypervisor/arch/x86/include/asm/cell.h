@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -23,21 +25,24 @@ struct pci_device;
 /** Cell-related states. */
 /* TODO: factor out arch-independent bits, define struct arch_cell */
 struct cell {
-	struct {
-		/** PIO access bitmap. */
-		/* should be first as it requires page alignment */
-		u8 __attribute__((aligned(PAGE_SIZE))) io_bitmap[2*PAGE_SIZE];
-		/** Paging structures used for cell CPUs. */
-		struct paging_structures ept_structs;
-	} vmx; /**< Intel VMX-specific fields. */
+	union {
+		struct {
+			/** PIO access bitmap. */
+			u8 *io_bitmap;
+			/** Paging structures used for cell CPUs. */
+			struct paging_structures ept_structs;
+		} vmx; /**< Intel VMX-specific fields. */
+	};
 
-	struct {
-		/** Paging structures used for DMA requests. */
-		struct paging_structures pg_structs;
-		/** True if interrupt remapping support is emulated for this
-		 * cell. */
-		bool ir_emulation;
-	} vtd; /**< Inte VT-d specific fields. */
+	union {
+		struct {
+			/** Paging structures used for DMA requests. */
+			struct paging_structures pg_structs;
+			/** True if interrupt remapping support is emulated for this
+			 * cell. */
+			bool ir_emulation;
+		} vtd; /**< Intel VT-d specific fields. */
+	};
 
 	/** ID of the cell. */
 	unsigned int id;

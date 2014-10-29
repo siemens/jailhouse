@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -79,8 +81,10 @@ struct per_cpu {
 	/** @} */
 	/** True when CPU is initialized by hypervisor. */
 	bool initialized;
-	/** VMX initialization state. */
-	enum vmx_state vmx_state;
+	union {
+		/** VMX initialization state */
+		enum vmx_state vmx_state;
+	};
 
 	/**
 	 * Lock protecting CPU state changes done for control tasks.
@@ -124,10 +128,16 @@ struct per_cpu {
 	/** Number of iterations to clear pending APIC IRQs. */
 	unsigned int num_clear_apic_irqs;
 
-	/** VMXON region, required by VMX. */
-	struct vmcs vmxon_region __attribute__((aligned(PAGE_SIZE)));
-	/** VMCS of this CPU, required by VMX. */
-	struct vmcs vmcs __attribute__((aligned(PAGE_SIZE)));
+	union {
+		struct {
+			/** VMXON region, required by VMX. */
+			struct vmcs vmxon_region
+				__attribute__((aligned(PAGE_SIZE)));
+			/** VMCS of this CPU, required by VMX. */
+			struct vmcs vmcs
+				__attribute__((aligned(PAGE_SIZE)));
+		};
+	};
 } __attribute__((aligned(PAGE_SIZE)));
 
 /**
