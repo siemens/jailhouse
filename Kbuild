@@ -20,4 +20,7 @@ ccflags-y := -I$(src)/hypervisor/arch/$(SRCARCH)/include \
 
 jailhouse-y := driver.o
 
-$(obj)/driver.o: $(obj)/hypervisor
+$(obj)/hypervisor/include/jailhouse/version.h: $(obj)/hypervisor
+	@
+
+$(obj)/driver.o: $(obj)/hypervisor/include/jailhouse/version.h
