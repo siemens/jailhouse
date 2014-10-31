@@ -186,7 +186,7 @@ static inline struct per_cpu *per_cpu(unsigned int cpu)
 	asm volatile(
 		"lea __page_pool(%%rip),%0\n\t"
 		"add %1,%0\n\t"
-		: "=&qm" (cpu_data)
+		: "=&q" (cpu_data)
 		: "qm" ((unsigned long)cpu << PERCPU_SIZE_SHIFT));
 	return cpu_data;
 }
