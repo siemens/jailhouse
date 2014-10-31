@@ -30,7 +30,7 @@
 	.section ".startup", "ax"
 
 start16:
-	cs,lgdtl gdt_ptr
+	lgdtl %cs:gdt_ptr
 
 	mov %cr0,%eax
 	or $X86_CR0_PE,%al
