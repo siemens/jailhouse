@@ -18,7 +18,7 @@
 
 #define X86_CR4_PSE	0x00000010
 
-	.code16gcc
+	.code16
 	.section ".boot", "ax"
 
 	ljmp $0xf000,$start16

@@ -21,7 +21,7 @@
 #define MSR_EFER	0xc0000080
 #define EFER_LME	0x00000100
 
-	.code16gcc
+	.code16
 	.section ".boot", "ax"
 
 	ljmp $0xf000,$start16
