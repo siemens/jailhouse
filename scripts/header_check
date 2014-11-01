@@ -26,12 +26,12 @@ test_compile()
 	prepend=
 	case $header in
 	cell-config.h|header.h|hypercall.h)
-		prepend="#include <asm/types.h>"
+		prepend="#include <jailhouse/types.h>"
 		;;
 	jailhouse_hypercall.h)
 		# only included directly for linker script
 		prepend="#define __ASSEMBLY__
-			 #include <asm/types.h>"
+			 #include <jailhouse/types.h>"
 		;;
 	esac
 
