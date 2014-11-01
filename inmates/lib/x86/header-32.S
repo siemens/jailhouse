@@ -84,3 +84,4 @@ gdt_ptr:
 	.global loader_pdpt
 loader_pdpt:
 	.long	0x00000083
+	.align(4096)
