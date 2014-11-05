@@ -1096,7 +1096,6 @@ void vcpu_park(struct per_cpu *cpu_data)
 
 void vcpu_nmi_handler(struct per_cpu *cpu_data)
 {
-	printk("Consuming pending NMI on CPU %d\n", cpu_data->cpu_id);
 }
 
 void vcpu_tlb_flush(void)
