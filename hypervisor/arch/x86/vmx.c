@@ -372,8 +372,9 @@ static bool vmx_set_guest_cr(int cr, unsigned long val)
 	return ok;
 }
 
-static bool vmx_set_cell_config(struct cell *cell)
+static bool vmx_set_cell_config(void)
 {
+	struct cell *cell = this_cell();
 	u8 *io_bitmap;
 	bool ok = true;
 
@@ -507,7 +508,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write64(APIC_ACCESS_ADDR,
 			   paging_hvirt2phys(apic_access_page));
 
-	ok &= vmx_set_cell_config(cpu_data->cell);
+	ok &= vmx_set_cell_config();
 
 	ok &= vmcs_write32(EXCEPTION_BITMAP, 0);
 
@@ -683,7 +684,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	__builtin_unreachable();
 }
 
-static void vmx_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
+static void vmx_vcpu_reset(unsigned int sipi_vector)
 {
 	unsigned long val;
 	bool ok = true;
@@ -765,7 +766,7 @@ static void vmx_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	val &= ~VM_ENTRY_IA32E_MODE;
 	ok &= vmcs_write32(VM_ENTRY_CONTROLS, val);
 
-	ok &= vmx_set_cell_config(cpu_data->cell);
+	ok &= vmx_set_cell_config();
 
 	if (!ok) {
 		panic_printk("FATAL: CPU reset failed\n");
@@ -787,7 +788,7 @@ void vcpu_nmi_handler(void)
 
 void vcpu_park(struct per_cpu *cpu_data)
 {
-	vmx_vcpu_reset(cpu_data, 0);
+	vmx_vcpu_reset(0);
 	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
 }
 
@@ -978,7 +979,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
-			vmx_vcpu_reset(cpu_data, sipi_vector);
+			vmx_vcpu_reset(sipi_vector);
 			memset(guest_regs, 0, sizeof(*guest_regs));
 		}
 		iommu_check_pending_faults(cpu_data);
