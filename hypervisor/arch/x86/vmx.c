@@ -372,7 +372,7 @@ static bool vmx_set_guest_cr(int cr, unsigned long val)
 	return ok;
 }
 
-static bool vcpu_set_cell_config(struct cell *cell)
+static bool vmx_set_cell_config(struct cell *cell)
 {
 	u8 *io_bitmap;
 	bool ok = true;
@@ -507,7 +507,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write64(APIC_ACCESS_ADDR,
 			   paging_hvirt2phys(apic_access_page));
 
-	ok &= vcpu_set_cell_config(cpu_data->cell);
+	ok &= vmx_set_cell_config(cpu_data->cell);
 
 	ok &= vmcs_write32(EXCEPTION_BITMAP, 0);
 
@@ -683,7 +683,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	__builtin_unreachable();
 }
 
-static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
+static void vmx_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 {
 	unsigned long val;
 	bool ok = true;
@@ -765,7 +765,7 @@ static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	val &= ~VM_ENTRY_IA32E_MODE;
 	ok &= vmcs_write32(VM_ENTRY_CONTROLS, val);
 
-	ok &= vcpu_set_cell_config(cpu_data->cell);
+	ok &= vmx_set_cell_config(cpu_data->cell);
 
 	if (!ok) {
 		panic_printk("FATAL: CPU reset failed\n");
@@ -787,7 +787,7 @@ void vcpu_nmi_handler(void)
 
 void vcpu_park(struct per_cpu *cpu_data)
 {
-	vcpu_reset(cpu_data, 0);
+	vmx_vcpu_reset(cpu_data, 0);
 	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
 }
 
@@ -935,7 +935,7 @@ static void dump_guest_regs(struct registers *guest_regs)
 	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
-static void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
+static void vmx_get_vcpu_io_intercept(struct vcpu_io_intercept *out)
 {
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
 
@@ -947,7 +947,7 @@ static void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
 	out->rep_or_str = !!(exitq & 0x30);
 }
 
-static void vcpu_vendor_get_pf_intercept(struct vcpu_pf_intercept *out)
+static void vmx_get_vcpu_pf_intercept(struct vcpu_pf_intercept *out)
 {
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
 
@@ -978,7 +978,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
-			vcpu_reset(cpu_data, sipi_vector);
+			vmx_vcpu_reset(cpu_data, sipi_vector);
 			memset(guest_regs, 0, sizeof(*guest_regs));
 		}
 		iommu_check_pending_faults(cpu_data);
@@ -1047,13 +1047,13 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
-		vcpu_vendor_get_io_intercept(&io);
+		vmx_get_vcpu_io_intercept(&io);
 		if (vcpu_handle_io_access(guest_regs, &io))
 			return;
 		break;
 	case EXIT_REASON_EPT_VIOLATION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
-		vcpu_vendor_get_pf_intercept(&pf);
+		vmx_get_vcpu_pf_intercept(&pf);
 		if (vcpu_handle_pt_violation(guest_regs, &pf))
 			return;
 		break;

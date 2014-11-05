@@ -158,7 +158,7 @@ static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
 	svm_segment->base = segment->base;
 }
 
-static bool vcpu_set_cell_config(struct cell *cell, struct vmcb *vmcb)
+static bool svm_set_cell_config(struct cell *cell, struct vmcb *vmcb)
 {
 	/* No real need for this function; used for consistency with vmx.c */
 	vmcb->iopm_base_pa = paging_hvirt2phys(cell->svm.iopm);
@@ -238,7 +238,7 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 	/* Explicitly mark all of the state as new */
 	vmcb->clean_bits = 0;
 
-	return vcpu_set_cell_config(cpu_data->cell, vmcb);
+	return svm_set_cell_config(cpu_data->cell, vmcb);
 }
 
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
@@ -557,7 +557,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	__builtin_unreachable();
 }
 
-static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
+static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long val;
@@ -646,7 +646,7 @@ static void vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	/* Almost all of the guest state changed */
 	vmcb->clean_bits = 0;
 
-	ok &= vcpu_set_cell_config(cpu_data->cell, vmcb);
+	ok &= svm_set_cell_config(cpu_data->cell, vmcb);
 
 	/* This is always false, but to be consistent with vmx.c... */
 	if (!ok) {
@@ -950,8 +950,8 @@ static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
 	panic_printk("EFER: %p\n", vmcb->efer);
 }
 
-static void vcpu_vendor_get_pf_intercept(struct per_cpu *cpu_data,
-					 struct vcpu_pf_intercept *out)
+static void svm_get_vcpu_pf_intercept(struct per_cpu *cpu_data,
+				      struct vcpu_pf_intercept *out)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 
@@ -959,8 +959,8 @@ static void vcpu_vendor_get_pf_intercept(struct per_cpu *cpu_data,
 	out->is_write = !!(vmcb->exitinfo1 & 0x2);
 }
 
-static void vcpu_vendor_get_io_intercept(struct per_cpu *cpu_data,
-					 struct vcpu_io_intercept *out)
+static void svm_get_vcpu_io_intercept(struct per_cpu *cpu_data,
+				      struct vcpu_io_intercept *out)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	u64 exitinfo = vmcb->exitinfo1;
@@ -1005,7 +1005,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
-			vcpu_reset(cpu_data, sipi_vector);
+			svm_vcpu_reset(cpu_data, sipi_vector);
 			memset(guest_regs, 0, sizeof(*guest_regs));
 		}
 		iommu_check_pending_faults(cpu_data);
@@ -1042,7 +1042,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
-			vcpu_vendor_get_pf_intercept(cpu_data, &pf);
+			svm_get_vcpu_pf_intercept(cpu_data, &pf);
 			if (vcpu_handle_pt_violation(guest_regs, &pf))
 				return;
 		}
@@ -1069,7 +1069,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case VMEXIT_IOIO:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
-		vcpu_vendor_get_io_intercept(cpu_data, &io);
+		svm_get_vcpu_io_intercept(cpu_data, &io);
 		if (vcpu_handle_io_access(guest_regs, &io))
 			return;
 		break;
@@ -1087,7 +1087,7 @@ void vcpu_park(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 
-	vcpu_reset(cpu_data, APIC_BSP_PSEUDO_SIPI);
+	svm_vcpu_reset(cpu_data, APIC_BSP_PSEUDO_SIPI);
 	/* No need to clear VMCB Clean bit: vcpu_reset() already does this */
 	vmcb->n_cr3 = paging_hvirt2phys(parked_mode_npt);
 
