@@ -73,8 +73,6 @@ void vcpu_nmi_handler(struct per_cpu *cpu_data);
 
 void vcpu_tlb_flush(void);
 
-void vcpu_entry_failure(struct per_cpu *cpu_data);
-
 /*
  * vcpu_map_inst() and vcpu_get_inst_bytes() contract:
  *
