@@ -789,19 +789,10 @@ iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
 	union vtd_irte root_irte;
 	unsigned long irte_addr;
 	void *irte_page;
-	int base_index;
 
 	if (remap_index >= unit->irt_entries)
 		return irq_msg;
 	unit->irte_map[remap_index].used = 0;
-
-	base_index = vtd_find_int_remap_region(device_id);
-	if (base_index < 0)
-		return irq_msg;
-
-	if (vector >= unit->irt_entries ||
-	    base_index >= unit->irt_entries - vector)
-		return irq_msg;
 
 	irte_addr = (unit->irta & VTD_IRTA_ADDR_MASK) +
 		remap_index * sizeof(union vtd_irte);
