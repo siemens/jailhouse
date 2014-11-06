@@ -455,9 +455,9 @@ void vcpu_activate_vmm(struct per_cpu *cpu_data)
 		"mov 0x20(%%rdi),%%rbx\n\t"
 		"mov 0x28(%%rdi),%%rbp\n\t"
 		"mov %0, %%rax\n\t"
-		"vmload\n\t"
-		"vmrun\n\t"
-		"vmsave\n\t"
+		"vmload %%rax\n\t"
+		"vmrun %%rax\n\t"
+		"vmsave %%rax\n\t"
 		/* Restore hypervisor stack */
 		"mov %2, %%rsp\n\t"
 		"jmp svm_vmexit"

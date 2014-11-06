@@ -58,8 +58,8 @@ svm_vmexit:
 
 	pop %rax
 
-	vmload
-	vmrun
-	vmsave
+	vmload %rax
+	vmrun %rax
+	vmsave %rax
 
 	jmp svm_vmexit
