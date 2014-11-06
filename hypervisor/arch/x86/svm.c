@@ -436,17 +436,6 @@ void vcpu_activate_vmm(struct per_cpu *cpu_data)
 	vmcb_pa = paging_hvirt2phys(&cpu_data->vmcb);
 	host_stack = (unsigned long)cpu_data->stack + sizeof(cpu_data->stack);
 
-	/* Clear host-mode MSRs */
-	write_msr(MSR_IA32_SYSENTER_CS, 0);
-	write_msr(MSR_IA32_SYSENTER_EIP, 0);
-	write_msr(MSR_IA32_SYSENTER_ESP, 0);
-
-	write_msr(MSR_STAR, 0);
-	write_msr(MSR_LSTAR, 0);
-	write_msr(MSR_CSTAR, 0);
-	write_msr(MSR_SFMASK, 0);
-	write_msr(MSR_KERNGS_BASE, 0);
-
 	/*
 	 * XXX: Jailhouse doesn't use PAT, so it is explicitly set to the
 	 * reset value. However, this value is later combined with vmcb->g_pat
