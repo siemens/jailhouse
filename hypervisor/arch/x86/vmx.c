@@ -281,7 +281,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 }
 
 int vcpu_map_memory_region(struct cell *cell,
-			  const struct jailhouse_memory *mem)
+			   const struct jailhouse_memory *mem)
 {
 	u64 phys_start = mem->phys_start;
 	u32 flags = EPT_FLAG_WB_TYPE;
@@ -300,7 +300,7 @@ int vcpu_map_memory_region(struct cell *cell,
 }
 
 int vcpu_unmap_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem)
+			     const struct jailhouse_memory *mem)
 {
 	return paging_destroy(&cell->vmx.ept_structs, mem->virt_start,
 			      mem->size, PAGING_NON_COHERENT);

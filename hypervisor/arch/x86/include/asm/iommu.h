@@ -27,7 +27,7 @@ int iommu_cell_init(struct cell *cell);
 int iommu_map_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem);
 int iommu_unmap_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem);
+			      const struct jailhouse_memory *mem);
 int iommu_add_pci_device(struct cell *cell, struct pci_device *device);
 void iommu_remove_pci_device(struct pci_device *device);
 

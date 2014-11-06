@@ -376,7 +376,7 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 
 	irq_msg = pci_translate_msi_vector(device, index, 0, msi);
 	result = iommu_map_interrupt(device->cell, device->info->bdf, index,
-				   irq_msg);
+				     irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {
 		mmio_write64(&device->msix_table[index].field.address,

@@ -247,9 +247,9 @@ static int vtd_emulate_inv_int(unsigned int unit_no, unsigned int index)
 		return 0;
 
 	irq_msg = iommu_get_remapped_root_int(unit_no, irte_usage->device_id,
-					    irte_usage->vector, index);
+					      irte_usage->vector, index);
 	return iommu_map_interrupt(&root_cell, irte_usage->device_id,
-				 irte_usage->vector, irq_msg);
+				   irte_usage->vector, irq_msg);
 }
 
 static int vtd_emulate_qi_request(unsigned int unit_no,
@@ -745,7 +745,7 @@ int iommu_cell_init(struct cell *cell)
 }
 
 int iommu_map_memory_region(struct cell *cell,
-			  const struct jailhouse_memory *mem)
+			    const struct jailhouse_memory *mem)
 {
 	u32 flags = 0;
 
@@ -767,7 +767,7 @@ int iommu_map_memory_region(struct cell *cell,
 }
 
 int iommu_unmap_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem)
+			      const struct jailhouse_memory *mem)
 {
 	// HACK for QEMU
 	if (dmar_units == 0)
@@ -782,7 +782,7 @@ int iommu_unmap_memory_region(struct cell *cell,
 
 struct apic_irq_message
 iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
-			  unsigned int vector, unsigned int remap_index)
+			    unsigned int vector, unsigned int remap_index)
 {
 	struct vtd_emulation *unit = &root_cell_units[iommu];
 	struct apic_irq_message irq_msg = { .valid = 0 };
@@ -823,7 +823,7 @@ iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
 }
 
 int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
-		      struct apic_irq_message irq_msg)
+			struct apic_irq_message irq_msg)
 {
 	u32 dest = irq_msg.destination;
 	union vtd_irte irte;
