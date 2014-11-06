@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#define ARRAY_SIZE(array)	sizeof(array) / sizeof((array)[0])
+#define ARRAY_SIZE(array)	(sizeof(array) / sizeof((array)[0]))
 
 /* create 64-bit mask with bytes 0 to size-1 set to 0xff */
 #define BYTE_MASK(size)		(0xffffffffffffffffULL >> ((8 - (size)) * 8))
