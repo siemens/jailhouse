@@ -359,6 +359,11 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	cfg = (struct jailhouse_cell_desc *)(cfg_mapping + cfg_page_offs);
 
 	for_each_cell(cell)
+		/*
+		 * No bound checking needed, thus strcmp is safe here because
+		 * sizeof(cell->config->name) == sizeof(cfg->name) and
+		 * cell->config->name is guaranteed to be null-terminated.
+		 */
 		if (strcmp(cell->config->name, cfg->name) == 0) {
 			err = -EEXIST;
 			goto err_resume;
