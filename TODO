@@ -36,6 +36,7 @@ o setup validation
   - Intel TXT support?
   - secure boot?
  - check for execution inside hypervisor, allow only when enabled in config
+ - clear memory regions before reassignment to prevent information leaks?
 o inter-cell communication channel
  - shared memory + doorbell IRQs
  - queues + doorbell?
