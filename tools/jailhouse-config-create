@@ -290,6 +290,7 @@ class MemRegion:
     def flagstr(self, p=''):
         if (
             self.typestr == 'System RAM' or
+            self.typestr == 'Kernel' or
             self.typestr == 'RAM buffer' or
             self.typestr == 'ACPI DMAR RMRR'
         ):
@@ -319,6 +320,39 @@ class IOMemRegionTree:
         for c in self.children:
             s += str(c)
         return s
+
+    def regions_split_by_kernel(self):
+        kernel = [x for x in self.children if
+                    x.region.typestr.startswith('Kernel ')]
+
+        if (len(kernel) == 0):
+            return [self.region]
+
+        r = self.region
+        s = r.typestr
+
+        kernel_start = kernel[0].region.start
+        kernel_stop = kernel[len(kernel) - 1].region.stop
+
+        # align this for 16M, but only if we have enough space
+        kernel_stop = (kernel_stop & ~0xFFFFFF) + 0xFFFFFF
+        if (kernel_stop > r.stop):
+            kernel_stop = r.stop
+
+        before_kernel = None
+        after_kernel = None
+
+        # before Kernel if any
+        if (r.start < kernel_start):
+            before_kernel = MemRegion(r.start, kernel_start - 1, s)
+
+        kernel_region = MemRegion(kernel_start, kernel_stop, "Kernel")
+
+        # after Kernel if any
+        if (r.stop > kernel_stop):
+            after_kernel = MemRegion(kernel_stop + 1, r.stop, s)
+
+        return [before_kernel, kernel_region, after_kernel]
 
     @staticmethod
     def parse_iomem_line(line):
@@ -365,9 +399,11 @@ class IOMemRegionTree:
             r = tree.region
             s = r.typestr
 
-            # System RAM on first level will be added without digging deeper
+            # System RAM on the first level will be added completely,
+            # if they don't contain the kernel itself, if they do,
+            # we split them
             if (tree.level == 1 and s == 'System RAM'):
-                regions.append(r)
+                regions.extend(tree.regions_split_by_kernel())
                 continue
 
             # blacklisted on all levels
