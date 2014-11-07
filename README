@@ -72,7 +72,7 @@ Simply run make, optionally specifying the target kernel directory:
 
     make [KDIR=/path/to/kernel/objects]
 
-Except for the hypervisor image jailhouse.bin that has to be available in the
+Except for the hypervisor image jailhouse*.bin that has to be available in the
 firmware search path (invoke "make firmware_install" for this), you can run
 Jailhouse from the build directory. Alternatively, install everything on the
 target machine by calling "make install" from the top-level directory.
