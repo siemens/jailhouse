@@ -44,6 +44,7 @@
 # define PCI_CMD_INTX_OFF	(1 << 10)
 #define PCI_CFG_STATUS		0x006
 # define PCI_STS_INT		(1 << 3)
+# define PCI_STS_CAPS		(1 << 4)
 #define PCI_CFG_BAR		0x010
 # define PCI_BAR_64BIT		0x4
 #define PCI_CFG_CAP_PTR		0x034

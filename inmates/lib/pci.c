@@ -30,6 +30,9 @@ int pci_find_cap(u16 bdf, u16 cap)
 {
 	u8 pos = PCI_CFG_CAP_PTR - 1;
 
+	if (!(pci_read_config(bdf, PCI_CFG_STATUS, 2) & PCI_STS_CAPS))
+		return -1;
+
 	while (1) {
 		pos = pci_read_config(bdf, pos + 1, 1);
 		if (pos == 0)
