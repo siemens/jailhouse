@@ -305,7 +305,7 @@ class IOMemRegionTree:
         self.linenum = linenum
         self.level = level
         self.parent = None
-        self.children = set()
+        self.children = []
 
     def __str__(self):
         s = ''
@@ -313,7 +313,7 @@ class IOMemRegionTree:
             s = (' ' * (self.level - 1)) + str(self.region) + ' line %d' \
                 % (self.linenum)
             if self.parent and self.parent.region:
-                s += '--> ' + self.parent.region.typestr + ' line %d' \
+                s += ' --> ' + self.parent.region.typestr + ' line %d' \
                     % (self.parent.linenum)
             s += '\n'
         for c in self.children:
@@ -348,19 +348,18 @@ class IOMemRegionTree:
                     p = p.parent
                 t.parent = p.parent
 
-            t.parent.children.add(t)
+            t.parent.children.append(t)
             lastnode = t
             lastlevel = t.level
             linenum += 1
         f.close()
 
-        return linenum, root
+        return root
 
     # recurse down the tree
     @staticmethod
     def parse_iomem_tree(tree):
         regions = []
-        linenumbers = []
 
         for tree in tree.children:
             r = tree.region
@@ -369,7 +368,6 @@ class IOMemRegionTree:
             # System RAM on first level will be added without digging deeper
             if (tree.level == 1 and s == 'System RAM'):
                 regions.append(r)
-                linenumbers.append(tree.linenum)
                 continue
 
             # blacklisted on all levels
@@ -387,54 +385,40 @@ class IOMemRegionTree:
                     r2 = subtree.region
                     if (r2.typestr.find('HPET') >= 0):
                         regions.append(r2)
-                        linenumbers.append(subtree.linenum)
                 continue
 
             # if the tree continues recurse further down ...
             if (len(tree.children) > 0):
-                ln2, r2 = IOMemRegionTree.parse_iomem_tree(tree)
-                linenumbers.extend(ln2)
-                regions.extend(r2)
+                regions.extend(IOMemRegionTree.parse_iomem_tree(tree))
                 continue
 
             # add all remaining leaves
             regions.append(r)
-            linenumbers.append(tree.linenum)
 
-        return linenumbers, regions
+        return regions
 
 
 def parse_iomem(pcidevices):
-    (maxsz, tree) = IOMemRegionTree.parse_iomem_file()
+    regions = IOMemRegionTree.parse_iomem_tree(
+                    IOMemRegionTree.parse_iomem_file())
 
-    # create a spare array so we can easiely keep the order from the file
-    regions = [None for x in range(maxsz)]
-
-    lines, regs = IOMemRegionTree.parse_iomem_tree(tree)
-    i = 0
-    for l in lines:
-        regions[l] = regs[i]
-        i += 1
-
-    # now prepare a non-sparse array for a return value,
-    # also filtering out MSI-X pages
+    # filter the list for MSI-X pages
     ret = []
     for r in regions:
+        for d in pcidevices:
+            if d.msix_address >= r.start and d.msix_address <= r.stop:
+                if d.msix_address > r.start:
+                    head_r = MemRegion(r.start, d.msix_address - 1,
+                                       r.typestr, r.comments)
+                    ret.append(head_r)
+                if d.msix_address + d.msix_region_size < r.stop:
+                    tail_r = MemRegion(d.msix_address + d.msix_region_size,
+                                       r.stop, r.typestr, r.comments)
+                    ret.append(tail_r)
+                r = None
+                break
         if r:
-            for d in pcidevices:
-                if d.msix_address >= r.start and d.msix_address <= r.stop:
-                    if d.msix_address > r.start:
-                        head_r = MemRegion(r.start, d.msix_address - 1,
-                                           r.typestr, r.comments)
-                        ret.append(head_r)
-                    if d.msix_address + d.msix_region_size < r.stop:
-                        tail_r = MemRegion(d.msix_address + d.msix_region_size,
-                                           r.stop, r.typestr, r.comments)
-                        ret.append(tail_r)
-                    r = None
-                    break
-            if r:
-                ret.append(r)
+            ret.append(r)
 
     # newer Linux kernels will report the first page as reserved
     # it is needed for CPU init so include it anyways
