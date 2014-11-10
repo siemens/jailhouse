@@ -14,3 +14,5 @@ tools/jailhouse
 tools/jailhouse-config-collect
 configs/*.cell
 Documentation/generated
+hypervisor/include/generated
+*.s
