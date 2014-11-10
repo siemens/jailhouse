@@ -301,9 +301,8 @@ class MemRegion:
 
 
 class IOMemRegionTree:
-    def __init__(self, region, level, linenum):
+    def __init__(self, region, level):
         self.region = region
-        self.linenum = linenum
         self.level = level
         self.parent = None
         self.children = []
@@ -311,11 +310,9 @@ class IOMemRegionTree:
     def __str__(self):
         s = ''
         if (self.region):
-            s = (' ' * (self.level - 1)) + str(self.region) + ' line %d' \
-                % (self.linenum)
+            s = (' ' * (self.level - 1)) + str(self.region)
             if self.parent and self.parent.region:
-                s += ' --> ' + self.parent.region.typestr + ' line %d' \
-                    % (self.parent.linenum)
+                s += ' --> ' + self.parent.region.typestr
             s += '\n'
         for c in self.children:
             s += str(c)
@@ -364,14 +361,13 @@ class IOMemRegionTree:
 
     @staticmethod
     def parse_iomem_file():
-        root = IOMemRegionTree(None, 0, -1)
+        root = IOMemRegionTree(None, 0)
         f = input_open('/proc/iomem')
         lastlevel = 0
         lastnode = root
-        linenum = 0
         for line in f:
             (level, r) = IOMemRegionTree.parse_iomem_line(line)
-            t = IOMemRegionTree(r, level, linenum)
+            t = IOMemRegionTree(r, level)
             if (t.level > lastlevel):
                 t.parent = lastnode
             if (t.level == lastlevel):
@@ -385,7 +381,6 @@ class IOMemRegionTree:
             t.parent.children.append(t)
             lastnode = t
             lastlevel = t.level
-            linenum += 1
         f.close()
 
         return root
