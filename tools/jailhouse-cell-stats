@@ -20,9 +20,12 @@ stats_dir = "/sys/devices/jailhouse/cells/%s/statistics"
 
 
 def main(stdscr, cell, stats_names):
-    curses.use_default_colors()
+    try:
+        curses.use_default_colors()
+        curses.curs_set(0)
+    except curses.error:
+        pass
     curses.noecho()
-    curses.curs_set(0)
     curses.halfdelay(10)
     value = dict.fromkeys(stats_names)
     old_value = dict.fromkeys(stats_names, None)
