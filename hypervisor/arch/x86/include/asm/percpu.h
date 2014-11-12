@@ -23,14 +23,6 @@
 
 #define NUM_ENTRY_REGS			6
 
-/* Keep in sync with struct per_cpu! */
-#define PERCPU_SIZE_SHIFT_ASM		14
-#define PERCPU_STACK_END		PAGE_SIZE
-#define PERCPU_LINUX_SP			PERCPU_STACK_END
-/* SVM only: offsetof(struct per_cpu, vmcb) */
-#define PERCPU_VMCB_OFFSET		8192
-#define PERCPU_VMCB_RAX			(PERCPU_VMCB_OFFSET + 0x5f8)
-
 #ifndef __ASSEMBLY__
 
 #include <asm/cell.h>
@@ -221,18 +213,6 @@ static inline struct per_cpu *per_cpu(unsigned int cpu)
 
 /** @} **/
 
-/* Validate defines */
-#define CHECK_ASSUMPTION(assume)	((void)sizeof(char[1 - 2*!(assume)]))
-
-static inline void __check_assumptions(void)
-{
-	struct per_cpu cpu_data;
-
-	CHECK_ASSUMPTION(PERCPU_SIZE_SHIFT_ASM == PERCPU_SIZE_SHIFT);
-	CHECK_ASSUMPTION(sizeof(cpu_data.stack) == PERCPU_STACK_END);
-	CHECK_ASSUMPTION(__builtin_offsetof(struct per_cpu, linux_sp) ==
-			 PERCPU_LINUX_SP);
-}
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PERCPU_H */

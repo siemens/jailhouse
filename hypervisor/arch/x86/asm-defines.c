@@ -11,9 +11,26 @@
  */
 
 #include <jailhouse/gen-defines.h>
+#include <jailhouse/utils.h>
+#include <asm/percpu.h>
+#include <asm/svm.h>
 
 void common(void);
 
 void common(void)
 {
+	OFFSET(PERCPU_LINUX_SP, per_cpu, linux_sp);
+	BLANK();
+
+	OFFSET(PERCPU_VMCB, per_cpu, vmcb);
+	OFFSET(VMCB_RAX, vmcb, rax);
+	BLANK();
+
+	/* GCC evaluates constant expressions involving built-ins
+	 * at compilation time, so this yields computed value.
+	 */
+	DEFINE(PERCPU_STACK_END,
+	       __builtin_offsetof(struct per_cpu, stack) + \
+	       FIELD_SIZEOF(struct per_cpu, stack));
+	DEFINE(PERCPU_SIZE_SHIFT_ASM, PERCPU_SIZE_SHIFT);
 }

@@ -10,7 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
+#include <asm/asm-defines.h>
+
+#define PERCPU_VMCB_RAX (PERCPU_VMCB + VMCB_RAX)
 
 /* SVM VM-exit handling */
 	.globl svm_vmexit

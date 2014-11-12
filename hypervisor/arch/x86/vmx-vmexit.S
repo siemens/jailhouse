@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
+#include <asm/asm-defines.h>
 
 /* VMX VM-exit handling */
 	.globl vmx_vmexit
