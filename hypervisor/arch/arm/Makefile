@@ -24,4 +24,6 @@ obj-y += irqchip.o gic-common.o
 obj-$(CONFIG_ARM_GIC_V3) += gic-v3.o
 obj-$(CONFIG_ARM_GIC) += gic-v2.o
 obj-$(CONFIG_SERIAL_AMBA_PL011) += dbg-write-pl011.o
+obj-$(CONFIG_SERIAL_8250_DW) += uart-8250-dw.o
 obj-$(CONFIG_ARCH_VEXPRESS) += smp-vexpress.o
+obj-$(CONFIG_ARCH_SUN7I) += smp-sun7i.o

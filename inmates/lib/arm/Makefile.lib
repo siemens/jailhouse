@@ -28,10 +28,12 @@ define DECLARE_TARGETS =
 endef
 
 mach-$(CONFIG_ARCH_VEXPRESS)		:= vexpress
+mach-$(CONFIG_ARCH_SUN7I)		:= sun7i
 
 gic-$(CONFIG_ARM_GIC)			:= gic-v2.o
 gic-$(CONFIG_ARM_GIC_V3)		:= gic-v3.o
 uart-$(CONFIG_SERIAL_AMBA_PL011) 	:= uart-pl011.o
+uart-$(CONFIG_SERIAL_8250_DW)	 	:= uart-8250-dw.o
 
 MACHINE					:= mach-$(mach-y)
 DRIVERS					:= $(gic-y) $(uart-y)

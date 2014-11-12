@@ -52,6 +52,23 @@
 
 #endif /* CONFIG_ARCH_VEXPRESS */
 
+#ifdef CONFIG_ARCH_SUN7I
+
+#  define GICD_BASE	((void *)0x01c81000)
+#  define GICD_SIZE	0x1000
+#  define GICC_BASE	((void *)0x01c82000)
+#  define GICC_SIZE	0x2000
+#  define GICH_BASE	((void *)0x01c84000)
+#  define GICH_SIZE	0x2000
+#  define GICV_BASE	((void *)0x01c86000)
+#  define GICV_SIZE	0x2000
+
+#  include <asm/gic_v2.h>
+
+# define MAINTENANCE_IRQ 25
+
+#endif /* CONFIG_ARCH_SUN7I */
+
 #define HOTPLUG_SPIN	1
 /*
 #define HOTPLUG_PSCI	1
