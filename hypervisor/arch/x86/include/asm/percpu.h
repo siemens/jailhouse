@@ -24,7 +24,7 @@
 #define NUM_ENTRY_REGS			6
 
 /* Keep in sync with struct per_cpu! */
-#define PERCPU_SIZE_SHIFT		14
+#define PERCPU_SIZE_SHIFT_ASM		14
 #define PERCPU_STACK_END		PAGE_SIZE
 #define PERCPU_LINUX_SP			PERCPU_STACK_END
 /* SVM only: offsetof(struct per_cpu, vmcb) */
@@ -154,6 +154,10 @@ struct per_cpu {
 	};
 } __attribute__((aligned(PAGE_SIZE)));
 
+/* Round up sizeof(struct per_cpu) to the next power of two. */
+#define PERCPU_SIZE_SHIFT \
+	(64 - __builtin_clzl(sizeof(struct per_cpu) - 1))
+
 /**
  * Define CPU-local accessor for a per-CPU field.
  * @param field		Field name.
@@ -224,7 +228,7 @@ static inline void __check_assumptions(void)
 {
 	struct per_cpu cpu_data;
 
-	CHECK_ASSUMPTION(sizeof(struct per_cpu) == (1 << PERCPU_SIZE_SHIFT));
+	CHECK_ASSUMPTION(PERCPU_SIZE_SHIFT_ASM == PERCPU_SIZE_SHIFT);
 	CHECK_ASSUMPTION(sizeof(cpu_data.stack) == PERCPU_STACK_END);
 	CHECK_ASSUMPTION(__builtin_offsetof(struct per_cpu, linux_sp) ==
 			 PERCPU_LINUX_SP);

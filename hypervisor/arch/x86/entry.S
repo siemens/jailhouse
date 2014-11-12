@@ -26,7 +26,7 @@ arch_entry:
 	push %r15
 
 	mov %rdi,%rsi
-	shl $PERCPU_SIZE_SHIFT,%rsi
+	shl $PERCPU_SIZE_SHIFT_ASM,%rsi
 	lea __page_pool(%rip),%rax
 	add %rax,%rsi
 
