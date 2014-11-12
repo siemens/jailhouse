@@ -28,11 +28,6 @@
 #define NUM_EXCP_DESC		20
 #define IRQ_DESC_START		32
 
-struct farptr {
-	u64 offs;
-	u16 seg;
-} __attribute__((packed));
-
 static u64 gdt[] = {
 	[GDT_DESC_NULL]   = 0,
 	[GDT_DESC_CODE]   = 0x00af9b000000ffff,
