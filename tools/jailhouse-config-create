@@ -385,6 +385,24 @@ class IOMemRegionTree:
 
         return root
 
+    # find HPET regions in tree
+    @staticmethod
+    def find_hpet_regions(tree):
+        regions = []
+
+        for tree in tree.children:
+            r = tree.region
+            s = r.typestr
+
+            if (s.find('HPET') >= 0):
+                regions.append(r)
+
+            # if the tree continues recurse further down ...
+            if (len(tree.children) > 0):
+                regions.extend(IOMemRegionTree.find_hpet_regions(tree))
+
+        return regions
+
     # recurse down the tree
     @staticmethod
     def parse_iomem_tree(tree):
@@ -409,13 +427,9 @@ class IOMemRegionTree:
             ):
                 continue
 
-            # generally blacklisted, unless we find an HPET right behind it
-            # on the next level
+            # generally blacklisted, unless we find an HPET behind it
             if (s == 'reserved'):
-                for subtree in tree.children:
-                    r2 = subtree.region
-                    if (r2.typestr.find('HPET') >= 0):
-                        regions.append(r2)
+                regions.extend(IOMemRegionTree.find_hpet_regions(tree))
                 continue
 
             # if the tree continues recurse further down ...
