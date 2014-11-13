@@ -233,6 +233,7 @@ void apic_clear(struct per_cpu *cpu_data)
 	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
 	int n;
 
+	/* Mask all available LVTs */
 	apic_mask_lvt(APIC_REG_LVTERR);
 	if (maxlvt >= 6)
 		apic_mask_lvt(APIC_REG_LVTCMCI);
@@ -244,15 +245,21 @@ void apic_clear(struct per_cpu *cpu_data)
 	apic_mask_lvt(APIC_REG_LVT0);
 	apic_mask_lvt(APIC_REG_LVT1);
 
+	/* Clear ISR. This is done in reverse direction as EOI
+	 * clears highest-priority interrupt ISR bit. */
 	for (n = APIC_NUM_INT_REGS-1; n >= 0; n--)
 		while (apic_ops.read(APIC_REG_ISR0 + n) != 0)
 			apic_ops.write(APIC_REG_EOI, APIC_EOI_ACK);
 
+	/* Consume pending interrupts to clear IRR.
+	 * Need to reset TPR to ensure interrupt delivery. */
 	apic_ops.write(APIC_REG_TPR, 0);
 	cpu_data->num_clear_apic_irqs = 0;
 	enable_irq();
 	cpu_relax();
 	disable_irq();
+
+	/* Finally, reset the TPR again */
 	apic_ops.write(APIC_REG_TPR, 0);
 }
 
