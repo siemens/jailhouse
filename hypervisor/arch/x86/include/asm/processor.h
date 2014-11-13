@@ -109,6 +109,15 @@
 
 #ifndef __ASSEMBLY__
 
+/**
+ * @ingroup X86
+ * @defgroup Processor Processor
+ *
+ * Low-level support for x86 processor configuration and status retrieval.
+ *
+ * @{
+ */
+
 struct registers {
 	unsigned long r15;
 	unsigned long r14;
@@ -267,16 +276,19 @@ static inline void write_idtr(struct desc_table_reg *val)
 	asm volatile("lidtq %0" : : "m" (*val));
 }
 
-static inline void enable_irq(void)
-{
-	asm volatile("sti");
-}
+/**
+ * Enable or disable interrupts delivery to the local CPU when in host mode.
+ *
+ * In some cases (AMD) changing IF isn't enough, so these are implemented on
+ * per-vendor basis.
+ * @{
+ */
+void enable_irq(void);
 
-static inline void disable_irq(void)
-{
-	asm volatile("cli");
-}
+void disable_irq(void);
+/** @} */
 
+/** @} */
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PROCESSOR_H */

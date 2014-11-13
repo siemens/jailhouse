@@ -1136,3 +1136,15 @@ void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
 	x_state->cs = cpu_data->vmcb.cs.selector;
 	x_state->rip = cpu_data->vmcb.rip;
 }
+
+/* GIF must be set for interrupts to be delivered (APMv2, Sect. 15.17) */
+void enable_irq(void)
+{
+	asm volatile("stgi; sti" : : : "memory");
+}
+
+/* Jailhouse runs with GIF cleared, so we need to restore this state */
+void disable_irq(void)
+{
+	asm volatile("cli; clgi" : : : "memory");
+}

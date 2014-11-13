@@ -1091,3 +1091,13 @@ void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
 	x_state->cs = vmcs_read16(GUEST_CS_SELECTOR);
 	x_state->rip = vmcs_read64(GUEST_RIP);
 }
+
+void enable_irq(void)
+{
+	asm volatile("sti" : : : "memory");
+}
+
+void disable_irq(void)
+{
+	asm volatile("cli" : : : "memory");
+}
