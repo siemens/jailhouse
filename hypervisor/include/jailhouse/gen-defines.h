@@ -8,6 +8,8 @@
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
+ *
+ * Derived from Linux kernel code.
  */
 
 #ifndef _JAILHOUSE_GEN_DEFINES_H

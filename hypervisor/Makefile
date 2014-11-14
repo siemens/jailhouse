@@ -11,6 +11,8 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 #
+# asm-defines.h generation code derived from Linux kernel.
+#
 
 LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include -I$(src)/include
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
@@ -35,8 +37,6 @@ define filechk_version
 endef
 
 clean-files := $(obj)/include/jailhouse/version.h
-
-# This derives from the Linux kernel's asm-offsets.h generation infrastructure
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \
