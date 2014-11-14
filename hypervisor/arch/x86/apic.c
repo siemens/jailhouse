@@ -381,6 +381,10 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 
 static bool apic_accessing_reserved_bits(unsigned int reg, u32 val)
 {
+	/* Unlisted registers are implicitly reserved */
+	if (reg >= ARRAY_SIZE(apic_reserved_bits))
+		return true;
+
 	if ((apic_reserved_bits[reg] & val) == 0)
 		return false;
 
