@@ -296,8 +296,6 @@ int vcpu_vendor_init(void)
 				(MSR_X2APIC_END - MSR_X2APIC_BASE + 1)/4);
 		msrpm[SVM_MSRPM_0000][MSR_X2APIC_ICR/4] = 0x02;
 	} else {
-		/* Enable Extended Interrupt LVT */
-		apic_reserved_bits[0x50] = 0;
 		if (has_avic) {
 			avic_page = page_alloc(&remap_pool, 1);
 			if (!avic_page)
@@ -402,10 +400,6 @@ int vcpu_init(struct per_cpu *cpu_data)
 		return -EIO;
 
 	write_msr(MSR_VM_HSAVE_PA, paging_hvirt2phys(cpu_data->host_state));
-
-	/* Enable Extended Interrupt LVT (xAPIC, as it is AMD-only) */
-	if (!using_x2apic)
-		apic_reserved_bits[0x50] = 0;
 
 	return 0;
 }

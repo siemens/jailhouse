@@ -45,6 +45,9 @@
 #define APIC_REG_LVT1			0x36
 #define APIC_REG_LVTERR			0x37
 #define APIC_REG_SELF_IPI		0x3f
+#define APIC_REG_XFEAT			0x40
+#define APIC_REG_XLVT0			0x50
+#define APIC_REG_XLVT3			0x53
 
 #define APIC_EOI_ACK			0
 #define APIC_ICR_VECTOR_MASK		0x000000ff
@@ -73,6 +76,8 @@
 #define  APIC_LVT_DLVR_FIXED		0x00000000
 #define  APIC_LVT_DLVR_NMI		0x00000400
 #define APIC_LVT_MASKED			0x00010000
+
+#define APIC_LVR_EAS			(1 << 31)
 
 #define XAPIC_DEST_MASK			0xff000000
 #define XAPIC_DEST_SHIFT		24
@@ -144,7 +149,6 @@ struct apic_irq_message {
 
 extern bool using_x2apic;
 extern u8 apic_to_cpu_id[];
-extern u32 apic_reserved_bits[];
 
 int apic_init(void);
 int apic_cpu_init(struct per_cpu *cpu_data);

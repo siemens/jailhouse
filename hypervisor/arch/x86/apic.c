@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -25,7 +27,7 @@ bool using_x2apic;
 u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
 
 /* Initialized for x2APIC, adjusted for xAPIC during init */
-u32 apic_reserved_bits[] = {
+static u32 apic_reserved_bits[] = {
 	[0x00 ... 0x07] = -1,
 	[0x08]          = 0xffffff00,	/* TPR */
 	[0x09 ... 0x0a] = -1,
@@ -44,6 +46,7 @@ u32 apic_reserved_bits[] = {
 	[0x39 ... 0x3d] = -1,
 	[0x3e]		= 0xfffffff4,	/* DCR */
 	[0x3f]		= 0xffffff00,	/* Self IPI */
+	[0x40 ... 0x53] = -1,		/* Extended APIC Register Space */
 };
 static void *xapic_page;
 
@@ -100,6 +103,15 @@ static void send_x2apic_ipi(u32 apic_id, u32 icr_lo)
 		  ((unsigned long)apic_id) << 32 | icr_lo);
 }
 
+static u32 apic_ext_features(void)
+{
+	if (apic_ops.read(APIC_REG_LVR) & APIC_LVR_EAS)
+		return apic_ops.read(APIC_REG_XFEAT);
+	else
+		/* Set extended feature bits to all-zeroes */
+		return 0;
+}
+
 int phys_processor_id(void)
 {
 	return apic_ops.read_id();
@@ -107,8 +119,10 @@ int phys_processor_id(void)
 
 int apic_cpu_init(struct per_cpu *cpu_data)
 {
+	unsigned int xlc = (apic_ext_features() >> 16) & 0xff;
 	unsigned int apic_id = phys_processor_id();
 	unsigned int cpu_id = cpu_data->cpu_id;
+	unsigned int n;
 	u32 ldr;
 
 	printk("(APIC ID %d) ", apic_id);
@@ -129,6 +143,16 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 	cpu_data->apic_id = apic_id;
 
 	cpu_data->sipi_vector = -1;
+
+	/*
+	 * Extended APIC Register Space (currently, AMD thus xAPIC only).
+	 *
+	 * Can't do it in apic_init(), as apic_ext_features() accesses
+	 * the APIC page that is only accessible after switching to
+	 * hv_paging_structs.
+	 */
+	for (n = 0; n < xlc; n++)
+		apic_reserved_bits[0x50 + n] = 0xfffef800;
 
 	return 0;
 }
@@ -231,6 +255,7 @@ static void apic_mask_lvt(unsigned int reg)
 void apic_clear(struct per_cpu *cpu_data)
 {
 	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
+	unsigned int xlc = (apic_ext_features() >> 16) & 0xff;
 	int n;
 
 	/* Mask all available LVTs */
@@ -244,6 +269,8 @@ void apic_clear(struct per_cpu *cpu_data)
 		apic_mask_lvt(APIC_REG_LVTPC);
 	apic_mask_lvt(APIC_REG_LVT0);
 	apic_mask_lvt(APIC_REG_LVT1);
+	for (n = 0; n < xlc; n++)
+		apic_mask_lvt(APIC_REG_XLVT0 + n);
 
 	/* Clear ISR. This is done in reverse direction as EOI
 	 * clears highest-priority interrupt ISR bit. */
@@ -441,6 +468,9 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			return 0;
 		} else if (reg >= APIC_REG_LVTCMCI && reg <= APIC_REG_LVTERR &&
 			   apic_invalid_lvt_delivery_mode(reg, val))
+			return 0;
+		else if (reg >= APIC_REG_XLVT0 && reg <= APIC_REG_XLVT3 &&
+			 apic_invalid_lvt_delivery_mode(reg, val))
 			return 0;
 		else
 			apic_ops.write(reg, val);
