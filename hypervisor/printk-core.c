@@ -71,7 +71,7 @@ static char *int2str(long long value, char *buf)
 static char *hex2str(unsigned long long value, char *buf,
 		     unsigned long long leading_zero_mask)
 {
-	const char hexdigit[] = "0123456789abcdef";
+	static const char hexdigit[] = "0123456789abcdef";
 	unsigned long long digit, divisor = 0x1000000000000000ULL;
 	int first_digit = 1;
 
