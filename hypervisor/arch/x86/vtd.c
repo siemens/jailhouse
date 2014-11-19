@@ -699,7 +699,7 @@ void iommu_remove_pci_device(struct pci_device *device)
 	arch_paging_flush_cpu_caches(&context_entry->lo_word, sizeof(u64));
 
 	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
-					   device->info->num_msi_vectors));
+					   device->info->num_msix_vectors));
 
 	for (n = 0; n < 256; n++)
 		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)
