@@ -111,8 +111,7 @@ static void cpu_init(unsigned int cpu_id, struct per_cpu *cpu_data)
 
 failed:
 	printk("FAILED\n");
-	if (!error)
-		error = err;
+	error = err;
 }
 
 int map_root_memory_regions(void)
