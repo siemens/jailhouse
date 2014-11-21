@@ -148,7 +148,7 @@ struct per_cpu {
 
 /* Round up sizeof(struct per_cpu) to the next power of two. */
 #define PERCPU_SIZE_SHIFT \
-	(64 - __builtin_clzl(sizeof(struct per_cpu) - 1))
+	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
 
 /**
  * Define CPU-local accessor for a per-CPU field.
