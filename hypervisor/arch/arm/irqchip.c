@@ -271,6 +271,11 @@ void irqchip_cell_exit(struct cell *cell)
 	const struct jailhouse_irqchip *root_pins =
 		irqchip_find_config(root_cell.config);
 
+	/* might be called by arch_shutdown while rolling back
+	 * a failed setup */
+	if (!irqchip_is_init)
+		return;
+
 	if (root_pins)
 		root_cell.arch.spis |= cell->arch.spis & root_pins->pin_bitmap;
 
