@@ -64,7 +64,7 @@ endef
 
 defines-file := include/generated/asm-defines.h
 
-targets := $(defines-file)
+targets := $(defines-file) arch/$(SRCARCH)/asm-defines.s
 
 $(obj)/arch/$(SRCARCH)/asm-defines.s: $(src)/arch/$(SRCARCH)/asm-defines.c
 	$(call if_changed_dep,cc_s_c)
