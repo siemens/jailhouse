@@ -22,8 +22,10 @@ static unsigned long long div_u64_u64(unsigned long long dividend,
 		tmp_div = divisor << 1;
 		tmp_res = 1;
 		while (dividend >= tmp_div) {
-			tmp_div <<= 1;
 			tmp_res <<= 1;
+			if (tmp_div & (1ULL << 63))
+				break;
+			tmp_div <<= 1;
 		}
 		dividend -= divisor * tmp_res;
 		result += tmp_res;
