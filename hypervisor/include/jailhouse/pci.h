@@ -20,6 +20,11 @@
 # define PCI_CMD_MASTER		(1 << 2)
 # define PCI_CMD_INTX_OFF	(1 << 10)
 
+#define PCI_CONFIG_HEADER_SIZE	0x40
+
+#define PCI_CAP_MSI		0x05
+#define PCI_CAP_MSIX		0x11
+
 /**
  * @defgroup PCI PCI Subsystem
  *

@@ -17,11 +17,6 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/utils.h>
 
-#define PCI_CONFIG_HEADER_SIZE		0x40
-
-#define PCI_CAP_MSI			0x05
-#define PCI_CAP_MSIX			0x11
-
 #define MSIX_VECTOR_CTRL_DWORD		3
 
 #define for_each_configured_pci_device(dev, cell)			\
