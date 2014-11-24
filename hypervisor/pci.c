@@ -636,8 +636,8 @@ int pci_cell_init(struct cell *cell)
 	 */
 	for (ndev = 0; ndev < cell->config->num_pci_devices; ndev++) {
 		if (dev_infos[ndev].num_msix_vectors > PCI_MAX_MSIX_VECTORS) {
-			pci_cell_exit(cell);
-			return -ERANGE;
+			err = -ERANGE;
+			goto error;
 		}
 
 		device = &cell->pci_devices[ndev];
@@ -651,10 +651,8 @@ int pci_cell_init(struct cell *cell)
 		}
 
 		err = pci_add_device(cell, device);
-		if (err) {
-			pci_cell_exit(cell);
-			return err;
-		}
+		if (err)
+			goto error;
 
 		device->cell = cell;
 
@@ -669,6 +667,9 @@ int pci_cell_init(struct cell *cell)
 		pci_prepare_handover();
 
 	return 0;
+error:
+	pci_cell_exit(cell);
+	return err;
 }
 
 static void pci_return_device_to_root_cell(struct pci_device *device)
