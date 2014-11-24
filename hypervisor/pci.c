@@ -251,6 +251,11 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 				return PCI_ACCESS_PERFORM;
 		}
 
+		// HACK to allow PCI bus rescanning in root-cell
+		if (device->info->type == JAILHOUSE_PCI_TYPE_BRIDGE &&
+		    device->cell == &root_cell)
+			return PCI_ACCESS_DONE;
+
 		return PCI_ACCESS_REJECT;
 	}
 
