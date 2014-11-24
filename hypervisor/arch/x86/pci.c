@@ -305,7 +305,8 @@ void arch_pci_suppress_msi(struct pci_device *device,
 	msi = pci_get_x86_msi_vector(device);
 	for (n = 0; n < vectors; n++) {
 		irq_msg = pci_translate_msi_vector(device, n, vectors, msi);
-		apic_send_irq(irq_msg);
+		if (irq_msg.valid)
+			apic_send_irq(irq_msg);
 	}
 }
 

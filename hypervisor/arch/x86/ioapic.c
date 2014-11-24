@@ -142,6 +142,7 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 static void ioapic_mask_pins(struct cell *cell, u64 pin_bitmap,
 			     enum ioapic_handover handover)
 {
+	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;
 	unsigned int pin, reg;
 
@@ -166,8 +167,10 @@ static void ioapic_mask_pins(struct cell *cell, u64 pin_bitmap,
 			 * interrupts.
 			 */
 			entry = shadow_redir_table[pin];
-			apic_send_irq(ioapic_translate_redir_entry(cell, pin,
-								   entry));
+			irq_msg = ioapic_translate_redir_entry(cell, pin,
+							       entry);
+			if (irq_msg.valid)
+				apic_send_irq(irq_msg);
 		}
 	}
 }
