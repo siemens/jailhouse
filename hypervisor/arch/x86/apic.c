@@ -206,6 +206,42 @@ void apic_send_nmi_ipi(struct per_cpu *target_data)
 			  APIC_ICR_SH_NONE);
 }
 
+/**
+ * Return whether an interrupt's destination CPU is within a given cell. Also
+ * return a filtered destination mask.
+ *
+ * @param cell		Target cell
+ * @param irq_msg	Pointer to the irq message to be checked
+ *			The data structure might get adjusted by calling this
+ *			function.
+ *
+ * @see x2apic_filter_logical_dest
+ *
+ * @return "true" if the interrupt is for the given cell, "false" if not.
+ */
+bool apic_filter_irq_dest(struct cell *cell, struct apic_irq_message *irq_msg)
+{
+	u32 dest = irq_msg->destination;
+
+	if (irq_msg->dest_logical) {
+		if (using_x2apic)
+			dest = x2apic_filter_logical_dest(cell, dest);
+		else
+			dest &= cell->cpu_set->bitmap[0];
+		/*
+		 * Linux may have programmed inactive vectors with too broad
+		 * destination masks. Return the adjusted mask and do not fail.
+		 */
+		if (dest != irq_msg->destination && cell != &root_cell)
+			return false;
+		irq_msg->destination = dest;
+	} else if (dest > APIC_MAX_PHYS_ID ||
+		   !cell_owns_cpu(cell, apic_to_cpu_id[dest])) {
+		return false;
+	}
+	return true;
+}
+
 void apic_send_irq(struct apic_irq_message irq_msg)
 {
 	u32 delivery_mode = irq_msg.delivery_mode << APIC_ICR_DLVR_SHIFT;

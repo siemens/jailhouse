@@ -825,7 +825,6 @@ iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
 int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 			struct apic_irq_message irq_msg)
 {
-	u32 dest = irq_msg.destination;
 	union vtd_irte irte;
 	int base_index;
 
@@ -862,29 +861,15 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 	     irq_msg.delivery_mode != APIC_MSG_DLVR_LOWPRI) ||
 	    irq_msg.dest_logical != irq_msg.redir_hint)
 		return -EINVAL;
-	if (irq_msg.dest_logical) {
-		if (using_x2apic)
-			dest = x2apic_filter_logical_dest(cell, dest);
-		else
-			dest &= cell->cpu_set->bitmap[0];
-		/*
-		 * Linux may have programmed inactive vectors with too broad
-		 * destination masks. Silently adjust them when programming the
-		 * IRTE instead of failing the whole cell here.
-		 */
-		if (dest != irq_msg.destination && cell != &root_cell)
-			return -EPERM;
-	} else if (dest > APIC_MAX_PHYS_ID ||
-		   !cell_owns_cpu(cell, apic_to_cpu_id[dest])) {
+	if (!apic_filter_irq_dest(cell, &irq_msg))
 		return -EPERM;
-	}
 
 	irte.field.dest_logical = irq_msg.dest_logical;
 	irte.field.redir_hint = irq_msg.redir_hint;
 	irte.field.level_triggered = irq_msg.level_triggered;
 	irte.field.delivery_mode = irq_msg.delivery_mode;
 	irte.field.vector = irq_msg.vector;
-	irte.field.destination = dest;
+	irte.field.destination = irq_msg.destination;
 	if (!using_x2apic)
 		/* xAPIC in flat mode: APIC ID in 47:40 (of 63:32) */
 		irte.field.destination <<= 8;
