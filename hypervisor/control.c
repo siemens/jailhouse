@@ -334,7 +334,8 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 		 * thus no hugepages need to be broken up to unmap it.
 		 */
 		arch_unmap_memory_region(cell, mem);
-		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION))
+		if (!(mem->flags & (JAILHOUSE_MEM_COMM_REGION |
+				    JAILHOUSE_MEM_ROOTSHARED)))
 			remap_to_root_cell(mem, WARN_ON_ERROR);
 	}
 
@@ -452,8 +453,10 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		/*
 		 * Unmap exceptions:
 		 *  - the communication region is not backed by root memory
+		 *  - regions that may be shared with the root cell
 		 */
-		if (!(mem->flags & JAILHOUSE_MEM_COMM_REGION)) {
+		if (!(mem->flags & (JAILHOUSE_MEM_COMM_REGION |
+				    JAILHOUSE_MEM_ROOTSHARED))) {
 			err = unmap_from_root_cell(mem);
 			if (err)
 				goto err_destroy_cell;
