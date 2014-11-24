@@ -17,10 +17,18 @@
 #include <asm/cell.h>
 
 #define PCI_CFG_COMMAND		0x04
+# define PCI_CMD_MEM		(1 << 1)
 # define PCI_CMD_MASTER		(1 << 2)
 # define PCI_CMD_INTX_OFF	(1 << 10)
+#define PCI_CFG_STATUS		0x06
+# define PCI_STS_CAPS		(1 << 4)
+#define PCI_CFG_BAR		0x10
+# define PCI_BAR_64BIT		0x4
+#define PCI_CFG_INT		0x3c
 
 #define PCI_CONFIG_HEADER_SIZE	0x40
+
+#define PCI_DEV_CLASS_MEM	0x05
 
 #define PCI_CAP_MSI		0x05
 #define PCI_CAP_MSIX		0x11
