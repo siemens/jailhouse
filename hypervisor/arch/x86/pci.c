@@ -241,7 +241,18 @@ static union x86_msi_vector pci_get_x86_msi_vector(struct pci_device *device)
 	return msi;
 }
 
-static struct apic_irq_message
+/**
+ * Translate a given MSI vector into an IRQ message that can be sent to one
+ * or more APICs. (see apic_send_irq())
+ * @param device		Pointer to the pci device structure
+ * @param vector		interrupt vector number
+ * @param legacy_vectors	number of enabled MSI vectors of device
+ *				see pci_enabled_msi_vectors()
+ * @param msi			msi vector that should be translated
+ *
+ * @return an IRQ messages data structure
+ */
+struct apic_irq_message
 pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
 			 unsigned int legacy_vectors, union x86_msi_vector msi)
 {
