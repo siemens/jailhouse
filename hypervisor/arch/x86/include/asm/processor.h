@@ -161,6 +161,11 @@ static inline void memory_barrier(void)
 	asm volatile("mfence" : : : "memory");
 }
 
+static inline void memory_load_barrier(void)
+{
+	asm volatile("lfence" : : : "memory");
+}
+
 static inline void __cpuid(unsigned int *eax, unsigned int *ebx,
 			   unsigned int *ecx, unsigned int *edx)
 {

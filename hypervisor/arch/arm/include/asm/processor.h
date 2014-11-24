@@ -26,6 +26,10 @@ static inline void memory_barrier(void)
 {
 }
 
+static inline void memory_load_barrier(void)
+{
+}
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PROCESSOR_H */
