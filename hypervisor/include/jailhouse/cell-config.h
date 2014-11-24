@@ -74,6 +74,8 @@ struct jailhouse_pci_device {
 	__u16 num_msix_vectors;
 	__u16 msix_region_size;
 	__u64 msix_address;
+	/** used to refer to memory in virtual PCI devices */
+	__u32 shmem_region;
 } __attribute__((packed));
 
 #define JAILHOUSE_PCICAPS_WRITE		0x0001
