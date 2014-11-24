@@ -611,6 +611,9 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		goto error_free_cell;
 	}
 
+	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
+				     JAILHOUSE_PCI_ACTION_ADD);
+
 	release_firmware(hypervisor);
 
 	enabled = true;
@@ -698,6 +701,9 @@ static int jailhouse_disable(void)
 			       "online\n", cpu);
 		cpu_clear(cpu, offlined_cpus);
 	}
+
+	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
+				     JAILHOUSE_PCI_ACTION_DEL);
 
 	list_for_each_entry_safe(cell, tmp, &cells, entry)
 		delete_cell(cell);

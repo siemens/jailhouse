@@ -60,6 +60,7 @@ struct jailhouse_irqchip {
 
 #define JAILHOUSE_PCI_TYPE_DEVICE	0x01
 #define JAILHOUSE_PCI_TYPE_BRIDGE	0x02
+#define JAILHOUSE_PCI_TYPE_IVSHMEM	0x03
 
 struct jailhouse_pci_device {
 	__u8 type;
