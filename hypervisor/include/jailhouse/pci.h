@@ -106,6 +106,8 @@ union pci_msix_vector {
 	/** @publicsection */
 } __attribute__((packed));
 
+struct pci_ivshmem_endpoint;
+
 /**
  * PCI device state.
  */
@@ -124,6 +126,8 @@ struct pci_device {
 	struct pci_device *next_msix_device;
 	/** Next virtual PCI device in this cell. */
 	struct pci_device *next_virtual_device;
+	/** ivshmem specific data. */
+	struct pci_ivshmem_endpoint *ivshmem_endpoint;
 	/** Real MSI-X table. */
 	union pci_msix_vector *msix_table;
 	/** Shadow state of MSI-X table. */
@@ -230,5 +234,19 @@ int arch_pci_update_msi(struct pci_device *device,
  */
 int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index);
 
-/** @} */
+/**
+ * @defgroup PCI-IVSHMEM ivshmem
+ * @{
+ */
+int pci_ivshmem_init(struct cell *cell, struct pci_device *dev);
+void pci_ivshmem_exit(struct pci_device *dev);
+int pci_ivshmem_update_msix(struct pci_device *dev);
+enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, u16 address,
+				      u8 sz, u32 val);
+enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
+				     u8 sz, u32 *value);
+int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
+				u64 addr, u32 *value);
+/** @} PCI-IVSHMEM */
+/** @} PCI */
 #endif /* !_JAILHOUSE_PCI_H */

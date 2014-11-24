@@ -179,6 +179,9 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 		return PCI_ACCESS_DONE;
 	}
 
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return pci_ivshmem_cfg_read(device, address, size, value);
+
 	if (address < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
 
@@ -235,6 +238,9 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 
 	if (!device)
 		return PCI_ACCESS_REJECT;
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return pci_ivshmem_cfg_write(device, address, size, value);
 
 	if (address < PCI_CONFIG_HEADER_SIZE) {
 		if (device->info->type == JAILHOUSE_PCI_TYPE_DEVICE) {
@@ -394,9 +400,15 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	u32 mmcfg_offset, reg_addr;
 	struct pci_device *device;
 	enum pci_access access;
+	int ret;
 
-	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end)
-		return pci_msix_access_handler(cell, is_write, addr, value);
+	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end) {
+		ret = pci_msix_access_handler(cell, is_write, addr, value);
+		if (ret == 0)
+			ret = ivshmem_mmio_access_handler(cell, is_write, addr,
+							  value);
+		return ret;
+	}
 
 	mmcfg_offset = addr - mmcfg_start;
 	reg_addr = mmcfg_offset & 0xfff;
@@ -519,11 +531,12 @@ void pci_prepare_handover(void)
 	}
 }
 
-static void pci_add_virtual_device(struct cell *cell, struct pci_device *device)
+static int pci_add_virtual_device(struct cell *cell, struct pci_device *device)
 {
 	device->cell = cell;
 	device->next_virtual_device = cell->virtual_device_list;
 	cell->virtual_device_list = device;
+	return arch_pci_add_device(cell, device);
 }
 
 static int pci_add_device(struct cell *cell, struct pci_device *device)
@@ -567,6 +580,7 @@ static void pci_remove_virtual_device(struct pci_device *device)
 {
 	struct pci_device *prev = device->cell->virtual_device_list;
 
+	arch_pci_remove_device(device);
 	if (prev == device) {
 		device->cell->virtual_device_list = device->next_virtual_device;
 	} else {
@@ -643,6 +657,16 @@ int pci_cell_init(struct cell *cell)
 		device = &cell->pci_devices[ndev];
 		device->info = &dev_infos[ndev];
 
+		if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
+			err = pci_ivshmem_init(cell, device);
+			if (err)
+				goto error;
+			err = pci_add_virtual_device(cell, device);
+			if (err)
+				goto error;
+			continue;
+		}
+
 		root_device = pci_get_assigned_device(&root_cell,
 						      dev_infos[ndev].bdf);
 		if (root_device) {
@@ -709,8 +733,13 @@ void pci_cell_exit(struct cell *cell)
 
 	for_each_configured_pci_device(device, cell)
 		if (device->cell) {
-			pci_remove_device(device);
-			pci_return_device_to_root_cell(device);
+			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
+				pci_ivshmem_exit(device);
+				pci_remove_virtual_device(device);
+			} else {
+				pci_remove_device(device);
+				pci_return_device_to_root_cell(device);
+			}
 		}
 
 	page_free(&mem_pool, cell->pci_devices, devlist_pages);
@@ -734,7 +763,7 @@ void pci_config_commit(struct cell *cell_added_removed)
 		return;
 
 	for_each_configured_pci_device(device, &root_cell)
-		if (device->cell)
+		if (device->cell) {
 			for_each_pci_cap(cap, device, n) {
 				if (cap->id == PCI_CAP_MSI) {
 					err = arch_pci_update_msi(device, cap);
@@ -745,11 +774,23 @@ void pci_config_commit(struct cell *cell_added_removed)
 				if (err)
 					goto error;
 			}
+			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
+				err = pci_ivshmem_update_msix(device);
+				if (err) {
+					cap = NULL;
+					goto error;
+				}
+			}
+		}
 	return;
 
 error:
-	panic_printk("FATAL: Unsupported MSI/MSI-X state, device %02x:%02x.%x,"
-		     " cap %d\n", PCI_BDF_PARAMS(device->info->bdf), cap->id);
+	panic_printk("FATAL: Unsupported MSI/MSI-X state, device %02x:%02x.%x",
+		     PCI_BDF_PARAMS(device->info->bdf));
+	if (cap)
+		panic_printk(", cap %d\n", cap->id);
+	else
+		panic_printk("\n");
 	panic_stop();
 }
 

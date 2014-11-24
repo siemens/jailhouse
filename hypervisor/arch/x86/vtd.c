@@ -239,12 +239,19 @@ static int vtd_emulate_inv_int(unsigned int unit_no, unsigned int index)
 {
 	struct vtd_irte_usage *irte_usage;
 	struct apic_irq_message irq_msg;
+	struct pci_device *device;
 
 	if (index >= root_cell_units[unit_no].irt_entries)
 		return 0;
 	irte_usage = &root_cell_units[unit_no].irte_map[index];
 	if (!irte_usage->used)
 		return 0;
+
+	/* check all virtual PCI devices first */
+	for (device = root_cell.virtual_device_list; device;
+	     device = device->next_virtual_device)
+		if (device->info->bdf == irte_usage->device_id)
+			return pci_ivshmem_update_msix(device);
 
 	irq_msg = iommu_get_remapped_root_int(unit_no, irte_usage->device_id,
 					      irte_usage->vector, index);
@@ -653,6 +660,9 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 	if (result < 0)
 		return result;
 
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return 0;
+
 	if (*root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
 			paging_phys2hvirt(*root_entry_lo & PAGE_MASK);
@@ -692,14 +702,17 @@ void iommu_remove_pci_device(struct pci_device *device)
 	if (dmar_units == 0)
 		return;
 
+	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
+					   device->info->num_msix_vectors));
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return;
+
 	context_entry_table = paging_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 
 	context_entry->lo_word &= ~VTD_CTX_PRESENT;
 	arch_paging_flush_cpu_caches(&context_entry->lo_word, sizeof(u64));
-
-	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
-					   device->info->num_msix_vectors));
 
 	for (n = 0; n < 256; n++)
 		if (context_entry_table[n].lo_word & VTD_CTX_PRESENT)
