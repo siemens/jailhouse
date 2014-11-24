@@ -74,6 +74,8 @@ struct cell {
 	struct pci_device *pci_devices;
 	/** List of PCI devices assigned to this cell that support MSI-X. */
 	struct pci_device *msix_device_list;
+	/** List of virtual PCI devices assigned to this cell. */
+	struct pci_device *virtual_device_list;
 	/** Shadow value of PCI config space address port register. */
 	u32 pci_addr_port_val;
 

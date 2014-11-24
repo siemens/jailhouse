@@ -519,6 +519,13 @@ void pci_prepare_handover(void)
 	}
 }
 
+static void pci_add_virtual_device(struct cell *cell, struct pci_device *device)
+{
+	device->cell = cell;
+	device->next_virtual_device = cell->virtual_device_list;
+	cell->virtual_device_list = device;
+}
+
 static int pci_add_device(struct cell *cell, struct pci_device *device)
 {
 	unsigned int size = device->info->msix_region_size;
@@ -554,6 +561,19 @@ error_page_free:
 error_remove_dev:
 	arch_pci_remove_device(device);
 	return err;
+}
+
+static void pci_remove_virtual_device(struct pci_device *device)
+{
+	struct pci_device *prev = device->cell->virtual_device_list;
+
+	if (prev == device) {
+		device->cell->virtual_device_list = device->next_virtual_device;
+	} else {
+		while (prev->next_virtual_device != device)
+			prev = prev->next_virtual_device;
+		prev->next_virtual_device = device->next_virtual_device;
+	}
 }
 
 static void pci_remove_device(struct pci_device *device)

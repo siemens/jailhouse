@@ -122,6 +122,8 @@ struct pci_device {
 	union pci_msix_registers msix_registers;
 	/** Next PCI device in this cell with MSI-X support. */
 	struct pci_device *next_msix_device;
+	/** Next virtual PCI device in this cell. */
+	struct pci_device *next_virtual_device;
 	/** Real MSI-X table. */
 	union pci_msix_vector *msix_table;
 	/** Shadow state of MSI-X table. */
