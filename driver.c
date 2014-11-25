@@ -411,10 +411,15 @@ static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 static void enter_hypervisor(void *info)
 {
 	struct jailhouse_header *header = info;
+	unsigned int cpu = smp_processor_id();
 	int err;
 
-	/* either returns 0 or the same error code across all CPUs */
-	err = header->entry(smp_processor_id());
+	if (cpu < header->max_cpus)
+		/* either returns 0 or the same error code across all CPUs */
+		err = header->entry(cpu);
+	else
+		err = -EINVAL;
+
 	if (err)
 		error_code = err;
 
