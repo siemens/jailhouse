@@ -111,9 +111,23 @@ int arch_init_late(void)
 void arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	/* Return to the kernel */
-	cpu_return_el1(cpu_data, false);
+	cpu_prepare_return_el1(cpu_data, 0);
 
-	while (1);
+	asm volatile(
+	/* Reset the hypervisor stack */
+	"mov	sp, %0\n"
+	/*
+	 * We don't care about clobbering the other registers from now on. Must
+	 * be in sync with arch_entry.
+	 */
+	"ldm	%1, {r0 - r12}\n"
+	/* After this, the kernel won't be able to access the hypervisor code */
+	"eret\n"
+	:
+	: "r" (cpu_data->stack + PERCPU_STACK_END),
+	  "r" (cpu_data->linux_reg));
+
+	__builtin_unreachable();
 }
 
 void arch_shutdown_self(struct per_cpu *cpu_data)
@@ -138,6 +152,8 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 
 void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 {
+	struct registers *ctx = guest_regs(cpu_data);
+
 	/*
 	 * If we haven't reached switch_exception_level yet, there is nothing to
 	 * clean up.
@@ -148,10 +164,13 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 	/*
 	 * Otherwise, attempt do disable the MMU and return to EL1 using the
 	 * arch_shutdown path. cpu_return will fill the banked registers and the
-	 * guest regs structure (stored at the begginning of the stack) to
+	 * guest regs structure (stored at the beginning of the stack) to
 	 * prepare the ERET.
 	 */
-	cpu_return_el1(cpu_data, true);
+	cpu_prepare_return_el1(cpu_data, return_code);
+
+	memcpy(&ctx->usr, &cpu_data->linux_reg,
+	       NUM_ENTRY_REGS * sizeof(unsigned long));
 
 	arch_shutdown_self(cpu_data);
 }

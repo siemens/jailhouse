@@ -21,14 +21,9 @@
 #include <jailhouse/string.h>
 
 static inline void __attribute__((always_inline))
-cpu_return_el1(struct per_cpu *cpu_data, bool panic)
+cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
 {
-	/*
-	 * Return value
-	 * FIXME: there is no way, currently, to communicate the precise error
-	 * number from the core. A `EDISASTER' would be appropriate here.
-	 */
-	cpu_data->linux_reg[0] = (panic ? -EIO : 0);
+	cpu_data->linux_reg[0] = return_code;
 
 	asm volatile (
 	"msr	sp_svc, %0\n"
@@ -38,28 +33,6 @@ cpu_return_el1(struct per_cpu *cpu_data, bool panic)
 	: "r" (cpu_data->linux_sp + (NUM_ENTRY_REGS * sizeof(unsigned long))),
 	  "r" (cpu_data->linux_ret),
 	  "r" (cpu_data->linux_flags));
-
-	if (panic) {
-		/* A panicking return needs to shutdown EL2 before the ERET. */
-		struct registers *ctx = guest_regs(cpu_data);
-		memcpy(&ctx->usr, &cpu_data->linux_reg,
-		       NUM_ENTRY_REGS * sizeof(unsigned long));
-		return;
-	}
-
-	asm volatile(
-	/* Reset the hypervisor stack */
-	"mov	sp, %0\n"
-	/*
-	 * We don't care about clobbering the other registers from now on. Must
-	 * be in sync with arch_entry.
-	 */
-	"ldm	%1, {r0 - r12}\n"
-	/* After this, the kernel won't be able to access the hypervisor code */
-	"eret\n"
-	:
-	: "r" (cpu_data->stack + PERCPU_STACK_END),
-	  "r" (cpu_data->linux_reg));
 }
 
 int switch_exception_level(struct per_cpu *cpu_data);
