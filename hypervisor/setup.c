@@ -82,16 +82,15 @@ static void init_early(unsigned int cpu_id)
 	printk("Initializing processors:\n");
 }
 
-static void cpu_init(unsigned int cpu_id, struct per_cpu *cpu_data)
+static void cpu_init(struct per_cpu *cpu_data)
 {
 	int err = -EINVAL;
 
-	printk(" CPU %d... ", cpu_id);
+	printk(" CPU %d... ", cpu_data->cpu_id);
 
 	if (!cpu_id_valid(cpu_data->cpu_id))
 		goto failed;
 
-	cpu_data->cpu_id = cpu_id;
 	cpu_data->cell = &root_cell;
 
 	err = arch_cpu_init(cpu_data);
@@ -154,6 +153,8 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 	static volatile bool activate;
 	bool master = false;
 
+	cpu_data->cpu_id = cpu_id;
+
 	spin_lock(&init_lock);
 
 	if (master_cpu_id == -1) {
@@ -162,7 +163,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 	}
 
 	if (!error)
-		cpu_init(cpu_id, cpu_data);
+		cpu_init(cpu_data);
 
 	spin_unlock(&init_lock);
 
