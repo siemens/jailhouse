@@ -136,7 +136,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	arch_shutdown_mmu(cpu_data);
 }
 
-void arch_cpu_restore(struct per_cpu *cpu_data)
+void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 {
 	/*
 	 * If we haven't reached switch_exception_level yet, there is nothing to

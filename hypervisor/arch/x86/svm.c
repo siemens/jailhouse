@@ -509,7 +509,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	cpu_data->linux_fs.selector = vmcb->fs.selector;
 	cpu_data->linux_gs.selector = vmcb->gs.selector;
 
-	arch_cpu_restore(cpu_data);
+	arch_cpu_restore(cpu_data, 0);
 
 	stack--;
 	*stack = linux_ip;
