@@ -34,7 +34,7 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 
 	asm volatile("mov %%cr3,%0" : "=r" (pt_addr));
 
-	size += HUGE_PAGE_SIZE - 1;
+	size += (vaddr & ~HUGE_PAGE_MASK) + HUGE_PAGE_SIZE - 1;
 	size &= HUGE_PAGE_MASK;
 	while (size > 0) {
 #ifdef __x86_64__
