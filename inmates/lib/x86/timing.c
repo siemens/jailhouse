@@ -15,6 +15,7 @@
 #include <inmate.h>
 
 #define PM_TIMER_HZ		3579545
+#define PM_TIMER_OVERFLOW      ((0x1000000 * NS_PER_SEC) / PM_TIMER_HZ)
 
 #define X2APIC_LVTT		0x832
 #define X2APIC_TMICT		0x838
@@ -40,9 +41,10 @@ unsigned long pm_timer_read(void)
 	static unsigned long last, overflows;
 	unsigned long tmr;
 
-	tmr = (inl(comm_region->pm_timer_address) * NS_PER_SEC) / PM_TIMER_HZ;
+	tmr = ((inl(comm_region->pm_timer_address) & 0x00ffffff) * NS_PER_SEC)
+		/ PM_TIMER_HZ;
 	if (tmr < last)
-		overflows += pm_timer_overflow;
+		overflows += PM_TIMER_OVERFLOW;
 	last = tmr;
 	return tmr + overflows;
 }
