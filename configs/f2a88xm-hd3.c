@@ -40,7 +40,6 @@ struct {
 			.mmconfig_base = 0xe0000000,
 			.mmconfig_end_bus = 0xff,
 			.pm_timer_address = 0x808,
-			.pm_timer_val_ext = 1
 		},
 		.root_cell = {
 			.name = "F2A88XM-HD3",

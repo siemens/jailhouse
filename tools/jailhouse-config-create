@@ -3,7 +3,6 @@
 # Jailhouse, a Linux-based partitioning hypervisor
 #
 # Copyright (c) Siemens AG, 2014
-# Copyright (c) Valentine Sinitsyn, 2014
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
@@ -81,7 +80,6 @@ inputs['files'].add('/sys/bus/pci/devices/*/config')
 inputs['files'].add('/sys/bus/pci/devices/*/class')
 inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
 inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
-inputs['files'].add('/sys/firmware/acpi/tables/FACP')
 ## optional files
 inputs['files_opt'].add('/sys/class/dmi/id/product_name')
 inputs['files_opt'].add('/sys/class/dmi/id/sys_vendor')
@@ -642,19 +640,6 @@ def parse_ioports():
     return pm_timer_base
 
 
-def parse_facp():
-    tmr_val_ext = 0
-    with input_open('/sys/firmware/acpi/tables/FACP', 'rb') as f:
-        signature = f.read(4)
-        if signature != b'FACP':
-            raise RuntimeError('FACP: incorrect input file format %s' %
-                               signature)
-        f.seek(112)
-        (flags,) = struct.unpack('>I', f.read(4))
-        tmr_val_ext = (flags & 256) >> 8
-    return tmr_val_ext
-
-
 class MMConfig:
     def __init__(self, base, end_bus):
         self.base = base
@@ -765,7 +750,6 @@ cpucount = count_cpus()
 
 pm_timer_base = parse_ioports()
 
-pm_timer_val_ext = parse_facp()
 
 f = open(options.file, 'w')
 tmpl = Template(filename=os.path.join(options.template_dir,
@@ -780,7 +764,6 @@ f.write(tmpl.render(regions=regions,
                     cpucount=cpucount,
                     ioapic_id=ioapic_id,
                     pm_timer_base=pm_timer_base,
-                    pm_timer_val_ext=pm_timer_val_ext,
                     mmconfig=mmconfig,
                     dmar_units=dmar_units))
 

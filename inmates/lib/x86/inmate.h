@@ -223,7 +223,6 @@ void inmate_main(void);
 
 void hypercall_init(void);
 
-void pm_timer_init(void);
 unsigned long pm_timer_read(void);
 void delay_us(unsigned long microsecs);
 unsigned long apic_timer_init(unsigned int vector);

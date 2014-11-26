@@ -98,8 +98,7 @@ struct jailhouse_system {
 		struct {
 			__u64 mmconfig_base;
 			__u8 mmconfig_end_bus;
-			__u8 padding[4];
-			__u8 pm_timer_val_ext;
+			__u8 padding[5];
 			__u16 pm_timer_address;
 			__u64 dmar_unit_base[JAILHOUSE_MAX_DMAR_UNITS];
 		} __attribute__((packed)) x86;

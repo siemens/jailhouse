@@ -119,7 +119,6 @@ void inmate_main(void)
 
 	printk_uart_base = UART_BASE;
 
-	pm_timer_init();
 	int_init();
 
 again:

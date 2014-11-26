@@ -174,7 +174,6 @@ void inmate_main(void)
 	int bdf;
 
 	printk_uart_base = UART_BASE;
-	pm_timer_init();
 
 	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY, 0);
 	if (bdf < 0) {
