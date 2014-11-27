@@ -44,3 +44,12 @@ The link between two such virtual PCI devices is established by using the same
 you have to make sure that the values match on both sides.
 For an example have a look at the cell configuration files of qemu and the
 ivshmem-demo.
+
+Demo code
+---------
+
+You can go ahead and connect two non-root cells and run the ivshmem-demo. They
+will send each other interrupts.
+For the root cell you can find some test code in the following git repository:
+https://github.com/henning-schild/ivshmem-guest-code
+Check out the jailhouse branch and have a look at README.jailhouse.
