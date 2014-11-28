@@ -255,7 +255,7 @@ void arch_suspend_cpu(unsigned int cpu_id)
 {
 	struct sgi sgi;
 
-	if (psci_cpu_stopped(cpu_id) != 0)
+	if (psci_cpu_stopped(cpu_id))
 		return;
 
 	sgi.routing_mode = 0;
