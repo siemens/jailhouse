@@ -26,6 +26,9 @@ struct uart_chip {
 	void (*wait)(struct uart_chip *);
 	void (*busy)(struct uart_chip *);
 	void (*write)(struct uart_chip *, char c);
+
+	void		*clock_reg;
+	unsigned int	gate_nr;
 };
 
 void uart_chip_init(struct uart_chip *chip);

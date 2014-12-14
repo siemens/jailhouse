@@ -25,6 +25,11 @@
 
 static void uart_init(struct uart_chip *chip)
 {
+	if (chip->clock_reg)
+		mmio_write32(chip->clock_reg,
+			     mmio_read32(chip->clock_reg) |
+			     (1 << chip->gate_nr));
+
 	mmio_write32(chip->virt_base + UART_LCR, UART_LCR_DLAB);
 	mmio_write32(chip->virt_base + UART_DLL, 0x0d);
 	mmio_write32(chip->virt_base + UART_DLM, 0);

@@ -11,3 +11,5 @@
  */
 
 #define UART_BASE	((void *)0x01c29c00)
+#define UART_CLOCK_REG	((void *)0x01c2006c)
+#define UART_GATE_NR	23
