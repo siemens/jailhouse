@@ -61,6 +61,8 @@
 #define CNTV_CTL_EL0	SYSREG_32(0, c14, c3, 1)
 #define CNTV_CVAL_EL0	SYSREG_64(3, c14)
 
+#define CNTPCT		SYSREG_64(0, c14)
+
 /*
  * AArch32-specific registers: they are 64bit on AArch64, and will need some
  * helpers if used frequently.
