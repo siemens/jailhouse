@@ -180,6 +180,7 @@ static int cell_create(int argc, char *argv[])
 		perror("JAILHOUSE_CELL_CREATE");
 
 	close(fd);
+	free((void *)(unsigned long)cell_create.config_address);
 
 	return err;
 }
