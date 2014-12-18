@@ -119,7 +119,8 @@ int phys_processor_id(void)
 
 int apic_cpu_init(struct per_cpu *cpu_data)
 {
-	unsigned int xlc = (apic_ext_features() >> 16) & 0xff;
+	unsigned int xlc = MAX((apic_ext_features() >> 16) & 0xff,
+			       APIC_REG_XLVT3 - APIC_REG_XLVT0 + 1);
 	unsigned int apic_id = phys_processor_id();
 	unsigned int cpu_id = cpu_data->cpu_id;
 	unsigned int n;
