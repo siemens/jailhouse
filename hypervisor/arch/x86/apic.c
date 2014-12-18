@@ -153,7 +153,7 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 	 * hv_paging_structs.
 	 */
 	for (n = 0; n < xlc; n++)
-		apic_reserved_bits[0x50 + n] = 0xfffef800;
+		apic_reserved_bits[APIC_REG_XLVT0 + n] = 0xfffef800;
 
 	return 0;
 }
@@ -185,10 +185,10 @@ int apic_init(void)
 		apic_ops.send_ipi = send_xapic_ipi;
 
 		/* adjust reserved bits to xAPIC mode */
-		apic_reserved_bits[0x0d] = 0; /* LDR, separately filtered */
-		apic_reserved_bits[0x0e] = 0; /* DFR, separately filtered */
-		apic_reserved_bits[0x31] = 0x00ffffff; /* ICR (32..63) */
-		apic_reserved_bits[0x3f] = -1; /* no Self IPI register */
+		apic_reserved_bits[APIC_REG_LDR] = 0; /* separately filtered */
+		apic_reserved_bits[APIC_REG_DFR] = 0; /* separately filtered */
+		apic_reserved_bits[APIC_REG_ICR_HI] = 0x00ffffff;
+		apic_reserved_bits[APIC_REG_SELF_IPI] = -1; /* not available */
 	} else
 		return -EIO;
 
