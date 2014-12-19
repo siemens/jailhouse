@@ -266,6 +266,8 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	sgi.id = SGI_CPU_OFF;
 
 	irqchip_send_sgi(&sgi);
+
+	psci_wait_cpu_stopped(cpu_id);
 }
 
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
