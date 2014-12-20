@@ -94,6 +94,18 @@ static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 	return psci_resume(cpu);
 }
 
+static long psci_emulate_affinity_info(struct per_cpu *cpu_data,
+				       struct trap_context *ctx)
+{
+	unsigned int cpu = arm_cpu_virt2phys(cpu_data->cell, ctx->regs[1]);
+
+	if (cpu == -1)
+		/* Virtual id not in set */
+		return PSCI_DENIED;
+
+	return psci_cpu_stopped(cpu) ? PSCI_CPU_IS_OFF : PSCI_CPU_IS_ON;
+}
+
 /* Returns the secondary address set by the guest */
 unsigned long psci_emulate_spin(struct per_cpu *cpu_data)
 {
@@ -141,6 +153,9 @@ long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx)
 
 	case PSCI_CPU_ON_32:
 		return psci_emulate_cpu_on(cpu_data, ctx);
+
+	case PSCI_AFFINITY_INFO_32:
+		return psci_emulate_affinity_info(cpu_data, ctx);
 
 	default:
 		return PSCI_NOT_SUPPORTED;

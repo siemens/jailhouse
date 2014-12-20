@@ -39,6 +39,9 @@
 #define PSCI_NOT_PRESENT	(-7)
 #define PSCI_DISABLED		(-8)
 
+#define PSCI_CPU_IS_ON		0
+#define PSCI_CPU_IS_OFF		1
+
 #define IS_PSCI_FN(hvc)		((((hvc) >> 24) & 0x84) == 0x84)
 
 #define PSCI_INVALID_ADDRESS	0xffffffff
