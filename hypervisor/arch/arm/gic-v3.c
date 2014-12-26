@@ -52,6 +52,25 @@ static int gic_init(void)
 	return err;
 }
 
+static void gic_clear_pending_irqs(void)
+{
+	unsigned int n;
+
+	/* Clear list registers. */
+	for (n = 0; n < gic_num_lr; n++)
+		gic_write_lr(n, 0);
+
+	/* Clear active priority bits */
+	if (gic_num_priority_bits >= 5)
+		arm_write_sysreg(ICH_AP1R0_EL2, 0);
+	if (gic_num_priority_bits >= 6)
+		arm_write_sysreg(ICH_AP1R1_EL2, 0);
+	if (gic_num_priority_bits > 6) {
+		arm_write_sysreg(ICH_AP1R2_EL2, 0);
+		arm_write_sysreg(ICH_AP1R3_EL2, 0);
+	}
+}
+
 static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
 	unsigned int i;
@@ -63,9 +82,7 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	if (gicr == 0)
 		return -ENODEV;
 
-	/* Clear list registers */
-	for (i = 0; i < gic_num_lr; i++)
-		gic_write_lr(i, 0);
+	gic_clear_pending_irqs();
 
 	gicr += GICR_SGI_BASE;
 	active = mmio_read32(gicr + GICR_ICACTIVER);
@@ -83,16 +100,6 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	if (!root_shutdown)
 		mmio_write32(gicr + GICR_ICENABLER, 0xffff0000);
 	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff);
-
-	/* Clear active priority bits */
-	if (gic_num_priority_bits >= 5)
-		arm_write_sysreg(ICH_AP1R0_EL2, 0);
-	if (gic_num_priority_bits >= 6)
-		arm_write_sysreg(ICH_AP1R1_EL2, 0);
-	if (gic_num_priority_bits > 6) {
-		arm_write_sysreg(ICH_AP1R2_EL2, 0);
-		arm_write_sysreg(ICH_AP1R3_EL2, 0);
-	}
 
 	if (root_shutdown) {
 		/* Restore the root config */
@@ -169,6 +176,13 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	arm_read_sysreg(ICH_VTR_EL2, ich_vtr);
 	gic_num_lr = (ich_vtr & 0xf) + 1;
 	gic_num_priority_bits = (ich_vtr >> 29) + 1;
+
+	/*
+	 * Clear pending virtual IRQs in case anything is left from previous
+	 * use. Physically pending IRQs will be forwarded to Linux once we
+	 * enable interrupts for the hypervisor.
+	 */
+	gic_clear_pending_irqs();
 
 	ich_vmcr = (cell_icc_pmr & ICC_PMR_MASK) << ICH_VMCR_VPMR_SHIFT;
 	if (cell_icc_igrpen1 & ICC_IGRPEN1_EN)

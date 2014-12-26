@@ -47,6 +47,18 @@ static int gic_init(void)
 	return err;
 }
 
+static void gic_clear_pending_irqs(void)
+{
+	unsigned int n;
+
+	/* Clear list registers. */
+	for (n = 0; n < gic_num_lr; n++)
+		gic_write_lr(n, 0);
+
+	/* Clear active priority bits. */
+	mmio_write32(gich_base + GICH_APR, 0);
+}
+
 static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
 	unsigned int i;
@@ -55,9 +67,7 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	u32 gich_vmcr = 0;
 	u32 gicc_ctlr, gicc_pmr;
 
-	/* Clear list registers */
-	for (i = 0; i < gic_num_lr; i++)
-		gic_write_lr(i, 0);
+	gic_clear_pending_irqs();
 
 	/* Deactivate all PPIs */
 	active = mmio_read32(gicd_base + GICD_ISACTIVER);
@@ -71,8 +81,6 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 		mmio_write32(gicd_base + GICD_ICENABLER, 0xffff0000);
 	/* Ensure IPIs are enabled */
 	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff);
-
-	mmio_write32(gich_base + GICH_APR, 0);
 
 	if (is_shutdown)
 		mmio_write32(gich_base + GICH_HCR, 0);
@@ -136,6 +144,13 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 
 	mmio_write32(gich_base + GICH_VMCR, vmcr);
 	mmio_write32(gich_base + GICH_HCR, GICH_HCR_EN);
+
+	/*
+	 * Clear pending virtual IRQs in case anything is left from previous
+	 * use. Physically pending IRQs will be forwarded to Linux once we
+	 * enable interrupts for the hypervisor.
+	 */
+	gic_clear_pending_irqs();
 
 	/* Register ourselves into the CPU itf map */
 	gic_probe_cpu_id(cpu_data->cpu_id);
