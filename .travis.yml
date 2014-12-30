@@ -1,0 +1,61 @@
+# Copyright Roger Meier <r.meier@siemens.com>
+# SPDX-License-Identifier: GPL-2.0+
+# build Jailhouse on Travis CI - https://travis-ci.org/
+
+language: c
+
+cache:
+- apt
+
+env:
+  global:
+    - TEST_NAME=""
+    - CROSS_COMPILE=""
+
+install:
+  - sudo apt-get install -qq cppcheck sloccount python-mako bc gcc-arm-linux-gnueabi
+
+matrix:
+  include:
+    - env:
+        - TEST_NAME="gcc"
+      compiler: gcc
+      script:
+        - wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.14.tar.xz
+        - tar -xJf linux-3.14.tar.xz
+        - cd linux-3.14
+        - make defconfig
+        - make bzImage
+        - cd ..
+        - make KDIR=linux-3.14
+
+# TODO add arm architecture with multicore board (versatile_defconfig does not work)
+#    - env:
+#        - TEST_NAME="gcc-arm-linux-gnueabi"
+#        - CROSS_COMPILE="arm-linux-gnueabi-"
+#        - ARCH="arm"
+#      script:
+#        - wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.18.tar.xz
+#        - tar -xJf linux-3.18.tar.xz
+#        - cd linux-3.18
+#        - make defconfig
+#        - make bzImage
+#        - cd ..
+#        - make KDIR=linux-3.18
+
+    # QA jobs for code analytics and metrics
+    # static code analysis with cppcheck (we can add --enable=all later)
+    - env:    TEST_NAME="cppcheck"
+      script: cppcheck --force --quiet --inline-suppr -j2 .
+    # search for TODO within source tree
+    - env:    TEST_NAME="TODO"
+      script: grep -r TODO *
+    # search for FIXME within source tree
+    - env:    TEST_NAME="FIXME"
+      script: grep -r FIXME *
+    # search for HACK within source tree
+    - env:    TEST_NAME="HACK"
+      script: grep -r HACK *
+    # some statistics about the code base
+    - env:    TEST_NAME="sloccount"
+      script: sloccount .
