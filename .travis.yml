@@ -1,0 +1,33 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2014
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+language: c
+
+compiler:
+  - gcc
+
+install:
+  - echo "deb http://archive.ubuntu.com/ubuntu utopic main restricted" | sudo tee -a /etc/apt/sources.list
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq python-mako gcc-arm-linux-gnueabihf make
+  - cd ci
+  - wget -q http://www.kiszka.org/downloads/travis-ci/kernel-build.tar.xz
+  - tar xJf kernel-build.tar.xz
+  - cd ..
+
+script:
+  - cp ci/jailhouse-config-x86.h hypervisor/include/jailhouse/config.h
+  - make KDIR=ci/linux/build-x86
+  - cp ci/jailhouse-config-banana-pi.h hypervisor/include/jailhouse/config.h
+  - make KDIR=ci/linux/build-banana-pi ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean all
+  - cp ci/jailhouse-config-vexpress.h hypervisor/include/jailhouse/config.h
+  - make KDIR=ci/linux/build-vexpress ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean all
