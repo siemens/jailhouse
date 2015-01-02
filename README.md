@@ -28,34 +28,53 @@ dimension. Use at your own risk. And keep the reset button in reach.
 Community
 ---------
 
-Project home:   https://github.com/siemens/jailhouse
+Project home:
 
-git:            https://github.com/siemens/jailhouse.git
-                git@github.com:siemens/jailhouse.git
+ - https://github.com/siemens/jailhouse
 
-Mailing list:   jailhouse-dev@googlegroups.com
- Subscription:  jailhouse-dev+subscribe@googlegroups.com
-                https://groups.google.com/forum/#!forum/jailhouse-dev/join
- Archives:      http://news.gmane.org/gmane.linux.jailhouse
+Source code:
+
+ - https://github.com/siemens/jailhouse.git
+ - git@github.com:siemens/jailhouse.git
+
+Mailing list:
+
+  - jailhouse-dev@googlegroups.com
+
+  - Subscription:
+    - jailhouse-dev+subscribe@googlegroups.com
+    - https://groups.google.com/forum/#!forum/jailhouse-dev/join
+
+  - Archives
+    - http://news.gmane.org/gmane.linux.jailhouse
 
 
 Requirements (preliminary)
 --------------------------
 
-currently:
- - Intel x86 processor with support for 64-bit and VMX, more precisely
-    - EPT (extended page tables)
-    - unrestricted guest mode
-    - preemption timer
- - Intel IOMMU (VT-d) with interrupt remapping support
-   (except when running inside QEMU)
- or
- - AMD x86 processor with support for 64-bit and SVM (AMD-V), and also
-    - NPT (nested page tables); required
-    - Decode Assists; recommended
- - AMD IOMMU (AMD-Vi) is unsupported now but will be required in future
- - at least 2 logical CPUs
- - x86-64 Linux kernel (tested against >= 3.9)
+x86 architecture:
+
+  - Intel system:
+
+    - support for 64-bit and VMX, more precisely
+      - EPT (extended page tables)
+      - unrestricted guest mode
+      - preemption timer
+
+    - Intel IOMMU (VT-d) with interrupt remapping support
+      (except when running inside QEMU)
+
+  - or AMD system:
+
+    - support for 64-bit and SVM (AMD-V), and also
+      - NPT (nested page tables); required
+      - Decode Assists; recommended
+
+    - AMD IOMMU (AMD-Vi) is unsupported now but will be required in future
+
+  - at least 2 logical CPUs
+
+  - x86-64 Linux kernel (tested against >= 3.14)
     - VT-d IOMMU usage (DMAR) has to be disabled in the Linux kernel, e.g. via
       the command line parameter:
 
@@ -72,10 +91,10 @@ Simply run make, optionally specifying the target kernel directory:
 
     make [KDIR=/path/to/kernel/objects]
 
-Except for the hypervisor image jailhouse*.bin that has to be available in the
-firmware search path (invoke "make firmware_install" for this), you can run
+Except for the hypervisor image `jailhouse*.bin` that has to be available in the
+firmware search path (invoke `make firmware_install` for this), you can run
 Jailhouse from the build directory. Alternatively, install everything on the
-target machine by calling "make install" from the top-level directory.
+target machine by calling `make install` from the top-level directory.
 
 
 Configuration
