@@ -48,6 +48,14 @@ Mailing list:
   - Archives
     - http://news.gmane.org/gmane.linux.jailhouse
 
+Continuous Integration:
+
+  - https://travis-ci.org/siemens/jailhouse
+
+  - Status:
+    - ![](https://travis-ci.org/siemens/jailhouse.svg?branch=master) on master
+    - ![](https://travis-ci.org/siemens/jailhouse.svg?branch=next) on next
+
 
 Requirements (preliminary)
 --------------------------
