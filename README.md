@@ -56,6 +56,9 @@ Continuous Integration:
     - ![](https://travis-ci.org/siemens/jailhouse.svg?branch=master) on master
     - ![](https://travis-ci.org/siemens/jailhouse.svg?branch=next) on next
 
+See the [contribution documentation](CONTRIBUTING.md) for details
+on how to write Jailhouse patches and propose them for upstream integration.
+
 
 Requirements (preliminary)
 --------------------------
