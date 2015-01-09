@@ -10,6 +10,12 @@
 # the COPYING file in the top-level directory.
 #
 
+# Check make version
+need := 3.82
+ifneq ($(need),$(firstword $(sort $(MAKE_VERSION) $(need))))
+$(error Too old make version $(MAKE_VERSION), at least $(need) required)
+endif
+
 # no recipes above this one (also no includes)
 all: modules tools
 
