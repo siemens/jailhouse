@@ -96,11 +96,11 @@ struct {
 			.size = 0x30000,
 			.flags = JAILHOUSE_MEM_READ,
 		},
-		/* MemRegion: fc000000-fc3fffff : vesafb */
+		/* MemRegion: fd000000-fdffffff : vesafb */
 		{
-			.phys_start = 0xfc000000,
-			.virt_start = 0xfc000000,
-			.size = 0x400000,
+			.phys_start = 0xfd000000,
+			.virt_start = 0xfd000000,
+			.size = 0x1000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* MemRegion: feb80000-febbffff : 0000:00:02.0 */
