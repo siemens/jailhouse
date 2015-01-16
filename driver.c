@@ -388,16 +388,23 @@ static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 	       sizeof(struct jailhouse_memory) * cell->num_memory_regions);
 #ifdef CONFIG_PCI
 	cell->num_pci_devices = cell_desc->num_pci_devices;
-	cell->pci_devices = vmalloc(sizeof(struct jailhouse_pci_device) *
-				    cell->num_pci_devices);
-	if (cell->num_pci_devices && !cell->pci_devices) {
-		vfree(cell->memory_regions);
-		kfree(cell);
-		return ERR_PTR(-ENOMEM);
-	}
+	cell->pci_devices = NULL;
 
-	memcpy(cell->pci_devices, jailhouse_cell_pci_devices(cell_desc),
-	       sizeof(struct jailhouse_pci_device) * cell->num_pci_devices);
+	if (cell->num_pci_devices > 0) {
+		cell->pci_devices =
+			vmalloc(sizeof(struct jailhouse_pci_device) *
+				cell->num_pci_devices);
+		if (!cell->pci_devices) {
+			vfree(cell->memory_regions);
+			kfree(cell);
+			return ERR_PTR(-ENOMEM);
+		}
+
+		memcpy(cell->pci_devices,
+		       jailhouse_cell_pci_devices(cell_desc),
+		       sizeof(struct jailhouse_pci_device) *
+		       cell->num_pci_devices);
+	}
 #endif
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
 				   cell_desc->name);
