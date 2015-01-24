@@ -79,6 +79,7 @@ inputs['files'].add('/proc/ioports')
 inputs['files'].add('/sys/bus/pci/devices/*/config')
 inputs['files'].add('/sys/bus/pci/devices/*/class')
 inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
+inputs['files'].add('/sys/firmware/acpi/tables/APIC')
 inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
 ## optional files
 inputs['files_opt'].add('/sys/class/dmi/id/product_name')
@@ -296,6 +297,22 @@ class MemRegion:
             s += p + '\t\tJAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA'
             return s
         return 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE'
+
+
+class IOAPIC:
+    def __init__(self, id, address, gsi_base, iommu=0, bdf=0):
+        self.id = id
+        self.address = address
+        self.gsi_base = gsi_base
+        self.iommu = iommu
+        self.bdf = bdf
+
+    def __str__(self):
+        return 'IOAPIC %d, GSI base %d' % (self.id, self.gsi_base)
+
+    def irqchip_id(self):
+        # encode the IOMMU number into the irqchip ID
+        return (self.iommu << 16) | self.bdf
 
 
 class IOMemRegionTree:
@@ -543,17 +560,43 @@ def count_cpus():
     return count
 
 
+def parse_madt():
+    f = input_open('/sys/firmware/acpi/tables/APIC', 'rb')
+    signature = f.read(4)
+    if signature != b'APIC':
+        raise RuntimeError('MADT: incorrect input file format %s' % signature)
+    (length,) = struct.unpack('<I', f.read(4))
+    f.seek(44)
+    length -= 44
+    ioapics = []
+
+    while length > 0:
+        offset = 0
+        (struct_type, struct_len) = struct.unpack('<BB', f.read(2))
+        offset += 2
+        length -= struct_len
+
+        if struct_type == 1:
+            (id, address, gsi_base) = struct.unpack('<BxII', f.read(10))
+            offset += 10
+            ioapics.append(IOAPIC(id, address, gsi_base))
+
+        f.seek(struct_len - offset, os.SEEK_CUR)
+
+    return ioapics
+
+
 def parse_dmar_devscope(f):
-    (scope_type, scope_len, bus, dev, fn) = \
-        struct.unpack('<BBxxxBBB', f.read(8))
+    (scope_type, scope_len, id, bus, dev, fn) = \
+        struct.unpack('<BBxxBBBB', f.read(8))
     if scope_len != 8:
         raise RuntimeError('Unsupported DMAR Device Scope Structure')
-    return (scope_type, scope_len, bus, dev, fn)
+    return (scope_type, scope_len, id, bus, dev, fn)
 
 
 # parsing of DMAR ACPI Table
 # see Intel VT-d Spec chapter 8
-def parse_dmar(pcidevices):
+def parse_dmar(pcidevices, ioapics):
     f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb')
     signature = f.read(4)
     if signature != b'DMAR':
@@ -563,7 +606,6 @@ def parse_dmar(pcidevices):
     length -= 48
     units = []
     regions = []
-    ioapic_id = 0
 
     while length > 0:
         offset = 0
@@ -586,7 +628,7 @@ def parse_dmar(pcidevices):
                         d.iommu = len(units) - 1
             offset += 16 - offset
             while offset < struct_len:
-                (scope_type, scope_len, bus, dev, fn) =\
+                (scope_type, scope_len, id, bus, dev, fn) =\
                     parse_dmar_devscope(f)
                 if scope_type == 1:
                     for d in pcidevices:
@@ -595,12 +637,13 @@ def parse_dmar(pcidevices):
                 elif scope_type == 2:
                     raise RuntimeError('Unsupported DMAR Device Scope type')
                 elif scope_type == 3:
-                    if ioapic_id != 0:
-                        raise RuntimeError('We do not support more '
-                                           'than 1 IOAPIC')
-                    # encode the DMAR unit number into the device ID
-                    ioapic_id = ((len(units) - 1) << 16) | \
-                        (bus << 8) | (dev << 3) | fn
+                    ioapic = next(chip for chip in ioapics if chip.id == id)
+                    bdf = (bus << 8) | (dev << 3) | fn
+                    for chip in ioapics:
+                        if chip.bdf == bdf:
+                            raise RuntimeError('IOAPICs with identical BDF')
+                    ioapic.bdf = bdf
+                    ioapic.dmar_unit = len(units) - 1
                 offset += scope_len
 
         # Reserved Memory Region Reporting Structure
@@ -612,7 +655,7 @@ def parse_dmar(pcidevices):
 
             comments = []
             while offset < struct_len:
-                (scope_type, scope_len, bus, dev, fn) =\
+                (scope_type, scope_len, id, bus, dev, fn) =\
                     parse_dmar_devscope(f)
                 if scope_type == 1:
                     comments.append('PCI device: %02x:%02x.%x' %
@@ -626,7 +669,7 @@ def parse_dmar(pcidevices):
 
         f.seek(struct_len - offset, os.SEEK_CUR)
 
-    return units, ioapic_id, regions
+    return units, regions
 
 
 def parse_ioports():
@@ -719,10 +762,12 @@ total = hvmem[1] + inmatemem
 
 mmconfig = MMConfig.parse()
 
+ioapics = parse_madt()
+
 if get_cpu_vendor() == 'GenuineIntel':
-    (dmar_units, ioapic_id, rmrr_regs) = parse_dmar(pcidevices)
+    (dmar_units, rmrr_regs) = parse_dmar(pcidevices, ioapics)
 else:
-    (dmar_units, ioapic_id, rmrr_regs) = [], 0, []
+    (dmar_units, rmrr_regs) = [], []
 regions += rmrr_regs
 
 for d in pcidevices:
@@ -762,7 +807,7 @@ f.write(tmpl.render(regions=regions,
                     pcidevices=pcidevices,
                     pcicaps=pcicaps,
                     cpucount=cpucount,
-                    ioapic_id=ioapic_id,
+                    irqchips=ioapics,
                     pm_timer_base=pm_timer_base,
                     mmconfig=mmconfig,
                     dmar_units=dmar_units))
