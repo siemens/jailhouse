@@ -20,6 +20,8 @@
 
 #include <jailhouse/cell-config.h>
 
+#define IOAPIC_MAX_CHIPS	1
+
 #define IOAPIC_BASE_ADDR	0xfec00000
 #define IOAPIC_REG_INDEX	0x00
 #define IOAPIC_REG_DATA		0x10
@@ -192,7 +194,9 @@ int ioapic_init(void)
 		return err;
 	ioapic = ioapic_page;
 
-	ioapic_cell_init(&root_cell);
+	err = ioapic_cell_init(&root_cell);
+	if (err)
+		return err;
 
 	for (index = 0; index < IOAPIC_NUM_PINS * 2; index++)
 		shadow_redir_table[index / 2].raw[index % 2] =
@@ -231,10 +235,13 @@ void ioapic_prepare_handover(void)
 	ioapic_mask_pins(&root_cell, ~pin_bitmap, PINS_MASKED);
 }
 
-void ioapic_cell_init(struct cell *cell)
+int ioapic_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *irqchip =
 		ioapic_find_config(cell->config);
+
+	if (cell->config->num_irqchips > IOAPIC_MAX_CHIPS)
+		return -ERANGE;
 
 	if (irqchip) {
 		cell->ioapic_id = (u16)irqchip->id;
@@ -247,6 +254,8 @@ void ioapic_cell_init(struct cell *cell)
 					 PINS_MASKED);
 		}
 	}
+
+	return 0;
 }
 
 void ioapic_cell_exit(struct cell *cell)

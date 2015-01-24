@@ -47,7 +47,7 @@ union ioapic_redir_entry {
 int ioapic_init(void);
 void ioapic_prepare_handover(void);
 
-void ioapic_cell_init(struct cell *cell);
+int ioapic_cell_init(struct cell *cell);
 void ioapic_cell_exit(struct cell *cell);
 
 void ioapic_config_commit(struct cell *cell_added_removed);

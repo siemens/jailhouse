@@ -46,13 +46,17 @@ int arch_cell_create(struct cell *cell)
 	if (err)
 		goto error_iommu_exit;
 
-	ioapic_cell_init(cell);
+	err = ioapic_cell_init(cell);
+	if (err)
+		goto error_pci_exit;
 
 	cell->comm_page.comm_region.pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 
 	return 0;
 
+error_pci_exit:
+	pci_cell_exit(cell);
 error_iommu_exit:
 	iommu_cell_exit(cell);
 error_vm_exit:
