@@ -11,6 +11,7 @@
  */
 
 #include <asm/cell.h>
+#include <asm/spinlock.h>
 
 #define IOAPIC_NUM_PINS		24
 
@@ -43,6 +44,20 @@ union ioapic_redir_entry {
 	} __attribute__((packed)) remap;
 	u32 raw[2];
 } __attribute__((packed));
+
+/**
+ * Global physical IOAPIC irqchip state.
+ */
+struct phys_ioapic {
+	/** Physical address to identify the instance. */
+	unsigned long base_addr;
+	/** Virtual address of mapped registers. */
+	void *reg_base;
+	/** Lock protecting physical accesses. */
+	spinlock_t lock;
+	/** Shadow state of redirection entries as seen by the cells. */
+	union ioapic_redir_entry shadow_redir_table[IOAPIC_NUM_PINS];
+};
 
 int ioapic_init(void);
 void ioapic_prepare_handover(void);
