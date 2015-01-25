@@ -32,10 +32,6 @@ struct cell root_cell;
 static DEFINE_SPINLOCK(shutdown_lock);
 static unsigned int num_cells = 1;
 
-#define for_each_cell(c)	for ((c) = &root_cell; (c); (c) = (c)->next)
-#define for_each_non_root_cell(c) \
-	for ((c) = root_cell.next; (c); (c) = (c)->next)
-
 /**
  * CPU set iterator.
  * @param cpu		Previous CPU ID.

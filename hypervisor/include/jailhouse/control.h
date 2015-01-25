@@ -54,13 +54,34 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
  * @param set		CPU set to iterate over (struct cpu_set).
  * @param exception	CPU to skip if it is part of the set.
  *
-* @see for_each_cpu
+ * @see for_each_cpu
  */
 #define for_each_cpu_except(cpu, set, exception)		\
 	for ((cpu) = -1;					\
 	     (cpu) = next_cpu((cpu), (set), (exception)),	\
 	     (cpu) <= (set)->max_cpu_id;			\
 	    )
+
+/**
+ * Loop-generating macro for iterating over all registered cells.
+ * @param cell		Iteration variable holding the reference to the current
+ * 			cell (struct cell *).
+ *
+ * @see for_each_non_root_cell
+ */
+#define for_each_cell(cell)					\
+	for ((cell) = &root_cell; (cell); (cell) = (cell)->next)
+
+/**
+ * Loop-generating macro for iterating over all registered cells, expect the
+ * root cell.
+ * @param cell		Iteration variable holding the reference to the current
+ * 			cell (struct cell *).
+ *
+ * @see for_each_cell
+ */
+#define for_each_non_root_cell(cell) \
+	for ((cell) = root_cell.next; (cell); (cell) = (cell)->next)
 
 /**
  * Check if the CPU is assigned to the specified cell.
