@@ -225,7 +225,7 @@ void ioapic_prepare_handover(void)
 	if (!ioapic)
 		return;
 	if (irqchip) {
-		pin_bitmap = irqchip->pin_bitmap;
+		pin_bitmap = root_cell.ioapic_pin_bitmap;
 		ioapic_mask_pins(&root_cell, pin_bitmap, PINS_ACTIVE);
 	}
 	ioapic_mask_pins(&root_cell, ~pin_bitmap, PINS_MASKED);
