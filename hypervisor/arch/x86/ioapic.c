@@ -34,6 +34,11 @@
 
 enum ioapic_handover {PINS_ACTIVE, PINS_MASKED};
 
+#define for_each_phys_ioapic(ioapic, counter)			\
+	for ((ioapic) = &phys_ioapics[0], (counter) = 0;	\
+	     (counter) < num_phys_ioapics;			\
+	     (ioapic)++, (counter)++)
+
 static struct phys_ioapic phys_ioapics[IOAPIC_MAX_CHIPS];
 static unsigned int num_phys_ioapics;
 
@@ -181,32 +186,11 @@ static void ioapic_mask_pins(struct cell *cell, u64 pin_bitmap,
 
 int ioapic_init(void)
 {
-	unsigned int index;
-	void *ioapic_page;
 	int err;
-
-	ioapic_page = page_alloc(&remap_pool, 1);
-	if (!ioapic_page)
-		return -ENOMEM;
-	err = paging_create(&hv_paging_structs, IOAPIC_BASE_ADDR, PAGE_SIZE,
-			    (unsigned long)ioapic_page,
-			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			    PAGING_NON_COHERENT);
-	if (err)
-		return err;
-
-	phys_ioapics[0].base_addr = IOAPIC_BASE_ADDR;
-	phys_ioapics[0].reg_base = ioapic_page;
-	num_phys_ioapics++;
 
 	err = ioapic_cell_init(&root_cell);
 	if (err)
 		return err;
-
-	for (index = 0; index < IOAPIC_NUM_PINS * 2; index++)
-		phys_ioapics[0].shadow_redir_table[index / 2].raw[index % 2] =
-			ioapic_reg_read(&phys_ioapics[0],
-					IOAPIC_REDIR_TBL_START + index);
 
 	ioapic_prepare_handover();
 
@@ -241,15 +225,59 @@ void ioapic_prepare_handover(void)
 	ioapic_mask_pins(&root_cell, ~pin_bitmap, PINS_MASKED);
 }
 
+static struct phys_ioapic *
+ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip)
+{
+	struct phys_ioapic *phys_ioapic;
+	unsigned int n, index;
+	int err;
+
+	for_each_phys_ioapic(phys_ioapic, n)
+		if (phys_ioapic->base_addr == irqchip->address)
+			return phys_ioapic;
+
+	if (num_phys_ioapics == IOAPIC_MAX_CHIPS)
+		return NULL;
+
+	phys_ioapic->reg_base = page_alloc(&remap_pool, 1);
+	if (!phys_ioapic->reg_base)
+		return NULL;
+	err = paging_create(&hv_paging_structs, irqchip->address, PAGE_SIZE,
+			    (unsigned long)phys_ioapic->reg_base,
+			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
+			    PAGING_NON_COHERENT);
+	if (err) {
+		page_free(&remap_pool, phys_ioapic->reg_base, 1);
+		return NULL;
+	}
+
+	phys_ioapic->base_addr = irqchip->address;
+	num_phys_ioapics++;
+
+	for (index = 0; index < IOAPIC_NUM_PINS * 2; index++)
+		phys_ioapic->shadow_redir_table[index / 2].raw[index % 2] =
+			ioapic_reg_read(phys_ioapic,
+					IOAPIC_REDIR_TBL_START + index);
+
+	return phys_ioapic;
+}
+
 int ioapic_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *irqchip =
-		ioapic_find_config(cell->config);
+		jailhouse_cell_irqchips(cell->config);
+	struct phys_ioapic *phys_ioapic;
+	unsigned int n;
 
 	if (cell->config->num_irqchips > IOAPIC_MAX_CHIPS)
 		return -ERANGE;
 
-	if (irqchip) {
+	for (n = 0; n < cell->config->num_irqchips; n++, irqchip++) {
+		phys_ioapic = ioapic_get_or_add_phys(irqchip);
+		if (!phys_ioapic)
+			return -ENOMEM;
+
+		/* this still assumes IOAPIC_MAX_CHIPS == 1 */
 		cell->ioapic_id = (u16)irqchip->id;
 		cell->ioapic_iommu = (u8)(irqchip->id >> 16);
 		cell->ioapic_pin_bitmap = irqchip->pin_bitmap;
