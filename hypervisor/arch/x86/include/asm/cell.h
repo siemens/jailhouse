@@ -20,6 +20,7 @@
 #include <jailhouse/cell-config.h>
 #include <jailhouse/hypercall.h>
 
+struct cell_ioapic;
 struct pci_device;
 
 /** Cell-related states. */
@@ -79,14 +80,10 @@ struct cell {
 	/** Shadow value of PCI config space address port register. */
 	u32 pci_addr_port_val;
 
-	/** Shadow value of IOAPIC index register. */
-	u32 ioapic_index_reg_val;
-	/** IOAPIC ID as used for interrupt remapping. */
-	u16 ioapic_id;
-	/** IOMMU unit responsible for the IOAPIC. */
-	u8 ioapic_iommu;
-	/** Bitmap of IOAPIC pins assigned to this cell. */
-	u64 ioapic_pin_bitmap;
+	/** List of IOAPICs assigned to this cell. */
+	struct cell_ioapic *ioapics;
+	/** Number of assigned IOAPICs. */
+	unsigned int num_ioapics;
 
 	union {
 		/** Communication region. */

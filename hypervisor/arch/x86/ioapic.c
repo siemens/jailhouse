@@ -68,21 +68,21 @@ static void ioapic_reg_write(struct phys_ioapic *ioapic, unsigned int reg,
 }
 
 static struct apic_irq_message
-ioapic_translate_redir_entry(struct cell *cell, unsigned int pin,
+ioapic_translate_redir_entry(struct cell_ioapic *ioapic, unsigned int pin,
 			     union ioapic_redir_entry entry)
 {
 	struct apic_irq_message irq_msg = { .valid = 0 };
-	unsigned int idx;
+	unsigned int idx, ioapic_id;
 
-	if (iommu_cell_emulates_ir(cell)) {
+	if (iommu_cell_emulates_ir(ioapic->cell)) {
 		if (!entry.remap.remapped)
 			return irq_msg;
 
 		idx = entry.remap.int_index | (entry.remap.int_index15 << 15);
+		ioapic_id = ioapic->info->id;
 
-		return iommu_get_remapped_root_int(root_cell.ioapic_iommu,
-						   root_cell.ioapic_id, pin,
-						   idx);
+		return iommu_get_remapped_root_int(ioapic_id >> 16,
+						   (u16)ioapic_id, pin, idx);
 	}
 
 	irq_msg.vector = entry.native.vector;
@@ -97,11 +97,11 @@ ioapic_translate_redir_entry(struct cell *cell, unsigned int pin,
 	return irq_msg;
 }
 
-static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
-				   u32 value)
+static int ioapic_virt_redir_write(struct cell_ioapic *ioapic,
+				   unsigned int reg, u32 value)
 {
 	unsigned int pin = (reg - IOAPIC_REDIR_TBL_START) / 2;
-	struct phys_ioapic *phys_ioapic = &phys_ioapics[0];
+	struct phys_ioapic *phys_ioapic = ioapic->phys_ioapic;
 	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;
 	int result;
@@ -121,9 +121,10 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 		return 0;
 	}
 
-	irq_msg = ioapic_translate_redir_entry(cell, pin, entry);
+	irq_msg = ioapic_translate_redir_entry(ioapic, pin, entry);
 
-	result = iommu_map_interrupt(cell, cell->ioapic_id, pin, irq_msg);
+	result = iommu_map_interrupt(ioapic->cell, (u16)ioapic->info->id, pin,
+				     irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {
 		/*
@@ -147,16 +148,16 @@ static int ioapic_virt_redir_write(struct cell *cell, unsigned int reg,
 	return 0;
 }
 
-static void ioapic_mask_pins(struct cell *cell, u64 pin_bitmap,
-			     enum ioapic_handover handover)
+static void ioapic_mask_cell_pins(struct cell_ioapic *ioapic,
+				  enum ioapic_handover handover)
 {
-	struct phys_ioapic *phys_ioapic = &phys_ioapics[0];
+	struct phys_ioapic *phys_ioapic = ioapic->phys_ioapic;
 	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;
 	unsigned int pin, reg;
 
 	for (pin = 0; pin < IOAPIC_NUM_PINS; pin++) {
-		if (!(pin_bitmap & (1UL << pin)))
+		if (!(ioapic->pin_bitmap & (1UL << pin)))
 			continue;
 
 		reg = IOAPIC_REDIR_TBL_START + pin * 2;
@@ -176,7 +177,7 @@ static void ioapic_mask_pins(struct cell *cell, u64 pin_bitmap,
 			 * interrupts.
 			 */
 			entry = phys_ioapic->shadow_redir_table[pin];
-			irq_msg = ioapic_translate_redir_entry(cell, pin,
+			irq_msg = ioapic_translate_redir_entry(ioapic, pin,
 							       entry);
 			if (irq_msg.valid)
 				apic_send_irq(irq_msg);
@@ -197,32 +198,17 @@ int ioapic_init(void)
 	return 0;
 }
 
-static const struct jailhouse_irqchip *
-ioapic_find_config(struct jailhouse_cell_desc *config)
-{
-	const struct jailhouse_irqchip *irqchip =
-		jailhouse_cell_irqchips(config);
-	unsigned int n;
-
-	for (n = 0; n < config->num_irqchips; n++, irqchip++)
-		if (irqchip->address == IOAPIC_BASE_ADDR)
-			return irqchip;
-	return NULL;
-}
-
 void ioapic_prepare_handover(void)
 {
-	const struct jailhouse_irqchip *irqchip =
-		ioapic_find_config(root_cell.config);
-	u64 pin_bitmap = 0;
+	struct cell *cell;
 
-	if (num_phys_ioapics == 0)
-		return;
-	if (irqchip) {
-		pin_bitmap = root_cell.ioapic_pin_bitmap;
-		ioapic_mask_pins(&root_cell, pin_bitmap, PINS_ACTIVE);
+	for_each_cell(cell) {
+		if (!cell->ioapics)
+			continue;
+		ioapic_mask_cell_pins(&cell->ioapics[0],
+				      cell == &root_cell ? PINS_ACTIVE
+							 : PINS_MASKED);
 	}
-	ioapic_mask_pins(&root_cell, ~pin_bitmap, PINS_MASKED);
 }
 
 static struct phys_ioapic *
@@ -267,25 +253,34 @@ int ioapic_cell_init(struct cell *cell)
 	const struct jailhouse_irqchip *irqchip =
 		jailhouse_cell_irqchips(cell->config);
 	struct phys_ioapic *phys_ioapic;
+	struct cell_ioapic *ioapic;
 	unsigned int n;
 
+	if (cell->config->num_irqchips == 0)
+		return 0;
 	if (cell->config->num_irqchips > IOAPIC_MAX_CHIPS)
 		return -ERANGE;
+
+	cell->ioapics = page_alloc(&mem_pool, 1);
+	if (!cell->ioapics)
+		return -ENOMEM;
 
 	for (n = 0; n < cell->config->num_irqchips; n++, irqchip++) {
 		phys_ioapic = ioapic_get_or_add_phys(irqchip);
 		if (!phys_ioapic)
 			return -ENOMEM;
 
-		/* this still assumes IOAPIC_MAX_CHIPS == 1 */
-		cell->ioapic_id = (u16)irqchip->id;
-		cell->ioapic_iommu = (u8)(irqchip->id >> 16);
-		cell->ioapic_pin_bitmap = irqchip->pin_bitmap;
+		ioapic = &cell->ioapics[n];
+		ioapic->info = irqchip;
+		ioapic->cell = cell;
+		ioapic->phys_ioapic = phys_ioapic;
+		ioapic->pin_bitmap = (u32)irqchip->pin_bitmap;
+		cell->num_ioapics++;
 
+		/* this still assumes IOAPIC_MAX_CHIPS == 1 */
 		if (cell != &root_cell) {
-			root_cell.ioapic_pin_bitmap &= ~irqchip->pin_bitmap;
-			ioapic_mask_pins(cell, irqchip->pin_bitmap,
-					 PINS_MASKED);
+			root_cell.ioapics[0].pin_bitmap &= ~ioapic->pin_bitmap;
+			ioapic_mask_cell_pins(ioapic, PINS_MASKED);
 		}
 	}
 
@@ -294,42 +289,39 @@ int ioapic_cell_init(struct cell *cell)
 
 void ioapic_cell_exit(struct cell *cell)
 {
-	const struct jailhouse_irqchip *cell_irqchip =
-		ioapic_find_config(cell->config);
-	const struct jailhouse_irqchip *root_irqchip =
-		ioapic_find_config(root_cell.config);
-
-	if (!cell_irqchip)
+	if (!cell->ioapics)
 		return;
 
-	ioapic_mask_pins(cell, cell_irqchip->pin_bitmap, PINS_MASKED);
-	if (root_irqchip)
-		root_cell.ioapic_pin_bitmap |= cell_irqchip->pin_bitmap &
-			root_irqchip->pin_bitmap;
+	ioapic_mask_cell_pins(&cell->ioapics[0], PINS_MASKED);
+	if (root_cell.ioapics)
+		root_cell.ioapics[0].pin_bitmap |=
+			cell->ioapics[0].pin_bitmap &
+			root_cell.ioapics[0].info->pin_bitmap;
+
+	page_free(&mem_pool, cell->ioapics, 1);
 }
 
 void ioapic_config_commit(struct cell *cell_added_removed)
 {
-	const struct jailhouse_irqchip *irqchip =
-		ioapic_find_config(root_cell.config);
 	union ioapic_redir_entry entry;
+	struct cell_ioapic *ioapic;
 	unsigned int pin, reg;
 
-	if (!irqchip || !cell_added_removed)
+	if (!root_cell.ioapics || !cell_added_removed)
 		return;
 
+	ioapic = &root_cell.ioapics[0];
 	for (pin = 0; pin < IOAPIC_NUM_PINS; pin++) {
-		if (!(root_cell.ioapic_pin_bitmap & (1UL << pin)))
+		if (!(ioapic->pin_bitmap & (1UL << pin)))
 			continue;
 
-		entry = phys_ioapics[0].shadow_redir_table[pin];
+		entry = ioapic->phys_ioapic->shadow_redir_table[pin];
 		reg = IOAPIC_REDIR_TBL_START + pin * 2;
 
 		/* write high word first to preserve mask initially */
-		if (ioapic_virt_redir_write(&root_cell, reg + 1,
+		if (ioapic_virt_redir_write(ioapic, reg + 1,
 					    entry.raw[1]) < 0 ||
-		    ioapic_virt_redir_write(&root_cell, reg,
-					    entry.raw[0]) < 0) {
+		    ioapic_virt_redir_write(ioapic, reg, entry.raw[0]) < 0) {
 			panic_printk("FATAL: Unsupported IOAPIC state, "
 				     "pin %d\n", pin);
 			panic_stop();
@@ -350,7 +342,13 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 			  u32 *value)
 {
 	union ioapic_redir_entry *shadow_table;
+	struct cell_ioapic *ioapic;
 	u32 index, entry;
+
+	if (!cell->ioapics)
+		return 0;
+
+	ioapic = &cell->ioapics[0];
 
 	if (addr < IOAPIC_BASE_ADDR || addr >= IOAPIC_BASE_ADDR + PAGE_SIZE)
 		return 0;
@@ -358,17 +356,17 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 	switch (addr - IOAPIC_BASE_ADDR) {
 	case IOAPIC_REG_INDEX:
 		if (is_write)
-			cell->ioapic_index_reg_val = *value;
+			ioapic->index_reg_val = *value;
 		else
-			*value = cell->ioapic_index_reg_val;
+			*value = ioapic->index_reg_val;
 		return 1;
 	case IOAPIC_REG_DATA:
-		index = cell->ioapic_index_reg_val;
+		index = ioapic->index_reg_val;
 
 		if (index == IOAPIC_ID || index == IOAPIC_VER) {
 			if (is_write)
 				goto invalid_access;
-			*value = ioapic_reg_read(&phys_ioapics[0], index);
+			*value = ioapic_reg_read(ioapic->phys_ioapic, index);
 			return 1;
 		}
 
@@ -377,21 +375,20 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 			goto invalid_access;
 
 		entry = (index - IOAPIC_REDIR_TBL_START) / 2;
-		/* Note: we only support one IOAPIC per system */
-		if ((cell->ioapic_pin_bitmap & (1UL << entry)) == 0)
+		if ((ioapic->pin_bitmap & (1UL << entry)) == 0)
 			goto invalid_access;
 
 		if (is_write) {
-			if (ioapic_virt_redir_write(cell, index, *value) < 0)
+			if (ioapic_virt_redir_write(ioapic, index, *value) < 0)
 				goto invalid_access;
 		} else {
 			index -= IOAPIC_REDIR_TBL_START;
-			shadow_table = phys_ioapics[0].shadow_redir_table;
+			shadow_table = ioapic->phys_ioapic->shadow_redir_table;
 			*value = shadow_table[index / 2].raw[index % 2];
 		}
 		return 1;
 	case IOAPIC_REG_EOI:
-		if (!is_write || cell->ioapic_pin_bitmap == 0)
+		if (!is_write || ioapic->pin_bitmap == 0)
 			goto invalid_access;
 		/*
 		 * Just write the EOI if the cell has any assigned pin. It
@@ -400,7 +397,7 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 		 * recommended to use level-triggered IOAPIC interrupts in
 		 * non-root cells.
 		 */
-		mmio_write32(phys_ioapics[0].reg_base + IOAPIC_REG_EOI,
+		mmio_write32(ioapic->phys_ioapic->reg_base + IOAPIC_REG_EOI,
 			     *value);
 		return 1;
 	}
@@ -408,7 +405,7 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 invalid_access:
 	panic_printk("FATAL: Invalid IOAPIC %s, reg: %x, index: %x\n",
 		     is_write ? "write" : "read", addr - IOAPIC_BASE_ADDR,
-		     cell->ioapic_index_reg_val);
+		     ioapic->index_reg_val);
 	return -1;
 }
 

@@ -59,6 +59,24 @@ struct phys_ioapic {
 	union ioapic_redir_entry shadow_redir_table[IOAPIC_NUM_PINS];
 };
 
+/**
+ * Per-cell IOAPIC irqchip state.
+ */
+struct cell_ioapic {
+	/** Reference to static irqchip configuration. */
+	const struct jailhouse_irqchip *info;
+	/** Cell owning at least one pin of the IOAPIC. */
+	struct cell *cell;
+	/** Reference to corresponding physical IOAPIC */
+	struct phys_ioapic *phys_ioapic;
+
+	/** Shadow value of index register. */
+	u32 index_reg_val;
+	/** Bitmap of pins currently assigned to this cell. Only requires 32
+	 * bits because the IOAPIC has just 24 pins. */
+	u32 pin_bitmap;
+};
+
 int ioapic_init(void);
 void ioapic_prepare_handover(void);
 
