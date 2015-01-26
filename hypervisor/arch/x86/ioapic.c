@@ -415,14 +415,18 @@ invalid_access:
 void ioapic_shutdown(void)
 {
 	union ioapic_redir_entry *shadow_table;
+	struct phys_ioapic *phys_ioapic;
+	unsigned int n;
 	int index;
 
-	if (num_phys_ioapics == 0)
-		return;
-	shadow_table = phys_ioapics[0].shadow_redir_table;
-	/* write in reverse order to preserve the mask as long as needed */
-	for (index = IOAPIC_NUM_PINS * 2 - 1; index >= 0; index--)
-		ioapic_reg_write(&phys_ioapics[0],
-				 IOAPIC_REDIR_TBL_START + index,
-				 shadow_table[index / 2].raw[index % 2]);
+	for_each_phys_ioapic(phys_ioapic, n) {
+		shadow_table = phys_ioapic->shadow_redir_table;
+
+		/* write in reverse order to preserve the mask as long as
+		 * needed */
+		for (index = IOAPIC_NUM_PINS * 2 - 1; index >= 0; index--)
+			ioapic_reg_write(phys_ioapic,
+				IOAPIC_REDIR_TBL_START + index,
+				shadow_table[index / 2].raw[index % 2]);
+	}
 }
