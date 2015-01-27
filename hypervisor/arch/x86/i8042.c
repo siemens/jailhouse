@@ -35,7 +35,7 @@ int i8042_access_handler(struct registers *guest_regs, u16 port, bool dir_in,
 			guest_regs->rax |= inb(I8042_CMD_REG);
 		} else {
 			val = (u8)guest_regs->rax;
-			if (size != 1 || val == I8042_CMD_WRITE_CTRL_PORT ||
+			if (val == I8042_CMD_WRITE_CTRL_PORT ||
 			    (val & I8042_CMD_PULSE_CTRL_PORT) ==
 			    I8042_CMD_PULSE_CTRL_PORT)
 				goto invalid_access;
