@@ -77,7 +77,6 @@ inputs['files'].add('/proc/cpuinfo')
 inputs['files'].add('/proc/cmdline')
 inputs['files'].add('/proc/ioports')
 inputs['files'].add('/sys/bus/pci/devices/*/config')
-inputs['files'].add('/sys/bus/pci/devices/*/class')
 inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
 inputs['files'].add('/sys/firmware/acpi/tables/APIC')
 inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
@@ -254,8 +253,11 @@ class PCIDevice:
     @staticmethod
     def parse_pcidevice_sysfsdir(basedir, dir):
         dpath = os.path.join(basedir, dir)
-        dclass = input_readline(os.path.join(dpath, 'class'))
-        if re.match(r'0x0604..', dclass):
+        f = input_open(os.path.join(dpath, 'config'), 'rb')
+        f.seek(0x0A)
+        (classcode,) = struct.unpack('<H', f.read(2))
+        f.close()
+        if classcode == 0x0604:
             type = 'JAILHOUSE_PCI_TYPE_BRIDGE'
         else:
             type = 'JAILHOUSE_PCI_TYPE_DEVICE'
@@ -492,7 +494,7 @@ def parse_pcidevices():
     devices = []
     caps = []
     basedir = '/sys/bus/pci/devices'
-    list = input_listdir(basedir, ['*/class', '*/config'])
+    list = input_listdir(basedir, ['*/config'])
     for dir in list:
         d = PCIDevice.parse_pcidevice_sysfsdir(basedir, dir)
         if d is not None:
