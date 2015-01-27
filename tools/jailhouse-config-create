@@ -632,13 +632,16 @@ def parse_dmar(pcidevices, ioapics):
             while offset < struct_len:
                 (scope_type, scope_len, id, bus, dev, fn) =\
                     parse_dmar_devscope(f)
+                # PCI Endpoint Device
                 if scope_type == 1:
                     for d in pcidevices:
                         if d.bus == bus and d.dev == dev and d.fn == fn:
                             d.iommu = len(units) - 1
                             break
+                # PCI Sub-hierarchy
                 elif scope_type == 2:
                     raise RuntimeError('Unsupported DMAR Device Scope type')
+                # IOAPIC
                 elif scope_type == 3:
                     ioapic = next(chip for chip in ioapics if chip.id == id)
                     bdf = (bus << 8) | (dev << 3) | fn
