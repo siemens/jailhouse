@@ -217,7 +217,7 @@ class PCICapability:
 
 
 class PCIDevice:
-    def __init__(self, type, domain, bus, dev, fn, caps):
+    def __init__(self, type, domain, bus, dev, fn, caps, path):
         self.type = type
         self.iommu = None
         self.domain = domain
@@ -225,6 +225,7 @@ class PCIDevice:
         self.dev = dev
         self.fn = fn
         self.caps = caps
+        self.path = path
         self.caps_start = 0
         self.num_caps = len(caps)
         self.num_msi_vectors = 0
@@ -267,7 +268,18 @@ class PCIDevice:
         df = a[2].split('.')
         caps = PCICapability.parse_pcicaps(dpath)
         return PCIDevice(type, domain, bus, int(df[0], 16), int(df[1], 16),
-                         caps)
+                         caps, dpath)
+
+
+class PCIPCIBridge(PCIDevice):
+    @staticmethod
+    def get_2nd_busses(dev):
+        assert dev.type == 'JAILHOUSE_PCI_TYPE_BRIDGE'
+        f = input_open(os.path.join(dev.path, 'config'), 'rb')
+        f.seek(0x19)
+        (secondbus, subordinate) = struct.unpack('<BB', f.read(2))
+        f.close()
+        return (secondbus, subordinate)
 
 
 class MemRegion:
@@ -640,7 +652,17 @@ def parse_dmar(pcidevices, ioapics):
                             break
                 # PCI Sub-hierarchy
                 elif scope_type == 2:
-                    raise RuntimeError('Unsupported DMAR Device Scope type')
+                    for d in pcidevices:
+                        if d.bus == bus and d.dev == dev and d.fn == fn:
+                            (secondbus, subordinate) = \
+                                PCIPCIBridge.get_2nd_busses(d)
+                            for d2 in pcidevices:
+                                if (
+                                    d2.bus >= secondbus and
+                                    d2.bus <= subordinate
+                                ):
+                                    d2.iommu = len(units) - 1
+                            break
                 # IOAPIC
                 elif scope_type == 3:
                     ioapic = next(chip for chip in ioapics if chip.id == id)
