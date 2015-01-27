@@ -646,12 +646,14 @@ def parse_dmar(pcidevices, ioapics):
                     parse_dmar_devscope(f)
                 # PCI Endpoint Device
                 if scope_type == 1:
+                    assert not (flags & 1)
                     for d in pcidevices:
                         if d.bus == bus and d.dev == dev and d.fn == fn:
                             d.iommu = len(units) - 1
                             break
                 # PCI Sub-hierarchy
                 elif scope_type == 2:
+                    assert not (flags & 1)
                     for d in pcidevices:
                         if d.bus == bus and d.dev == dev and d.fn == fn:
                             (secondbus, subordinate) = \
