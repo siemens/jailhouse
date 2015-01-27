@@ -636,6 +636,7 @@ def parse_dmar(pcidevices, ioapics):
                     for d in pcidevices:
                         if d.bus == bus and d.dev == dev and d.fn == fn:
                             d.iommu = len(units) - 1
+                            break
                 elif scope_type == 2:
                     raise RuntimeError('Unsupported DMAR Device Scope type')
                 elif scope_type == 3:
