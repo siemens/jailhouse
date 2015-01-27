@@ -71,7 +71,7 @@ options = parser.parse_args()
 
 inputs = {'files': set(), 'files_opt': set(), 'files_intel': set()}
 
-## required files
+# required files
 inputs['files'].add('/proc/iomem')
 inputs['files'].add('/proc/cpuinfo')
 inputs['files'].add('/proc/cmdline')
@@ -81,11 +81,11 @@ inputs['files'].add('/sys/bus/pci/devices/*/class')
 inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
 inputs['files'].add('/sys/firmware/acpi/tables/APIC')
 inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
-## optional files
+# optional files
 inputs['files_opt'].add('/sys/class/dmi/id/product_name')
 inputs['files_opt'].add('/sys/class/dmi/id/sys_vendor')
 inputs['files_opt'].add('/sys/devices/jailhouse/enabled')
-## platform specific files
+# platform specific files
 inputs['files_intel'].add('/sys/firmware/acpi/tables/DMAR')
 
 
@@ -335,7 +335,7 @@ class IOMemRegionTree:
 
     def regions_split_by_kernel(self):
         kernel = [x for x in self.children if
-                    x.region.typestr.startswith('Kernel ')]
+                  x.region.typestr.startswith('Kernel ')]
 
         if (len(kernel) == 0):
             return [self.region]
@@ -460,7 +460,7 @@ class IOMemRegionTree:
 
 def parse_iomem(pcidevices):
     regions = IOMemRegionTree.parse_iomem_tree(
-                    IOMemRegionTree.parse_iomem_file())
+        IOMemRegionTree.parse_iomem_file())
 
     # filter the list for MSI-X pages
     ret = []
