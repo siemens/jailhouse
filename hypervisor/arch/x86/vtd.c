@@ -70,6 +70,7 @@ static unsigned int dmar_num_did = ~0U;
 static unsigned int fault_reporting_cpu_id;
 static DEFINE_SPINLOCK(inv_queue_lock);
 static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_DMAR_UNITS];
+static bool dmar_units_initialized;
 
 static unsigned int inv_queue_write(void *inv_queue, unsigned int index,
 				    struct vtd_entry content)
@@ -926,6 +927,7 @@ void iommu_config_commit(struct cell *cell_added_removed)
 			reg_base += PAGE_SIZE;
 			inv_queue += PAGE_SIZE;
 		}
+		dmar_units_initialized = true;
 	} else {
 		if (cell_added_removed)
 			vtd_flush_domain_caches(cell_added_removed->id);
@@ -975,14 +977,15 @@ void iommu_shutdown(void)
 	void *reg_base = dmar_reg_base;
 	unsigned int n;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
-		vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 0);
-		vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 0);
-		if (root_cell.vtd.ir_emulation)
-			vtd_restore_ir(n, reg_base);
-		else
-			vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 0);
-	}
+	if (dmar_units_initialized)
+		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+			vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 0);
+			vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 0);
+			if (root_cell.vtd.ir_emulation)
+				vtd_restore_ir(n, reg_base);
+			else
+				vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 0);
+		}
 }
 
 bool iommu_cell_emulates_ir(struct cell *cell)
