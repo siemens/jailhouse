@@ -161,8 +161,8 @@ static void vtd_init_fault_nmi(void)
 	struct per_cpu *cpu_data;
 	unsigned int n;
 
-	/* Assume that at least one bit is set somewhere as
-	 * we don't support configurations when Linux is left with no CPUs */
+	/* This assumes that at least one bit is set somewhere because we
+	 * don't support configurations where Linux is left with no CPUs. */
 	for (n = 0; root_cell.cpu_set->bitmap[n] == 0; n++)
 		/* Empty loop */;
 	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[n]));
@@ -752,8 +752,6 @@ int iommu_cell_init(struct cell *cell)
 		}
 	}
 
-	vtd_init_fault_nmi();
-
 	return 0;
 }
 
@@ -918,6 +916,9 @@ void iommu_config_commit(struct cell *cell_added_removed)
 	// HACK for QEMU
 	if (dmar_units == 0)
 		return;
+
+	if (cell_added_removed)
+		vtd_init_fault_nmi();
 
 	if (cell_added_removed == &root_cell) {
 		for (n = 0; n < dmar_units; n++) {
