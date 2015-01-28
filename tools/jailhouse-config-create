@@ -213,6 +213,7 @@ class PCICapability:
             content = f.read(len - 2)
             caps.append(PCICapability(id, cap, len, flags, content,
                                       msix_address))
+        f.close()
         return caps
 
 
@@ -597,6 +598,7 @@ def parse_madt():
 
         f.seek(struct_len - offset, os.SEEK_CUR)
 
+    f.close()
     return ioapics
 
 
@@ -699,6 +701,7 @@ def parse_dmar(pcidevices, ioapics):
 
         f.seek(struct_len - offset, os.SEEK_CUR)
 
+    f.close()
     return units, regions
 
 
