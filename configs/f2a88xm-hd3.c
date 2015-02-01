@@ -26,7 +26,7 @@ struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[33];
-	struct jailhouse_irqchip irqchips[1];
+	struct jailhouse_irqchip irqchips[2];
 	__u8 pio_bitmap[0x2000];
 	struct jailhouse_pci_device pci_devices[24];
 	struct jailhouse_pci_capability pci_caps[26];
@@ -299,8 +299,15 @@ struct {
 	},
 
 	.irqchips = {
-		/* IOAPIC */ {
+		/* IOAPIC 0, GSI base 0 */
+		{
 			.address = 0xfec00000,
+			.id = 0x0,
+			.pin_bitmap = 0xffffff,
+		},
+		/* IOAPIC 1, GSI base 24 */
+		{
+			.address = 0xfec01000,
 			.id = 0x0,
 			.pin_bitmap = 0xffffff,
 		},
