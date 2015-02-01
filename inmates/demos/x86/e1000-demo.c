@@ -31,11 +31,19 @@
 # define E1000_CTRL_RST		(1 << 26)
 #define E1000_REG_STATUS	0x0008
 # define E1000_STATUS_LU	(1 << 1)
+# define E1000_STATUS_SPEEDSHFT	6
+# define E1000_STATUS_SPEED	(3 << E1000_STATUS_SPEEDSHFT)
 #define E1000_REG_EERD		0x0014
 # define E1000_EERD_START	(1 << 0)
 # define E1000_EERD_DONE	(1 << 4)
 # define E1000_EERD_ADDR_SHIFT	8
 # define E1000_EERD_DATA_SHIFT	16
+#define E1000_REG_MDIC		0x0020
+# define E1000_MDIC_REGADD_SHFT	16
+# define E1000_MDIC_PHYADD_SHFT	21
+# define E1000_MDIC_OP_WRITE	(0x1 << 26)
+# define E1000_MDIC_OP_READ	(0x2 << 26)
+# define E1000_MDIC_READY	(0x1 << 28)
 #define E1000_REG_RCTL		0x0100
 # define E1000_RCTL_EN		(1 << 1)
 # define E1000_RCTL_BAM		(1 << 15)
@@ -63,6 +71,13 @@
 #define E1000_REG_RAL		0x5400
 #define E1000_REG_RAH		0x5404
 # define E1000_RAH_AV		(1 << 31)
+
+#define E1000_MAX_PHYADD	7
+
+#define E1000_PHY_CTRL		0
+# define E1000_PHYC_POWER_DOWN	(1 << 11)
+#define E1000_PHY_PSTATUS	1
+#define E1000_PHY_ID1		2
 
 struct eth_header {
 	u8	dst[6];
@@ -117,12 +132,39 @@ struct e1000_txd {
 #define RX_BUFFER_SIZE		2048
 #define TX_DESCRIPTORS		8
 
+static const char *speed_info[] = { "10", "100", "1000", "1000" };
+
 static void *mmiobar;
 static u8 buffer[RX_DESCRIPTORS * RX_BUFFER_SIZE];
 static struct e1000_rxd rx_ring[RX_DESCRIPTORS];
 static struct e1000_txd tx_ring[TX_DESCRIPTORS];
 static unsigned int rx_idx, tx_idx;
 static struct eth_header tx_packet;
+static unsigned int phyadd;
+
+static u16 phy_read(unsigned int reg)
+{
+	u32 val;
+
+	mmio_write32(mmiobar + E1000_REG_MDIC,
+		     (reg << E1000_MDIC_REGADD_SHFT) |
+		     (phyadd << E1000_MDIC_PHYADD_SHFT) | E1000_MDIC_OP_READ);
+	do {
+		val = mmio_read32(mmiobar + E1000_REG_MDIC);
+		cpu_relax();
+	} while (!(val & E1000_MDIC_READY));
+
+	return (u16)val;
+}
+
+static void phy_write(unsigned int reg, u16 val)
+{
+	mmio_write32(mmiobar + E1000_REG_MDIC,
+		     val | (reg << E1000_MDIC_REGADD_SHFT) |
+		     (phyadd << E1000_MDIC_PHYADD_SHFT) | E1000_MDIC_OP_WRITE);
+	while (!(mmio_read32(mmiobar + E1000_REG_MDIC) & E1000_MDIC_READY))
+		cpu_relax();
+}
 
 static void send_packet(void *buffer, unsigned int size)
 {
@@ -202,11 +244,23 @@ void inmate_main(void)
 	val &= ~(E1000_CTRL_LRST | E1000_CTRL_FRCSPD);
 	val |= E1000_CTRL_ASDE | E1000_CTRL_SLU;
 	mmio_write32(mmiobar + E1000_REG_CTRL, val);
-	printk("Reset done, waiting for link...");
 
+	for (phyadd = 0; phyadd <= E1000_MAX_PHYADD; phyadd++)
+		if (phy_read(E1000_PHY_ID1) != 0)
+			break;
+	printk("PHY address: %d\n", phyadd);
+	/* power up again in case the previous user turned it off */
+	phy_write(E1000_PHY_CTRL,
+		  phy_read(E1000_PHY_CTRL) & ~E1000_PHYC_POWER_DOWN);
+
+	printk("Waiting for link...");
 	while (!(mmio_read32(mmiobar + E1000_REG_STATUS) & E1000_STATUS_LU))
 		cpu_relax();
 	printk(" ok\n");
+
+	val = mmio_read32(mmiobar + E1000_REG_STATUS) & E1000_STATUS_SPEED;
+	val >>= E1000_STATUS_SPEEDSHFT;
+	printk("Link speed: %s Mb/s\n", speed_info[val]);
 
 	if (mmio_read32(mmiobar + E1000_REG_RAH) & E1000_RAH_AV) {
 		*(u32 *)mac = mmio_read32(mmiobar + E1000_REG_RAL);
