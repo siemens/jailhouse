@@ -757,7 +757,7 @@ static int jailhouse_cell_create(struct jailhouse_cell_create __user *arg)
 	struct jailhouse_cell_id cell_id;
 	struct cell *cell;
 	unsigned int cpu;
-	int id, err;
+	int id, err = 0;
 
 	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
 		return -EFAULT;
