@@ -154,10 +154,14 @@ void arch_suspend_cpu(unsigned int cpu_id)
 
 void arch_resume_cpu(unsigned int cpu_id)
 {
-	/* make any state changes visible before releasing the CPU */
-	memory_barrier();
+	struct per_cpu *target_data = per_cpu(cpu_id);
 
-	per_cpu(cpu_id)->suspend_cpu = false;
+	/* take lock to avoid theoretical race with a pending suspension */
+	spin_lock(&target_data->control_lock);
+
+	target_data->suspend_cpu = false;
+
+	spin_unlock(&target_data->control_lock);
 }
 
 void arch_reset_cpu(unsigned int cpu_id)
