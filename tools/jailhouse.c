@@ -192,6 +192,8 @@ static int parse_cell_id(struct jailhouse_cell_id *cell_id, int argc,
 	int arg_pos = 0;
 	char *endp;
 
+	memset(cell_id, 0, sizeof(*cell_id));
+
 	if (argc < 1)
 		return 0;
 
@@ -209,8 +211,10 @@ static int parse_cell_id(struct jailhouse_cell_id *cell_id, int argc,
 
 	if (use_name) {
 		cell_id->id = JAILHOUSE_CELL_ID_UNUSED;
-		strncpy(cell_id->name, argv[arg_pos], sizeof(cell_id->name));
-		cell_id->name[sizeof(cell_id->name) - 1] = 0;
+		/* cell_id is initialized with zeros, so leaving out the last
+		 * byte ensures that the string is always terminated. */
+		strncpy(cell_id->name, argv[arg_pos],
+			sizeof(cell_id->name) - 1);
 	}
 
 	return arg_pos + 1;
