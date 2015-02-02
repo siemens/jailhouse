@@ -15,6 +15,11 @@ language: c
 compiler:
   - gcc
 
+env:
+  global:
+   - secure: "HeNK8vFhW6656FoEc05SWwjorvMZWkUTIioHBJoX+s59uQ6MlgyPNnro8FrrcX/fNWLDNRrzl9U05423JVMWwjOuov6MgShDJkG/imadVO8Y+ZIsKdefAp/DsUhIhsnRNh8+bxUStdFAVatMvPf/ZWuEk0K3BC95yWK1VXE73ZQ="
+
+
 install:
   - echo "deb http://archive.ubuntu.com/ubuntu utopic main restricted" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
@@ -31,3 +36,13 @@ script:
   - make KDIR=ci/linux/build-banana-pi ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean all
   - cp ci/jailhouse-config-vexpress.h hypervisor/include/jailhouse/config.h
   - make KDIR=ci/linux/build-vexpress ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean all
+
+addons:
+  coverity_scan:
+    project:
+      name: "siemens/jailhouse"
+      description: "Build submitted via Travis CI"
+    notification_email: jan.kiszka@siemens.com
+    build_command_prepend: "cp ci/jailhouse-config-x86.h hypervisor/include/jailhouse/config.h"
+    build_command:   "make KDIR=ci/linux/build-x86"
+    branch_pattern: coverity_scan
