@@ -72,7 +72,7 @@ struct apic_irq_message iommu_get_remapped_root_int(unsigned int iommu,
 						    unsigned int vector,
 						    unsigned int remap_index)
 {
-	struct apic_irq_message dummy;
+	struct apic_irq_message dummy = { .valid = 0 };
 
 	/* TODO: Implement */
 	return dummy;
