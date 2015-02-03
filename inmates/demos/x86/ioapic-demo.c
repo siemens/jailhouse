@@ -28,14 +28,19 @@
 #define UART_BASE		0x2f8
 #endif
 
+#define PM1_STATUS		0
+#define PM1_ENABLE		2
+# define PM1_TMR_EN		(1 << 0)
+
 #define ACPI_GSI		9
 
 #define IRQ_VECTOR		32
 
+static unsigned int pm_base;
+
 static void irq_handler(void)
 {
-	unsigned int pm_base = comm_region->pm_timer_address - 8;
-	u16 status = inw(pm_base);
+	u16 status = inw(pm_base + PM1_STATUS);
 
 	printk("ACPI IRQ received, status: %04x\n", status);
 	outw(status, pm_base);
@@ -51,8 +56,10 @@ void inmate_main(void)
 	ioapic_init();
 	ioapic_pin_set_vector(ACPI_GSI, TRIGGER_LEVEL_ACTIVE_HIGH, IRQ_VECTOR);
 
-	printk("Press power button to trigger an IRQ\n"
-	       "Note: ACPI IRQs are broken for Linux now.\n");
+	pm_base = comm_region->pm_timer_address - 8;
+	outw(inw(pm_base + PM1_ENABLE) | PM1_TMR_EN, pm_base + PM1_ENABLE);
+
+	printk("Note: ACPI IRQs are broken for Linux now.\n");
 	asm volatile("sti");
 
 	while (1)
