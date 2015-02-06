@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014
+# Copyright (c) Siemens AG, 2014, 2015
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -17,17 +17,18 @@ compiler:
 
 env:
   global:
-   - secure: "HeNK8vFhW6656FoEc05SWwjorvMZWkUTIioHBJoX+s59uQ6MlgyPNnro8FrrcX/fNWLDNRrzl9U05423JVMWwjOuov6MgShDJkG/imadVO8Y+ZIsKdefAp/DsUhIhsnRNh8+bxUStdFAVatMvPf/ZWuEk0K3BC95yWK1VXE73ZQ="
-
+    - secure: "HeNK8vFhW6656FoEc05SWwjorvMZWkUTIioHBJoX+s59uQ6MlgyPNnro8FrrcX/fNWLDNRrzl9U05423JVMWwjOuov6MgShDJkG/imadVO8Y+ZIsKdefAp/DsUhIhsnRNh8+bxUStdFAVatMvPf/ZWuEk0K3BC95yWK1VXE73ZQ="
 
 install:
+  # Install additional packages
   - echo "deb http://archive.ubuntu.com/ubuntu utopic main restricted" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-mako gcc-arm-linux-gnueabihf make
-  - cd ci
+  # Install kernel build environment
+  - pushd ci
   - wget -q http://www.kiszka.org/downloads/travis-ci/kernel-build.tar.xz
   - tar xJf kernel-build.tar.xz
-  - cd ..
+  - popd
 
 script:
   - cp ci/jailhouse-config-x86.h hypervisor/include/jailhouse/config.h
