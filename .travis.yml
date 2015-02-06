@@ -31,7 +31,9 @@ install:
   - popd
 
 script:
-  - ci/build-all-configs.sh
+  - if [ ${COVERITY_SCAN_BRANCH} != 1 ];
+        then ci/build-all-configs.sh;
+    fi
 
 addons:
   coverity_scan:
