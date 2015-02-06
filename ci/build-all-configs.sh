@@ -13,6 +13,12 @@
 
 CONFIGS="x86 banana-pi vexpress"
 
+PREFIX=
+if [ "$1" == "--cov" ]; then
+	export COVERITY_UNSUPPORTED=1
+	PREFIX="cov-build --append-log --dir $2 $3"
+fi
+
 for CONFIG in $CONFIGS; do
 	echo
 	echo "*** Building configuration $CONFIG ***"
@@ -30,6 +36,12 @@ for CONFIG in $CONFIGS; do
 		;;
 	esac
 
+	$PREFIX make KDIR=ci/linux/build-$CONFIG ARCH=$ARCH \
+	     CROSS_COMPILE=$CROSS_COMPILE
+
+	# Keep the clean run out of sight for cov-build so that results are
+	# accumulated as far as possible. Multiple compilations of the same
+	# file will still leave only the last run in the results.
 	make KDIR=ci/linux/build-$CONFIG ARCH=$ARCH \
-	     CROSS_COMPILE=$CROSS_COMPILE clean all
+	     CROSS_COMPILE=$CROSS_COMPILE clean
 done
