@@ -25,8 +25,8 @@ WARNING: This is work in progress! Don't expect things to be complete in any
 dimension. Use at your own risk. And keep the reset button in reach.
 
 
-Community
----------
+Community Resources
+-------------------
 
 Project home:
 
@@ -48,13 +48,20 @@ Mailing list:
   - Archives
     - http://news.gmane.org/gmane.linux.jailhouse
 
-Continuous Integration:
+Continuous integration:
 
   - https://travis-ci.org/siemens/jailhouse
 
   - Status:
     - ![](https://travis-ci.org/siemens/jailhouse.svg?branch=master) on master
     - ![](https://travis-ci.org/siemens/jailhouse.svg?branch=next) on next
+
+Static code analysis:
+
+  - https://scan.coverity.com/projects/4114
+
+  - Status:
+    - ![](https://scan.coverity.com/projects/4114/badge.svg) on coverity_scan
 
 See the [contribution documentation](CONTRIBUTING.md) for details
 on how to write Jailhouse patches and propose them for upstream integration.

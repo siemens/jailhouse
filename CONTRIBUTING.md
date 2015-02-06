@@ -27,6 +27,8 @@ Contribution Checklist
 - test patches sufficiently (obvious, but...) [**required**]
     - no regressions are caused in affected code
     - seemingly unaffected architectures still build (use Travis CI e.g.)
+    - static code analyzer finds no new defects (register a github fork with
+      Travis CI and Coverity for free scanning) [*recommended*]
     - the world is still spinning
 
 - add signed-off to all patches [**required**]
@@ -60,7 +62,8 @@ Contribution Integration Process
 
 2. accepted patches merged into next branch
 
-3. further testing done by community, including CI build tests
+3. further testing done by community, including CI build tests and code
+   analyzer runs
 
 4. if no new problems or discussions showed up, acceptance into master
     * grace period for master: about 3 days
