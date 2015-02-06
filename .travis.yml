@@ -31,12 +31,7 @@ install:
   - popd
 
 script:
-  - cp ci/jailhouse-config-x86.h hypervisor/include/jailhouse/config.h
-  - make KDIR=ci/linux/build-x86
-  - cp ci/jailhouse-config-banana-pi.h hypervisor/include/jailhouse/config.h
-  - make KDIR=ci/linux/build-banana-pi ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean all
-  - cp ci/jailhouse-config-vexpress.h hypervisor/include/jailhouse/config.h
-  - make KDIR=ci/linux/build-vexpress ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- clean all
+  - ci/build-all-configs.sh
 
 addons:
   coverity_scan:
