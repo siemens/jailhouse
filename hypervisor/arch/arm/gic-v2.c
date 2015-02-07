@@ -228,12 +228,12 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	int i;
 	int first_free = -1;
 	u32 lr;
-	u64 elsr;
+	unsigned long elsr[2];
 
-	elsr = mmio_read32(gich_base + GICH_ELSR0);
-	elsr |= (u64)mmio_read32(gich_base + GICH_ELSR1) << 32;
+	elsr[0] = mmio_read32(gich_base + GICH_ELSR0);
+	elsr[1] = mmio_read32(gich_base + GICH_ELSR1);
 	for (i = 0; i < gic_num_lr; i++) {
-		if (test_bit(i, (unsigned long *)&elsr)) {
+		if (test_bit(i, elsr)) {
 			/* Entry is available */
 			if (first_free == -1)
 				first_free = i;
