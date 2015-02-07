@@ -105,14 +105,16 @@ int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject);
 static inline bool spi_in_cell(struct cell *cell, unsigned int spi)
 {
 	/* FIXME: Change the configuration to a bitmask range */
-	u64 spi_mask;
+	u32 spi_mask;
 
-	if (spi > 64)
+	if (spi >= 64)
 		return false;
+	else if (spi >= 32)
+		spi_mask = cell->arch.spis >> 32;
+	else
+		spi_mask = cell->arch.spis;
 
-	spi_mask = cell->arch.spis;
-
-	return spi_mask & (1 << spi);
+	return spi_mask & (1 << (spi & 31));
 }
 
 #endif /* __ASSEMBLY__ */
