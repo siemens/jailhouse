@@ -93,6 +93,7 @@ x86 architecture:
   - at least 2 logical CPUs
 
   - x86-64 Linux kernel (tested against >= 3.14)
+
     - VT-d IOMMU usage (DMAR) has to be disabled in the Linux kernel, e.g. via
       the command line parameter:
 
@@ -100,6 +101,25 @@ x86 architecture:
 
     - To exploit the faster x2APIC, interrupt remapping needs to be on in the
       kernel (check for CONFIG_IRQ_REMAP)
+
+ARM architecture:
+
+  - Abstract:
+
+    - ARMv7 with virtualization extensions
+
+    - Appropriate boot loader support (typically U-Boot)
+      - Linux is started in HYP mode
+      - PSCI support for CPU offlining
+
+    - at least 2 logical CPUs
+
+  - Board support:
+
+    - Banana Pi (see also [below](#setup-on-banana-pi-arm-board))
+
+    - ARM Versatile Express with Cortex-A15 or A7 cores
+      (includes ARM Fast Model)
 
 
 Build & Installation
