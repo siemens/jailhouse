@@ -68,7 +68,7 @@ static void handle_IRQ(unsigned int irqn)
 	       ticks_to_ns(delta), ticks_to_ns(min_delta),
 	       ticks_to_ns(max_delta));
 
-#ifdef CONFIG_ARCH_SUN7I
+#ifdef CONFIG_MACH_SUN7I
 	/* let green LED on Banana Pi blink */
 	#define LED_REG (void *)(0x1c20800 + 7*0x24 + 0x10)
 	mmio_write32(LED_REG, mmio_read32(LED_REG) ^ (1<<24));

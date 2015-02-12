@@ -27,8 +27,8 @@ define DECLARE_TARGETS =
             $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)
 endef
 
-mach-$(CONFIG_ARCH_VEXPRESS)		:= vexpress
-mach-$(CONFIG_ARCH_SUN7I)		:= sun7i
+mach-$(CONFIG_MACH_VEXPRESS)		:= vexpress
+mach-$(CONFIG_MACH_SUN7I)		:= sun7i
 
 gic-$(CONFIG_ARM_GIC)			:= gic-v2.o
 gic-$(CONFIG_ARM_GIC_V3)		:= gic-v3.o

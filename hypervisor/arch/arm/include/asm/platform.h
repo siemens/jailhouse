@@ -20,7 +20,7 @@
  */
 #ifndef __ASSEMBLY__
 
-#ifdef CONFIG_ARCH_VEXPRESS
+#ifdef CONFIG_MACH_VEXPRESS
 
 # ifdef CONFIG_ARM_GIC_V3
 #  define GICD_BASE	((void *)0x2f000000)
@@ -50,9 +50,9 @@
 # define MAINTENANCE_IRQ 25
 # define SYSREGS_BASE	0x1c010000
 
-#endif /* CONFIG_ARCH_VEXPRESS */
+#endif /* CONFIG_MACH_VEXPRESS */
 
-#ifdef CONFIG_ARCH_SUN7I
+#ifdef CONFIG_MACH_SUN7I
 
 #  define GICD_BASE	((void *)0x01c81000)
 #  define GICD_SIZE	0x1000
@@ -67,7 +67,7 @@
 
 # define MAINTENANCE_IRQ 25
 
-#endif /* CONFIG_ARCH_SUN7I */
+#endif /* CONFIG_MACH_SUN7I */
 
 #define HOTPLUG_SPIN	1
 /*
