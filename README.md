@@ -263,8 +263,8 @@ The Banana Pi is a cheap Raspberry-Pi-like ARM board with an Allwinner A20 SoC
 comparably well hackable. Further information can be found on
 http://linux-sunxi.org.
 
-For Jailhouse, U-Boot currently requires a few additional patches that can be
-retrieved from https://github.com/siemens/u-boot/commits/sunxi.
+For Jailhouse, a U-Boot (pre-)release more recent than v2015.04-rc1 is
+required. Tested and know to work is git revision bd2a4888b1.
 
 The Linux kernel version should be at least 3.19-rcX. The configuration used
 for continuous integration builds can serve as reference, see
