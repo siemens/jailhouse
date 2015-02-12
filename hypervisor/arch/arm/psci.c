@@ -142,6 +142,7 @@ long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx)
 		return 2;
 
 	case PSCI_CPU_OFF:
+	case PSCI_CPU_OFF_V0_1_UBOOT:
 		/*
 		 * The reset function will take care of calling
 		 * psci_emulate_spin
@@ -152,6 +153,7 @@ long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx)
 		return 0;
 
 	case PSCI_CPU_ON_32:
+	case PSCI_CPU_ON_V0_1_UBOOT:
 		return psci_emulate_cpu_on(cpu_data, ctx);
 
 	case PSCI_AFFINITY_INFO_32:

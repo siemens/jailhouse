@@ -29,6 +29,10 @@
 #define PSCI_SYSTEM_OFF			0x84000008
 #define PSCI_SYSTEM_RESET		0x84000009
 
+/* v0.1 function IDs as used by U-Boot */
+#define PSCI_CPU_OFF_V0_1_UBOOT		0x95c1ba5f
+#define PSCI_CPU_ON_V0_1_UBOOT		0x95c1ba60
+
 #define PSCI_SUCCESS		0
 #define PSCI_NOT_SUPPORTED	(-1)
 #define PSCI_INVALID_PARAMETERS	(-2)
