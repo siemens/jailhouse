@@ -69,6 +69,23 @@
 
 #endif /* CONFIG_MACH_SUN7I */
 
+#ifdef CONFIG_MACH_TEGRA124
+
+#  define GICD_BASE	((void *)0x50041000)
+#  define GICD_SIZE	0x1000
+#  define GICC_BASE	((void *)0x50042000)
+#  define GICC_SIZE	0x2000
+#  define GICH_BASE	((void *)0x50044000)
+#  define GICH_SIZE	0x2000
+#  define GICV_BASE	((void *)0x50046000)
+#  define GICV_SIZE	0x2000
+
+#  include <asm/gic_v2.h>
+
+# define MAINTENANCE_IRQ 25
+
+#endif /* CONFIG_MACH_TEGRA124 */
+
 #define HOTPLUG_SPIN	1
 /*
 #define HOTPLUG_PSCI	1
