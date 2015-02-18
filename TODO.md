@@ -72,3 +72,13 @@ Monitoring
   - cell software watchdog via comm region messages  
     -> time out pending comm region messages and kill failing cells
        (includes timeouts of unanswered shutdown requests)
+
+Misc
+  - generic sub-page access filtering
+    - use bitmap, likely with byte granularity, to filter access on specific
+      registers in a MMIO page
+  - generic and faster MMIO dispatching
+    - use binary search on an per-cell array of (start, size, handler, opaque)
+      entries
+    - should be able to deal with both existing devices as well as sub-page
+      filtering
