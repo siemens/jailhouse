@@ -300,8 +300,13 @@ static ssize_t cpus_assigned_show(struct kobject *kobj,
 	struct cell *cell = container_of(kobj, struct cell, kobj);
 	int written;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+	written = scnprintf(buf, PAGE_SIZE, "%*pb\n",
+			    cpumask_pr_args(&cell->cpus_assigned));
+#else
 	written = cpumask_scnprintf(buf, PAGE_SIZE, &cell->cpus_assigned);
 	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");
+#endif
 	return written;
 }
 
@@ -322,8 +327,13 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 		    JAILHOUSE_CPU_FAILED)
 			cpu_set(cpu, *cpus_failed);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+	written = scnprintf(buf, PAGE_SIZE, "%*pb\n",
+			    cpumask_pr_args(cpus_failed));
+#else
 	written = cpumask_scnprintf(buf, PAGE_SIZE, cpus_failed);
 	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");
+#endif
 
 	free_cpumask_var(cpus_failed);
 
