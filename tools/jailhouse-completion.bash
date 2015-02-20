@@ -1,4 +1,13 @@
 # bash completion for jailhouse
+#
+# Copyright (c) Benjamin Block, 2014
+#
+# Authors:
+#  Benjamin Block <bebl@mageta.org>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
 
 # usage: - include the directory containing the `jailhouse`-tool into your
 #          ${PATH}-variable
