@@ -115,8 +115,19 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	 */
 	irqchip_eoi_irq(SGI_CPU_OFF, true);
 
-	/* irqchip_cpu_shutdown already resets the GIC on all CPUs. */
-	if (!is_shutdown) {
+	if (is_shutdown) {
+#ifndef CONFIG_MACH_VEXPRESS
+		if (cell != &root_cell) {
+			irqchip_cpu_shutdown(cpu_data);
+
+			smc(PSCI_CPU_OFF, 0, 0, 0);
+			smc(PSCI_CPU_OFF_V0_1_UBOOT, 0, 0, 0);
+			printk("FATAL: PSCI_CPU_OFF failed\n");
+			panic_stop();
+		}
+#endif
+		/* arch_shutdown_self resets the GIC on all remaining CPUs. */
+	} else {
 		err = irqchip_cpu_reset(cpu_data);
 		if (err)
 			printk("IRQ setup failed\n");
