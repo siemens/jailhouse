@@ -29,6 +29,7 @@
 #include <linux/pci.h>
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
+#include <asm/tlbflush.h>
 
 #include "jailhouse.h"
 #include <jailhouse/cell-config.h>
@@ -515,6 +516,11 @@ static void enter_hypervisor(void *info)
 	if (err)
 		error_code = err;
 
+#if defined(CONFIG_X86) && LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+	/* on Intel, VMXE is now on - update the shadow */
+	cr4_init_shadow();
+#endif
+
 	atomic_inc(&call_done);
 }
 
@@ -702,6 +708,11 @@ static void leave_hypervisor(void *info)
 	err = jailhouse_call(JAILHOUSE_HC_DISABLE);
 	if (err)
 		error_code = err;
+
+#if defined(CONFIG_X86) && LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+	/* on Intel, VMXE is now off - update the shadow */
+	cr4_init_shadow();
+#endif
 
 	atomic_inc(&call_done);
 }
