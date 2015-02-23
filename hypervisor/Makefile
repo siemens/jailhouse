@@ -11,7 +11,9 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 #
-# asm-defines.h generation code derived from Linux kernel.
+# asm-defines.h generation code derived from linux/Kbuild:
+#
+# Copyright (c) Linux kernel developers, 2014
 #
 
 LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include -I$(src)/include

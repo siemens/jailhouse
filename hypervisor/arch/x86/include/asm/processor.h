@@ -10,6 +10,11 @@
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
+ *
+ * This file is based on linux/arch/x86/include/asm/special_insn.h and other
+ * kernel headers:
+ *
+ * Copyright (c) Linux kernel developers, 2013
  */
 
 #ifndef _JAILHOUSE_ASM_PROCESSOR_H

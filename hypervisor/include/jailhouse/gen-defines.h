@@ -9,7 +9,9 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  *
- * Derived from Linux kernel code.
+ * Derived from linux/include/linux/kbuild.h:
+ *
+ * Copyright (c) Linux kernel developers, 2014
  */
 
 #ifndef _JAILHOUSE_GEN_DEFINES_H
