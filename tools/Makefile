@@ -12,7 +12,7 @@
 
 CC = $(CROSS_COMPILE)gcc
 
-CFLAGS = -g -O3 -I.. -DLIBEXECDIR=\"$(libexecdir)\" \
+CFLAGS = -g -O3 -I../driver -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wmissing-declarations -Wmissing-prototypes \
 	-DJAILHOUSE_VERSION=\"$(shell cat ../VERSION)\"
 
@@ -46,7 +46,7 @@ all: $(TARGETS)
 # includes installation-related variables and definitions
 include ../scripts/include.mk
 
-jailhouse: jailhouse.c ../jailhouse.h ../VERSION
+jailhouse: jailhouse.c ../driver/jailhouse.h ../VERSION
 	$(CC) $(CFLAGS) -o $@ $<
 
 jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl

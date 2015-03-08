@@ -11,8 +11,11 @@
 # the COPYING file in the top-level directory.
 #
 
-subdir-y := driver hypervisor configs inmates
+obj-m := jailhouse.o
 
-# inmates build depends on generated config.mk of the hypervisor,
-# and the driver needs version.h from there
-$(addprefix $(obj)/,inmates) $(addprefix $(obj)/,driver): $(obj)/hypervisor
+ccflags-y := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
+	     -I$(src)/../hypervisor/include
+
+jailhouse-y := main.o
+
+$(obj)/main.o: $(obj)/../hypervisor/include/jailhouse/version.h

@@ -6,7 +6,7 @@
 .tmp_versions
 Module.symvers
 modules.order
-jailhouse.ko
+driver/jailhouse.ko
 hypervisor/include/jailhouse/config.h
 hypervisor/include/jailhouse/config.mk
 hypervisor/include/jailhouse/version.h
