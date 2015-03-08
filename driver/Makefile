@@ -18,4 +18,4 @@ ccflags-y := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
 
 jailhouse-y := main.o
 
-$(obj)/main.o: $(obj)/../hypervisor/include/jailhouse/version.h
+$(obj)/main.o: $(obj)/../hypervisor/include/generated/version.h

@@ -55,8 +55,8 @@ define filechk_version
 	$(src)/../scripts/gen_version_h $(src)/..
 endef
 
-clean-files := include/jailhouse/config.mk \
-	include/jailhouse/version.h
+clean-files += include/jailhouse/config.mk \
+	include/generated/version.h
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \
@@ -93,13 +93,13 @@ $(obj)/$(defines-file): $(obj)/arch/$(SRCARCH)/asm-defines.s
 	$(Q)mkdir -p $(dir $@)
 	$(call cmd,defines)
 
-$(obj)/include/jailhouse/version.h: $(src)/Makefile FORCE
+$(obj)/include/generated/version.h: $(src)/Makefile FORCE
 	$(call filechk,version)
 
 $(foreach co,$(CORE_OBJECTS),\
 	$(eval $(obj)/$(co): $(obj)/$(defines-file)))
 
-$(obj)/setup.o: $(obj)/include/jailhouse/version.h
+$(obj)/setup.o: $(obj)/include/generated/version.h
 
 arch-builtin: $(obj)/$(defines-file) $(obj)/include/jailhouse/config.mk FORCE
 	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH) \

@@ -16,7 +16,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
-#include <jailhouse/version.h>
+#include <generated/version.h>
 #include <asm/spinlock.h>
 
 extern u8 __text_start[], __hv_core_end[];

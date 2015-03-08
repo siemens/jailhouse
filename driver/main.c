@@ -35,7 +35,7 @@
 #include <jailhouse/cell-config.h>
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
-#include <jailhouse/version.h>
+#include <generated/version.h>
 
 #ifdef CONFIG_X86_32
 #error 64-bit kernel required!
