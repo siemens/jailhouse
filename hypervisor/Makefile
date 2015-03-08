@@ -55,8 +55,8 @@ define filechk_version
 	$(src)/../scripts/gen_version_h $(src)/..
 endef
 
-clean-files := $(obj)/include/jailhouse/config.mk \
-	$(obj)/include/jailhouse/version.h
+clean-files := include/jailhouse/config.mk \
+	include/jailhouse/version.h
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \
