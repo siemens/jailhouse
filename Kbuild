@@ -26,6 +26,4 @@ $(obj)/hypervisor/include/jailhouse/version.h: $(obj)/hypervisor
 $(obj)/driver.o: $(obj)/hypervisor/include/jailhouse/version.h
 
 # inmates build depends on generated config.mk of the hypervisor
-ifeq ($(clean),)
 $(addprefix $(obj)/,inmates): $(obj)/hypervisor
-endif
