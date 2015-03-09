@@ -17,15 +17,15 @@
  * we assume that where VMCALL isn't available, VMMCALL is.
  */
 #define JAILHOUSE_CALL_CODE	\
-	"cmpb $0x01, %1\n\t"\
-	"jnz 1f\n\t"\
+	"cmpb $0x01, %[use_vmcall]\n\t"\
+	"jne 1f\n\t"\
 	"vmcall\n\t"\
 	"jmp 2f\n\t"\
 	"1: vmmcall\n\t"\
 	"2:"
 
 #define JAILHOUSE_CALL_RESULT	"=a" (result)
-#define JAILHOUSE_USE_VMCALL	"m" (jailhouse_use_vmcall)
+#define JAILHOUSE_USE_VMCALL	[use_vmcall] "m" (jailhouse_use_vmcall)
 #define JAILHOUSE_CALL_NUM	"a" (num)
 #define JAILHOUSE_CALL_ARG1	"D" (arg1)
 #define JAILHOUSE_CALL_ARG2	"S" (arg2)
