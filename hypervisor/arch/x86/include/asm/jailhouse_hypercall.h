@@ -17,7 +17,7 @@
  * we assume that where VMCALL isn't available, VMMCALL is.
  */
 #define JAILHOUSE_CALL_CODE	\
-	"cmp $0x01, %1\n\t"\
+	"cmpb $0x01, %1\n\t"\
 	"jnz 1f\n\t"\
 	"vmcall\n\t"\
 	"jmp 2f\n\t"\
