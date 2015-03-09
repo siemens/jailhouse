@@ -18,4 +18,6 @@
 extern struct mutex jailhouse_lock;
 extern bool jailhouse_enabled;
 
+void jailhouse_cell_kobj_release(struct kobject *kobj);
+
 #endif /* !_JAILHOUSE_DRIVER_MAIN_H */
