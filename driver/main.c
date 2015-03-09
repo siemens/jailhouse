@@ -104,7 +104,7 @@ struct cell {
 	struct jailhouse_pci_device *pci_devices;
 };
 
-MODULE_DESCRIPTION("Loader for Jailhouse partitioning hypervisor");
+MODULE_DESCRIPTION("Management driver for Jailhouse partitioning hypervisor");
 MODULE_LICENSE("GPL");
 #ifdef CONFIG_X86
 MODULE_FIRMWARE(JAILHOUSE_AMD_FW_NAME);
