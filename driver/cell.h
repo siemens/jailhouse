@@ -25,9 +25,11 @@ struct cell {
 	unsigned int id;
 	cpumask_t cpus_assigned;
 	u32 num_memory_regions;
-	u32 num_pci_devices;
 	struct jailhouse_memory *memory_regions;
+#ifdef CONFIG_PCI
+	u32 num_pci_devices;
 	struct jailhouse_pci_device *pci_devices;
+#endif /* CONFIG_PCI */
 };
 
 #endif /* !_JAILHOUSE_DRIVER_CELL_H */

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Siemens AG, 2013-2015
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -26,13 +26,13 @@
 #include <linux/reboot.h>
 #include <linux/vmalloc.h>
 #include <linux/io.h>
-#include <linux/pci.h>
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
 
 #include "cell.h"
 #include "jailhouse.h"
+#include "pci.h"
 
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
@@ -128,59 +128,6 @@ static void init_hypercall(void)
 {
 }
 #endif
-
-enum { JAILHOUSE_PCI_ACTION_ADD, JAILHOUSE_PCI_ACTION_DEL };
-
-#ifdef CONFIG_PCI
-static void jailhouse_pci_add_device(const struct jailhouse_pci_device *dev)
-{
-	int num;
-	struct pci_bus *bus;
-
-	bus = pci_find_bus(dev->domain, PCI_BUS_NUM(dev->bdf));
-	if (bus) {
-		num = pci_scan_slot(bus, dev->bdf & 0xff);
-		if (num) {
-			pci_lock_rescan_remove();
-			pci_bus_assign_resources(bus);
-			pci_bus_add_devices(bus);
-			pci_unlock_rescan_remove();
-		}
-	}
-}
-
-static void jailhouse_pci_remove_device(const struct jailhouse_pci_device *dev)
-{
-	struct pci_dev *l_dev;
-
-	l_dev = pci_get_bus_and_slot(PCI_BUS_NUM(dev->bdf), dev->bdf & 0xff);
-	if (l_dev)
-		pci_stop_and_remove_bus_device_locked(l_dev);
-}
-
-static void jailhouse_pci_do_all_devices(struct cell *cell, unsigned int type,
-					 unsigned int action)
-{
-	unsigned int n;
-	const struct jailhouse_pci_device *dev;
-
-	dev = cell->pci_devices;
-	for (n = cell->num_pci_devices; n > 0; n--) {
-		if (dev->type == type) {
-			if (action == JAILHOUSE_PCI_ACTION_ADD)
-				jailhouse_pci_add_device(dev);
-			else if (action == JAILHOUSE_PCI_ACTION_DEL)
-				jailhouse_pci_remove_device(dev);
-		}
-		dev++;
-	}
-}
-#else /* CONFIG_PCI */
-static void jailhouse_pci_do_all_devices(struct cell *cell, unsigned int type,
-					 unsigned int action)
-{
-}
-#endif /* CONFIG_PCI */
 
 struct jailhouse_cpu_stats_attr {
 	struct kobj_attribute kattr;
@@ -349,8 +296,8 @@ static void cell_kobj_release(struct kobject *kobj)
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
 
+	jailhouse_pci_cell_cleanup(cell);
 	vfree(cell->memory_regions);
-	vfree(cell->pci_devices);
 	kfree(cell);
 }
 
@@ -385,26 +332,14 @@ static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
 
 	memcpy(cell->memory_regions, jailhouse_cell_mem_regions(cell_desc),
 	       sizeof(struct jailhouse_memory) * cell->num_memory_regions);
-#ifdef CONFIG_PCI
-	cell->num_pci_devices = cell_desc->num_pci_devices;
-	cell->pci_devices = NULL;
 
-	if (cell->num_pci_devices > 0) {
-		cell->pci_devices =
-			vmalloc(sizeof(struct jailhouse_pci_device) *
-				cell->num_pci_devices);
-		if (!cell->pci_devices) {
-			vfree(cell->memory_regions);
-			kfree(cell);
-			return ERR_PTR(-ENOMEM);
-		}
-
-		memcpy(cell->pci_devices,
-		       jailhouse_cell_pci_devices(cell_desc),
-		       sizeof(struct jailhouse_pci_device) *
-		       cell->num_pci_devices);
+	err = jailhouse_pci_cell_setup(cell, cell_desc);
+	if (err) {
+		vfree(cell->memory_regions);
+		kfree(cell);
+		return ERR_PTR(err);
 	}
-#endif
+
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
 				   cell_desc->name);
 	if (err) {
