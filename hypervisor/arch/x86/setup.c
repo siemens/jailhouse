@@ -213,7 +213,7 @@ error_out:
 	return err;
 }
 
-int arch_init_late()
+int arch_init_late(void)
 {
 	int err;
 
