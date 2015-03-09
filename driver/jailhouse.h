@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2015
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -9,6 +9,9 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
+
+#ifndef _JAILHOUSE_DRIVER_H
+#define _JAILHOUSE_DRIVER_H
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
@@ -49,3 +52,5 @@ struct jailhouse_cell_load {
 #define JAILHOUSE_CELL_LOAD		_IOW(0, 3, struct jailhouse_cell_load)
 #define JAILHOUSE_CELL_START		_IOW(0, 4, struct jailhouse_cell_id)
 #define JAILHOUSE_CELL_DESTROY		_IOW(0, 5, struct jailhouse_cell_id)
+
+#endif /* !_JAILHOUSE_DRIVER_H */

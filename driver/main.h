@@ -15,9 +15,12 @@
 
 #include <linux/mutex.h>
 
+#include "cell.h"
+
 extern struct mutex jailhouse_lock;
 extern bool jailhouse_enabled;
 
-void jailhouse_cell_kobj_release(struct kobject *kobj);
+void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
+			unsigned long size);
 
 #endif /* !_JAILHOUSE_DRIVER_MAIN_H */

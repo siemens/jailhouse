@@ -14,13 +14,11 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/cpu.h>
 #include <linux/device.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/firmware.h>
 #include <linux/mm.h>
-#include <linux/slab.h>
 #include <linux/smp.h>
 #include <linux/uaccess.h>
 #include <linux/reboot.h>
@@ -74,11 +72,8 @@ bool jailhouse_enabled;
 static struct device *jailhouse_dev;
 static void *hypervisor_mem;
 static unsigned long hv_core_and_percpu_size;
-static cpumask_t offlined_cpus;
 static atomic_t call_done;
 static int error_code;
-static LIST_HEAD(cells);
-static struct cell *root_cell;
 
 #ifdef CONFIG_X86
 bool jailhouse_use_vmcall;
@@ -92,80 +87,6 @@ static void init_hypercall(void)
 {
 }
 #endif
-
-void jailhouse_cell_kobj_release(struct kobject *kobj)
-{
-	struct cell *cell = container_of(kobj, struct cell, kobj);
-
-	jailhouse_pci_cell_cleanup(cell);
-	vfree(cell->memory_regions);
-	kfree(cell);
-}
-
-static struct cell *create_cell(const struct jailhouse_cell_desc *cell_desc)
-{
-	struct cell *cell;
-	int err;
-
-	cell = kzalloc(sizeof(*cell), GFP_KERNEL);
-	if (!cell)
-		return ERR_PTR(-ENOMEM);
-
-	INIT_LIST_HEAD(&cell->entry);
-
-	bitmap_copy(cpumask_bits(&cell->cpus_assigned),
-		    jailhouse_cell_cpu_set(cell_desc),
-		    min(nr_cpumask_bits, (int)cell_desc->cpu_set_size * 8));
-
-	cell->num_memory_regions = cell_desc->num_memory_regions;
-	cell->memory_regions = vmalloc(sizeof(struct jailhouse_memory) *
-				       cell->num_memory_regions);
-	if (!cell->memory_regions) {
-		kfree(cell);
-		return ERR_PTR(-ENOMEM);
-	}
-
-	memcpy(cell->memory_regions, jailhouse_cell_mem_regions(cell_desc),
-	       sizeof(struct jailhouse_memory) * cell->num_memory_regions);
-
-	err = jailhouse_pci_cell_setup(cell, cell_desc);
-	if (err) {
-		vfree(cell->memory_regions);
-		kfree(cell);
-		return ERR_PTR(err);
-	}
-
-	err = jailhouse_sysfs_cell_create(cell, cell_desc->name);
-	if (err)
-		/* cleanup done by jailhouse_sysfs_cell_create */
-		return ERR_PTR(err);
-
-	return cell;
-}
-
-static void register_cell(struct cell *cell)
-{
-	list_add_tail(&cell->entry, &cells);
-	jailhouse_sysfs_cell_register(cell);
-}
-
-static struct cell *find_cell(struct jailhouse_cell_id *cell_id)
-{
-	struct cell *cell;
-
-	list_for_each_entry(cell, &cells, entry)
-		if (cell_id->id == cell->id ||
-		    (cell_id->id == JAILHOUSE_CELL_ID_UNUSED &&
-		     strcmp(kobject_name(&cell->kobj), cell_id->name) == 0))
-			return cell;
-	return NULL;
-}
-
-static void delete_cell(struct cell *cell)
-{
-	list_del(&cell->entry);
-	jailhouse_sysfs_cell_delete(cell);
-}
 
 static long get_max_cpus(u32 cpu_set_size,
 			 const struct jailhouse_system __user *system_config)
@@ -186,8 +107,8 @@ static long get_max_cpus(u32 cpu_set_size,
 	return -EINVAL;
 }
 
-static void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
-			       unsigned long size)
+void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
+			unsigned long size)
 {
 	struct vm_struct *vma;
 
@@ -248,7 +169,7 @@ static inline const char * jailhouse_fw_name(void)
 #endif
 }
 
-static int jailhouse_enable(struct jailhouse_system __user *arg)
+static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 {
 	const struct firmware *hypervisor;
 	struct jailhouse_system config_header;
@@ -338,14 +259,9 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		header->debug_uart_base = (void *)uart;
 	}
 
-	root_cell = create_cell(&config->root_cell);
-	if (IS_ERR(root_cell)) {
-		err = PTR_ERR(root_cell);
+	err = jailhouse_cell_prepare_root(&config->root_cell);
+	if (err)
 		goto error_unmap;
-	}
-
-	cpumask_and(&root_cell->cpus_assigned, &root_cell->cpus_assigned,
-		    cpu_online_mask);
 
 	error_code = 0;
 
@@ -365,17 +281,14 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 		goto error_free_cell;
 	}
 
-	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
-				     JAILHOUSE_PCI_ACTION_ADD);
-
 	if (uart)
 		iounmap(uart);
 
 	release_firmware(hypervisor);
 
+	jailhouse_cell_register_root();
+
 	jailhouse_enabled = true;
-	root_cell->id = 0;
-	register_cell(root_cell);
 
 	mutex_unlock(&jailhouse_lock);
 
@@ -384,7 +297,7 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	return 0;
 
 error_free_cell:
-	delete_cell(root_cell);
+	jailhouse_cell_delete_root();
 
 error_unmap:
 	vunmap(hypervisor_mem);
@@ -428,10 +341,8 @@ static void leave_hypervisor(void *info)
 	atomic_inc(&call_done);
 }
 
-static int jailhouse_disable(void)
+static int jailhouse_cmd_disable(void)
 {
-	struct cell *cell, *tmp;
-	unsigned int cpu;
 	int err;
 
 	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
@@ -459,275 +370,11 @@ static int jailhouse_disable(void)
 
 	vunmap(hypervisor_mem);
 
-	for_each_cpu(cpu, &offlined_cpus) {
-		if (cpu_up(cpu) != 0)
-			pr_err("Jailhouse: failed to bring CPU %d back "
-			       "online\n", cpu);
-		cpu_clear(cpu, offlined_cpus);
-	}
-
-	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
-				     JAILHOUSE_PCI_ACTION_DEL);
-
-	list_for_each_entry_safe(cell, tmp, &cells, entry)
-		delete_cell(cell);
+	jailhouse_cell_delete_all();
 	jailhouse_enabled = false;
 	module_put(THIS_MODULE);
 
 	pr_info("The Jailhouse was closed.\n");
-
-unlock_out:
-	mutex_unlock(&jailhouse_lock);
-
-	return err;
-}
-
-static int jailhouse_cell_create(struct jailhouse_cell_create __user *arg)
-{
-	struct jailhouse_cell_create cell_params;
-	struct jailhouse_cell_desc *config;
-	struct jailhouse_cell_id cell_id;
-	struct cell *cell;
-	unsigned int cpu;
-	int id, err = 0;
-
-	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
-		return -EFAULT;
-
-	config = kmalloc(cell_params.config_size, GFP_KERNEL | GFP_DMA);
-	if (!config)
-		return -ENOMEM;
-
-	if (copy_from_user(config,
-			   (void *)(unsigned long)cell_params.config_address,
-			   cell_params.config_size)) {
-		err = -EFAULT;
-		goto kfree_config_out;
-	}
-	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
-
-	if (mutex_lock_interruptible(&jailhouse_lock) != 0) {
-		err = -EINTR;
-		goto kfree_config_out;
-	}
-
-	if (!jailhouse_enabled) {
-		err = -EINVAL;
-		goto unlock_out;
-	}
-
-	cell_id.id = JAILHOUSE_CELL_ID_UNUSED;
-	memcpy(cell_id.name, config->name, sizeof(cell_id.name));
-	if (find_cell(&cell_id) != NULL) {
-		err = -EEXIST;
-		goto unlock_out;
-	}
-
-	cell = create_cell(config);
-	if (IS_ERR(cell)) {
-		err = PTR_ERR(cell);
-		goto unlock_out;
-	}
-
-	if (!cpumask_subset(&cell->cpus_assigned, &root_cell->cpus_assigned)) {
-		err = -EBUSY;
-		goto error_cell_delete;
-	}
-
-	for_each_cpu(cpu, &cell->cpus_assigned) {
-		if (cpu_online(cpu)) {
-			err = cpu_down(cpu);
-			if (err)
-				goto error_cpu_online;
-			cpu_set(cpu, offlined_cpus);
-		}
-		cpu_clear(cpu, root_cell->cpus_assigned);
-	}
-
-	id = jailhouse_call_arg1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
-	if (id < 0) {
-		err = id;
-		goto error_cpu_online;
-	}
-
-	cell->id = id;
-	register_cell(cell);
-
-	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
-
-unlock_out:
-	mutex_unlock(&jailhouse_lock);
-
-kfree_config_out:
-	kfree(config);
-
-	return err;
-
-error_cpu_online:
-	for_each_cpu(cpu, &cell->cpus_assigned) {
-		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
-			cpu_clear(cpu, offlined_cpus);
-		cpu_set(cpu, root_cell->cpus_assigned);
-	}
-
-error_cell_delete:
-	delete_cell(cell);
-	goto unlock_out;
-}
-
-static int cell_management_prologue(struct jailhouse_cell_id *cell_id,
-				    struct cell **cell_ptr)
-{
-	cell_id->name[JAILHOUSE_CELL_ID_NAMELEN] = 0;
-
-	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
-		return -EINTR;
-
-	if (!jailhouse_enabled) {
-		mutex_unlock(&jailhouse_lock);
-		return -EINVAL;
-	}
-
-	*cell_ptr = find_cell(cell_id);
-	if (*cell_ptr == NULL) {
-		mutex_unlock(&jailhouse_lock);
-		return -ENOENT;
-	}
-	return 0;
-}
-
-#define MEM_REQ_FLAGS	(JAILHOUSE_MEM_WRITE | JAILHOUSE_MEM_LOADABLE)
-
-static int load_image(struct cell *cell,
-		      struct jailhouse_preload_image __user *uimage)
-{
-	struct jailhouse_preload_image image;
-	const struct jailhouse_memory *mem;
-	unsigned int regions;
-	u64 image_offset;
-	void *image_mem;
-	int err = 0;
-
-	if (copy_from_user(&image, uimage, sizeof(image)))
-		return -EFAULT;
-
-	mem = cell->memory_regions;
-	for (regions = cell->num_memory_regions; regions > 0; regions--) {
-		image_offset = image.target_address - mem->virt_start;
-		if (image.target_address >= mem->virt_start &&
-		    image_offset < mem->size) {
-			if (image.size > mem->size - image_offset ||
-			    (mem->flags & MEM_REQ_FLAGS) != MEM_REQ_FLAGS)
-				return -EINVAL;
-			break;
-		}
-		mem++;
-	}
-	if (regions == 0)
-		return -EINVAL;
-
-	image_mem = jailhouse_ioremap(mem->phys_start + image_offset, 0,
-				      image.size);
-	if (!image_mem) {
-		pr_err("jailhouse: Unable to map cell RAM at %08llx "
-		       "for image loading\n",
-		       (unsigned long long)(mem->phys_start + image_offset));
-		return -EBUSY;
-	}
-
-	if (copy_from_user(image_mem,
-			   (void *)(unsigned long)image.source_address,
-			   image.size))
-		err = -EFAULT;
-
-	vunmap(image_mem);
-
-	return err;
-}
-
-static int jailhouse_cell_load(struct jailhouse_cell_load __user *arg)
-{
-	struct jailhouse_preload_image __user *image = arg->image;
-	struct jailhouse_cell_load cell_load;
-	struct cell *cell;
-	unsigned int n;
-	int err;
-
-	if (copy_from_user(&cell_load, arg, sizeof(cell_load)))
-		return -EFAULT;
-
-	err = cell_management_prologue(&cell_load.cell_id, &cell);
-	if (err)
-		return err;
-
-	err = jailhouse_call_arg1(JAILHOUSE_HC_CELL_SET_LOADABLE, cell->id);
-	if (err)
-		goto unlock_out;
-
-	for (n = cell_load.num_preload_images; n > 0; n--, image++) {
-		err = load_image(cell, image);
-		if (err)
-			break;
-	}
-
-unlock_out:
-	mutex_unlock(&jailhouse_lock);
-
-	return err;
-}
-
-static int jailhouse_cell_start(const char __user *arg)
-{
-	struct jailhouse_cell_id cell_id;
-	struct cell *cell;
-	int err;
-
-	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
-		return -EFAULT;
-
-	err = cell_management_prologue(&cell_id, &cell);
-	if (err)
-		return err;
-
-	err = jailhouse_call_arg1(JAILHOUSE_HC_CELL_START, cell->id);
-
-	mutex_unlock(&jailhouse_lock);
-
-	return err;
-}
-
-static int jailhouse_cell_destroy(const char __user *arg)
-{
-	struct jailhouse_cell_id cell_id;
-	struct cell *cell;
-	unsigned int cpu;
-	int err;
-
-	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
-		return -EFAULT;
-
-	err = cell_management_prologue(&cell_id, &cell);
-	if (err)
-		return err;
-
-	err = jailhouse_call_arg1(JAILHOUSE_HC_CELL_DESTROY, cell->id);
-	if (err)
-		goto unlock_out;
-
-	for_each_cpu(cpu, &cell->cpus_assigned) {
-		if (cpu_isset(cpu, offlined_cpus)) {
-			if (cpu_up(cpu) != 0)
-				pr_err("Jailhouse: failed to bring CPU %d "
-				       "back online\n", cpu);
-			cpu_clear(cpu, offlined_cpus);
-		}
-		cpu_set(cpu, root_cell->cpus_assigned);
-	}
-
-	pr_info("Destroyed Jailhouse cell \"%s\"\n",
-		kobject_name(&cell->kobj));
-
-	delete_cell(cell);
 
 unlock_out:
 	mutex_unlock(&jailhouse_lock);
@@ -742,25 +389,25 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 
 	switch (ioctl) {
 	case JAILHOUSE_ENABLE:
-		err = jailhouse_enable(
+		err = jailhouse_cmd_enable(
 			(struct jailhouse_system __user *)arg);
 		break;
 	case JAILHOUSE_DISABLE:
-		err = jailhouse_disable();
+		err = jailhouse_cmd_disable();
 		break;
 	case JAILHOUSE_CELL_CREATE:
-		err = jailhouse_cell_create(
+		err = jailhouse_cmd_cell_create(
 			(struct jailhouse_cell_create __user *)arg);
 		break;
 	case JAILHOUSE_CELL_LOAD:
-		err = jailhouse_cell_load(
+		err = jailhouse_cmd_cell_load(
 			(struct jailhouse_cell_load __user *)arg);
 		break;
 	case JAILHOUSE_CELL_START:
-		err = jailhouse_cell_start((const char __user *)arg);
+		err = jailhouse_cmd_cell_start((const char __user *)arg);
 		break;
 	case JAILHOUSE_CELL_DESTROY:
-		err = jailhouse_cell_destroy((const char __user *)arg);
+		err = jailhouse_cmd_cell_destroy((const char __user *)arg);
 		break;
 	default:
 		err = -EINVAL;
@@ -788,7 +435,7 @@ static int jailhouse_shutdown_notify(struct notifier_block *unused1,
 {
 	int err;
 
-	err = jailhouse_disable();
+	err = jailhouse_cmd_disable();
 	if (err && err != -EINVAL)
 		pr_emerg("jailhouse: ordered shutdown failed!\n");
 

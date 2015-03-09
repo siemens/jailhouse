@@ -16,6 +16,9 @@
 #include <linux/cpumask.h>
 #include <linux/list.h>
 #include <linux/kobject.h>
+#include <linux/uaccess.h>
+
+#include "jailhouse.h"
 
 #include <jailhouse/cell-config.h>
 
@@ -31,5 +34,23 @@ struct cell {
 	struct jailhouse_pci_device *pci_devices;
 #endif /* CONFIG_PCI */
 };
+
+void jailhouse_cell_kobj_release(struct kobject *kobj);
+
+struct cell *
+jailhouse_cell_create(const struct jailhouse_cell_desc *cell_desc);
+void jailhouse_cell_register(struct cell *cell);
+void jailhouse_cell_delete(struct cell *cell);
+
+int jailhouse_cell_prepare_root(const struct jailhouse_cell_desc *cell_desc);
+void jailhouse_cell_register_root(void);
+void jailhouse_cell_delete_root(void);
+
+void jailhouse_cell_delete_all(void);
+
+int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg);
+int jailhouse_cmd_cell_load(struct jailhouse_cell_load __user *arg);
+int jailhouse_cmd_cell_start(const char __user *arg);
+int jailhouse_cmd_cell_destroy(const char __user *arg);
 
 #endif /* !_JAILHOUSE_DRIVER_CELL_H */
