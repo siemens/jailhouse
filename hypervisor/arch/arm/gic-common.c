@@ -30,7 +30,7 @@ extern unsigned int gicd_size;
 static DEFINE_SPINLOCK(dist_lock);
 
 /* The GIC interface numbering does not necessarily match the logical map */
-u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /*
  * Most of the GIC distributor writes only reconfigure the IRQs corresponding to
