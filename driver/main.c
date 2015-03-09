@@ -31,8 +31,9 @@
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
 
+#include "cell.h"
 #include "jailhouse.h"
-#include <jailhouse/cell-config.h>
+
 #include <jailhouse/header.h>
 #include <jailhouse/hypercall.h>
 #include <generated/version.h>
@@ -92,17 +93,6 @@ static const struct sysfs_ops cell_sysfs_ops = {
 #else
 #define JAILHOUSE_FW_NAME	"jailhouse.bin"
 #endif
-
-struct cell {
-	struct kobject kobj;
-	struct list_head entry;
-	unsigned int id;
-	cpumask_t cpus_assigned;
-	u32 num_memory_regions;
-	u32 num_pci_devices;
-	struct jailhouse_memory *memory_regions;
-	struct jailhouse_pci_device *pci_devices;
-};
 
 MODULE_DESCRIPTION("Management driver for Jailhouse partitioning hypervisor");
 MODULE_LICENSE("GPL");
