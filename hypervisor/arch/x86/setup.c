@@ -236,7 +236,7 @@ int arch_init_late()
 	return 0;
 }
 
-void arch_cpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	vcpu_activate_vmm(cpu_data);
 }

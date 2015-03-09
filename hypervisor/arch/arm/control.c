@@ -390,7 +390,7 @@ void arch_config_commit(struct cell *cell_added_removed)
 {
 }
 
-void arch_panic_stop(void)
+void __attribute__((noreturn)) arch_panic_stop(void)
 {
 	psci_cpu_off(this_cpu_data());
 	__builtin_unreachable();

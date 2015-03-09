@@ -272,7 +272,8 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	return sipi_vector;
 }
 
-void x86_exception_handler(struct exception_frame *frame)
+void __attribute__((noreturn))
+x86_exception_handler(struct exception_frame *frame)
 {
 	panic_printk("FATAL: Jailhouse triggered exception #%d\n",
 		     frame->vector);
@@ -287,7 +288,7 @@ void x86_exception_handler(struct exception_frame *frame)
 	panic_stop();
 }
 
-void arch_panic_stop(void)
+void __attribute__((noreturn)) arch_panic_stop(void)
 {
 	/* no lock required here as we won't change to false anymore */
 	this_cpu_data()->cpu_suspended = true;

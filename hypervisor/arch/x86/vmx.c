@@ -602,7 +602,7 @@ void vcpu_exit(struct per_cpu *cpu_data)
 	write_cr4(read_cr4() & ~X86_CR4_VMXE);
 }
 
-void vcpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	/* We enter Linux at the point arch_entry would return to as well.
 	 * rax is cleared to signal success to the caller. */

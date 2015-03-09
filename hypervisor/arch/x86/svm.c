@@ -421,7 +421,7 @@ void vcpu_exit(struct per_cpu *cpu_data)
 	write_msr(MSR_VM_HSAVE_PA, 0);
 }
 
-void vcpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	unsigned long vmcb_pa, host_stack;
 

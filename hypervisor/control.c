@@ -826,7 +826,7 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
  *
  * @see panic_park
  */
-void panic_stop(void)
+void __attribute__((noreturn)) panic_stop(void)
 {
 	panic_printk("Stopping CPU %d (Cell: \"%s\")\n", this_cpu_id(),
 		     this_cell()->config->name);
