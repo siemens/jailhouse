@@ -32,6 +32,7 @@
 
 #include "cell.h"
 #include "jailhouse.h"
+#include "main.h"
 #include "pci.h"
 
 #include <jailhouse/header.h>
@@ -104,9 +105,10 @@ MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
 #endif
 MODULE_VERSION(JAILHOUSE_VERSION);
 
+DEFINE_MUTEX(jailhouse_lock);
+bool jailhouse_enabled;
+
 static struct device *jailhouse_dev;
-static DEFINE_MUTEX(lock);
-static bool enabled;
 static void *hypervisor_mem;
 static unsigned long hv_core_and_percpu_size;
 static cpumask_t offlined_cpus;
@@ -491,11 +493,11 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 	if (max_cpus > UINT_MAX)
 		return -EINVAL;
 
-	if (mutex_lock_interruptible(&lock) != 0)
+	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
 		return -EINTR;
 
 	err = -EBUSY;
-	if (enabled || !try_module_get(THIS_MODULE))
+	if (jailhouse_enabled || !try_module_get(THIS_MODULE))
 		goto error_unlock;
 
 	err = request_firmware(&hypervisor, fw_name, jailhouse_dev);
@@ -587,11 +589,11 @@ static int jailhouse_enable(struct jailhouse_system __user *arg)
 
 	release_firmware(hypervisor);
 
-	enabled = true;
+	jailhouse_enabled = true;
 	root_cell->id = 0;
 	register_cell(root_cell);
 
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 
 	pr_info("The Jailhouse is opening.\n");
 
@@ -612,7 +614,7 @@ error_put_module:
 	module_put(THIS_MODULE);
 
 error_unlock:
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 	return err;
 }
 
@@ -648,10 +650,10 @@ static int jailhouse_disable(void)
 	unsigned int cpu;
 	int err;
 
-	if (mutex_lock_interruptible(&lock) != 0)
+	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
 		return -EINTR;
 
-	if (!enabled) {
+	if (!jailhouse_enabled) {
 		err = -EINVAL;
 		goto unlock_out;
 	}
@@ -685,13 +687,13 @@ static int jailhouse_disable(void)
 
 	list_for_each_entry_safe(cell, tmp, &cells, entry)
 		delete_cell(cell);
-	enabled = false;
+	jailhouse_enabled = false;
 	module_put(THIS_MODULE);
 
 	pr_info("The Jailhouse was closed.\n");
 
 unlock_out:
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 
 	return err;
 }
@@ -720,12 +722,12 @@ static int jailhouse_cell_create(struct jailhouse_cell_create __user *arg)
 	}
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
-	if (mutex_lock_interruptible(&lock) != 0) {
+	if (mutex_lock_interruptible(&jailhouse_lock) != 0) {
 		err = -EINTR;
 		goto kfree_config_out;
 	}
 
-	if (!enabled) {
+	if (!jailhouse_enabled) {
 		err = -EINVAL;
 		goto unlock_out;
 	}
@@ -770,7 +772,7 @@ static int jailhouse_cell_create(struct jailhouse_cell_create __user *arg)
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
 
 unlock_out:
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 
 kfree_config_out:
 	kfree(config);
@@ -794,17 +796,17 @@ static int cell_management_prologue(struct jailhouse_cell_id *cell_id,
 {
 	cell_id->name[JAILHOUSE_CELL_ID_NAMELEN] = 0;
 
-	if (mutex_lock_interruptible(&lock) != 0)
+	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
 		return -EINTR;
 
-	if (!enabled) {
-		mutex_unlock(&lock);
+	if (!jailhouse_enabled) {
+		mutex_unlock(&jailhouse_lock);
 		return -EINVAL;
 	}
 
 	*cell_ptr = find_cell(cell_id);
 	if (*cell_ptr == NULL) {
-		mutex_unlock(&lock);
+		mutex_unlock(&jailhouse_lock);
 		return -ENOENT;
 	}
 	return 0;
@@ -885,7 +887,7 @@ static int jailhouse_cell_load(struct jailhouse_cell_load __user *arg)
 	}
 
 unlock_out:
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 
 	return err;
 }
@@ -905,7 +907,7 @@ static int jailhouse_cell_start(const char __user *arg)
 
 	err = jailhouse_call_arg1(JAILHOUSE_HC_CELL_START, cell->id);
 
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 
 	return err;
 }
@@ -944,7 +946,7 @@ static int jailhouse_cell_destroy(const char __user *arg)
 	delete_cell(cell);
 
 unlock_out:
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 
 	return err;
 }
@@ -1016,7 +1018,7 @@ static struct notifier_block jailhouse_shutdown_nb = {
 static ssize_t enabled_show(struct device *dev, struct device_attribute *attr,
 			    char *buffer)
 {
-	return sprintf(buffer, "%d\n", enabled);
+	return sprintf(buffer, "%d\n", jailhouse_enabled);
 }
 
 static ssize_t info_show(struct device *dev, char *buffer, unsigned int type)
@@ -1024,10 +1026,10 @@ static ssize_t info_show(struct device *dev, char *buffer, unsigned int type)
 	ssize_t result;
 	long val = 0;
 
-	if (mutex_lock_interruptible(&lock) != 0)
+	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
 		return -EINTR;
 
-	if (enabled)
+	if (jailhouse_enabled)
 		val = jailhouse_call_arg1(JAILHOUSE_HC_HYPERVISOR_GET_INFO,
 					  type);
 	if (val >= 0)
@@ -1035,7 +1037,7 @@ static ssize_t info_show(struct device *dev, char *buffer, unsigned int type)
 	else
 		result = val;
 
-	mutex_unlock(&lock);
+	mutex_unlock(&jailhouse_lock);
 	return result;
 }
 
