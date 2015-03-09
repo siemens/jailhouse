@@ -36,8 +36,8 @@ cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
 }
 
 int switch_exception_level(struct per_cpu *cpu_data);
-inline int arch_map_device(void *paddr, void *vaddr, unsigned long size);
-inline int arch_unmap_device(void *addr, unsigned long size);
+int arch_map_device(void *paddr, void *vaddr, unsigned long size);
+int arch_unmap_device(void *addr, unsigned long size);
 
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_SETUP_H */
