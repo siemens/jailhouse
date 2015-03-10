@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#define JAILHOUSE_BASE		0xfffffffff0000000
+#define JAILHOUSE_BASE		__MAKE_UL(0xfffffffff0000000)
 
 /*
  * As this is never called on a CPU without VM extensions,
@@ -39,7 +39,13 @@
 #define JAILHOUSE_CPU_STAT_VMEXITS_XSETBV	JAILHOUSE_GENERIC_CPU_STATS + 5
 #define JAILHOUSE_NUM_CPU_STATS			JAILHOUSE_GENERIC_CPU_STATS + 6
 
-#ifndef __ASSEMBLY__
+#ifdef __ASSEMBLY__
+
+#define __MAKE_UL(x)	x
+
+#else /* !__ASSEMBLY__ */
+
+#define __MAKE_UL(x)	x ## UL
 
 /**
  * @defgroup Hypercalls

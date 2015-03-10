@@ -41,7 +41,7 @@
 
 #define MTRR_DEFTYPE		0x2ff
 
-#define PAT_RESET_VALUE		0x0007040600070406
+#define PAT_RESET_VALUE		0x0007040600070406UL
 
 static bool has_avic, has_assists, has_flush_by_asid;
 

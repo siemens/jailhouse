@@ -58,7 +58,7 @@ static u64 get_bar_sz(u16 bdf, u8 barn)
 	u64 barsz;
 
 	bar = pci_cfg_read64(bdf, PCI_CFG_BAR + (8 * barn));
-	pci_cfg_write64(bdf, PCI_CFG_BAR + (8 * barn), 0xffffffffffffffff);
+	pci_cfg_write64(bdf, PCI_CFG_BAR + (8 * barn), 0xffffffffffffffffULL);
 	tmp = pci_cfg_read64(bdf, PCI_CFG_BAR + (8 * barn));
 	barsz = ~(tmp & ~(0xf)) + 1;
 	pci_cfg_write64(bdf, PCI_CFG_BAR + (8 * barn), bar);

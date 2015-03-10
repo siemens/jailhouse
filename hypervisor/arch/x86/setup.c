@@ -30,9 +30,9 @@
 
 static u64 gdt[] = {
 	[GDT_DESC_NULL]   = 0,
-	[GDT_DESC_CODE]   = 0x00af9b000000ffff,
-	[GDT_DESC_TSS]    = 0x0000890000000000,
-	[GDT_DESC_TSS_HI] = 0x0000000000000000,
+	[GDT_DESC_CODE]   = 0x00af9b000000ffffUL,
+	[GDT_DESC_TSS]    = 0x0000890000000000UL,
+	[GDT_DESC_TSS_HI] = 0x0000000000000000UL,
 };
 
 extern u8 exception_entries[];
