@@ -39,6 +39,10 @@ struct cell *jailhouse_cell_create(const struct jailhouse_cell_desc *cell_desc)
 	struct cell *cell;
 	int err;
 
+	if (cell_desc->num_memory_regions >=
+	    ULONG_MAX / sizeof(struct jailhouse_memory))
+		return ERR_PTR(-EINVAL);
+
 	cell = kzalloc(sizeof(*cell), GFP_KERNEL);
 	if (!cell)
 		return ERR_PTR(-ENOMEM);

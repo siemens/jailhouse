@@ -66,6 +66,10 @@ int jailhouse_pci_cell_setup(struct cell *cell,
 		/* cell is zero-initialized, no need to set pci fields */
 		return 0;
 
+	if (cell_desc->num_pci_devices >=
+	    ULONG_MAX / sizeof(struct jailhouse_pci_device))
+		return -EINVAL;
+
 	cell->num_pci_devices = cell_desc->num_pci_devices;
 	cell->pci_devices = vmalloc(sizeof(struct jailhouse_pci_device) *
 				    cell->num_pci_devices);
