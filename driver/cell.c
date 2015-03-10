@@ -149,6 +149,7 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	struct jailhouse_cell_create cell_params;
 	struct jailhouse_cell_desc *config;
 	struct jailhouse_cell_id cell_id;
+	void __user *user_config;
 	struct cell *cell;
 	unsigned int cpu;
 	int id, err = 0;
@@ -160,9 +161,8 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	if (!config)
 		return -ENOMEM;
 
-	if (copy_from_user(config,
-			   (void *)(unsigned long)cell_params.config_address,
-			   cell_params.config_size)) {
+	user_config = (void __user *)(unsigned long)cell_params.config_address;
+	if (copy_from_user(config, user_config, cell_params.config_size)) {
 		err = -EFAULT;
 		goto kfree_config_out;
 	}
@@ -298,7 +298,7 @@ static int load_image(struct cell *cell,
 	}
 
 	if (copy_from_user(image_mem,
-			   (void *)(unsigned long)image.source_address,
+			   (void __user *)(unsigned long)image.source_address,
 			   image.size))
 		err = -EFAULT;
 

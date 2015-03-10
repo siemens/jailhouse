@@ -92,7 +92,9 @@ static long get_max_cpus(u32 cpu_set_size,
 			 const struct jailhouse_system __user *system_config)
 {
 	u8 __user *cpu_set =
-		(u8 __user *)jailhouse_cell_cpu_set(&system_config->root_cell);
+		(u8 __user *)jailhouse_cell_cpu_set(
+				(const struct jailhouse_cell_desc * __force)
+				&system_config->root_cell);
 	unsigned int pos = cpu_set_size;
 	long max_cpu_id;
 	u8 bitmap;
@@ -256,7 +258,9 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 			       (unsigned long)config->debug_uart.phys_start);
 			goto error_unmap;
 		}
-		header->debug_uart_base = (void *)uart;
+		/* The hypervisor has no notion of address spaces, so we need
+		 * to enforce conversion. */
+		header->debug_uart_base = (void * __force)uart;
 	}
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
@@ -326,7 +330,7 @@ static void leave_hypervisor(void *info)
 	 * not support taking any faults while switching worlds. */
 	for (page = hypervisor_mem, size = hv_core_and_percpu_size; size > 0;
 	     size -= PAGE_SIZE, page += PAGE_SIZE)
-		readl(page);
+		readl((void __iomem *)page);
 
 	/* either returns 0 or the same error code across all CPUs */
 	err = jailhouse_call(JAILHOUSE_HC_DISABLE);
