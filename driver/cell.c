@@ -161,7 +161,7 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
 		return -EFAULT;
 
-	config = kmalloc(cell_params.config_size, GFP_KERNEL | GFP_DMA);
+	config = kmalloc(cell_params.config_size, GFP_USER | __GFP_NOWARN);
 	if (!config)
 		return -ENOMEM;
 
