@@ -118,6 +118,8 @@ ARM architecture:
 
     - Banana Pi (see also [below](#setup-on-banana-pi-arm-board))
 
+    - NVIDIA Jetson TK1
+
     - ARM Versatile Express with Cortex-A15 or A7 cores
       (includes ARM Fast Model)
 
