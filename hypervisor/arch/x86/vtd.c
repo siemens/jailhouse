@@ -69,7 +69,7 @@ static unsigned int dmar_pt_levels;
 static unsigned int dmar_num_did = ~0U;
 static unsigned int fault_reporting_cpu_id;
 static DEFINE_SPINLOCK(inv_queue_lock);
-static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_DMAR_UNITS];
+static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_IOMMU_UNITS];
 static bool dmar_units_initialized;
 
 static unsigned int inv_queue_write(void *inv_queue, unsigned int index,
@@ -355,7 +355,7 @@ int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value)
 		return 0;
 
 	for (n = 0; n < dmar_units; n++) {
-		base_addr = system_config->platform_info.x86.dmar_unit_base[n];
+		base_addr = system_config->platform_info.x86.iommu_base[n];
 		if (addr >= base_addr && addr < base_addr + PAGE_SIZE)
 			return vtd_unit_access_handler(n, is_write,
 						       addr - base_addr,
@@ -465,7 +465,7 @@ int iommu_init(void)
 
 	int_remap_table_size_log2 = n;
 
-	while (system_config->platform_info.x86.dmar_unit_base[units])
+	while (system_config->platform_info.x86.iommu_base[units])
 		units++;
 	if (units == 0)
 		return -EINVAL;
@@ -476,7 +476,7 @@ int iommu_init(void)
 		return -ENOMEM;
 
 	for (n = 0; n < units; n++) {
-		base_addr = system_config->platform_info.x86.dmar_unit_base[n];
+		base_addr = system_config->platform_info.x86.iommu_base[n];
 
 		reg_base = dmar_reg_base + n * PAGE_SIZE;
 

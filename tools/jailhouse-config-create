@@ -636,7 +636,7 @@ def parse_dmar(pcidevices, ioapics):
                 raise RuntimeError('We do not support multiple PCI segments')
             if len(units) >= 8:
                 raise RuntimeError('Too many DMAR units. '
-                                   'Raise JAILHOUSE_MAX_DMAR_UNITS.')
+                                   'Raise JAILHOUSE_MAX_IOMMU_UNITS.')
             units.append(base)
             if flags & 1:
                 for d in pcidevices:
@@ -798,9 +798,9 @@ mmconfig = MMConfig.parse()
 ioapics = parse_madt()
 
 if get_cpu_vendor() == 'GenuineIntel':
-    (dmar_units, rmrr_regs) = parse_dmar(pcidevices, ioapics)
+    (iommu_units, rmrr_regs) = parse_dmar(pcidevices, ioapics)
 else:
-    (dmar_units, rmrr_regs) = [], []
+    (iommu_units, rmrr_regs) = [], []
 regions += rmrr_regs
 
 for d in pcidevices:
@@ -843,6 +843,6 @@ f.write(tmpl.render(regions=regions,
                     irqchips=ioapics,
                     pm_timer_base=pm_timer_base,
                     mmconfig=mmconfig,
-                    dmar_units=dmar_units))
+                    iommu_units=iommu_units))
 
 f.close()

@@ -89,7 +89,7 @@ struct jailhouse_pci_capability {
 	__u16 flags;
 } __attribute__((packed));
 
-#define JAILHOUSE_MAX_DMAR_UNITS	8
+#define JAILHOUSE_MAX_IOMMU_UNITS	8
 
 struct jailhouse_system {
 	struct jailhouse_memory hypervisor_memory;
@@ -100,7 +100,7 @@ struct jailhouse_system {
 			__u8 mmconfig_end_bus;
 			__u8 padding[5];
 			__u16 pm_timer_address;
-			__u64 dmar_unit_base[JAILHOUSE_MAX_DMAR_UNITS];
+			__u64 iommu_base[JAILHOUSE_MAX_IOMMU_UNITS];
 		} __attribute__((packed)) x86;
 	} __attribute__((packed)) platform_info;
 	__u32 device_limit;

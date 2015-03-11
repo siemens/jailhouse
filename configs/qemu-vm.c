@@ -47,7 +47,7 @@ struct {
 			.mmconfig_base = 0xb0000000,
 			.mmconfig_end_bus = 0xff,
 			.pm_timer_address = 0x608,
-			.dmar_unit_base = {
+			.iommu_base = {
 				0xfed90000,
 			},
 		},
