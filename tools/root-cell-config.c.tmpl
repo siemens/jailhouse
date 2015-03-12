@@ -110,7 +110,9 @@ struct {
 		/* ${str(d)} */
 		{
 			.type = ${d.type},
+			% if d.iommu is not None:
 			.iommu = ${d.iommu},
+			% endif
 			.domain = ${hex(d.domain)},
 			.bdf = ${hex(d.bdf())},
 			.caps_start = ${d.caps_start},

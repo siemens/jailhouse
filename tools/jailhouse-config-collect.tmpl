@@ -37,6 +37,7 @@ fi
 filelist="${filelist}"
 filelist_opt="${filelist_opt}"
 filelist_intel="${filelist_intel}"
+filelist_amd="${filelist_amd}"
 
 tmpdir=/tmp/jailhouse-config-collect.$$
 
@@ -58,6 +59,10 @@ for f in $filelist; do
 done
 grep GenuineIntel /proc/cpuinfo > /dev/null &&
 	for f in $filelist_intel; do
+		copy_file $f
+	done
+grep AuthenticAMD /proc/cpuino > /dev/null &&
+	for f in $filelist_amd; do
 		copy_file $f
 	done
 for f in $filelist_opt; do

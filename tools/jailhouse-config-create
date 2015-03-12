@@ -69,7 +69,12 @@ parser.add_argument('file', metavar='FILE',
 
 options = parser.parse_args()
 
-inputs = {'files': set(), 'files_opt': set(), 'files_intel': set()}
+inputs = {
+    'files': set(),
+    'files_opt': set(),
+    'files_intel': set(),
+    'files_amd': set()
+}
 
 # required files
 inputs['files'].add('/proc/iomem')
@@ -86,6 +91,7 @@ inputs['files_opt'].add('/sys/class/dmi/id/sys_vendor')
 inputs['files_opt'].add('/sys/devices/jailhouse/enabled')
 # platform specific files
 inputs['files_intel'].add('/sys/firmware/acpi/tables/DMAR')
+inputs['files_amd'].add('/sys/firmware/acpi/tables/IVRS')
 
 
 def kmg_multiply(value, kmg):
@@ -112,6 +118,8 @@ def check_input_listed(name, optional=False):
         global cpuvendor
         if cpuvendor == 'GenuineIntel':
             set = set.union(inputs['files_intel'])
+        elif cpuvendor == 'AuthenticAMD':
+            set = set.union(inputs['files_amd'])
 
     for file in set:
         if fnmatch.fnmatch(name, file):
@@ -306,7 +314,8 @@ class MemRegion:
             self.typestr == 'System RAM' or
             self.typestr == 'Kernel' or
             self.typestr == 'RAM buffer' or
-            self.typestr == 'ACPI DMAR RMRR'
+            self.typestr == 'ACPI DMAR RMRR' or
+            self.typestr == 'ACPI IVRS'
         ):
             s = 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |\n'
             s += p + '\t\tJAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA'
@@ -702,7 +711,168 @@ def parse_dmar(pcidevices, ioapics):
         f.seek(struct_len - offset, os.SEEK_CUR)
 
     f.close()
+
+    for d in pcidevices:
+        if d.iommu is None:
+            raise RuntimeError(
+                'PCI device %02x:%02x.%x outside the scope of an '
+                'IOMMU' % (d.bus, d.dev, d.fn))
+
     return units, regions
+
+
+def parse_ivrs(pcidevices, ioapics):
+    def format_bdf(bdf):
+        bus, dev, fun = (bdf >> 8) & 0xff, (bdf >> 3) & 0x1f, bdf & 0x7
+        return '%02x:%02x.%x' % (bus, dev, fun)
+
+    f = input_open('/sys/firmware/acpi/tables/IVRS', 'rb')
+    signature = f.read(4)
+    if signature != b'IVRS':
+        raise RuntimeError('IVRS: incorrect input file format %s' % signature)
+
+    (length, revision) = struct.unpack('<IB', f.read(5))
+    if revision > 2:
+        raise RuntimeError('IVRS: unsupported Revision %02x' % revision)
+
+    f.seek(48, os.SEEK_SET)
+    length -= 48
+
+    units = []
+    regions = []
+    # BDF of devices that are permitted outside IOMMU: root complex
+    iommu_skiplist = set([0x0])
+    while length > 0:
+        (block_type, block_length) = struct.unpack('<BxH', f.read(4))
+        if block_type in [0x10, 0x11]:
+            # IVHD block
+            (iommu_id, base_addr, pci_seg) = \
+                struct.unpack('<HxxQH', f.read(14))
+            length -= block_length
+            block_length -= 18
+
+            # IOMMU EFR image and reserved area
+            skip_bytes = 6 if block_type == 0x10 else 22
+            f.seek(skip_bytes, os.SEEK_CUR)
+            block_length -= skip_bytes
+
+            if pci_seg != 0:
+                raise RuntimeError('We do not support multiple PCI segments')
+
+            if len(units) > 8:
+                raise RuntimeError('Too many IOMMU units. '
+                                   'Raise JAILHOUSE_MAX_IOMMU_UNITS.')
+
+            # We shouldn't map IOMMU to the cells
+            for i, d in enumerate(pcidevices):
+                if d.bdf() == iommu_id:
+                    del pcidevices[i]
+
+            units.append(base_addr)
+
+            bdf_start_range = None
+            while block_length > 0:
+                (entry_type, device_id, dte_setting) = struct.unpack(
+                    '<BHB', f.read(4))
+                block_length -= 4
+
+                if entry_type == 0x01:
+                    # All
+                    for d in pcidevices:
+                        d.iommu = len(units) - 1
+                elif entry_type == 0x02:
+                    # Select
+                    for d in pcidevices:
+                        if d.bdf() == device_id:
+                            d.iommu = len(units) - 1
+                elif entry_type == 0x03:
+                    # Start of range
+                    bdf_start_range = device_id
+                elif entry_type == 0x04:
+                    # End of range
+                    if bdf_start_range is None:
+                        continue
+                    for d in pcidevices:
+                        if d.bdf() >= bdf_start_range and d.bdf() <= device_id:
+                            d.iommu = len(units) - 1
+                    bdf_start_range = None
+                elif entry_type == 0x42:
+                    # Alias select
+                    (device_id_b,) = struct.unpack('<xHx', f.read(4))
+                    block_length -= 4
+                    for d in pcidevices:
+                        if d.bdf() == device_id_b:
+                            d.iommu = len(units) - 1
+                elif entry_type == 0x43:
+                    # Alias start of range
+                    (device_id_b,) = struct.unpack('<xHx', f.read(4))
+                    block_length -= 4
+                    bdf_start_range = device_id_b
+                elif entry_type == 0x48:
+                    # Special device
+                    (handle, device_id_b, variety) = struct.unpack(
+                        '<BHB', f.read(4))
+                    block_length -= 4
+                    if variety == 0x01:  # IOAPIC
+                        for chip in ioapics:
+                            if chip.id == handle:
+                                chip.bdf = device_id
+                                chip.iommu = len(units) - 1
+                else:
+                    # Reserved or ignored entries
+                    if entry_type >= 0x40:
+                        f.seek(4, os.SEEK_CUR)
+                        block_length -= 4
+
+        elif type in [0x20, 0x21, 0x22]:
+            # IVMD block
+            (block_type, block_flags, block_length,
+             device_id, aux_data, mem_addr, mem_len) = struct.unpack(
+                 '<BBHHHxxxxxxxxQQ')
+            length -= block_length
+
+            if int(block_flags):
+                bdf_str = format_bdf(device_id)
+                print(
+                    'WARNING: Jailhouse doesn\'t support configurable '
+                    '(eg. read-only) device memory. Device %s may not '
+                    'work properly, especially in non-root cell.' % bdf_str)
+
+            if block_type == 0x20:
+                # All devices
+                comment = None
+            elif block_type == 0x21:
+                # Selected device
+                comment = 'PCI Device: %s' % format_bdf(device_id)
+            elif block_type == 0x22:
+                # Device range
+                comment = 'PCI Device: %s - %s' % (
+                    format_bdf(device_id), format_bdf(aux_data))
+
+            if comment:
+                print('WARNING: Jailhouse doesn\'t support per-device memory '
+                      'regions. The memory at 0x%x will be mapped accessible '
+                      'to all devices.' % mem_addr)
+
+            regions.append(MemRegion(mem_addr, mem_len, 'ACPI IVRS', comment))
+        elif type == 0x40:
+            raise RuntimeError(
+                'You board uses IVRS Rev. 2 feature Jailhouse doesn\'t '
+                'support yet. Please report this to '
+                'jailhouse-dev@googlegroups.com.')
+        else:
+            print(
+                'WARNING: Skipping unknown IVRS '
+                'block type 0x%02x' % block_type)
+
+        for d in pcidevices:
+            if d.bdf() not in iommu_skiplist and d.iommu is None:
+                raise RuntimeError(
+                    'PCI device %02x:%02x.%x outside the scope of an '
+                    'IOMMU' % (d.bus, d.dev, d.fn))
+
+        f.close()
+        return units, regions
 
 
 def parse_ioports():
@@ -759,11 +929,12 @@ if options.generate_collector:
     filelist = ' '.join(inputs['files'])
     filelist_opt = ' '.join(inputs['files_opt'])
     filelist_intel = ' '.join(inputs['files_intel'])
+    filelist_amd = ' '.join(inputs['files_amd'])
 
     tmpl = Template(filename=os.path.join(options.template_dir,
                                           'jailhouse-config-collect.tmpl'))
     f.write(tmpl.render(filelist=filelist, filelist_opt=filelist_opt,
-            filelist_intel=filelist_intel))
+            filelist_intel=filelist_intel, filelist_amd=filelist_amd))
     f.close()
     sys.exit(0)
 
@@ -797,18 +968,12 @@ mmconfig = MMConfig.parse()
 
 ioapics = parse_madt()
 
-if get_cpu_vendor() == 'GenuineIntel':
-    (iommu_units, rmrr_regs) = parse_dmar(pcidevices, ioapics)
+vendor = get_cpu_vendor()
+if vendor == 'GenuineIntel':
+    (iommu_units, extra_memregs) = parse_dmar(pcidevices, ioapics)
 else:
-    (iommu_units, rmrr_regs) = [], []
-regions += rmrr_regs
-
-for d in pcidevices:
-    if get_cpu_vendor() == 'AuthenticAMD':
-        d.iommu = 0  # temporary workaround
-    if d.iommu is None:
-        raise RuntimeError('PCI device %02x:%02x.%x outside the scope of an '
-                           'IOMMU' % (d.bus, d.dev, d.fn))
+    (iommu_units, extra_memregs) = parse_ivrs(pcidevices, ioapics)
+regions += extra_memregs
 
 # kernel does not have memmap region, pick one
 if ourmem is None:
@@ -832,17 +997,21 @@ pm_timer_base = parse_ioports()
 f = open(options.file, 'w')
 tmpl = Template(filename=os.path.join(options.template_dir,
                                       'root-cell-config.c.tmpl'))
-f.write(tmpl.render(regions=regions,
-                    ourmem=ourmem,
-                    argstr=' '.join(sys.argv),
-                    hvmem=hvmem,
-                    product=product,
-                    pcidevices=pcidevices,
-                    pcicaps=pcicaps,
-                    cpucount=cpucount,
-                    irqchips=ioapics,
-                    pm_timer_base=pm_timer_base,
-                    mmconfig=mmconfig,
-                    iommu_units=iommu_units))
+kwargs = {
+    'regions': regions,
+    'ourmem': ourmem,
+    'argstr': ' '.join(sys.argv),
+    'hvmem': hvmem,
+    'product': product,
+    'pcidevices': pcidevices,
+    'pcicaps': pcicaps,
+    'cpucount': cpucount,
+    'irqchips': ioapics,
+    'pm_timer_base': pm_timer_base,
+    'mmconfig': mmconfig,
+    'iommu_units': iommu_units
+}
+
+f.write(tmpl.render(**kwargs))
 
 f.close()
