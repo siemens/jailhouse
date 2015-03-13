@@ -48,6 +48,10 @@ struct {
 				{
 					.base = 0xfeb80000,
 					.size = 0x80000,
+					.amd_bdf = 0x02,
+					.amd_base_cap = 0x40,
+					.amd_msi_cap = 0x54,
+					.amd_features = 0x80048824,
 				},
 			},
 		},

@@ -562,6 +562,15 @@ class IOMMUConfig(object):
     def __init__(self, props):
         self.base_addr = props['base_addr']
         self.mmio_size = props['mmio_size']
+        if 'amd_bdf' in props:
+            self.amd_bdf = props['amd_bdf']
+            self.amd_base_cap = props['amd_base_cap']
+            self.amd_msi_cap = props['amd_msi_cap']
+            self.amd_features = props['amd_features']
+
+    @property
+    def is_amd_iommu(self):
+        return hasattr(self, 'amd_bdf')
 
 
 def parse_iomem(pcidevices):
@@ -877,10 +886,20 @@ def parse_ivrs(pcidevices, ioapics):
                 raise RuntimeError('Too many IOMMU units. '
                                    'Raise JAILHOUSE_MAX_IOMMU_UNITS.')
 
+            msi_cap_ofs = None
+
             for i, d in enumerate(pcidevices):
                 if d.bdf() == iommu_bdf:
+                    # Extract MSI capability offset
+                    for c in d.caps:
+                        if c.id == 0x05:
+                            msi_cap_ofs = c.start
                     # We must not map IOMMU to the cells
                     del pcidevices[i]
+
+            if msi_cap_ofs is None:
+                raise RuntimeError('AMD IOMMU lacks MSI support, and '
+                                   'Jailhouse doesn\'t support MSI-X yet.')
 
             if (iommu_feat & (0xF << 13)) and (iommu_feat & (0x3F << 17)):
                 # Performance Counters are supported, allocate 512K
@@ -892,6 +911,13 @@ def parse_ivrs(pcidevices, ioapics):
             units.append(IOMMUConfig({
                 'base_addr': base_addr,
                 'mmio_size': mmio_size,
+                'amd_bdf': iommu_bdf,
+                'amd_base_cap': base_cap_ofs,
+                'amd_msi_cap': msi_cap_ofs,
+                # IVHD block type 0x11 has exact EFR copy but type 0x10 may
+                # overwrite what hardware reports. Set reserved bit 0 in that
+                # case to indicate that the value is in use.
+                'amd_features': (iommu_feat | 0x1) if block_type == 0x10 else 0
             }))
 
             bdf_start_range = None
