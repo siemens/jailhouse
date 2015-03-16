@@ -63,6 +63,7 @@ struct per_cpu {
 	struct desc_table_reg linux_idtr;
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 	unsigned long linux_ip;
+	unsigned long linux_cr0;
 	unsigned long linux_cr3;
 	struct segment linux_cs;
 	struct segment linux_ds;

@@ -186,6 +186,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	gdt[GDT_DESC_TSS] &= ~DESC_TSS_BUSY;
 	asm volatile("ltr %%ax" : : "a" (GDT_DESC_TSS * 8));
 
+	cpu_data->linux_cr0 = read_cr0();
+
 	/* swap CR3 */
 	cpu_data->linux_cr3 = read_cr3();
 	write_cr3(paging_hvirt2phys(hv_paging_structs.root_table));
@@ -251,6 +253,7 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 	vcpu_exit(cpu_data);
 
 	write_msr(MSR_EFER, cpu_data->linux_efer);
+	write_cr0(cpu_data->linux_cr0);
 	write_cr3(cpu_data->linux_cr3);
 
 	asm volatile("lgdtq %0" : : "m" (cpu_data->linux_gdtr));

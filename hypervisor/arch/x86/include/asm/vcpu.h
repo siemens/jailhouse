@@ -21,6 +21,10 @@
 #include <asm/percpu.h>
 #include <asm/processor.h>
 
+#define X86_CR0_HOST_STATE \
+	(X86_CR0_PG | X86_CR0_WP | X86_CR0_NE | X86_CR0_ET | X86_CR0_TS | \
+	 X86_CR0_MP | X86_CR0_PE)
+
 struct vcpu_io_bitmap {
 	u8 *data;
 	u32 size;
