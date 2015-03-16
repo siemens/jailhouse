@@ -470,9 +470,6 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	unsigned long *stack = (unsigned long *)vmcb->rsp;
 	unsigned long linux_ip = vmcb->rip;
 
-	/* We are leaving - set the GIF */
-	asm volatile ("stgi" : : : "memory");
-
 	/*
 	 * Restore the MSRs.
 	 *
