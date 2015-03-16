@@ -86,7 +86,7 @@ int vcpu_cell_init(struct cell *cell)
 		pio_bitmap_size -= size;
 	}
 
-	/* moderation access to i8042 command register */
+	/* moderate access to i8042 command register */
 	cell_iobm.data[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
 
 	if (cell != &root_cell) {
