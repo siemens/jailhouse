@@ -49,6 +49,8 @@ static const struct segment invalid_seg;
 
 static struct paging npt_paging[NPT_PAGE_DIR_LEVELS];
 
+/* bit cleared: direct access allowed */
+// TODO: convert to whitelist
 static u8 __attribute__((aligned(PAGE_SIZE))) msrpm[][0x2000/4] = {
 	[ SVM_MSRPM_0000 ] = {
 		[      0/4 ...  0x017/4 ] = 0,

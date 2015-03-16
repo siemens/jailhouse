@@ -33,6 +33,7 @@ static const struct segment invalid_seg = {
 };
 
 /* bit cleared: direct access allowed */
+// TODO: convert to whitelist
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BMP_0000_READ ] = {
 		[      0/8 ...  0x7ff/8 ] = 0,

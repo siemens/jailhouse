@@ -6,6 +6,7 @@ x86 support
     - block
     - allow per cell (managing inter-core/inter-cell impacts)
   - NMI control/status port - moderation or emulation required?
+  - whitelist-based MSR access
 
 ARM support
   - v7 (32-bit) [WIP]
