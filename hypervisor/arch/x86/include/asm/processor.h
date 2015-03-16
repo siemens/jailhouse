@@ -29,12 +29,17 @@
 
 #define X86_RFLAGS_VM					(1 << 17)
 
-#define X86_CR0_PE					0x00000001
-#define X86_CR0_ET					0x00000010
-#define X86_CR0_WP					0x00010000
-#define X86_CR0_NW					0x20000000
-#define X86_CR0_CD					0x40000000
-#define X86_CR0_PG					0x80000000
+#define X86_CR0_PE					(1UL << 0)
+#define X86_CR0_MP					(1UL << 1)
+#define X86_CR0_TS					(1UL << 3)
+#define X86_CR0_ET					(1UL << 4)
+#define X86_CR0_NE					(1UL << 5)
+#define X86_CR0_WP					(1UL << 16)
+#define X86_CR0_NW					(1UL << 29)
+#define X86_CR0_CD					(1UL << 30)
+#define X86_CR0_PG					(1UL << 31)
+#define X86_CR0_RESERVED				\
+	(BIT_MASK(28, 19) |  (1UL << 17) | BIT_MASK(15, 6))
 
 #define X86_CR4_PAE					0x00000020
 #define X86_CR4_PGE					0x00000080
