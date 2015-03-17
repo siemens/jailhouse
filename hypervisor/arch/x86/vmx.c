@@ -28,6 +28,9 @@
 #include <asm/vmx.h>
 #include <asm/vtd.h>
 
+#define CR0_IDX		0
+#define CR4_IDX		1
+
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
 };
@@ -68,6 +71,7 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 static u8 __attribute__((aligned(PAGE_SIZE))) apic_access_page[PAGE_SIZE];
 static struct paging ept_paging[EPT_PAGE_DIR_LEVELS];
 static u32 enable_rdtscp;
+static unsigned long cr_maybe1[2], cr_required1[2];
 
 static bool vmxon(struct per_cpu *cpu_data)
 {
@@ -157,10 +161,24 @@ static bool vmcs_write32(unsigned long field, u32 value)
 	return vmcs_write64(field, value);
 }
 
+static bool vmx_define_cr_restrictions(unsigned int cr_idx,
+				       unsigned long maybe1,
+				       unsigned long required1)
+{
+	if (!cr_maybe1[cr_idx]) {
+		cr_maybe1[cr_idx] = maybe1;
+		cr_required1[cr_idx] = required1;
+		return true;
+	}
+
+	return cr_maybe1[cr_idx] == maybe1 &&
+		cr_required1[cr_idx] == required1;
+}
+
 static int vmx_check_features(void)
 {
 	unsigned long vmx_proc_ctrl, vmx_proc_ctrl2, ept_cap;
-	unsigned long vmx_pin_ctrl, vmx_basic;
+	unsigned long vmx_pin_ctrl, vmx_basic, maybe1, required1;
 
 	if (!(cpuid_ecx(1) & X86_FEATURE_VMX))
 		return -ENODEV;
@@ -213,6 +231,29 @@ static int vmx_check_features(void)
 
 	/* require activity state HLT */
 	if (!(read_msr(MSR_IA32_VMX_MISC) & VMX_MISC_ACTIVITY_HLT))
+		return -EIO;
+
+	/*
+	 * Retrieve/validate restrictions on CR0
+	 *
+	 * In addition to what the VMX MSRs tell us, make sure that
+	 * - NW and CD are kept off as they are not updated on VM exit and we
+	 *   don't want them enabled for performance reasons while in root mode
+	 * - PE and PG can be freely chosen (by the guest) because we demand
+	 *   unrestricted guest mode support anyway
+	 * - ET is always on (architectural requirement)
+	 */
+	maybe1 = read_msr(MSR_IA32_VMX_CR0_FIXED1) &
+		~(X86_CR0_NW | X86_CR0_CD);
+	required1 = (read_msr(MSR_IA32_VMX_CR0_FIXED0) &
+		~(X86_CR0_PE | X86_CR0_PG)) | X86_CR0_ET;
+	if (!vmx_define_cr_restrictions(CR0_IDX, maybe1, required1))
+		return -EIO;
+
+	/* Retrieve/validate restrictions on CR4 */
+	maybe1 = read_msr(MSR_IA32_VMX_CR4_FIXED1);
+	required1 = read_msr(MSR_IA32_VMX_CR4_FIXED0);
+	if (!vmx_define_cr_restrictions(CR4_IDX, maybe1, required1))
 		return -EIO;
 
 	return 0;
@@ -346,29 +387,18 @@ void vcpu_tlb_flush(void)
 	}
 }
 
-static bool vmx_set_guest_cr(int cr, unsigned long val)
+static bool vmx_set_guest_cr(unsigned int cr_idx, unsigned long val)
 {
-	unsigned long fixed0, fixed1, required1;
 	bool ok = true;
 
-	fixed0 = read_msr(cr ? MSR_IA32_VMX_CR4_FIXED0
-			     : MSR_IA32_VMX_CR0_FIXED0);
-	fixed1 = read_msr(cr ? MSR_IA32_VMX_CR4_FIXED1
-			     : MSR_IA32_VMX_CR0_FIXED1);
-	required1 = fixed0 & fixed1;
-	if (cr == 0) {
-		fixed1 &= ~(X86_CR0_NW | X86_CR0_CD);
-		required1 &= ~(X86_CR0_PE | X86_CR0_PG);
-		required1 |= X86_CR0_ET;
-	} else {
-		/* keeps the hypervisor visible */
-		val |= X86_CR4_VMXE;
-	}
-	ok &= vmcs_write64(cr ? GUEST_CR4 : GUEST_CR0,
-			   (val & fixed1) | required1);
-	ok &= vmcs_write64(cr ? CR4_READ_SHADOW : CR0_READ_SHADOW, val);
-	ok &= vmcs_write64(cr ? CR4_GUEST_HOST_MASK : CR0_GUEST_HOST_MASK,
-			   required1 | ~fixed1);
+	if (cr_idx)
+		val |= X86_CR4_VMXE; /* keeps the hypervisor visible */
+
+	ok &= vmcs_write64(cr_idx ? GUEST_CR4 : GUEST_CR0,
+			   (val & cr_maybe1[cr_idx]) | cr_required1[cr_idx]);
+	ok &= vmcs_write64(cr_idx ? CR4_READ_SHADOW : CR0_READ_SHADOW, val);
+	ok &= vmcs_write64(cr_idx ? CR4_GUEST_HOST_MASK : CR0_GUEST_HOST_MASK,
+			   cr_required1[cr_idx] | ~cr_maybe1[cr_idx]);
 
 	return ok;
 }
@@ -441,8 +471,8 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 			   sizeof(cpu_data->stack));
 	ok &= vmcs_write64(HOST_RIP, (unsigned long)vmx_vmexit);
 
-	ok &= vmx_set_guest_cr(0, read_cr0());
-	ok &= vmx_set_guest_cr(4, read_cr4());
+	ok &= vmx_set_guest_cr(CR0_IDX, read_cr0());
+	ok &= vmx_set_guest_cr(CR4_IDX, read_cr4());
 
 	ok &= vmcs_write64(GUEST_CR3, cpu_data->linux_cr3);
 
@@ -690,8 +720,8 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	unsigned long val;
 	bool ok = true;
 
-	ok &= vmx_set_guest_cr(0, X86_CR0_NW | X86_CR0_CD | X86_CR0_ET);
-	ok &= vmx_set_guest_cr(4, 0);
+	ok &= vmx_set_guest_cr(CR0_IDX, X86_CR0_NW | X86_CR0_CD | X86_CR0_ET);
+	ok &= vmx_set_guest_cr(CR4_IDX, 0);
 
 	ok &= vmcs_write64(GUEST_CR3, 0);
 
@@ -838,7 +868,7 @@ static bool vmx_handle_cr(struct registers *guest_regs,
 		if (cr == 0 || cr == 4) {
 			vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
 			/* TODO: check for #GP reasons */
-			vmx_set_guest_cr(cr, val);
+			vmx_set_guest_cr(cr ? CR4_IDX : CR0_IDX, val);
 			if (cr == 0 && val & X86_CR0_PG)
 				update_efer();
 			return true;
