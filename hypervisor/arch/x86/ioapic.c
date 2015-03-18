@@ -228,11 +228,11 @@ ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip)
 			return phys_ioapic;
 
 	if (num_phys_ioapics == IOAPIC_MAX_CHIPS)
-		return NULL;
+		return trace_error(NULL);
 
 	phys_ioapic->reg_base = page_alloc(&remap_pool, 1);
 	if (!phys_ioapic->reg_base)
-		return NULL;
+		return trace_error(NULL);
 	err = paging_create(&hv_paging_structs, irqchip->address, PAGE_SIZE,
 			    (unsigned long)phys_ioapic->reg_base,
 			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
@@ -279,7 +279,7 @@ int ioapic_cell_init(struct cell *cell)
 	if (cell->config->num_irqchips == 0)
 		return 0;
 	if (cell->config->num_irqchips > IOAPIC_MAX_CHIPS)
-		return -ERANGE;
+		return trace_error(-ERANGE);
 
 	cell->ioapics = page_alloc(&mem_pool, 1);
 	if (!cell->ioapics)

@@ -106,11 +106,11 @@ static int svm_check_features(void)
 {
 	/* SVM is available */
 	if (!(cpuid_ecx(0x80000001) & X86_FEATURE_SVM))
-		return -ENODEV;
+		return trace_error(-ENODEV);
 
 	/* Nested paging */
 	if (!(cpuid_edx(0x8000000A) & X86_FEATURE_NP))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* Decode assists */
 	if ((cpuid_edx(0x8000000A) & X86_FEATURE_DECODE_ASSISTS))
@@ -271,7 +271,7 @@ int vcpu_vendor_init(void)
 	vm_cr = read_msr(MSR_VM_CR);
 	if (vm_cr & VM_CR_SVMDIS)
 		/* SVM disabled in BIOS */
-		return -EPERM;
+		return trace_error(-EPERM);
 
 	/* Nested paging is the same as the native one */
 	memcpy(npt_paging, x86_64_paging, sizeof(npt_paging));
@@ -301,7 +301,7 @@ int vcpu_vendor_init(void)
 		if (has_avic) {
 			avic_page = page_alloc(&remap_pool, 1);
 			if (!avic_page)
-				return -ENOMEM;
+				return trace_error(-ENOMEM);
 		}
 	}
 
@@ -389,7 +389,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 
 	efer = read_msr(MSR_EFER);
 	if (efer & EFER_SVME)
-		return -EBUSY;
+		return trace_error(-EBUSY);
 
 	efer |= EFER_SVME;
 	write_msr(MSR_EFER, efer);
@@ -397,7 +397,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 	cpu_data->svm_state = SVMON;
 
 	if (!vmcb_setup(cpu_data))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/*
 	 * APM Volume 2, 3.1.1: "When writing the CR0 register, software should

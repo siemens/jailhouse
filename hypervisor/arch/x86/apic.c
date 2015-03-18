@@ -129,15 +129,15 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 	printk("(APIC ID %d) ", apic_id);
 
 	if (apic_id > APIC_MAX_PHYS_ID || cpu_id == CPU_ID_INVALID)
-		return -ERANGE;
+		return trace_error(-ERANGE);
 	if (apic_to_cpu_id[apic_id] != CPU_ID_INVALID)
-		return -EBUSY;
+		return trace_error(-EBUSY);
 	/* only flat mode with LDR corresponding to logical ID supported */
 	if (!using_x2apic) {
 		ldr = apic_ops.read(APIC_REG_LDR);
 		if (apic_ops.read(APIC_REG_DFR) != 0xffffffff ||
 		    (ldr != 0 && ldr != 1UL << (cpu_id + XAPIC_DEST_SHIFT)))
-			return -EIO;
+			return trace_error(-EIO);
 	}
 
 	apic_to_cpu_id[apic_id] = cpu_id;
@@ -172,7 +172,7 @@ int apic_init(void)
 	} else if (apicbase & APIC_BASE_EN) {
 		xapic_page = page_alloc(&remap_pool, 1);
 		if (!xapic_page)
-			return -ENOMEM;
+			return trace_error(-ENOMEM);
 		err = paging_create(&hv_paging_structs, XAPIC_BASE, PAGE_SIZE,
 				    (unsigned long)xapic_page,
 				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
@@ -190,7 +190,7 @@ int apic_init(void)
 		apic_reserved_bits[APIC_REG_ICR_HI] = 0x00ffffff;
 		apic_reserved_bits[APIC_REG_SELF_IPI] = -1; /* not available */
 	} else
-		return -EIO;
+		return trace_error(-EIO);
 
 	printk("Using x%sAPIC\n", using_x2apic ? "2" : "");
 

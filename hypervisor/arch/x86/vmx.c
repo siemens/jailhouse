@@ -181,7 +181,7 @@ static int vmx_check_features(void)
 	unsigned long vmx_pin_ctrl, vmx_basic, maybe1, required1;
 
 	if (!(cpuid_ecx(1) & X86_FEATURE_VMX))
-		return -ENODEV;
+		return trace_error(-ENODEV);
 
 	vmx_basic = read_msr(MSR_IA32_VMX_BASIC);
 
@@ -191,26 +191,26 @@ static int vmx_check_features(void)
 	if (((vmx_basic >> 32) & 0x1fff) > PAGE_SIZE ||
 	    ((vmx_basic >> 50) & 0xf) != EPT_TYPE_WRITEBACK ||
 	    !(vmx_basic & (1UL << 55)))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* require NMI exiting and preemption timer support */
 	vmx_pin_ctrl = read_msr(MSR_IA32_VMX_PINBASED_CTLS) >> 32;
 	if (!(vmx_pin_ctrl & PIN_BASED_NMI_EXITING) ||
 	    !(vmx_pin_ctrl & PIN_BASED_VMX_PREEMPTION_TIMER))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* require I/O and MSR bitmap as well as secondary controls support */
 	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_PROCBASED_CTLS) >> 32;
 	if (!(vmx_proc_ctrl & CPU_BASED_USE_IO_BITMAPS) ||
 	    !(vmx_proc_ctrl & CPU_BASED_USE_MSR_BITMAPS) ||
 	    !(vmx_proc_ctrl & CPU_BASED_ACTIVATE_SECONDARY_CONTROLS))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* require disabling of CR3 access interception */
 	vmx_proc_ctrl = read_msr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
 	if (vmx_proc_ctrl &
 	    (CPU_BASED_CR3_LOAD_EXITING | CPU_BASED_CR3_STORE_EXITING))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* require APIC access, EPT and unrestricted guest mode support */
 	vmx_proc_ctrl2 = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2) >> 32;
@@ -220,18 +220,18 @@ static int vmx_check_features(void)
 	    (ept_cap & EPT_MANDATORY_FEATURES) != EPT_MANDATORY_FEATURES ||
 	    !(ept_cap & (EPT_INVEPT_SINGLE | EPT_INVEPT_GLOBAL)) ||
 	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* require RDTSCP if present in CPUID */
 	if (cpuid_edx(0x80000001) & X86_FEATURE_RDTSCP) {
 		enable_rdtscp = SECONDARY_EXEC_RDTSCP;
 		if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_RDTSCP))
-			return -EIO;
+			return trace_error(-EIO);
 	}
 
 	/* require activity state HLT */
 	if (!(read_msr(MSR_IA32_VMX_MISC) & VMX_MISC_ACTIVITY_HLT))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/*
 	 * Retrieve/validate restrictions on CR0
@@ -248,13 +248,13 @@ static int vmx_check_features(void)
 	required1 = (read_msr(MSR_IA32_VMX_CR0_FIXED0) &
 		~(X86_CR0_PE | X86_CR0_PG)) | X86_CR0_ET;
 	if (!vmx_define_cr_restrictions(CR0_IDX, maybe1, required1))
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* Retrieve/validate restrictions on CR4 */
 	maybe1 = read_msr(MSR_IA32_VMX_CR4_FIXED1);
 	required1 = read_msr(MSR_IA32_VMX_CR4_FIXED0);
 	if (!vmx_define_cr_restrictions(CR4_IDX, maybe1, required1))
-		return -EIO;
+		return trace_error(-EIO);
 
 	return 0;
 }
@@ -570,7 +570,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 	int err;
 
 	if (cpu_data->linux_cr4 & X86_CR4_VMXE)
-		return -EBUSY;
+		return trace_error(-EBUSY);
 
 	err = vmx_check_features();
 	if (err)
@@ -589,7 +589,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 
 	if ((feature_ctrl & mask) != mask) {
 		if (feature_ctrl & FEATURE_CONTROL_LOCKED)
-			return -ENODEV;
+			return trace_error(-ENODEV);
 
 		feature_ctrl |= mask;
 		write_msr(MSR_IA32_FEATURE_CONTROL, feature_ctrl);
@@ -617,7 +617,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 
 	if (!vmxon(cpu_data))  {
 		write_cr4(cpu_data->linux_cr4);
-		return -EIO;
+		return trace_error(-EIO);
 	}
 
 	cpu_data->vmx_state = VMXON;
@@ -625,7 +625,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 	if (!vmcs_clear(cpu_data) ||
 	    !vmcs_load(cpu_data) ||
 	    !vmcs_setup(cpu_data))
-		return -EIO;
+		return trace_error(-EIO);
 
 	cpu_data->vmx_state = VMCS_READY;
 

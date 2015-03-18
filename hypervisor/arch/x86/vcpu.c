@@ -67,7 +67,7 @@ int vcpu_cell_init(struct cell *cell)
 
 	/* PM timer has to be provided */
 	if (system_config->platform_info.x86.pm_timer_address == 0)
-		return -EINVAL;
+		return trace_error(-EINVAL);
 
 	err = vcpu_vendor_cell_init(cell);
 	if (err) {

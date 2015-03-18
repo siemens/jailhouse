@@ -433,7 +433,7 @@ static int vtd_init_ir_emulation(void *reg_base, unsigned int unit_no)
 
 	unit->iqa = mmio_read64(reg_base + VTD_IQA_REG);
 	if (unit->iqa & ~VTD_IQA_ADDR_MASK)
-		return -EIO;
+		return trace_error(-EIO);
 
 	unit->fectl = mmio_read32(reg_base + VTD_FECTL_REG);
 	unit->fedata = mmio_read32(reg_base + VTD_FEDATA_REG);
@@ -456,7 +456,7 @@ int iommu_init(void)
 	for (n = 0; (1UL << n) < (system_config->interrupt_limit); n++)
 		; /* empty loop */
 	if (n >= 16)
-		return -EINVAL;
+		return trace_error(-EINVAL);
 
 	int_remap_table =
 		page_alloc(&mem_pool, PAGES(sizeof(union vtd_irte) << n));
@@ -468,11 +468,14 @@ int iommu_init(void)
 	while (system_config->platform_info.x86.iommu_base[units])
 		units++;
 	if (units == 0)
-		return -EINVAL;
+		return trace_error(-EINVAL);
 
 	dmar_reg_base = page_alloc(&remap_pool, units);
+	if (!dmar_reg_base)
+		return trace_error(-ENOMEM);
+
 	unit_inv_queue = page_alloc(&mem_pool, units);
-	if (!dmar_reg_base || !unit_inv_queue)
+	if (!unit_inv_queue)
 		return -ENOMEM;
 
 	for (n = 0; n < units; n++) {
@@ -503,32 +506,32 @@ int iommu_init(void)
 		else if (caps & VTD_CAP_SAGAW48)
 			pt_levels = 4;
 		else
-			return -EIO;
+			return trace_error(-EIO);
 		sllps_caps &= caps;
 
 		if (dmar_pt_levels > 0 && dmar_pt_levels != pt_levels)
-			return -EIO;
+			return trace_error(-EIO);
 		dmar_pt_levels = pt_levels;
 
 		if (caps & VTD_CAP_CM)
-			return -EIO;
+			return trace_error(-EIO);
 
 		ecaps = mmio_read64(reg_base + VTD_ECAP_REG);
 		if (!(ecaps & VTD_ECAP_QI) || !(ecaps & VTD_ECAP_IR) ||
 		    (using_x2apic && !(ecaps & VTD_ECAP_EIM)))
-			return -EIO;
+			return trace_error(-EIO);
 
 		ctrls = mmio_read32(reg_base + VTD_GSTS_REG) &
 			VTD_GSTS_USED_CTRLS;
 		if (ctrls != 0) {
 			if (ctrls != (VTD_GSTS_IRES | VTD_GSTS_QIES))
-				return -EBUSY;
+				return trace_error(-EBUSY);
 			err = vtd_init_ir_emulation(reg_base, n);
 			if (err)
 				return err;
 		} else if (root_cell.vtd.ir_emulation) {
 			/* IR+QI must be either on or off in all units */
-			return -EIO;
+			return trace_error(-EIO);
 		}
 
 		num_did = 1 << (4 + (caps & VTD_CAP_NUM_DID_MASK) * 2);
@@ -628,7 +631,7 @@ static int vtd_reserve_int_remap_region(u16 device_id, unsigned int length)
 			return start;
 		}
 	}
-	return -E2BIG;
+	return trace_error(-E2BIG);
 }
 
 static void vtd_free_int_remap_region(u16 device_id, unsigned int length)
@@ -736,7 +739,7 @@ int iommu_cell_init(struct cell *cell)
 		return 0;
 
 	if (cell->id >= dmar_num_did)
-		return -ERANGE;
+		return trace_error(-ERANGE);
 
 	cell->vtd.pg_structs.root_paging = vtd_paging;
 	cell->vtd.pg_structs.root_table = page_alloc(&mem_pool, 1);
