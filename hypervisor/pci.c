@@ -321,7 +321,7 @@ int pci_init(void)
 
 	pci_space = page_alloc(&remap_pool, mmcfg_size / PAGE_SIZE);
 	if (!pci_space)
-		return -ENOMEM;
+		return trace_error(-ENOMEM);
 
 	return paging_create(&hv_paging_structs, mmcfg_start, mmcfg_size,
 			     (unsigned long)pci_space,
@@ -552,7 +552,7 @@ static int pci_add_device(struct cell *cell, struct pci_device *device)
 	if (!err && device->info->msix_address) {
 		device->msix_table = page_alloc(&remap_pool, size / PAGE_SIZE);
 		if (!device->msix_table) {
-			err = -ENOMEM;
+			err = trace_error(-ENOMEM);
 			goto error_remove_dev;
 		}
 
@@ -650,7 +650,7 @@ int pci_cell_init(struct cell *cell)
 	 */
 	for (ndev = 0; ndev < cell->config->num_pci_devices; ndev++) {
 		if (dev_infos[ndev].num_msix_vectors > PCI_MAX_MSIX_VECTORS) {
-			err = -ERANGE;
+			err = trace_error(-ERANGE);
 			goto error;
 		}
 

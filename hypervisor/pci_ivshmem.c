@@ -553,10 +553,10 @@ int pci_ivshmem_init(struct cell *cell, struct pci_device *dev)
 	struct pci_device *dev0;
 
 	if (dev->info->num_msix_vectors != 1)
-		return -EINVAL;
+		return trace_error(-EINVAL);
 
 	if (dev->info->shmem_region >= cell->config->num_memory_regions)
-		return -EINVAL;
+		return trace_error(-EINVAL);
 
 	mem = jailhouse_cell_mem_regions(cell->config)
 		+ dev->info->shmem_region;
@@ -570,7 +570,7 @@ int pci_ivshmem_init(struct cell *cell, struct pci_device *dev)
 		if ((mem0->phys_start == mem->phys_start) &&
 		    (mem0->size == mem->size)) {
 			if ((*ivp)->eps[1].device)
-				return -EBUSY;
+				return trace_error(-EBUSY);
 			ivshmem_connect_cell(*ivp, dev, mem, 1);
 			printk("Virtual PCI connection established "
 				"\"%s\" <--> \"%s\"\n",

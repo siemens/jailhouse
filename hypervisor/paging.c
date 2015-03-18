@@ -513,11 +513,11 @@ int paging_init(void)
 
 	if (system_config->debug_uart.flags & JAILHOUSE_MEM_IO) {
 		vaddr = (unsigned long)hypervisor_header.debug_uart_base;
+		/* check if UART overlaps remapping region */
 		if (vaddr + system_config->debug_uart.size >= REMAP_BASE &&
-		    vaddr < REMAP_BASE + remap_pool.pages * PAGE_SIZE) {
-			printk("FATAL: UART overlaps remapping region\n");
-			return -EINVAL;
-		}
+		    vaddr < REMAP_BASE + remap_pool.pages * PAGE_SIZE)
+			return trace_error(-EINVAL);
+
 		err = paging_create(&hv_paging_structs,
 				    system_config->debug_uart.phys_start,
 				    system_config->debug_uart.size, vaddr,

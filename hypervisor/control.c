@@ -179,7 +179,7 @@ int cell_init(struct cell *cell)
 	cell->id = get_free_cell_id();
 
 	if (cpu_set_size > PAGE_SIZE)
-		return -EINVAL;
+		return trace_error(-EINVAL);
 	if (cpu_set_size > sizeof(cell->small_cpu_set.bitmap)) {
 		cpu_set = page_alloc(&mem_pool, 1);
 		if (!cpu_set)
@@ -221,12 +221,8 @@ int check_mem_regions(const struct jailhouse_cell_desc *config)
 		if (mem->phys_start & ~PAGE_MASK ||
 		    mem->virt_start & ~PAGE_MASK ||
 		    mem->size & ~PAGE_MASK ||
-		    mem->flags & ~JAILHOUSE_MEM_VALID_FLAGS) {
-			printk("FATAL: Invalid memory bar (%p, %p, %p, %x)\n",
-			       mem->phys_start, mem->virt_start, mem->size,
-			       mem->flags);
-			return -EINVAL;
-		}
+		    mem->flags & ~JAILHOUSE_MEM_VALID_FLAGS)
+			return trace_error(-EINVAL);
 	}
 	return 0;
 }
@@ -386,7 +382,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	cfg_total_size = jailhouse_cell_config_size(cfg);
 	cfg_pages = PAGES(cfg_page_offs + cfg_total_size);
 	if (cfg_pages > NUM_TEMPORARY_PAGES) {
-		err = -E2BIG;
+		err = trace_error(-E2BIG);
 		goto err_resume;
 	}
 
@@ -417,14 +413,14 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	/* don't assign the CPU we are currently running on */
 	if (cell_owns_cpu(cell, cpu_data->cpu_id)) {
-		err = -EBUSY;
+		err = trace_error(-EBUSY);
 		goto err_free_cpu_set;
 	}
 
 	/* the root cell's cpu set must be super-set of new cell's set */
 	for_each_cpu(cpu, cell->cpu_set)
 		if (!cell_owns_cpu(&root_cell, cpu)) {
-			err = -EBUSY;
+			err = trace_error(-EBUSY);
 			goto err_free_cpu_set;
 		}
 
