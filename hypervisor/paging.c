@@ -478,7 +478,7 @@ int paging_init(void)
 	bitmap_pages = (mem_pool.pages + BITS_PER_PAGE - 1) / BITS_PER_PAGE;
 
 	if (mem_pool.pages <= per_cpu_pages + config_pages + bitmap_pages)
-		goto error_nomem;
+		return -ENOMEM;
 
 	mem_pool.base_address = __page_pool;
 	mem_pool.used_bitmap =
@@ -500,7 +500,7 @@ int paging_init(void)
 	hv_paging_structs.root_paging = hv_paging;
 	hv_paging_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!hv_paging_structs.root_table)
-		goto error_nomem;
+		return -ENOMEM;
 
 	/* Replicate hypervisor mapping of Linux */
 	err = paging_create(&hv_paging_structs,
@@ -509,7 +509,7 @@ int paging_init(void)
 			     (unsigned long)&hypervisor_header,
 			     PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
 	if (err)
-		goto error_nomem;
+		return err;
 
 	if (system_config->debug_uart.flags & JAILHOUSE_MEM_IO) {
 		vaddr = (unsigned long)hypervisor_header.debug_uart_base;
@@ -524,23 +524,15 @@ int paging_init(void)
 				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);
 		if (err)
-			goto error_nomem;
+			return err;
 	}
 
 	/* Make sure any remappings to the temporary regions can be performed
 	 * without allocations of page table pages. */
-	err = paging_create(&hv_paging_structs, 0,
-			    remap_pool.used_pages * PAGE_SIZE,
-			    TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
-			    PAGING_NON_COHERENT);
-	if (err)
-		goto error_nomem;
-
-	return 0;
-
-error_nomem:
-	printk("FATAL: page pool much too small\n");
-	return -ENOMEM;
+	return paging_create(&hv_paging_structs, 0,
+			     remap_pool.used_pages * PAGE_SIZE,
+			     TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
+			     PAGING_NON_COHERENT);
 }
 
 /**
