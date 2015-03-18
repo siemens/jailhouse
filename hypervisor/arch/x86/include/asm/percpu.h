@@ -65,6 +65,7 @@ struct per_cpu {
 	unsigned long linux_ip;
 	unsigned long linux_cr0;
 	unsigned long linux_cr3;
+	unsigned long linux_cr4;
 	struct segment linux_cs;
 	struct segment linux_ds;
 	struct segment linux_es;
