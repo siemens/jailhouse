@@ -41,9 +41,11 @@
 #define X86_CR0_RESERVED				\
 	(BIT_MASK(28, 19) |  (1UL << 17) | BIT_MASK(15, 6))
 
-#define X86_CR4_PAE					0x00000020
-#define X86_CR4_PGE					0x00000080
-#define X86_CR4_VMXE					0x00002000
+#define X86_CR4_PAE					(1UL << 5)
+#define X86_CR4_VMXE					(1UL << 13)
+#define X86_CR4_OSXSAVE					(1UL << 18)
+#define X86_CR4_RESERVED				\
+	(BIT_MASK(31, 22) | (1UL << 19) | (1UL << 15) | BIT_MASK(12, 11))
 
 #define X86_XCR0_FP					0x00000001
 
