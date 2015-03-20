@@ -19,6 +19,7 @@
 
 /* leaf 0x01, ECX */
 #define X86_FEATURE_VMX					(1 << 5)
+#define X86_FEATURE_XSAVE				(1 << 26)
 
 /* leaf 0x80000001, ECX */
 #define X86_FEATURE_SVM					(1 << 2)
