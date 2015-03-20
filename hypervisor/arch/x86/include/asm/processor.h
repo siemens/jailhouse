@@ -17,11 +17,17 @@
 
 #include <jailhouse/types.h>
 
+/* leaf 0x01, ECX */
 #define X86_FEATURE_VMX					(1 << 5)
+
+/* leaf 0x80000001, ECX */
+#define X86_FEATURE_SVM					(1 << 2)
+
+/* leaf 0x80000001, EDX */
 #define X86_FEATURE_GBPAGES				(1 << 26)
 #define X86_FEATURE_RDTSCP				(1 << 27)
 
-#define X86_FEATURE_SVM					(1 << 2)
+/* leaf 0x8000000a, EDX */
 #define X86_FEATURE_NP					(1 << 0)
 #define X86_FEATURE_FLUSH_BY_ASID			(1 << 6)
 #define X86_FEATURE_DECODE_ASSISTS			(1 << 7)
