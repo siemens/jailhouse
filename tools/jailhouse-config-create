@@ -486,9 +486,13 @@ def parse_iomem(pcidevices):
     regions = IOMemRegionTree.parse_iomem_tree(
         IOMemRegionTree.parse_iomem_file())
 
-    # filter the list for MSI-X pages
+    rom_region = MemRegion(0xc0000, 0xdffff, 'ROMs')
+    add_rom_region = False
+
     ret = []
     for r in regions:
+        append_r = True
+        # filter the list for MSI-X pages
         for d in pcidevices:
             if d.msix_address >= r.start and d.msix_address <= r.stop:
                 if d.msix_address > r.start:
@@ -499,10 +503,18 @@ def parse_iomem(pcidevices):
                     tail_r = MemRegion(d.msix_address + d.msix_region_size,
                                        r.stop, r.typestr, r.comments)
                     ret.append(tail_r)
-                r = None
+                append_r = False
                 break
-        if r:
+        # filter out the ROMs
+        if (r.start >= rom_region.start and r.stop <= rom_region.stop):
+            add_rom_region = True
+            append_r = False
+        if append_r:
             ret.append(r)
+
+    # add a region that covers all potential ROMs
+    if add_rom_region:
+        ret.append(rom_region)
 
     # newer Linux kernels will report the first page as reserved
     # it is needed for CPU init so include it anyways
