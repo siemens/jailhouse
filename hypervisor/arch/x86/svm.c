@@ -37,7 +37,7 @@
  * combinations of NW and CD bits are prohibited by SVM (see APMv2,
  * Sect. 15.5). To handle this, we always keep the NW bit off.
  */
-#define SVM_CR0_CLEARED_BITS	~X86_CR0_NW
+#define SVM_CR0_ALLOWED_BITS	(~X86_CR0_NW)
 
 #define MTRR_DEFTYPE		0x2ff
 
@@ -175,7 +175,7 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 
 	memset(vmcb, 0, sizeof(struct vmcb));
 
-	vmcb->cr0 = read_cr0() & SVM_CR0_CLEARED_BITS;
+	vmcb->cr0 = read_cr0() & SVM_CR0_ALLOWED_BITS;
 	vmcb->cr3 = cpu_data->linux_cr3;
 	vmcb->cr4 = read_cr4();
 
@@ -800,7 +800,7 @@ static bool svm_handle_cr(struct registers *guest_regs,
 	if ((val ^ vmcb->cr0) & bits)
 		vcpu_tlb_flush();
 	/* TODO: better check for #GP reasons */
-	vmcb->cr0 = val & SVM_CR0_CLEARED_BITS;
+	vmcb->cr0 = val & SVM_CR0_ALLOWED_BITS;
 	if (val & X86_CR0_PG)
 		update_efer(cpu_data);
 	vmcb->clean_bits &= ~CLEAN_BITS_CRX;
