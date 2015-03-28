@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2015
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -56,7 +56,9 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BMP_0000_WRITE ] = {
 		[      0/8 ...   0x17/8 ] = 0,
 		[   0x18/8 ...   0x1f/8 ] = 0x08, /* 0x01b */
-		[   0x20/8 ...  0x7ff/8 ] = 0,
+		[   0x20/8 ...  0x387/8 ] = 0,
+		[  0x388/8 ...  0x38f/8 ] = 0x80, /* 0x38f */
+		[  0x390/8 ...  0x7ff/8 ] = 0,
 		[  0x808/8 ...  0x80f/8 ] = 0x89, /* 0x808, 0x80b, 0x80f */
 		[  0x810/8 ...  0x827/8 ] = 0,
 		[  0x828/8 ...  0x82f/8 ] = 0x81, /* 0x828, 0x82f */
@@ -511,7 +513,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmcs_write64(GUEST_IA32_EFER, cpu_data->linux_efer);
 
-	// TODO: switch PAT, PERF */
+	// TODO: switch PAT */
 
 	ok &= vmcs_write64(VMCS_LINK_POINTER, -1UL);
 	ok &= vmcs_write32(VM_ENTRY_INTR_INFO_FIELD, 0);
@@ -568,6 +570,10 @@ int vcpu_init(struct per_cpu *cpu_data)
 	unsigned long feature_ctrl, mask;
 	u32 revision_id;
 	int err;
+
+	/* make sure all perf counters are off */
+	if ((cpuid_eax(0x0a) & 0xff) > 0)
+		write_msr(MSR_IA32_PERF_GLOBAL_CTRL, 0);
 
 	if (cpu_data->linux_cr4 & X86_CR4_VMXE)
 		return trace_error(-EBUSY);
@@ -1066,6 +1072,10 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		    guest_regs->rcx <= MSR_X2APIC_END) {
 			if (!x2apic_handle_write(guest_regs, cpu_data))
 				break;
+			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+			return;
+		} else if (guest_regs->rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
+			/* ignore writes */
 			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
 		}
