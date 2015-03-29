@@ -181,6 +181,7 @@ static int vmx_check_features(void)
 {
 	unsigned long vmx_proc_ctrl, vmx_proc_ctrl2, ept_cap;
 	unsigned long vmx_pin_ctrl, vmx_basic, maybe1, required1;
+	unsigned long vmx_entry_ctrl, vmx_exit_ctrl;
 
 	if (!(cpuid_ecx(1) & X86_FEATURE_VMX))
 		return trace_error(-ENODEV);
@@ -230,6 +231,14 @@ static int vmx_check_features(void)
 		if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_RDTSCP))
 			return trace_error(-EIO);
 	}
+
+	/* require EFER save/restore */
+	vmx_entry_ctrl = read_msr(MSR_IA32_VMX_ENTRY_CTLS) >> 32;
+	vmx_exit_ctrl = read_msr(MSR_IA32_VMX_EXIT_CTLS) >> 32;
+	if (!(vmx_entry_ctrl & VM_ENTRY_LOAD_IA32_EFER) ||
+	    !(vmx_exit_ctrl & VM_EXIT_SAVE_IA32_EFER) ||
+	    !(vmx_exit_ctrl & VM_EXIT_LOAD_IA32_EFER))
+		return trace_error(-EIO);
 
 	/* require activity state HLT */
 	if (!(read_msr(MSR_IA32_VMX_MISC) & VMX_MISC_ACTIVITY_HLT))
