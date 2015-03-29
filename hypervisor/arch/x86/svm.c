@@ -821,21 +821,22 @@ out:
 static bool svm_handle_msr_read(struct registers *guest_regs,
 		struct per_cpu *cpu_data)
 {
-	if (guest_regs->rcx >= MSR_X2APIC_BASE &&
-	    guest_regs->rcx <= MSR_X2APIC_END) {
-		vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
+	switch (guest_regs->rcx) {
+	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
 		x2apic_handle_read(guest_regs);
-		return true;
-	} else if (guest_regs->rcx == MSR_IA32_PAT) {
-		vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
+		break;
+	case MSR_IA32_PAT:
 		guest_regs->rax = cpu_data->vmcb.g_pat & 0xffffffff;
 		guest_regs->rdx = cpu_data->vmcb.g_pat >> 32;
-		return true;
-	} else {
+		break;
+	default:
 		panic_printk("FATAL: Unhandled MSR read: %x\n",
 			     guest_regs->rcx);
 		return false;
 	}
+
+	vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
+	return true;
 }
 
 static bool svm_handle_msr_write(struct registers *guest_regs,
@@ -843,20 +844,18 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long efer, val;
-	bool result = true;
 
-	if (guest_regs->rcx >= MSR_X2APIC_BASE &&
-	    guest_regs->rcx <= MSR_X2APIC_END) {
-		result = x2apic_handle_write(guest_regs, cpu_data);
-		goto out;
-	}
-	if (guest_regs->rcx == MSR_IA32_PAT) {
+	switch (guest_regs->rcx) {
+	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
+		if (!x2apic_handle_write(guest_regs, cpu_data))
+			return false;
+		break;
+	case MSR_IA32_PAT:
 		vmcb->g_pat = (guest_regs->rax & 0xffffffff) |
 			(guest_regs->rdx << 32);
 		vmcb->clean_bits &= ~CLEAN_BITS_NP;
-		goto out;
-	}
-	if (guest_regs->rcx == MSR_EFER) {
+		break;
+	case MSR_EFER:
 		/* Never let a guest to disable SVME; see APMv2, Sect. 3.1.7 */
 		efer = (guest_regs->rax & 0xffffffff) |
 			(guest_regs->rdx << 32) | EFER_SVME;
@@ -865,9 +864,8 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 			vcpu_tlb_flush();
 		vmcb->efer = efer;
 		vmcb->clean_bits &= ~CLEAN_BITS_CRX;
-		goto out;
-	}
-	if (guest_regs->rcx == MTRR_DEFTYPE) {
+		break;
+	case MTRR_DEFTYPE:
 		val = (guest_regs->rax & 0xffffffff) | (guest_regs->rdx << 32);
 		/*
 		 * Quick (and very incomplete) guest MTRRs emulation.
@@ -884,16 +882,15 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 			write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
 		else
 			write_msr(MSR_IA32_PAT, 0);
-		goto out;
+		break;
+	default:
+		panic_printk("FATAL: Unhandled MSR write: %x\n",
+			     guest_regs->rcx);
+		return false;
 	}
 
-	result = false;
-	panic_printk("FATAL: Unhandled MSR write: %x\n",
-		     guest_regs->rcx);
-out:
-	if (result)
-		vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
-	return result;
+	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+	return true;
 }
 
 /*
