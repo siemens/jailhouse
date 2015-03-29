@@ -71,6 +71,7 @@ struct per_cpu {
 	struct segment linux_fs;
 	struct segment linux_gs;
 	struct segment linux_tss;
+	unsigned long linux_pat;
 	unsigned long linux_efer;
 	unsigned long linux_sysenter_cs;
 	unsigned long linux_sysenter_eip;

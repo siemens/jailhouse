@@ -210,10 +210,13 @@ enum vmx_state { VMXOFF = 0, VMXON, VMCS_READY };
 #define SECONDARY_EXEC_UNRESTRICTED_GUEST	(1UL << 7)
 
 #define VM_EXIT_HOST_ADDR_SPACE_SIZE		(1UL << 9)
+#define VM_EXIT_SAVE_IA32_PAT			(1UL << 18)
+#define VM_EXIT_LOAD_IA32_PAT			(1UL << 19)
 #define VM_EXIT_SAVE_IA32_EFER			(1UL << 20)
 #define VM_EXIT_LOAD_IA32_EFER			(1UL << 21)
 
 #define VM_ENTRY_IA32E_MODE			(1UL << 9)
+#define VM_ENTRY_LOAD_IA32_PAT			(1UL << 14)
 #define VM_ENTRY_LOAD_IA32_EFER			(1UL << 15)
 
 #define VMX_MISC_ACTIVITY_HLT			(1UL << 6)

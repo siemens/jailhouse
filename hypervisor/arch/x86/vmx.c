@@ -232,10 +232,13 @@ static int vmx_check_features(void)
 			return trace_error(-EIO);
 	}
 
-	/* require EFER save/restore */
+	/* require PAT and EFER save/restore */
 	vmx_entry_ctrl = read_msr(MSR_IA32_VMX_ENTRY_CTLS) >> 32;
 	vmx_exit_ctrl = read_msr(MSR_IA32_VMX_EXIT_CTLS) >> 32;
-	if (!(vmx_entry_ctrl & VM_ENTRY_LOAD_IA32_EFER) ||
+	if (!(vmx_entry_ctrl & VM_ENTRY_LOAD_IA32_PAT) ||
+	    !(vmx_entry_ctrl & VM_ENTRY_LOAD_IA32_EFER) ||
+	    !(vmx_exit_ctrl & VM_EXIT_SAVE_IA32_PAT) ||
+	    !(vmx_exit_ctrl & VM_EXIT_LOAD_IA32_PAT) ||
 	    !(vmx_exit_ctrl & VM_EXIT_SAVE_IA32_EFER) ||
 	    !(vmx_exit_ctrl & VM_EXIT_LOAD_IA32_EFER))
 		return trace_error(-EIO);
@@ -472,6 +475,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	read_idtr(&dtr);
 	ok &= vmcs_write64(HOST_IDTR_BASE, dtr.base);
 
+	ok &= vmcs_write64(HOST_IA32_PAT, read_msr(MSR_IA32_PAT));
 	ok &= vmcs_write64(HOST_IA32_EFER, EFER_LMA | EFER_LME);
 
 	ok &= vmcs_write32(HOST_IA32_SYSENTER_CS, 0);
@@ -520,9 +524,8 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
 	ok &= vmcs_write64(GUEST_PENDING_DBG_EXCEPTIONS, 0);
 
+	ok &= vmcs_write64(GUEST_IA32_PAT, cpu_data->linux_pat);
 	ok &= vmcs_write64(GUEST_IA32_EFER, cpu_data->linux_efer);
-
-	// TODO: switch PAT */
 
 	ok &= vmcs_write64(VMCS_LINK_POINTER, -1UL);
 	ok &= vmcs_write32(VM_ENTRY_INTR_INFO_FIELD, 0);
@@ -555,8 +558,9 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(EXCEPTION_BITMAP, 0);
 
 	val = read_msr(MSR_IA32_VMX_EXIT_CTLS);
-	val |= VM_EXIT_HOST_ADDR_SPACE_SIZE | VM_EXIT_SAVE_IA32_EFER |
-		VM_EXIT_LOAD_IA32_EFER;
+	val |= VM_EXIT_HOST_ADDR_SPACE_SIZE |
+		VM_EXIT_SAVE_IA32_PAT | VM_EXIT_LOAD_IA32_PAT |
+		VM_EXIT_SAVE_IA32_EFER | VM_EXIT_LOAD_IA32_EFER;
 	ok &= vmcs_write32(VM_EXIT_CONTROLS, val);
 
 	ok &= vmcs_write32(VM_EXIT_MSR_STORE_COUNT, 0);
@@ -564,7 +568,8 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(VM_ENTRY_MSR_LOAD_COUNT, 0);
 
 	val = read_msr(MSR_IA32_VMX_ENTRY_CTLS);
-	val |= VM_ENTRY_IA32E_MODE | VM_ENTRY_LOAD_IA32_EFER;
+	val |= VM_ENTRY_IA32E_MODE | VM_ENTRY_LOAD_IA32_PAT |
+		VM_ENTRY_LOAD_IA32_EFER;
 	ok &= vmcs_write32(VM_ENTRY_CONTROLS, val);
 
 	ok &= vmcs_write64(CR4_GUEST_HOST_MASK, 0);
@@ -704,6 +709,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 
 	cpu_data->linux_tss.selector = vmcs_read32(GUEST_TR_SELECTOR);
 
+	cpu_data->linux_pat = vmcs_read64(GUEST_IA32_PAT);
 	cpu_data->linux_efer = vmcs_read64(GUEST_IA32_EFER);
 	cpu_data->linux_fs.base = vmcs_read64(GUEST_FS_BASE);
 	cpu_data->linux_gs.base = vmcs_read64(GUEST_GS_BASE);
@@ -811,6 +817,7 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	ok &= vmcs_write64(GUEST_IDTR_BASE, 0);
 	ok &= vmcs_write32(GUEST_IDTR_LIMIT, 0xffff);
 
+	ok &= vmcs_write64(GUEST_IA32_PAT, PAT_RESET_VALUE);
 	ok &= vmcs_write64(GUEST_IA32_EFER, 0);
 
 	ok &= vmcs_write32(GUEST_SYSENTER_CS, 0);

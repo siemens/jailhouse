@@ -193,6 +193,9 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	cpu_data->linux_cr3 = read_cr3();
 	write_cr3(paging_hvirt2phys(hv_paging_structs.root_table));
 
+	cpu_data->linux_pat = read_msr(MSR_IA32_PAT);
+	write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
+
 	cpu_data->linux_efer = read_msr(MSR_EFER);
 
 	cpu_data->linux_sysenter_cs = read_msr(MSR_IA32_SYSENTER_CS);
@@ -253,6 +256,7 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 
 	vcpu_exit(cpu_data);
 
+	write_msr(MSR_IA32_PAT, cpu_data->linux_pat);
 	write_msr(MSR_EFER, cpu_data->linux_efer);
 	write_cr0(cpu_data->linux_cr0);
 	write_cr3(cpu_data->linux_cr3);

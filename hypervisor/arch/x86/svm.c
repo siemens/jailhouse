@@ -41,8 +41,6 @@
 
 #define MTRR_DEFTYPE		0x2ff
 
-#define PAT_RESET_VALUE		0x0007040600070406UL
-
 static bool has_avic, has_assists, has_flush_by_asid;
 
 static const struct segment invalid_seg;
@@ -55,7 +53,9 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msrpm[][0x2000/4] = {
 	[ SVM_MSRPM_0000 ] = {
 		[      0/4 ...  0x017/4 ] = 0,
 		[  0x018/4 ...  0x01b/4 ] = 0x80, /* 0x01b (w) */
-		[  0x01c/4 ...  0x2fb/4 ] = 0,
+		[  0x01c/4 ...  0x273/4 ] = 0,
+		[  0x274/4 ...  0x277/4 ] = 0xc0, /* 0x277 (rw) */
+		[  0x278/4 ...  0x2fb/4 ] = 0,
 		[  0x2fc/4 ...  0x2ff/4 ] = 0x80, /* 0x2ff (w) */
 		[  0x300/4 ...  0x7ff/4 ] = 0,
 		/* x2APIC MSRs - emulated if not present */
@@ -216,7 +216,7 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 	vmcb->efer = (cpu_data->linux_efer | EFER_SVME);
 
 	/* Linux uses custom PAT setting */
-	vmcb->g_pat = read_msr(MSR_IA32_PAT);
+	vmcb->g_pat = cpu_data->linux_pat;
 
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_NMI;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CR0_SEL_WRITE;
@@ -446,14 +446,6 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 	vmcb_pa = paging_hvirt2phys(&cpu_data->vmcb);
 	host_stack = (unsigned long)cpu_data->stack + sizeof(cpu_data->stack);
 
-	/*
-	 * XXX: Jailhouse doesn't use PAT, so it is explicitly set to the
-	 * reset value. However, this value is later combined with vmcb->g_pat
-	 * (as per APMv2, Sect. 15.25.8) which may lead to subtle bugs as the
-	 * actual memory type might slightly differ from what Linux expects.
-	 */
-	write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
-
 	/* We enter Linux at the point arch_entry would return to as well.
 	 * rax is cleared to signal success to the caller. */
 	asm volatile(
@@ -498,7 +490,6 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 	write_msr(MSR_CSTAR, vmcb->cstar);
 	write_msr(MSR_SFMASK, vmcb->sfmask);
 	write_msr(MSR_KERNGS_BASE, vmcb->kerngsbase);
-	write_msr(MSR_IA32_PAT, vmcb->g_pat);
 
 	cpu_data->linux_cr0 = vmcb->cr0;
 	cpu_data->linux_cr3 = vmcb->cr3;
@@ -512,6 +503,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 
 	cpu_data->linux_tss.selector = vmcb->tr.selector;
 
+	cpu_data->linux_pat = vmcb->g_pat;
 	cpu_data->linux_efer = vmcb->efer & (~EFER_SVME);
 	cpu_data->linux_fs.base = vmcb->fs.base;
 	cpu_data->linux_gs.base = vmcb->gs.base;
@@ -834,6 +826,11 @@ static bool svm_handle_msr_read(struct registers *guest_regs,
 		vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
 		x2apic_handle_read(guest_regs);
 		return true;
+	} else if (guest_regs->rcx == MSR_IA32_PAT) {
+		vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
+		guest_regs->rax = cpu_data->vmcb.g_pat & 0xffffffff;
+		guest_regs->rdx = cpu_data->vmcb.g_pat >> 32;
+		return true;
 	} else {
 		panic_printk("FATAL: Unhandled MSR read: %x\n",
 			     guest_regs->rcx);
@@ -851,6 +848,12 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 	if (guest_regs->rcx >= MSR_X2APIC_BASE &&
 	    guest_regs->rcx <= MSR_X2APIC_END) {
 		result = x2apic_handle_write(guest_regs, cpu_data);
+		goto out;
+	}
+	if (guest_regs->rcx == MSR_IA32_PAT) {
+		vmcb->g_pat = (guest_regs->rax & 0xffffffff) |
+			(guest_regs->rdx << 32);
+		vmcb->clean_bits &= ~CLEAN_BITS_NP;
 		goto out;
 	}
 	if (guest_regs->rcx == MSR_EFER) {
