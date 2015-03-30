@@ -40,7 +40,6 @@
 
 /** Per-CPU states. */
 struct per_cpu {
-	/* Keep these two in sync with defines above! */
 	/** Stack used while in hypervisor mode. */
 	u8 stack[PAGE_SIZE];
 	/** Linux stack pointer, used for handover to hypervisor. */
