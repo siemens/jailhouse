@@ -39,7 +39,9 @@ static const struct segment invalid_seg = {
 // TODO: convert to whitelist
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BMP_0000_READ ] = {
-		[      0/8 ...  0x7ff/8 ] = 0,
+		[      0/8 ...  0x26f/8 ] = 0,
+		[  0x270/8 ...  0x277/8 ] = 0x80, /* 0x277 */
+		[  0x278/8 ...  0x7ff/8 ] = 0,
 		[  0x800/8 ...  0x807/8 ] = 0x0c, /* 0x802, 0x803 */
 		[  0x808/8 ...  0x80f/8 ] = 0xa5, /* 0x808, 0x80a, 0x80d, 0x80f */
 		[  0x810/8 ...  0x817/8 ] = 0xff, /* 0x810 - 0x817 */
@@ -56,7 +58,9 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 	[ VMX_MSR_BMP_0000_WRITE ] = {
 		[      0/8 ...   0x17/8 ] = 0,
 		[   0x18/8 ...   0x1f/8 ] = 0x08, /* 0x01b */
-		[   0x20/8 ...  0x387/8 ] = 0,
+		[   0x20/8 ...  0x26f/8 ] = 0,
+		[  0x270/8 ...  0x277/8 ] = 0x80, /* 0x277 */
+		[  0x278/8 ...  0x387/8 ] = 0,
 		[  0x388/8 ...  0x38f/8 ] = 0x80, /* 0x38f */
 		[  0x390/8 ...  0x7ff/8 ] = 0,
 		[  0x808/8 ...  0x80f/8 ] = 0x89, /* 0x808, 0x80b, 0x80f */
@@ -524,7 +528,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
 	ok &= vmcs_write64(GUEST_PENDING_DBG_EXCEPTIONS, 0);
 
-	ok &= vmcs_write64(GUEST_IA32_PAT, cpu_data->linux_pat);
+	ok &= vmcs_write64(GUEST_IA32_PAT, cpu_data->pat);
 	ok &= vmcs_write64(GUEST_IA32_EFER, cpu_data->linux_efer);
 
 	ok &= vmcs_write64(VMCS_LINK_POINTER, -1UL);
@@ -709,7 +713,6 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 
 	cpu_data->linux_tss.selector = vmcs_read32(GUEST_TR_SELECTOR);
 
-	cpu_data->linux_pat = vmcs_read64(GUEST_IA32_PAT);
 	cpu_data->linux_efer = vmcs_read64(GUEST_IA32_EFER);
 	cpu_data->linux_fs.base = vmcs_read64(GUEST_FS_BASE);
 	cpu_data->linux_gs.base = vmcs_read64(GUEST_GS_BASE);
@@ -817,7 +820,6 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	ok &= vmcs_write64(GUEST_IDTR_BASE, 0);
 	ok &= vmcs_write32(GUEST_IDTR_LIMIT, 0xffff);
 
-	ok &= vmcs_write64(GUEST_IA32_PAT, PAT_RESET_VALUE);
 	ok &= vmcs_write64(GUEST_IA32_EFER, 0);
 
 	ok &= vmcs_write32(GUEST_SYSENTER_CS, 0);
@@ -936,6 +938,11 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 		return false;
 	}
 	return true;
+}
+
+void vcpu_vendor_set_guest_pat(unsigned long val)
+{
+	vmcs_write64(GUEST_IA32_PAT, val);
 }
 
 static bool vmx_handle_apic_access(struct registers *guest_regs,

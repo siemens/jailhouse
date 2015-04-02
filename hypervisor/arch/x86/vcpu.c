@@ -236,9 +236,14 @@ invalid_access:
 
 bool vcpu_handle_msr_read(struct registers *guest_regs)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	switch (guest_regs->rcx) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
 		x2apic_handle_read(guest_regs);
+		break;
+	case MSR_IA32_PAT:
+		set_rdmsr_value(guest_regs, cpu_data->pat);
 		break;
 	default:
 		panic_printk("FATAL: Unhandled MSR read: %x\n",
@@ -252,10 +257,27 @@ bool vcpu_handle_msr_read(struct registers *guest_regs)
 
 bool vcpu_handle_msr_write(struct registers *guest_regs)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+	unsigned int bit_pos, pa;
+	unsigned long val;
+
 	switch (guest_regs->rcx) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
-		if (!x2apic_handle_write(guest_regs, this_cpu_data()))
+		if (!x2apic_handle_write(guest_regs, cpu_data))
 			return false;
+		break;
+	case MSR_IA32_PAT:
+		val = get_wrmsr_value(guest_regs);
+		for (bit_pos = 0; bit_pos < 64; bit_pos += 8) {
+			pa = (val >> bit_pos) & 0xff;
+			/* filter out reserved memory types */
+			if (pa == 2 || pa == 3 || pa > 7) {
+				printk("FATAL: Invalid PAT value: %x\n", val);
+				return false;
+			}
+		}
+		cpu_data->pat = val;
+		vcpu_vendor_set_guest_pat(val);
 		break;
 	default:
 		panic_printk("FATAL: Unhandled MSR write: %x\n",
@@ -270,4 +292,6 @@ bool vcpu_handle_msr_write(struct registers *guest_regs)
 void vcpu_reset(struct registers *guest_regs)
 {
 	memset(guest_regs, 0, sizeof(*guest_regs));
+	this_cpu_data()->pat = PAT_RESET_VALUE;
+	vcpu_vendor_set_guest_pat(PAT_RESET_VALUE);
 }

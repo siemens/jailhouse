@@ -215,8 +215,7 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 	/* Make the hypervisor visible */
 	vmcb->efer = (cpu_data->linux_efer | EFER_SVME);
 
-	/* Linux uses custom PAT setting */
-	vmcb->g_pat = cpu_data->linux_pat;
+	vmcb->g_pat = cpu_data->pat;
 
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_NMI;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CR0_SEL_WRITE;
@@ -503,7 +502,6 @@ vcpu_deactivate_vmm(struct registers *guest_regs)
 
 	cpu_data->linux_tss.selector = vmcb->tr.selector;
 
-	cpu_data->linux_pat = vmcb->g_pat;
 	cpu_data->linux_efer = vmcb->efer & (~EFER_SVME);
 	cpu_data->linux_fs.base = vmcb->fs.base;
 	cpu_data->linux_gs.base = vmcb->gs.base;
@@ -628,8 +626,6 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	vmcb->sysenter_esp = 0;
 	vmcb->kerngsbase = 0;
 
-	vmcb->g_pat = PAT_RESET_VALUE;
-
 	vmcb->dr7 = 0x00000400;
 
 	/* Almost all of the guest state changed */
@@ -700,6 +696,14 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 		return false;
 	}
 	return true;
+}
+
+void vcpu_vendor_set_guest_pat(unsigned long val)
+{
+	struct vmcb *vmcb = &this_cpu_data()->vmcb;
+
+	vmcb->g_pat = val;
+	vmcb->clean_bits &= ~CLEAN_BITS_NP;
 }
 
 struct parse_context {
@@ -818,21 +822,6 @@ out:
 	return ok;
 }
 
-static bool svm_handle_msr_read(struct registers *guest_regs,
-		struct per_cpu *cpu_data)
-{
-	switch (guest_regs->rcx) {
-	case MSR_IA32_PAT:
-		set_rdmsr_value(guest_regs, cpu_data->vmcb.g_pat);
-		break;
-	default:
-		return vcpu_handle_msr_read(guest_regs);
-	}
-
-	vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
-	return true;
-}
-
 static bool svm_handle_msr_write(struct registers *guest_regs,
 		struct per_cpu *cpu_data)
 {
@@ -840,10 +829,6 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 	unsigned long efer, val;
 
 	switch (guest_regs->rcx) {
-	case MSR_IA32_PAT:
-		vmcb->g_pat = get_wrmsr_value(guest_regs);
-		vmcb->clean_bits &= ~CLEAN_BITS_NP;
-		break;
 	case MSR_EFER:
 		/* Never let a guest to disable SVME; see APMv2, Sect. 3.1.7 */
 		efer = get_wrmsr_value(guest_regs) | EFER_SVME;
@@ -1006,7 +991,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	case VMEXIT_MSR:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (!vmcb->exitinfo1)
-			res = svm_handle_msr_read(guest_regs, cpu_data);
+			res = vcpu_handle_msr_read(guest_regs);
 		else
 			res = svm_handle_msr_write(guest_regs, cpu_data);
 		if (res)

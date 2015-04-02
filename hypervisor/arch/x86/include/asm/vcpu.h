@@ -108,6 +108,8 @@ bool vcpu_handle_io_access(struct registers *guest_regs,
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
+void vcpu_vendor_set_guest_pat(unsigned long val);
+
 bool vcpu_handle_pt_violation(struct registers *guest_regs,
 			      struct vcpu_pf_intercept *pf);
 
