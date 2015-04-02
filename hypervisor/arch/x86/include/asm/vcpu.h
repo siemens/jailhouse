@@ -111,4 +111,7 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 bool vcpu_handle_pt_violation(struct registers *guest_regs,
 			      struct vcpu_pf_intercept *pf);
 
+bool vcpu_handle_msr_read(struct registers *guest_regs);
+bool vcpu_handle_msr_write(struct registers *guest_regs);
+
 #endif

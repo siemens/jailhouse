@@ -1073,30 +1073,17 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_MSR_READ:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
-		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
-		    guest_regs->rcx <= MSR_X2APIC_END) {
-			vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
-			x2apic_handle_read(guest_regs);
+		if (vcpu_handle_msr_read(guest_regs))
 			return;
-		}
-		panic_printk("FATAL: Unhandled MSR read: %08x\n",
-			     guest_regs->rcx);
 		break;
 	case EXIT_REASON_MSR_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
-		if (guest_regs->rcx >= MSR_X2APIC_BASE &&
-		    guest_regs->rcx <= MSR_X2APIC_END) {
-			if (!x2apic_handle_write(guest_regs, cpu_data))
-				break;
-			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
-			return;
-		} else if (guest_regs->rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
+		if (guest_regs->rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
 			/* ignore writes */
 			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
-		}
-		panic_printk("FATAL: Unhandled MSR write: %08x\n",
-			     guest_regs->rcx);
+		} else if (vcpu_handle_msr_write(guest_regs))
+			return;
 		break;
 	case EXIT_REASON_APIC_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;

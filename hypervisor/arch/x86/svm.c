@@ -822,17 +822,12 @@ static bool svm_handle_msr_read(struct registers *guest_regs,
 		struct per_cpu *cpu_data)
 {
 	switch (guest_regs->rcx) {
-	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
-		x2apic_handle_read(guest_regs);
-		break;
 	case MSR_IA32_PAT:
 		guest_regs->rax = cpu_data->vmcb.g_pat & 0xffffffff;
 		guest_regs->rdx = cpu_data->vmcb.g_pat >> 32;
 		break;
 	default:
-		panic_printk("FATAL: Unhandled MSR read: %x\n",
-			     guest_regs->rcx);
-		return false;
+		return vcpu_handle_msr_read(guest_regs);
 	}
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_RDMSR);
@@ -846,10 +841,6 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 	unsigned long efer, val;
 
 	switch (guest_regs->rcx) {
-	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
-		if (!x2apic_handle_write(guest_regs, cpu_data))
-			return false;
-		break;
 	case MSR_IA32_PAT:
 		vmcb->g_pat = (guest_regs->rax & 0xffffffff) |
 			(guest_regs->rdx << 32);
@@ -884,9 +875,7 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 			write_msr(MSR_IA32_PAT, 0);
 		break;
 	default:
-		panic_printk("FATAL: Unhandled MSR write: %x\n",
-			     guest_regs->rcx);
-		return false;
+		return vcpu_handle_msr_write(guest_regs);
 	}
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);

@@ -233,3 +233,36 @@ invalid_access:
 			     pf->is_write ? "write" : "read", pf->phys_addr);
 	return false;
 }
+
+bool vcpu_handle_msr_read(struct registers *guest_regs)
+{
+	switch (guest_regs->rcx) {
+	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
+		x2apic_handle_read(guest_regs);
+		break;
+	default:
+		panic_printk("FATAL: Unhandled MSR read: %x\n",
+			     guest_regs->rcx);
+		return false;
+	}
+
+	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+	return true;
+}
+
+bool vcpu_handle_msr_write(struct registers *guest_regs)
+{
+	switch (guest_regs->rcx) {
+	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
+		if (!x2apic_handle_write(guest_regs, this_cpu_data()))
+			return false;
+		break;
+	default:
+		panic_printk("FATAL: Unhandled MSR write: %x\n",
+			     guest_regs->rcx);
+		return false;
+	}
+
+	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+	return true;
+}
