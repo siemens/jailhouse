@@ -266,3 +266,8 @@ bool vcpu_handle_msr_write(struct registers *guest_regs)
 	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 	return true;
 }
+
+void vcpu_reset(struct registers *guest_regs)
+{
+	memset(guest_regs, 0, sizeof(*guest_regs));
+}

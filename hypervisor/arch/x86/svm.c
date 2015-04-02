@@ -987,7 +987,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
 			svm_vcpu_reset(cpu_data, sipi_vector);
-			memset(guest_regs, 0, sizeof(*guest_regs));
+			vcpu_reset(guest_regs);
 		}
 		iommu_check_pending_faults(cpu_data);
 		return;
