@@ -953,7 +953,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		/* FIXME: We are not intercepting CPUID now */
 		return;
 	case VMEXIT_VMMCALL:
-		vcpu_handle_hypercall(guest_regs);
+		vcpu_handle_hypercall();
 		return;
 	case VMEXIT_CR0_SEL_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;

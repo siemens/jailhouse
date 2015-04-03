@@ -133,8 +133,9 @@ void vcpu_cell_exit(struct cell *cell)
 	vcpu_vendor_cell_exit(cell);
 }
 
-void vcpu_handle_hypercall(union registers *guest_regs)
+void vcpu_handle_hypercall(void)
 {
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	unsigned long code = guest_regs->rax;
 	struct vcpu_execution_state x_state;
 	unsigned long arg_mask;

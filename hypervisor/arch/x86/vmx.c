@@ -1071,7 +1071,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
-		vcpu_handle_hypercall(guest_regs);
+		vcpu_handle_hypercall();
 		return;
 	case EXIT_REASON_CR_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;

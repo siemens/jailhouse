@@ -105,7 +105,7 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
 void vcpu_vendor_set_guest_pat(unsigned long val);
 
-void vcpu_handle_hypercall(union registers *guest_regs);
+void vcpu_handle_hypercall(void);
 
 bool vcpu_handle_io_access(union registers *guest_regs);
 bool vcpu_handle_mmio_access(union registers *guest_regs);
