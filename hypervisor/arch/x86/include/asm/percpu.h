@@ -23,6 +23,8 @@
 
 #define NUM_ENTRY_REGS			6
 
+#define STACK_SIZE			PAGE_SIZE
+
 #ifndef __ASSEMBLY__
 
 #include <asm/cell.h>
@@ -40,8 +42,16 @@
 
 /** Per-CPU states. */
 struct per_cpu {
-	/** Stack used while in hypervisor mode. */
-	u8 stack[PAGE_SIZE];
+	union {
+		/** Stack used while in hypervisor mode. */
+		u8 stack[STACK_SIZE];
+		struct {
+			u8 __fill[STACK_SIZE - sizeof(union registers)];
+			/** Guest registers saved on stack during VM exit. */
+			union registers guest_regs;
+		};
+	};
+
 	/** Linux stack pointer, used for handover to hypervisor. */
 	unsigned long linux_sp;
 
