@@ -166,9 +166,8 @@ unsigned int apic_mmio_access(union registers *guest_regs,
 			      const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write);
 
-bool x2apic_handle_write(union registers *guest_regs,
-			 struct per_cpu *cpu_data);
-void x2apic_handle_read(union registers *guest_regs);
+bool x2apic_handle_write(void);
+void x2apic_handle_read(void);
 
 u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination);
 

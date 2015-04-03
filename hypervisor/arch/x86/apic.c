@@ -517,8 +517,9 @@ unsigned int apic_mmio_access(union registers *guest_regs,
 	return inst.inst_len;
 }
 
-bool x2apic_handle_write(union registers *guest_regs, struct per_cpu *cpu_data)
+bool x2apic_handle_write(void)
 {
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 	u32 val = guest_regs->rax;
 
@@ -539,8 +540,9 @@ bool x2apic_handle_write(union registers *guest_regs, struct per_cpu *cpu_data)
 }
 
 /* must only be called for readable registers */
-void x2apic_handle_read(union registers *guest_regs)
+void x2apic_handle_read(void)
 {
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 
 	if (reg == APIC_REG_ID)

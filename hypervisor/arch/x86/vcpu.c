@@ -247,7 +247,7 @@ bool vcpu_handle_msr_read(union registers *guest_regs)
 
 	switch (guest_regs->rcx) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
-		x2apic_handle_read(guest_regs);
+		x2apic_handle_read();
 		break;
 	case MSR_IA32_PAT:
 		set_rdmsr_value(guest_regs, cpu_data->pat);
@@ -273,7 +273,7 @@ bool vcpu_handle_msr_write(union registers *guest_regs)
 
 	switch (guest_regs->rcx) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
-		if (!x2apic_handle_write(guest_regs, cpu_data))
+		if (!x2apic_handle_write())
 			return false;
 		break;
 	case MSR_IA32_PAT:
