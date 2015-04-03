@@ -114,6 +114,8 @@ bool vcpu_handle_mmio_access(struct registers *guest_regs);
 bool vcpu_handle_msr_read(struct registers *guest_regs);
 bool vcpu_handle_msr_write(struct registers *guest_regs);
 
+bool vcpu_handle_xsetbv(struct registers *guest_regs);
+
 void vcpu_reset(struct registers *guest_regs);
 
 #endif

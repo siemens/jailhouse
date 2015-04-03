@@ -311,6 +311,26 @@ bool vcpu_handle_msr_write(struct registers *guest_regs)
 	return true;
 }
 
+bool vcpu_handle_xsetbv(struct registers *guest_regs)
+{
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_XSETBV]++;
+
+	if (cpuid_ecx(1) & X86_FEATURE_XSAVE &&
+	    guest_regs->rax & X86_XCR0_FP &&
+	    (guest_regs->rax & ~cpuid_eax(0x0d)) == 0 &&
+	     guest_regs->rcx == 0 && guest_regs->rdx == 0) {
+		vcpu_skip_emulated_instruction(X86_INST_LEN_XSETBV);
+		asm volatile(
+			"xsetbv"
+			: /* no output */
+			: "a" (guest_regs->rax), "c" (0), "d" (0));
+		return true;
+	}
+	panic_printk("FATAL: Invalid xsetbv parameters: xcr[%d] = %08x:%08x\n",
+		     guest_regs->rcx, guest_regs->rdx, guest_regs->rax);
+	return false;
+}
+
 void vcpu_reset(struct registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
