@@ -272,6 +272,17 @@ static inline void write_msr(unsigned int msr, unsigned long val)
 		: "memory");
 }
 
+static inline void set_rdmsr_value(struct registers *regs, unsigned long val)
+{
+	regs->rax = (u32)val;
+	regs->rdx = val >> 32;
+}
+
+static inline unsigned long get_wrmsr_value(struct registers *regs)
+{
+	return (u32)regs->rax | (regs->rdx << 32);
+}
+
 static inline void read_gdtr(struct desc_table_reg *val)
 {
 	asm volatile("sgdtq %0" : "=m" (*val));

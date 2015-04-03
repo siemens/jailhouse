@@ -823,8 +823,7 @@ static bool svm_handle_msr_read(struct registers *guest_regs,
 {
 	switch (guest_regs->rcx) {
 	case MSR_IA32_PAT:
-		guest_regs->rax = cpu_data->vmcb.g_pat & 0xffffffff;
-		guest_regs->rdx = cpu_data->vmcb.g_pat >> 32;
+		set_rdmsr_value(guest_regs, cpu_data->vmcb.g_pat);
 		break;
 	default:
 		return vcpu_handle_msr_read(guest_regs);
@@ -842,14 +841,12 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 
 	switch (guest_regs->rcx) {
 	case MSR_IA32_PAT:
-		vmcb->g_pat = (guest_regs->rax & 0xffffffff) |
-			(guest_regs->rdx << 32);
+		vmcb->g_pat = get_wrmsr_value(guest_regs);
 		vmcb->clean_bits &= ~CLEAN_BITS_NP;
 		break;
 	case MSR_EFER:
 		/* Never let a guest to disable SVME; see APMv2, Sect. 3.1.7 */
-		efer = (guest_regs->rax & 0xffffffff) |
-			(guest_regs->rdx << 32) | EFER_SVME;
+		efer = get_wrmsr_value(guest_regs) | EFER_SVME;
 		/* Flush TLB on LME/NXE change: See APMv2, Sect. 15.16 */
 		if ((efer ^ vmcb->efer) & (EFER_LME | EFER_NXE))
 			vcpu_tlb_flush();
@@ -857,7 +854,7 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 		vmcb->clean_bits &= ~CLEAN_BITS_CRX;
 		break;
 	case MTRR_DEFTYPE:
-		val = (guest_regs->rax & 0xffffffff) | (guest_regs->rdx << 32);
+		val = get_wrmsr_value(guest_regs);
 		/*
 		 * Quick (and very incomplete) guest MTRRs emulation.
 		 *
