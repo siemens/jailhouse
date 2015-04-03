@@ -327,7 +327,7 @@ void apic_clear(void)
 	apic_ops.write(APIC_REG_TPR, 0);
 }
 
-static bool apic_valid_ipi_mode(struct per_cpu *cpu_data, u32 lo_val)
+static bool apic_valid_ipi_mode(u32 lo_val)
 {
 	switch (lo_val & APIC_ICR_DLVR_MASK) {
 	case APIC_ICR_DLVR_INIT:
@@ -416,7 +416,7 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 	unsigned int target_cpu_id;
 	unsigned long dest;
 
-	if (!apic_valid_ipi_mode(cpu_data, lo_val))
+	if (!apic_valid_ipi_mode(lo_val))
 		return false;
 
 	if ((lo_val & APIC_ICR_SH_MASK) == APIC_ICR_SH_SELF) {
