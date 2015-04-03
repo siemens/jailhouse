@@ -640,9 +640,7 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
-	struct vmcb *vmcb = &cpu_data->vmcb;
-	vmcb->rip += inst_len;
+	this_cpu_data()->vmcb.rip += inst_len;
 }
 
 static void update_efer(struct per_cpu *cpu_data)
@@ -665,8 +663,7 @@ static void update_efer(struct per_cpu *cpu_data)
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
-	struct vmcb *vmcb = &cpu_data->vmcb;
+	struct vmcb *vmcb = &this_cpu_data()->vmcb;
 
 	if (vmcb->efer & EFER_LMA) {
 		pg_structs->root_paging = x86_64_paging;
@@ -1021,8 +1018,7 @@ void vcpu_nmi_handler(void)
 
 void vcpu_tlb_flush(void)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
-	struct vmcb *vmcb = &cpu_data->vmcb;
+	struct vmcb *vmcb = &this_cpu_data()->vmcb;
 
 	if (has_flush_by_asid)
 		vmcb->tlb_control = SVM_TLB_FLUSH_GUEST;
@@ -1033,8 +1029,7 @@ void vcpu_tlb_flush(void)
 const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
-	struct vmcb *vmcb = &cpu_data->vmcb;
+	struct vmcb *vmcb = &this_cpu_data()->vmcb;
 	unsigned long start;
 
 	if (has_assists) {
