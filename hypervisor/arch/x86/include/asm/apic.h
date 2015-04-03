@@ -153,7 +153,7 @@ extern u8 apic_to_cpu_id[];
 int apic_init(void);
 int apic_cpu_init(struct per_cpu *cpu_data);
 
-void apic_clear(struct per_cpu *cpu_data);
+void apic_clear(void);
 
 void apic_send_nmi_ipi(struct per_cpu *target_data);
 bool apic_filter_irq_dest(struct cell *cell, struct apic_irq_message *irq_msg);

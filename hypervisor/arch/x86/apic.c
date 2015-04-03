@@ -289,7 +289,7 @@ static void apic_mask_lvt(unsigned int reg)
 		apic_ops.write(reg, val | APIC_LVT_MASKED);
 }
 
-void apic_clear(struct per_cpu *cpu_data)
+void apic_clear(void)
 {
 	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
 	unsigned int xlc = (apic_ext_features() >> 16) & 0xff;
@@ -318,7 +318,7 @@ void apic_clear(struct per_cpu *cpu_data)
 	/* Consume pending interrupts to clear IRR.
 	 * Need to reset TPR to ensure interrupt delivery. */
 	apic_ops.write(APIC_REG_TPR, 0);
-	cpu_data->num_clear_apic_irqs = 0;
+	this_cpu_data()->num_clear_apic_irqs = 0;
 	enable_irq();
 	cpu_relax();
 	disable_irq();
