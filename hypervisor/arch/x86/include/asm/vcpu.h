@@ -72,7 +72,7 @@ vcpu_deactivate_vmm(struct registers *guest_regs);
 
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data);
 
-void vcpu_park(struct per_cpu *cpu_data);
+void vcpu_park(void);
 
 void vcpu_nmi_handler(void);
 

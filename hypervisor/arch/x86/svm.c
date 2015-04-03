@@ -1027,13 +1027,11 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	panic_park();
 }
 
-void vcpu_park(struct per_cpu *cpu_data)
+void vcpu_park(void)
 {
-	struct vmcb *vmcb = &cpu_data->vmcb;
-
-	svm_vcpu_reset(cpu_data, APIC_BSP_PSEUDO_SIPI);
+	svm_vcpu_reset(this_cpu_data(), APIC_BSP_PSEUDO_SIPI);
 	/* No need to clear VMCB Clean bit: vcpu_reset() already does this */
-	vmcb->n_cr3 = paging_hvirt2phys(parked_mode_npt);
+	this_cpu_data()->vmcb.n_cr3 = paging_hvirt2phys(parked_mode_npt);
 
 	vcpu_tlb_flush();
 }

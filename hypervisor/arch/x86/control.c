@@ -265,7 +265,7 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	/* wait_for_sipi is only modified on this CPU, so checking outside of
 	 * control_lock is fine */
 	if (cpu_data->wait_for_sipi)
-		vcpu_park(cpu_data);
+		vcpu_park();
 	else if (sipi_vector >= 0)
 		apic_clear();
 
@@ -304,5 +304,5 @@ void arch_panic_park(void)
 	x86_enter_wait_for_sipi(cpu_data);
 	spin_unlock(&cpu_data->control_lock);
 
-	vcpu_park(cpu_data);
+	vcpu_park();
 }

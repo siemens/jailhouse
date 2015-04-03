@@ -861,7 +861,7 @@ void vcpu_nmi_handler(void)
 	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
 }
 
-void vcpu_park(struct per_cpu *cpu_data)
+void vcpu_park(void)
 {
 	vmx_vcpu_reset(0);
 	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
