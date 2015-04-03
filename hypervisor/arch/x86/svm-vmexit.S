@@ -18,9 +18,7 @@
 	.globl svm_vmexit
 svm_vmexit:
 	/* XXX: GIF is always cleared here */
-	push %rax
-
-	push -PERCPU_STACK_END+1*8+PERCPU_VMCB_RAX(%rsp)
+	push -PERCPU_STACK_END+PERCPU_VMCB_RAX(%rsp)
 	push %rcx
 	push %rdx
 	push %rbx
@@ -38,8 +36,10 @@ svm_vmexit:
 	push %r15
 
 	mov %rsp,%rdi
-	lea -PERCPU_STACK_END+1*8+16*8(%rsp),%rsi
+	lea -PERCPU_STACK_END+16*8(%rsp),%rsi
+	push %rax
 	call vcpu_handle_exit
+	pop %rax
 
 	pop %r15
 	pop %r14
@@ -56,9 +56,7 @@ svm_vmexit:
 	pop %rbx
 	pop %rdx
 	pop %rcx
-	pop -PERCPU_STACK_END+1*8+PERCPU_VMCB_RAX(%rsp)
-
-	pop %rax
+	pop -PERCPU_STACK_END+PERCPU_VMCB_RAX(%rsp)
 
 	vmload %rax
 	vmrun %rax
