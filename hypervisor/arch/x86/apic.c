@@ -354,13 +354,13 @@ static bool apic_valid_ipi_mode(u32 lo_val)
 	return true;
 }
 
-static void apic_send_ipi(struct per_cpu *cpu_data, unsigned int target_cpu_id,
-			  u32 orig_icr_hi, u32 icr_lo)
+static void apic_send_ipi(unsigned int target_cpu_id, u32 orig_icr_hi,
+			  u32 icr_lo)
 {
-	if (!cell_owns_cpu(cpu_data->cell, target_cpu_id)) {
+	if (!cell_owns_cpu(this_cell(), target_cpu_id)) {
 		printk("WARNING: CPU %d specified IPI destination outside "
 		       "cell boundaries, ICR.hi=%x\n",
-		       cpu_data->cpu_id, orig_icr_hi);
+		       this_cpu_id(), orig_icr_hi);
 		return;
 	}
 
@@ -381,8 +381,7 @@ static void apic_send_ipi(struct per_cpu *cpu_data, unsigned int target_cpu_id,
 	}
 }
 
-static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
-				       unsigned long dest, u32 lo_val,
+static void apic_send_logical_dest_ipi(unsigned long dest, u32 lo_val,
 				       u32 hi_val)
 {
 	unsigned int target_cpu_id = CPU_ID_INVALID;
@@ -401,13 +400,13 @@ static void apic_send_logical_dest_ipi(struct per_cpu *cpu_data,
 				(cluster_id << X2APIC_CLUSTER_ID_SHIFT);
 			if (apic_id <= APIC_MAX_PHYS_ID)
 				target_cpu_id = apic_to_cpu_id[apic_id];
-			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
+			apic_send_ipi(target_cpu_id, hi_val, lo_val);
 		}
 	} else
 		while (dest != 0) {
 			target_cpu_id = ffsl(dest);
 			dest &= ~(1UL << target_cpu_id);
-			apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
+			apic_send_ipi(target_cpu_id, hi_val, lo_val);
 		}
 }
 
@@ -433,12 +432,12 @@ bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
 
 	if (lo_val & APIC_ICR_DEST_LOGICAL) {
 		lo_val &= ~APIC_ICR_DEST_LOGICAL;
-		apic_send_logical_dest_ipi(cpu_data, dest, lo_val, hi_val);
+		apic_send_logical_dest_ipi(dest, lo_val, hi_val);
 	} else {
 		target_cpu_id = CPU_ID_INVALID;
 		if (dest <= APIC_MAX_PHYS_ID)
 			target_cpu_id = apic_to_cpu_id[dest];
-		apic_send_ipi(cpu_data, target_cpu_id, hi_val, lo_val);
+		apic_send_ipi(target_cpu_id, hi_val, lo_val);
 	}
 	return true;
 }
