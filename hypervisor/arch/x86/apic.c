@@ -410,7 +410,7 @@ static void apic_send_logical_dest_ipi(unsigned long dest, u32 lo_val,
 		}
 }
 
-bool apic_handle_icr_write(struct per_cpu *cpu_data, u32 lo_val, u32 hi_val)
+static bool apic_handle_icr_write(u32 lo_val, u32 hi_val)
 {
 	unsigned int target_cpu_id;
 	unsigned long dest;
@@ -490,7 +490,7 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			return 0;
 
 		if (reg == APIC_REG_ICR) {
-			if (!apic_handle_icr_write(cpu_data, val,
+			if (!apic_handle_icr_write(val,
 					apic_ops.read(APIC_REG_ICR_HI)))
 				return 0;
 		} else if (reg == APIC_REG_LDR &&
@@ -530,7 +530,7 @@ bool x2apic_handle_write(struct registers *guest_regs,
 		/* TODO: emulate */
 		printk("Unhandled x2APIC self IPI write\n");
 	else if (reg == APIC_REG_ICR)
-		return apic_handle_icr_write(cpu_data, val, guest_regs->rdx);
+		return apic_handle_icr_write(val, guest_regs->rdx);
 	else if (reg >= APIC_REG_LVTCMCI && reg <= APIC_REG_LVTERR &&
 		 apic_invalid_lvt_delivery_mode(reg, val))
 		return false;
