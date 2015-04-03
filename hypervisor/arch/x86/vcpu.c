@@ -245,6 +245,9 @@ bool vcpu_handle_msr_read(struct registers *guest_regs)
 	case MSR_IA32_PAT:
 		set_rdmsr_value(guest_regs, cpu_data->pat);
 		break;
+	case MSR_IA32_MTRR_DEF_TYPE:
+		set_rdmsr_value(guest_regs, cpu_data->mtrr_def_type);
+		break;
 	default:
 		panic_printk("FATAL: Unhandled MSR read: %x\n",
 			     guest_regs->rcx);
@@ -277,7 +280,20 @@ bool vcpu_handle_msr_write(struct registers *guest_regs)
 			}
 		}
 		cpu_data->pat = val;
-		vcpu_vendor_set_guest_pat(val);
+		if (cpu_data->mtrr_def_type & MTRR_ENABLE)
+			vcpu_vendor_set_guest_pat(val);
+		break;
+	case MSR_IA32_MTRR_DEF_TYPE:
+		/*
+		 * This only emulates the difference between MTRRs enabled
+		 * and disabled. When disabled, we turn off all caching by
+		 * setting the guest PAT to 0. When enabled, guest PAT +
+		 * host-controlled MTRRs define the guest's memory types.
+		 */
+		val = get_wrmsr_value(guest_regs);
+		cpu_data->mtrr_def_type = val;
+		vcpu_vendor_set_guest_pat(val & MTRR_ENABLE ?
+					  cpu_data->pat : 0);
 		break;
 	default:
 		panic_printk("FATAL: Unhandled MSR write: %x\n",
@@ -291,7 +307,10 @@ bool vcpu_handle_msr_write(struct registers *guest_regs)
 
 void vcpu_reset(struct registers *guest_regs)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	memset(guest_regs, 0, sizeof(*guest_regs));
-	this_cpu_data()->pat = PAT_RESET_VALUE;
-	vcpu_vendor_set_guest_pat(PAT_RESET_VALUE);
+	cpu_data->pat = PAT_RESET_VALUE;
+	cpu_data->mtrr_def_type = 0;
+	vcpu_vendor_set_guest_pat(0);
 }

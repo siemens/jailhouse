@@ -196,6 +196,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	cpu_data->pat = read_msr(MSR_IA32_PAT);
 	write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
 
+	cpu_data->mtrr_def_type = read_msr(MSR_IA32_MTRR_DEF_TYPE);
+
 	cpu_data->linux_efer = read_msr(MSR_EFER);
 
 	cpu_data->linux_sysenter_cs = read_msr(MSR_IA32_SYSENTER_CS);

@@ -79,6 +79,7 @@ struct per_cpu {
 
 	/** Shadow states. @{ */
 	unsigned long pat;
+	unsigned long mtrr_def_type;
 	/** @} */
 
 	/** True when CPU is initialized by hypervisor. */

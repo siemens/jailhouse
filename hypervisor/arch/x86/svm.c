@@ -39,8 +39,6 @@
  */
 #define SVM_CR0_ALLOWED_BITS	(~X86_CR0_NW)
 
-#define MTRR_DEFTYPE		0x2ff
-
 static bool has_avic, has_assists, has_flush_by_asid;
 
 static const struct segment invalid_seg;
@@ -826,10 +824,9 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 		struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
-	unsigned long efer, val;
+	unsigned long efer;
 
-	switch (guest_regs->rcx) {
-	case MSR_EFER:
+	if (guest_regs->rcx == MSR_EFER) {
 		/* Never let a guest to disable SVME; see APMv2, Sect. 3.1.7 */
 		efer = get_wrmsr_value(guest_regs) | EFER_SVME;
 		/* Flush TLB on LME/NXE change: See APMv2, Sect. 15.16 */
@@ -837,31 +834,11 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
 			vcpu_tlb_flush();
 		vmcb->efer = efer;
 		vmcb->clean_bits &= ~CLEAN_BITS_CRX;
-		break;
-	case MTRR_DEFTYPE:
-		val = get_wrmsr_value(guest_regs);
-		/*
-		 * Quick (and very incomplete) guest MTRRs emulation.
-		 *
-		 * For Linux, emulating MTRR Enable bit seems to be enough.
-		 * If it is cleared, we set hPAT to all zeroes, effectively
-		 * making all NPT-mapped memory UC (see APMv2, Sect. 15.25.8).
-		 *
-		 * Otherwise, default PAT value is restored. This can also
-		 * make NPT-mapped memory's type different from what Linux
-		 * expects, however.
-		 */
-		if (val & 0x800)
-			write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
-		else
-			write_msr(MSR_IA32_PAT, 0);
-		break;
-	default:
-		return vcpu_handle_msr_write(guest_regs);
+		vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+		return true;
 	}
 
-	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
-	return true;
+	return vcpu_handle_msr_write(guest_regs);
 }
 
 /*
