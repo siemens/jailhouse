@@ -180,8 +180,8 @@ static inline void memory_load_barrier(void)
 	asm volatile("lfence" : : : "memory");
 }
 
-static inline void __cpuid(unsigned int *eax, unsigned int *ebx,
-			   unsigned int *ecx, unsigned int *edx)
+static inline void cpuid(unsigned int *eax, unsigned int *ebx,
+			 unsigned int *ecx, unsigned int *edx)
 {
 	/* ecx is often an input as well as an output. */
 	asm volatile("cpuid"
@@ -190,20 +190,14 @@ static inline void __cpuid(unsigned int *eax, unsigned int *ebx,
 	    : "memory");
 }
 
-static inline void cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx,
-			 unsigned int *ecx, unsigned int *edx)
-{
-	*eax = op;
-	*ecx = 0;
-	__cpuid(eax, ebx, ecx, edx);
-}
-
 #define CPUID_REG(reg)						\
 static inline unsigned int cpuid_##reg(unsigned int op)		\
 {								\
 	unsigned int eax, ebx, ecx, edx;			\
 								\
-	cpuid(op, &eax, &ebx, &ecx, &edx);			\
+	eax = op;						\
+	ecx = 0;						\
+	cpuid(&eax, &ebx, &ecx, &edx);				\
 	return reg;						\
 }
 

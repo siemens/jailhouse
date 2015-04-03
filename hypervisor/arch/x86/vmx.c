@@ -1037,8 +1037,8 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		guest_regs->rbx &= 0xffffffff;
 		guest_regs->rcx &= 0xffffffff;
 		guest_regs->rdx &= 0xffffffff;
-		__cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
-			(u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
+		cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
+		      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
 		vcpu_vendor_get_execution_state(&x_state);
