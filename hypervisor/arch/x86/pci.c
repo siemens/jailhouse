@@ -71,7 +71,7 @@ void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
  *
  * @private
  */
-static void set_rax_reg(struct registers *guest_regs,
+static void set_rax_reg(union registers *guest_regs,
 	u32 value_new, u8 size)
 {
 	u64 value_old = guest_regs->rax;
@@ -91,7 +91,7 @@ static void set_rax_reg(struct registers *guest_regs,
  *
  * @private
  */
-static u32 get_rax_reg(struct registers *guest_regs, u8 size)
+static u32 get_rax_reg(union registers *guest_regs, u8 size)
 {
 	return guest_regs->rax & BYTE_MASK(size);
 }
@@ -108,7 +108,7 @@ static u32 get_rax_reg(struct registers *guest_regs, u8 size)
  * @private
  */
 static int
-data_port_in_handler(struct registers *guest_regs, struct pci_device *device,
+data_port_in_handler(union registers *guest_regs, struct pci_device *device,
 		     u16 address, unsigned int size)
 {
 	u32 reg_data;
@@ -135,7 +135,7 @@ data_port_in_handler(struct registers *guest_regs, struct pci_device *device,
  * @private
  */
 static int
-data_port_out_handler(struct registers *guest_regs, struct pci_device *device,
+data_port_out_handler(union registers *guest_regs, struct pci_device *device,
 		      u16 address, unsigned int size)
 {
 	u32 reg_data = get_rax_reg(guest_regs, size);
@@ -160,7 +160,7 @@ data_port_out_handler(struct registers *guest_regs, struct pci_device *device,
  *
  * @return 1 if handled successfully, 0 if unhandled, -1 on access error.
  */
-int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
+int x86_pci_config_handler(union registers *guest_regs, struct cell *cell,
 			   u16 port, bool dir_in, unsigned int size)
 {
 	struct pci_device *device;

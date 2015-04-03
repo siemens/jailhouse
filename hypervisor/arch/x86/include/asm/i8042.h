@@ -19,7 +19,7 @@
 # define I8042_CMD_WRITE_CTRL_PORT	0xd1
 # define I8042_CMD_PULSE_CTRL_PORT	0xf0
 
-int i8042_access_handler(struct registers *guest_regs, u16 port, bool dir_in,
+int i8042_access_handler(union registers *guest_regs, u16 port, bool dir_in,
 			 unsigned int size);
 
 #endif /* !_JAILHOUSE_ASM_I8042_H */

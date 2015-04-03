@@ -68,9 +68,9 @@ void vcpu_exit(struct per_cpu *cpu_data);
 
 void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data);
 void __attribute__((noreturn))
-vcpu_deactivate_vmm(struct registers *guest_regs);
+vcpu_deactivate_vmm(union registers *guest_regs);
 
-void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data);
+void vcpu_handle_exit(union registers *guest_regs, struct per_cpu *cpu_data);
 
 void vcpu_park(void);
 
@@ -106,16 +106,16 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
 void vcpu_vendor_set_guest_pat(unsigned long val);
 
-void vcpu_handle_hypercall(struct registers *guest_regs);
+void vcpu_handle_hypercall(union registers *guest_regs);
 
-bool vcpu_handle_io_access(struct registers *guest_regs);
-bool vcpu_handle_mmio_access(struct registers *guest_regs);
+bool vcpu_handle_io_access(union registers *guest_regs);
+bool vcpu_handle_mmio_access(union registers *guest_regs);
 
-bool vcpu_handle_msr_read(struct registers *guest_regs);
-bool vcpu_handle_msr_write(struct registers *guest_regs);
+bool vcpu_handle_msr_read(union registers *guest_regs);
+bool vcpu_handle_msr_write(union registers *guest_regs);
 
-bool vcpu_handle_xsetbv(struct registers *guest_regs);
+bool vcpu_handle_xsetbv(union registers *guest_regs);
 
-void vcpu_reset(struct registers *guest_regs);
+void vcpu_reset(union registers *guest_regs);
 
 #endif

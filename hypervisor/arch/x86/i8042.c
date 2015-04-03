@@ -18,7 +18,7 @@
 
 #include <jailhouse/cell-config.h>
 
-int i8042_access_handler(struct registers *guest_regs, u16 port, bool dir_in,
+int i8042_access_handler(union registers *guest_regs, u16 port, bool dir_in,
 			 unsigned int size)
 {
 	const struct jailhouse_cell_desc *config = this_cell()->config;

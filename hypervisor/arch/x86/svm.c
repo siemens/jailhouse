@@ -469,7 +469,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 }
 
 void __attribute__((noreturn))
-vcpu_deactivate_vmm(struct registers *guest_regs)
+vcpu_deactivate_vmm(union registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct vmcb *vmcb = &cpu_data->vmcb;
@@ -778,7 +778,7 @@ out:
  * result in no more than VMEXIT_INVALID. Maybe we can get along without it
  * altogether?
  */
-static bool svm_handle_cr(struct registers *guest_regs,
+static bool svm_handle_cr(union registers *guest_regs,
 			  struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
@@ -804,7 +804,7 @@ static bool svm_handle_cr(struct registers *guest_regs,
 	if (reg == 4)
 		val = vmcb->rsp;
 	else
-		val = ((unsigned long *)guest_regs)[15 - reg];
+		val = guest_regs->by_index[15 - reg];
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
 	/* Flush TLB on PG/WP/CD/NW change: See APMv2, Sect. 15.16 */
@@ -821,7 +821,7 @@ out:
 	return ok;
 }
 
-static bool svm_handle_msr_write(struct registers *guest_regs,
+static bool svm_handle_msr_write(union registers *guest_regs,
 		struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
@@ -846,7 +846,7 @@ static bool svm_handle_msr_write(struct registers *guest_regs,
  * TODO: This handles unaccelerated (non-AVIC) access. AVIC should
  * be treated separately in svm_handle_avic_access().
  */
-static bool svm_handle_apic_access(struct registers *guest_regs,
+static bool svm_handle_apic_access(union registers *guest_regs,
 				   struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
@@ -878,7 +878,7 @@ out_err:
 	return false;
 }
 
-static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
+static void dump_guest_regs(union registers *guest_regs, struct vmcb *vmcb)
 {
 	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", vmcb->rip,
 		     vmcb->rsp, vmcb->rflags);
@@ -915,7 +915,7 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 	mmio->is_write = !!(vmcb->exitinfo1 & 0x2);
 }
 
-void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
+void vcpu_handle_exit(union registers *guest_regs, struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	bool res = false;

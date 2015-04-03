@@ -32,7 +32,7 @@
  * @{
  */
 
-int x86_pci_config_handler(struct registers *guest_regs, struct cell *cell,
+int x86_pci_config_handler(union registers *guest_regs, struct cell *cell,
 			   u16 port, bool dir_in, unsigned int size);
 
 /** @} */

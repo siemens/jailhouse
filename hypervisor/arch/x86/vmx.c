@@ -698,7 +698,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 }
 
 void __attribute__((noreturn))
-vcpu_deactivate_vmm(struct registers *guest_regs)
+vcpu_deactivate_vmm(union registers *guest_regs)
 {
 	unsigned long *stack = (unsigned long *)vmcs_read64(GUEST_RSP);
 	unsigned long linux_ip = vmcs_read64(GUEST_RIP);
@@ -893,7 +893,7 @@ static void update_efer(void)
 		     vmcs_read32(VM_ENTRY_CONTROLS) | VM_ENTRY_IA32E_MODE);
 }
 
-static bool vmx_handle_cr(struct registers *guest_regs,
+static bool vmx_handle_cr(union registers *guest_regs,
 			  struct per_cpu *cpu_data)
 {
 	u64 exit_qualification = vmcs_read64(EXIT_QUALIFICATION);
@@ -907,7 +907,7 @@ static bool vmx_handle_cr(struct registers *guest_regs,
 		if (reg == 4)
 			val = vmcs_read64(GUEST_RSP);
 		else
-			val = ((unsigned long *)guest_regs)[15 - reg];
+			val = guest_regs->by_index[15 - reg];
 
 		if (cr == 0 || cr == 4) {
 			vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
@@ -949,7 +949,7 @@ void vcpu_vendor_set_guest_pat(unsigned long val)
 	vmcs_write64(GUEST_IA32_PAT, val);
 }
 
-static bool vmx_handle_apic_access(struct registers *guest_regs,
+static bool vmx_handle_apic_access(union registers *guest_regs,
 				   struct per_cpu *cpu_data)
 {
 	struct guest_paging_structures pg_structs;
@@ -998,7 +998,7 @@ static void dump_vm_exit_details(u32 reason)
 			     vmcs_read64(GUEST_LINEAR_ADDRESS));
 }
 
-static void dump_guest_regs(struct registers *guest_regs)
+static void dump_guest_regs(union registers *guest_regs)
 {
 	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", vmcs_read64(GUEST_RIP),
 		     vmcs_read64(GUEST_RSP), vmcs_read64(GUEST_RFLAGS));
@@ -1038,7 +1038,7 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 	mmio->is_write = !!(exitq & 0x2);
 }
 
-void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
+void vcpu_handle_exit(union registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	int sipi_vector;

@@ -138,23 +138,26 @@
  * @{
  */
 
-struct registers {
-	unsigned long r15;
-	unsigned long r14;
-	unsigned long r13;
-	unsigned long r12;
-	unsigned long r11;
-	unsigned long r10;
-	unsigned long r9;
-	unsigned long r8;
-	unsigned long rdi;
-	unsigned long rsi;
-	unsigned long rbp;
-	unsigned long unused;
-	unsigned long rbx;
-	unsigned long rdx;
-	unsigned long rcx;
-	unsigned long rax;
+union registers {
+	struct {
+		unsigned long r15;
+		unsigned long r14;
+		unsigned long r13;
+		unsigned long r12;
+		unsigned long r11;
+		unsigned long r10;
+		unsigned long r9;
+		unsigned long r8;
+		unsigned long rdi;
+		unsigned long rsi;
+		unsigned long rbp;
+		unsigned long unused;
+		unsigned long rbx;
+		unsigned long rdx;
+		unsigned long rcx;
+		unsigned long rax;
+	};
+	unsigned long by_index[16];
 };
 
 struct desc_table_reg {
@@ -275,13 +278,13 @@ static inline void write_msr(unsigned int msr, unsigned long val)
 		: "memory");
 }
 
-static inline void set_rdmsr_value(struct registers *regs, unsigned long val)
+static inline void set_rdmsr_value(union registers *regs, unsigned long val)
 {
 	regs->rax = (u32)val;
 	regs->rdx = val >> 32;
 }
 
-static inline unsigned long get_wrmsr_value(struct registers *regs)
+static inline unsigned long get_wrmsr_value(union registers *regs)
 {
 	return (u32)regs->rax | (regs->rdx << 32);
 }

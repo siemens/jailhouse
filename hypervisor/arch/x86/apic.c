@@ -468,7 +468,7 @@ static bool apic_invalid_lvt_delivery_mode(unsigned int reg, u32 val)
 	return true;
 }
 
-unsigned int apic_mmio_access(struct registers *guest_regs,
+unsigned int apic_mmio_access(union registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,
 			      const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write)
@@ -485,7 +485,7 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 		return 0;
 	}
 	if (is_write) {
-		val = ((unsigned long *)guest_regs)[inst.reg_num];
+		val = guest_regs->by_index[inst.reg_num];
 		if (apic_accessing_reserved_bits(reg, val))
 			return 0;
 
@@ -512,13 +512,12 @@ unsigned int apic_mmio_access(struct registers *guest_regs,
 			apic_ops.write(reg, val);
 	} else {
 		val = apic_ops.read(reg);
-		((unsigned long *)guest_regs)[inst.reg_num] = val;
+		guest_regs->by_index[inst.reg_num] = val;
 	}
 	return inst.inst_len;
 }
 
-bool x2apic_handle_write(struct registers *guest_regs,
-			 struct per_cpu *cpu_data)
+bool x2apic_handle_write(union registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 	u32 val = guest_regs->rax;
@@ -540,7 +539,7 @@ bool x2apic_handle_write(struct registers *guest_regs,
 }
 
 /* must only be called for readable registers */
-void x2apic_handle_read(struct registers *guest_regs)
+void x2apic_handle_read(union registers *guest_regs)
 {
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 

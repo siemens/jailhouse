@@ -161,14 +161,14 @@ void apic_send_irq(struct apic_irq_message irq_msg);
 
 void apic_irq_handler(void);
 
-unsigned int apic_mmio_access(struct registers *guest_regs,
+unsigned int apic_mmio_access(union registers *guest_regs,
 			      struct per_cpu *cpu_data, unsigned long rip,
 			      const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write);
 
-bool x2apic_handle_write(struct registers *guest_regs,
+bool x2apic_handle_write(union registers *guest_regs,
 			 struct per_cpu *cpu_data);
-void x2apic_handle_read(struct registers *guest_regs);
+void x2apic_handle_read(union registers *guest_regs);
 
 u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination);
 

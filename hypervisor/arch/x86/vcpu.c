@@ -133,7 +133,7 @@ void vcpu_cell_exit(struct cell *cell)
 	vcpu_vendor_cell_exit(cell);
 }
 
-void vcpu_handle_hypercall(struct registers *guest_regs)
+void vcpu_handle_hypercall(union registers *guest_regs)
 {
 	unsigned long code = guest_regs->rax;
 	struct vcpu_execution_state x_state;
@@ -164,7 +164,7 @@ void vcpu_handle_hypercall(struct registers *guest_regs)
 		vcpu_deactivate_vmm(guest_regs);
 }
 
-bool vcpu_handle_io_access(struct registers *guest_regs)
+bool vcpu_handle_io_access(union registers *guest_regs)
 {
 	struct vcpu_io_intercept io;
 	int result = 0;
@@ -192,7 +192,7 @@ invalid_access:
 	return false;
 }
 
-bool vcpu_handle_mmio_access(struct registers *guest_regs)
+bool vcpu_handle_mmio_access(union registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct guest_paging_structures pg_structs;
@@ -213,7 +213,7 @@ bool vcpu_handle_mmio_access(struct registers *guest_regs)
 		goto invalid_access;
 
 	if (mmio.is_write)
-		val = ((unsigned long *)guest_regs)[inst.reg_num];
+		val = guest_regs->by_index[inst.reg_num];
 
 	result = ioapic_access_handler(cpu_data->cell, mmio.is_write,
 			               mmio.phys_addr, &val);
@@ -227,7 +227,7 @@ bool vcpu_handle_mmio_access(struct registers *guest_regs)
 
 	if (result == 1) {
 		if (!mmio.is_write)
-			((unsigned long *)guest_regs)[inst.reg_num] = val;
+			guest_regs->by_index[inst.reg_num] = val;
 		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
 	}
@@ -240,7 +240,7 @@ invalid_access:
 	return false;
 }
 
-bool vcpu_handle_msr_read(struct registers *guest_regs)
+bool vcpu_handle_msr_read(union registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
@@ -264,7 +264,7 @@ bool vcpu_handle_msr_read(struct registers *guest_regs)
 	return true;
 }
 
-bool vcpu_handle_msr_write(struct registers *guest_regs)
+bool vcpu_handle_msr_write(union registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned int bit_pos, pa;
@@ -311,7 +311,7 @@ bool vcpu_handle_msr_write(struct registers *guest_regs)
 	return true;
 }
 
-bool vcpu_handle_xsetbv(struct registers *guest_regs)
+bool vcpu_handle_xsetbv(union registers *guest_regs)
 {
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_XSETBV]++;
 
@@ -331,7 +331,7 @@ bool vcpu_handle_xsetbv(struct registers *guest_regs)
 	return false;
 }
 
-void vcpu_reset(struct registers *guest_regs)
+void vcpu_reset(union registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
