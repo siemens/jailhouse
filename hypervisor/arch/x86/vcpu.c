@@ -179,8 +179,7 @@ bool vcpu_handle_io_access(union registers *guest_regs)
 	result = x86_pci_config_handler(guest_regs, this_cell(), io.port,
 					io.in, io.size);
 	if (result == 0)
-		result = i8042_access_handler(guest_regs, io.port, io.in,
-					      io.size);
+		result = i8042_access_handler(io.port, io.in, io.size);
 
 	if (result == 1) {
 		vcpu_skip_emulated_instruction(io.inst_len);

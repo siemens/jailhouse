@@ -18,9 +18,9 @@
 
 #include <jailhouse/cell-config.h>
 
-int i8042_access_handler(union registers *guest_regs, u16 port, bool dir_in,
-			 unsigned int size)
+int i8042_access_handler(u16 port, bool dir_in, unsigned int size)
 {
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	const struct jailhouse_cell_desc *config = this_cell()->config;
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
 	u8 val;

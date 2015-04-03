@@ -13,13 +13,12 @@
 #ifndef _JAILHOUSE_ASM_I8042_H
 #define _JAILHOUSE_ASM_I8042_H
 
-#include <asm/processor.h>
+#include <jailhouse/types.h>
 
 #define I8042_CMD_REG			0x64
 # define I8042_CMD_WRITE_CTRL_PORT	0xd1
 # define I8042_CMD_PULSE_CTRL_PORT	0xf0
 
-int i8042_access_handler(union registers *guest_regs, u16 port, bool dir_in,
-			 unsigned int size);
+int i8042_access_handler(u16 port, bool dir_in, unsigned int size);
 
 #endif /* !_JAILHOUSE_ASM_I8042_H */
