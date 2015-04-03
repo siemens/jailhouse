@@ -331,11 +331,11 @@ bool vcpu_handle_xsetbv(union registers *guest_regs)
 	return false;
 }
 
-void vcpu_reset(union registers *guest_regs)
+void vcpu_reset(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
-	memset(guest_regs, 0, sizeof(*guest_regs));
+	memset(&cpu_data->guest_regs, 0, sizeof(cpu_data->guest_regs));
 	cpu_data->pat = PAT_RESET_VALUE;
 	cpu_data->mtrr_def_type = 0;
 	vcpu_vendor_set_guest_pat(0);

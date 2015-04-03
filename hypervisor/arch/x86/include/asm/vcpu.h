@@ -116,6 +116,6 @@ bool vcpu_handle_msr_write(union registers *guest_regs);
 
 bool vcpu_handle_xsetbv(union registers *guest_regs);
 
-void vcpu_reset(union registers *guest_regs);
+void vcpu_reset(void);
 
 #endif
