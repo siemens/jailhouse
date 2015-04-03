@@ -67,8 +67,7 @@ int vcpu_init(struct per_cpu *cpu_data);
 void vcpu_exit(struct per_cpu *cpu_data);
 
 void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data);
-void __attribute__((noreturn))
-vcpu_deactivate_vmm(union registers *guest_regs);
+void __attribute__((noreturn)) vcpu_deactivate_vmm(void);
 
 void vcpu_handle_exit(struct per_cpu *cpu_data);
 

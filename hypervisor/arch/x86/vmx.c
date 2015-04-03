@@ -697,8 +697,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 	panic_stop();
 }
 
-void __attribute__((noreturn))
-vcpu_deactivate_vmm(union registers *guest_regs)
+void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 {
 	unsigned long *stack = (unsigned long *)vmcs_read64(GUEST_RSP);
 	unsigned long linux_ip = vmcs_read64(GUEST_RIP);
@@ -755,7 +754,7 @@ vcpu_deactivate_vmm(union registers *guest_regs)
 		"mov %%rax,%%rsp\n\t"
 		"xor %%rax,%%rax\n\t"
 		"ret"
-		: : "a" (stack), "b" (guest_regs));
+		: : "a" (stack), "b" (&cpu_data->guest_regs));
 	__builtin_unreachable();
 }
 

@@ -161,7 +161,7 @@ void vcpu_handle_hypercall(union registers *guest_regs)
 		       x_state.rip - X86_INST_LEN_HYPERCALL);
 
 	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
-		vcpu_deactivate_vmm(guest_regs);
+		vcpu_deactivate_vmm();
 }
 
 bool vcpu_handle_io_access(union registers *guest_regs)

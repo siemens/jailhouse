@@ -468,8 +468,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 	__builtin_unreachable();
 }
 
-void __attribute__((noreturn))
-vcpu_deactivate_vmm(union registers *guest_regs)
+void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct vmcb *vmcb = &cpu_data->vmcb;
@@ -539,7 +538,7 @@ vcpu_deactivate_vmm(union registers *guest_regs)
 		"mov %%rax,%%rsp\n\t"
 		"xor %%rax,%%rax\n\t"
 		"ret"
-		: : "a" (stack), "b" (guest_regs));
+		: : "a" (stack), "b" (&cpu_data->guest_regs));
 	__builtin_unreachable();
 }
 
