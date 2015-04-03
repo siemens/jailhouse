@@ -545,15 +545,14 @@ void x2apic_handle_read(struct registers *guest_regs)
 {
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 
-	guest_regs->rax &= ~0xffffffffUL;
 	if (reg == APIC_REG_ID)
-		guest_regs->rax |= apic_ops.read_id();
+		guest_regs->rax = apic_ops.read_id();
 	else
-		guest_regs->rax |= apic_ops.read(reg);
+		guest_regs->rax = apic_ops.read(reg);
 
-	guest_regs->rdx &= ~0xffffffffUL;
+	guest_regs->rdx = 0;
 	if (reg == APIC_REG_ICR)
-		guest_regs->rdx |= apic_ops.read(reg + 1);
+		guest_regs->rdx = apic_ops.read(reg + 1);
 }
 
 /**
