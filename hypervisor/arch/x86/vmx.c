@@ -1038,8 +1038,9 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 	mmio->is_write = !!(exitq & 0x2);
 }
 
-void vcpu_handle_exit(union registers *guest_regs, struct per_cpu *cpu_data)
+void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
+	union registers *guest_regs = &cpu_data->guest_regs;
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	int sipi_vector;
 

@@ -35,8 +35,7 @@ svm_vmexit:
 	push %r14
 	push %r15
 
-	mov %rsp,%rdi
-	lea -PERCPU_STACK_END+16*8(%rsp),%rsi
+	lea -PERCPU_STACK_END+16*8(%rsp),%rdi
 	push %rax
 	call vcpu_handle_exit
 	pop %rax

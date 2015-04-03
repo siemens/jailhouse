@@ -70,7 +70,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data);
 void __attribute__((noreturn))
 vcpu_deactivate_vmm(union registers *guest_regs);
 
-void vcpu_handle_exit(union registers *guest_regs, struct per_cpu *cpu_data);
+void vcpu_handle_exit(struct per_cpu *cpu_data);
 
 void vcpu_park(void);
 

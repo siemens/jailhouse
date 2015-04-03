@@ -915,8 +915,9 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 	mmio->is_write = !!(vmcb->exitinfo1 & 0x2);
 }
 
-void vcpu_handle_exit(union registers *guest_regs, struct per_cpu *cpu_data)
+void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
+	union registers *guest_regs = &cpu_data->guest_regs;
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	bool res = false;
 	int sipi_vector;
