@@ -948,8 +948,7 @@ void vcpu_vendor_set_guest_pat(unsigned long val)
 	vmcs_write64(GUEST_IA32_PAT, val);
 }
 
-static bool vmx_handle_apic_access(union registers *guest_regs,
-				   struct per_cpu *cpu_data)
+static bool vmx_handle_apic_access(void)
 {
 	struct guest_paging_structures pg_structs;
 	unsigned int inst_len, offset;
@@ -969,8 +968,7 @@ static bool vmx_handle_apic_access(union registers *guest_regs,
 		if (!vcpu_get_guest_paging_structs(&pg_structs))
 			break;
 
-		inst_len = apic_mmio_access(guest_regs, cpu_data,
-					    vmcs_read64(GUEST_RIP),
+		inst_len = apic_mmio_access(vmcs_read64(GUEST_RIP),
 					    &pg_structs, offset >> 4,
 					    is_write);
 		if (!inst_len)
@@ -1094,7 +1092,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_APIC_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
-		if (vmx_handle_apic_access(guest_regs, cpu_data))
+		if (vmx_handle_apic_access())
 			return;
 		break;
 	case EXIT_REASON_XSETBV:

@@ -845,8 +845,7 @@ static bool svm_handle_msr_write(union registers *guest_regs,
  * TODO: This handles unaccelerated (non-AVIC) access. AVIC should
  * be treated separately in svm_handle_avic_access().
  */
-static bool svm_handle_apic_access(union registers *guest_regs,
-				   struct per_cpu *cpu_data)
+static bool svm_handle_apic_access(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	struct guest_paging_structures pg_structs;
@@ -863,8 +862,8 @@ static bool svm_handle_apic_access(union registers *guest_regs,
 	if (!vcpu_get_guest_paging_structs(&pg_structs))
 		goto out_err;
 
-	inst_len = apic_mmio_access(guest_regs, cpu_data, vmcb->rip,
-				    &pg_structs, offset >> 4, is_write);
+	inst_len = apic_mmio_access(vmcb->rip, &pg_structs, offset >> 4,
+				    is_write);
 	if (!inst_len)
 		goto out_err;
 
@@ -975,7 +974,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		     vmcb->exitinfo2 < XAPIC_BASE + PAGE_SIZE) {
 			/* APIC access in non-AVIC mode */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
-			if (svm_handle_apic_access(guest_regs, cpu_data))
+			if (svm_handle_apic_access(cpu_data))
 				return;
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */

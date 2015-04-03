@@ -468,8 +468,7 @@ static bool apic_invalid_lvt_delivery_mode(unsigned int reg, u32 val)
 	return true;
 }
 
-unsigned int apic_mmio_access(union registers *guest_regs,
-			      struct per_cpu *cpu_data, unsigned long rip,
+unsigned int apic_mmio_access(unsigned long rip,
 			      const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write)
 {
@@ -485,7 +484,7 @@ unsigned int apic_mmio_access(union registers *guest_regs,
 		return 0;
 	}
 	if (is_write) {
-		val = guest_regs->by_index[inst.reg_num];
+		val = this_cpu_data()->guest_regs.by_index[inst.reg_num];
 		if (apic_accessing_reserved_bits(reg, val))
 			return 0;
 
@@ -494,7 +493,7 @@ unsigned int apic_mmio_access(union registers *guest_regs,
 					apic_ops.read(APIC_REG_ICR_HI)))
 				return 0;
 		} else if (reg == APIC_REG_LDR &&
-			 val != 1UL << (cpu_data->cpu_id + XAPIC_DEST_SHIFT)) {
+			 val != 1UL << (this_cpu_id() + XAPIC_DEST_SHIFT)) {
 			panic_printk("FATAL: Unsupported change to LDR: %x\n",
 				     val);
 			return 0;
@@ -512,7 +511,7 @@ unsigned int apic_mmio_access(union registers *guest_regs,
 			apic_ops.write(reg, val);
 	} else {
 		val = apic_ops.read(reg);
-		guest_regs->by_index[inst.reg_num] = val;
+		this_cpu_data()->guest_regs.by_index[inst.reg_num] = val;
 	}
 	return inst.inst_len;
 }
