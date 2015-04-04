@@ -64,41 +64,37 @@ void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size)
 }
 
 /**
- * Set value of RAX in guest register set.
- * @param guest_regs	Guest register set.
- * @param value_new	New value to be written.
+ * Set value of RAX in current CPU's guest register set.
+ * @param value		Value to be written.
  * @param size		Access size (1, 2 or 4 bytes).
  *
  * @private
  */
-static void set_rax_reg(union registers *guest_regs,
-	u32 value_new, u8 size)
+static void set_guest_rax_reg(u32 value, u8 size)
 {
-	u64 value_old = guest_regs->rax;
-	/* 32-bit access is special, since it clears all the upper
-	 *  part of RAX. Another types of access leave it intact */
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	/* 32-bit access is special since it clears all the upper part of RAX.
+	 * Any other types of access leave it intact. */
 	u64 mask = (size == 4 ? BYTE_MASK(8) : BYTE_MASK(size));
 
-	guest_regs->rax = (value_old & ~mask) | (value_new & mask);
+	guest_regs->rax = (guest_regs->rax & ~mask) | (value & mask);
 }
 
 /**
- * Get value of RAX from guest register set.
- * @param guest_regs	Guest register set.
+ * Get value of RAX from current CPU's guest register set.
  * @param size		Access size (1, 2 or 4 bytes).
  *
  * @return Register value.
  *
  * @private
  */
-static u32 get_rax_reg(union registers *guest_regs, u8 size)
+static u32 get_guest_rax_reg(u8 size)
 {
-	return guest_regs->rax & BYTE_MASK(size);
+	return this_cpu_data()->guest_regs.rax & BYTE_MASK(size);
 }
 
 /**
  * Handler for IN accesses to data port.
- * @param guest_regs	Guest register set.
  * @param device	Structure describing PCI device.
  * @param address	Config space access address.
  * @param size		Access size (1, 2 or 4 bytes).
@@ -107,9 +103,8 @@ static u32 get_rax_reg(union registers *guest_regs, u8 size)
  *
  * @private
  */
-static int
-data_port_in_handler(union registers *guest_regs, struct pci_device *device,
-		     u16 address, unsigned int size)
+static int data_port_in_handler(struct pci_device *device, u16 address,
+				unsigned int size)
 {
 	u32 reg_data;
 
@@ -118,14 +113,13 @@ data_port_in_handler(union registers *guest_regs, struct pci_device *device,
 		reg_data = arch_pci_read_config(device->info->bdf, address,
 						size);
 
-	set_rax_reg(guest_regs, reg_data, size);
+	set_guest_rax_reg(reg_data, size);
 
 	return 1;
 }
 
 /**
  * Handler for OUT accesses to data port.
- * @param guest_regs	Guest register set.
  * @param device	Structure describing PCI device.
  * @param address	Config space access address.
  * @param size		Access size (1, 2 or 4 bytes).
@@ -134,11 +128,10 @@ data_port_in_handler(union registers *guest_regs, struct pci_device *device,
  *
  * @private
  */
-static int
-data_port_out_handler(union registers *guest_regs, struct pci_device *device,
-		      u16 address, unsigned int size)
+static int data_port_out_handler(struct pci_device *device, u16 address,
+				 unsigned int size)
 {
-	u32 reg_data = get_rax_reg(guest_regs, size);
+	u32 reg_data = get_guest_rax_reg(size);
 	enum pci_access access;
 
 	access = pci_cfg_write_moderate(device, address, size, reg_data);
@@ -174,10 +167,9 @@ int x86_pci_config_handler(union registers *guest_regs, struct cell *cell,
 			goto invalid_access;
 
 		if (dir_in)
-			set_rax_reg(guest_regs, cell->pci_addr_port_val, size);
+			set_guest_rax_reg(cell->pci_addr_port_val, size);
 		else
-			cell->pci_addr_port_val =
-				get_rax_reg(guest_regs, size);
+			cell->pci_addr_port_val = get_guest_rax_reg(size);
 		result = 1;
 	} else if (port >= PCI_REG_DATA_PORT &&
 		   port < (PCI_REG_DATA_PORT + 4)) {
@@ -200,11 +192,9 @@ int x86_pci_config_handler(union registers *guest_regs, struct cell *cell,
 			port - PCI_REG_DATA_PORT;
 
 		if (dir_in)
-			result = data_port_in_handler(guest_regs, device,
-						      address, size);
+			result = data_port_in_handler(device, address, size);
 		else
-			result = data_port_out_handler(guest_regs, device,
-						       address, size);
+			result = data_port_out_handler(device, address, size);
 		if (result < 0)
 			goto invalid_access;
 	}
