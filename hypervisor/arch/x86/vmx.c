@@ -892,8 +892,7 @@ static void update_efer(void)
 		     vmcs_read32(VM_ENTRY_CONTROLS) | VM_ENTRY_IA32E_MODE);
 }
 
-static bool vmx_handle_cr(union registers *guest_regs,
-			  struct per_cpu *cpu_data)
+static bool vmx_handle_cr(void)
 {
 	u64 exit_qualification = vmcs_read64(EXIT_QUALIFICATION);
 	unsigned long cr, reg, val;
@@ -906,7 +905,7 @@ static bool vmx_handle_cr(union registers *guest_regs,
 		if (reg == 4)
 			val = vmcs_read64(GUEST_RSP);
 		else
-			val = guest_regs->by_index[15 - reg];
+			val = this_cpu_data()->guest_regs.by_index[15 - reg];
 
 		if (cr == 0 || cr == 4) {
 			vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
@@ -1073,7 +1072,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		return;
 	case EXIT_REASON_CR_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
-		if (vmx_handle_cr(guest_regs, cpu_data))
+		if (vmx_handle_cr())
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
