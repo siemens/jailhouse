@@ -176,8 +176,7 @@ bool vcpu_handle_io_access(union registers *guest_regs)
 	if (io.rep_or_str)
 		goto invalid_access;
 
-	result = x86_pci_config_handler(guest_regs, this_cell(), io.port,
-					io.in, io.size);
+	result = x86_pci_config_handler(io.port, io.in, io.size);
 	if (result == 0)
 		result = i8042_access_handler(io.port, io.in, io.size);
 

@@ -15,7 +15,6 @@
 #define _JAILHOUSE_ASM_PCI_H
 
 #include <jailhouse/types.h>
-#include <asm/percpu.h>
 
 /* --- PCI configuration ports --- */
 #define PCI_REG_ADDR_PORT		0xcf8
@@ -32,8 +31,7 @@
  * @{
  */
 
-int x86_pci_config_handler(union registers *guest_regs, struct cell *cell,
-			   u16 port, bool dir_in, unsigned int size);
+int x86_pci_config_handler(u16 port, bool dir_in, unsigned int size);
 
 /** @} */
 #endif /* !_JAILHOUSE_ASM_PCI_H */

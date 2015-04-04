@@ -20,6 +20,7 @@
 #include <asm/io.h>
 #include <asm/iommu.h>
 #include <asm/pci.h>
+#include <asm/processor.h>
 
 /** Protects the root bridge's PIO interface to the PCI config space. */
 static DEFINE_SPINLOCK(pci_lock);
@@ -145,17 +146,15 @@ static int data_port_out_handler(struct pci_device *device, u16 address,
 
 /**
  * Handler for accesses to PCI config space.
- * @param guest_regs	Guest register set.
- * @param cell		Issuing cell.
  * @param port		I/O port number of this access.
  * @param dir_in	True for input, false for output.
  * @param size		Size of access in bytes (1, 2 or 4 bytes).
  *
  * @return 1 if handled successfully, 0 if unhandled, -1 on access error.
  */
-int x86_pci_config_handler(union registers *guest_regs, struct cell *cell,
-			   u16 port, bool dir_in, unsigned int size)
+int x86_pci_config_handler(u16 port, bool dir_in, unsigned int size)
 {
+	struct cell *cell = this_cell();
 	struct pci_device *device;
 	u32 addr_port_val;
 	u16 bdf, address;
