@@ -903,7 +903,6 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 
 void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
-	union registers *guest_regs = &cpu_data->guest_regs;
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	bool res = false;
 	int sipi_vector;
@@ -987,7 +986,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			     "exitinfo1 %p exitinfo2 %p\n",
 			     vmcb->exitcode, vmcb->exitinfo1, vmcb->exitinfo2);
 	}
-	dump_guest_regs(guest_regs, vmcb);
+	dump_guest_regs(&cpu_data->guest_regs, vmcb);
 	panic_park();
 }
 
