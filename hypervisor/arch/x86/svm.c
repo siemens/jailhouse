@@ -432,17 +432,10 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 		"mov 0x18(%%rdi),%%r12\n\t"
 		"mov 0x20(%%rdi),%%rbx\n\t"
 		"mov 0x28(%%rdi),%%rbp\n\t"
-		"mov %0, %%rax\n\t"
-		"vmload %%rax\n\t"
-		"vmrun %%rax\n\t"
-		"vmsave %%rax\n\t"
-		/* Restore hypervisor stack */
-		"mov %2, %%rsp\n\t"
-		"jmp svm_vmexit"
+		"mov %2,%%rsp\n\t"
+		"jmp svm_vmentry"
 		: /* no output */
-		: "m" (vmcb_pa), "D" (cpu_data->linux_reg), "m" (host_stack)
-		: "memory", "r15", "r14", "r13", "r12",
-		  "rbx", "rbp", "rax", "cc");
+		: "D" (cpu_data->linux_reg), "a" (vmcb_pa), "m" (host_stack));
 	__builtin_unreachable();
 }
 

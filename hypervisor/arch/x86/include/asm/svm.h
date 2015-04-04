@@ -350,6 +350,4 @@ struct vmcb {
 	u64 res16[301];
 } __attribute__((packed));
 
-void svm_vmexit(void);
-
 #endif
