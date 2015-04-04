@@ -894,15 +894,6 @@ static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
 	panic_printk("EFER: %p\n", vmcb->efer);
 }
 
-static void svm_get_vcpu_pf_intercept(struct per_cpu *cpu_data,
-				      struct vcpu_pf_intercept *out)
-{
-	struct vmcb *vmcb = &cpu_data->vmcb;
-
-	out->phys_addr = vmcb->exitinfo2;
-	out->is_write = !!(vmcb->exitinfo1 & 0x2);
-}
-
 void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)
 {
 	struct vmcb *vmcb = &this_cpu_data()->vmcb;
@@ -916,10 +907,17 @@ void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)
 	io->rep_or_str = !!(exitinfo & 0x0c);
 }
 
+void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
+{
+	struct vmcb *vmcb = &this_cpu_data()->vmcb;
+
+	mmio->phys_addr = vmcb->exitinfo2;
+	mmio->is_write = !!(vmcb->exitinfo1 & 0x2);
+}
+
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
-	struct vcpu_pf_intercept pf;
 	bool res = false;
 	int sipi_vector;
 
@@ -982,8 +980,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
-			svm_get_vcpu_pf_intercept(cpu_data, &pf);
-			if (vcpu_handle_mmio_access(guest_regs, &pf))
+			if (vcpu_handle_mmio_access(guest_regs))
 				return;
 		}
 

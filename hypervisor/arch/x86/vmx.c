@@ -1028,20 +1028,19 @@ void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)
 	io->rep_or_str = !!(exitq & 0x30);
 }
 
-static void vmx_get_vcpu_pf_intercept(struct vcpu_pf_intercept *out)
+void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 {
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
 
-	out->phys_addr = vmcs_read64(GUEST_PHYSICAL_ADDRESS);
+	mmio->phys_addr = vmcs_read64(GUEST_PHYSICAL_ADDRESS);
 	/* We don't enable dirty/accessed bit updated in EPTP,
 	 * so only read of write flags can be set, not both. */
-	out->is_write = !!(exitq & 0x2);
+	mmio->is_write = !!(exitq & 0x2);
 }
 
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
-	struct vcpu_pf_intercept pf;
 	int sipi_vector;
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
@@ -1122,8 +1121,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_EPT_VIOLATION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
-		vmx_get_vcpu_pf_intercept(&pf);
-		if (vcpu_handle_mmio_access(guest_regs, &pf))
+		if (vcpu_handle_mmio_access(guest_regs))
 			return;
 		break;
 	default:

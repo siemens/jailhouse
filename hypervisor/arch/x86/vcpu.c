@@ -192,40 +192,41 @@ invalid_access:
 	return false;
 }
 
-bool vcpu_handle_mmio_access(struct registers *guest_regs,
-			     struct vcpu_pf_intercept *pf)
+bool vcpu_handle_mmio_access(struct registers *guest_regs)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct guest_paging_structures pg_structs;
 	struct vcpu_execution_state x_state;
+	struct vcpu_mmio_intercept mmio;
 	struct mmio_instruction inst;
 	int result = 0;
 	u32 val;
 
 	vcpu_vendor_get_execution_state(&x_state);
+	vcpu_vendor_get_mmio_intercept(&mmio);
 
 	if (!vcpu_get_guest_paging_structs(&pg_structs))
 		goto invalid_access;
 
-	inst = x86_mmio_parse(x_state.rip, &pg_structs, pf->is_write);
+	inst = x86_mmio_parse(x_state.rip, &pg_structs, mmio.is_write);
 	if (!inst.inst_len || inst.access_size != 4)
 		goto invalid_access;
 
-	if (pf->is_write)
+	if (mmio.is_write)
 		val = ((unsigned long *)guest_regs)[inst.reg_num];
 
-	result = ioapic_access_handler(cpu_data->cell, pf->is_write,
-			               pf->phys_addr, &val);
+	result = ioapic_access_handler(cpu_data->cell, mmio.is_write,
+			               mmio.phys_addr, &val);
 	if (result == 0)
-		result = pci_mmio_access_handler(cpu_data->cell, pf->is_write,
-						 pf->phys_addr, &val);
+		result = pci_mmio_access_handler(cpu_data->cell, mmio.is_write,
+						 mmio.phys_addr, &val);
 
 	if (result == 0)
-		result = iommu_mmio_access_handler(pf->is_write,
-				                   pf->phys_addr, &val);
+		result = iommu_mmio_access_handler(mmio.is_write,
+				                   mmio.phys_addr, &val);
 
 	if (result == 1) {
-		if (!pf->is_write)
+		if (!mmio.is_write)
 			((unsigned long *)guest_regs)[inst.reg_num] = val;
 		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
@@ -235,7 +236,7 @@ invalid_access:
 	/* report only unhandled access failures */
 	if (result == 0)
 		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
-			     pf->is_write ? "write" : "read", pf->phys_addr);
+			     mmio.is_write ? "write" : "read", mmio.phys_addr);
 	return false;
 }
 
