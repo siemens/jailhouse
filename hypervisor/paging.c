@@ -406,8 +406,10 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 
 /**
  * Map guest (cell) pages into the hypervisor address space.
- * @param pg_structs	Descriptor of the guest paging structures.
- * @param gaddr		Guest-physical address to the first page to be mapped.
+ * @param pg_structs	Descriptor of the guest paging structures if @c gaddr
+ * 			is a guest-virtual address or @c NULL if it is a
+ * 			guest-physical address.
+ * @param gaddr		Guest address of the first page to be mapped.
  * @param num		Number of pages to be mapped.
  * @param flags		Access flags for the hypervisor mapping, see
  * 			@ref PAGE_FLAGS.
