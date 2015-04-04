@@ -110,8 +110,8 @@ void vcpu_handle_hypercall(void);
 bool vcpu_handle_io_access(void);
 bool vcpu_handle_mmio_access(void);
 
-bool vcpu_handle_msr_read(union registers *guest_regs);
-bool vcpu_handle_msr_write(union registers *guest_regs);
+bool vcpu_handle_msr_read(void);
+bool vcpu_handle_msr_write(void);
 
 bool vcpu_handle_xsetbv(void);
 

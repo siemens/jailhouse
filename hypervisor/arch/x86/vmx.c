@@ -1078,7 +1078,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_MSR_READ:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
-		if (vcpu_handle_msr_read(guest_regs))
+		if (vcpu_handle_msr_read())
 			return;
 		break;
 	case EXIT_REASON_MSR_WRITE:
@@ -1087,7 +1087,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			/* ignore writes */
 			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
-		} else if (vcpu_handle_msr_write(guest_regs))
+		} else if (vcpu_handle_msr_write())
 			return;
 		break;
 	case EXIT_REASON_APIC_ACCESS:

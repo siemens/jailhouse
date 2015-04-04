@@ -239,23 +239,24 @@ invalid_access:
 	return false;
 }
 
-bool vcpu_handle_msr_read(union registers *guest_regs)
+bool vcpu_handle_msr_read(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
-	switch (guest_regs->rcx) {
+	switch (cpu_data->guest_regs.rcx) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
 		x2apic_handle_read();
 		break;
 	case MSR_IA32_PAT:
-		set_rdmsr_value(guest_regs, cpu_data->pat);
+		set_rdmsr_value(&cpu_data->guest_regs, cpu_data->pat);
 		break;
 	case MSR_IA32_MTRR_DEF_TYPE:
-		set_rdmsr_value(guest_regs, cpu_data->mtrr_def_type);
+		set_rdmsr_value(&cpu_data->guest_regs,
+				cpu_data->mtrr_def_type);
 		break;
 	default:
 		panic_printk("FATAL: Unhandled MSR read: %x\n",
-			     guest_regs->rcx);
+			     cpu_data->guest_regs.rcx);
 		return false;
 	}
 
@@ -263,19 +264,19 @@ bool vcpu_handle_msr_read(union registers *guest_regs)
 	return true;
 }
 
-bool vcpu_handle_msr_write(union registers *guest_regs)
+bool vcpu_handle_msr_write(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned int bit_pos, pa;
 	unsigned long val;
 
-	switch (guest_regs->rcx) {
+	switch (cpu_data->guest_regs.rcx) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
 		if (!x2apic_handle_write())
 			return false;
 		break;
 	case MSR_IA32_PAT:
-		val = get_wrmsr_value(guest_regs);
+		val = get_wrmsr_value(&cpu_data->guest_regs);
 		for (bit_pos = 0; bit_pos < 64; bit_pos += 8) {
 			pa = (val >> bit_pos) & 0xff;
 			/* filter out reserved memory types */
@@ -295,14 +296,14 @@ bool vcpu_handle_msr_write(union registers *guest_regs)
 		 * setting the guest PAT to 0. When enabled, guest PAT +
 		 * host-controlled MTRRs define the guest's memory types.
 		 */
-		val = get_wrmsr_value(guest_regs);
+		val = get_wrmsr_value(&cpu_data->guest_regs);
 		cpu_data->mtrr_def_type = val;
 		vcpu_vendor_set_guest_pat(val & MTRR_ENABLE ?
 					  cpu_data->pat : 0);
 		break;
 	default:
 		panic_printk("FATAL: Unhandled MSR write: %x\n",
-			     guest_regs->rcx);
+			     cpu_data->guest_regs.rcx);
 		return false;
 	}
 

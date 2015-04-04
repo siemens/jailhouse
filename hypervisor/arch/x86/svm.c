@@ -838,7 +838,7 @@ static bool svm_handle_msr_write(union registers *guest_regs,
 		return true;
 	}
 
-	return vcpu_handle_msr_write(guest_regs);
+	return vcpu_handle_msr_write();
 }
 
 /*
@@ -962,7 +962,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 	case VMEXIT_MSR:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (!vmcb->exitinfo1)
-			res = vcpu_handle_msr_read(guest_regs);
+			res = vcpu_handle_msr_read();
 		else
 			res = svm_handle_msr_write(guest_regs, cpu_data);
 		if (res)
