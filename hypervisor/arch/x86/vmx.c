@@ -1123,7 +1123,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 	case EXIT_REASON_EPT_VIOLATION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 		vmx_get_vcpu_pf_intercept(&pf);
-		if (vcpu_handle_pt_violation(guest_regs, &pf))
+		if (vcpu_handle_mmio_access(guest_regs, &pf))
 			return;
 		break;
 	default:

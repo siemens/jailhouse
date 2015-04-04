@@ -192,8 +192,8 @@ invalid_access:
 	return false;
 }
 
-bool vcpu_handle_pt_violation(struct registers *guest_regs,
-			      struct vcpu_pf_intercept *pf)
+bool vcpu_handle_mmio_access(struct registers *guest_regs,
+			     struct vcpu_pf_intercept *pf)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct guest_paging_structures pg_structs;

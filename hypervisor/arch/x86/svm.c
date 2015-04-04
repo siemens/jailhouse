@@ -983,7 +983,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 			/* General MMIO (IOAPIC, PCI etc) */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 			svm_get_vcpu_pf_intercept(cpu_data, &pf);
-			if (vcpu_handle_pt_violation(guest_regs, &pf))
+			if (vcpu_handle_mmio_access(guest_regs, &pf))
 				return;
 		}
 

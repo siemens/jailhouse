@@ -108,9 +108,8 @@ void vcpu_vendor_set_guest_pat(unsigned long val);
 void vcpu_handle_hypercall(struct registers *guest_regs);
 
 bool vcpu_handle_io_access(struct registers *guest_regs);
-
-bool vcpu_handle_pt_violation(struct registers *guest_regs,
-			      struct vcpu_pf_intercept *pf);
+bool vcpu_handle_mmio_access(struct registers *guest_regs,
+			     struct vcpu_pf_intercept *pf);
 
 bool vcpu_handle_msr_read(struct registers *guest_regs);
 bool vcpu_handle_msr_write(struct registers *guest_regs);
