@@ -218,8 +218,6 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_NMI;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CR0_SEL_WRITE;
-	/* TODO: Do we need this for SVM ? */
-	/* vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CPUID; */
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_IOIO_PROT;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_MSR_PROT;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_SHUTDOWN_EVT;
@@ -944,9 +942,6 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			vcpu_reset();
 		}
 		iommu_check_pending_faults(cpu_data);
-		return;
-	case VMEXIT_CPUID:
-		/* FIXME: We are not intercepting CPUID now */
 		return;
 	case VMEXIT_VMMCALL:
 		vcpu_handle_hypercall();
