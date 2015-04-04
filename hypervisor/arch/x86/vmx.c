@@ -1041,7 +1041,6 @@ static void vmx_get_vcpu_pf_intercept(struct vcpu_pf_intercept *out)
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
-	struct vcpu_execution_state x_state;
 	struct vcpu_io_intercept io;
 	struct vcpu_pf_intercept pf;
 	int sipi_vector;
@@ -1074,8 +1073,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
 		return;
 	case EXIT_REASON_VMCALL:
-		vcpu_vendor_get_execution_state(&x_state);
-		vcpu_handle_hypercall(guest_regs, &x_state);
+		vcpu_handle_hypercall(guest_regs);
 		return;
 	case EXIT_REASON_CR_ACCESS:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;

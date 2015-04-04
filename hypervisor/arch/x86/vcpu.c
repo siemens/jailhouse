@@ -133,17 +133,22 @@ void vcpu_cell_exit(struct cell *cell)
 	vcpu_vendor_cell_exit(cell);
 }
 
-void vcpu_handle_hypercall(struct registers *guest_regs,
-			   struct vcpu_execution_state *x_state)
+void vcpu_handle_hypercall(struct registers *guest_regs)
 {
-	bool long_mode = !!(x_state->efer & EFER_LMA);
-	unsigned long arg_mask = long_mode ? (u64)-1 : (u32)-1;
 	unsigned long code = guest_regs->rax;
+	struct vcpu_execution_state x_state;
+	unsigned long arg_mask;
+	bool long_mode;
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_HYPERCALL);
 
-	if ((!long_mode && (x_state->rflags & X86_RFLAGS_VM)) ||
-	    (x_state->cs & 3) != 0) {
+	vcpu_vendor_get_execution_state(&x_state);
+
+	long_mode = !!(x_state.efer & EFER_LMA);
+	arg_mask = long_mode ? (u64)-1 : (u32)-1;
+
+	if ((!long_mode && (x_state.rflags & X86_RFLAGS_VM)) ||
+	    (x_state.cs & 3) != 0) {
 		guest_regs->rax = -EPERM;
 		return;
 	}
@@ -153,7 +158,7 @@ void vcpu_handle_hypercall(struct registers *guest_regs,
 	if (guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown hypercall %d, RIP: %p\n",
 		       this_cpu_id(), code,
-		       x_state->rip - X86_INST_LEN_HYPERCALL);
+		       x_state.rip - X86_INST_LEN_HYPERCALL);
 
 	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
 		vcpu_deactivate_vmm(guest_regs);

@@ -920,7 +920,6 @@ static void svm_get_vcpu_io_intercept(struct per_cpu *cpu_data,
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
-	struct vcpu_execution_state x_state;
 	struct vcpu_pf_intercept pf;
 	struct vcpu_io_intercept io;
 	bool res = false;
@@ -958,8 +957,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		/* FIXME: We are not intercepting CPUID now */
 		return;
 	case VMEXIT_VMMCALL:
-		vcpu_vendor_get_execution_state(&x_state);
-		vcpu_handle_hypercall(guest_regs, &x_state);
+		vcpu_handle_hypercall(guest_regs);
 		return;
 	case VMEXIT_CR0_SEL_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;

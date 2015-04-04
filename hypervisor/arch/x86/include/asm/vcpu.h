@@ -100,8 +100,7 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state);
 
-void vcpu_handle_hypercall(struct registers *guest_regs,
-			   struct vcpu_execution_state *x_state);
+void vcpu_handle_hypercall(struct registers *guest_regs);
 
 bool vcpu_handle_io_access(struct registers *guest_regs,
 			   struct vcpu_io_intercept *io);
