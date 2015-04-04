@@ -641,9 +641,8 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 	this_cpu_data()->vmcb.rip += inst_len;
 }
 
-static void update_efer(struct per_cpu *cpu_data)
+static void update_efer(struct vmcb *vmcb)
 {
-	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long efer = vmcb->efer;
 
 	if ((efer & (EFER_LME | EFER_LMA)) != EFER_LME)
@@ -722,13 +721,10 @@ static bool ctx_advance(struct parse_context *ctx,
 	return true;
 }
 
-static bool svm_parse_mov_to_cr(struct per_cpu *cpu_data,
-				unsigned long pc,
-				unsigned char reg,
-				unsigned long *gpr)
+static bool svm_parse_mov_to_cr(struct vmcb *vmcb, unsigned long pc,
+				unsigned char reg, unsigned long *gpr)
 {
 	struct guest_paging_structures pg_structs;
-	struct vmcb *vmcb = &cpu_data->vmcb;
 	struct parse_context ctx = {};
 	/* No prefixes are supported yet */
 	u8 opcodes[] = {0x0f, 0x22}, modrm;
@@ -787,7 +783,7 @@ static bool svm_handle_cr(struct per_cpu *cpu_data)
 		}
 		reg = vmcb->exitinfo1 & 0x07;
 	} else {
-		if (!svm_parse_mov_to_cr(cpu_data, vmcb->rip, 0, &reg)) {
+		if (!svm_parse_mov_to_cr(vmcb, vmcb->rip, 0, &reg)) {
 			panic_printk("FATAL: Unable to parse MOV-to-CR instruction\n");
 			ok = false;
 			goto out;
@@ -807,7 +803,7 @@ static bool svm_handle_cr(struct per_cpu *cpu_data)
 	/* TODO: better check for #GP reasons */
 	vmcb->cr0 = val & SVM_CR0_ALLOWED_BITS;
 	if (val & X86_CR0_PG)
-		update_efer(cpu_data);
+		update_efer(vmcb);
 	vmcb->clean_bits &= ~CLEAN_BITS_CRX;
 
 out:
@@ -839,9 +835,8 @@ static bool svm_handle_msr_write(union registers *guest_regs,
  * TODO: This handles unaccelerated (non-AVIC) access. AVIC should
  * be treated separately in svm_handle_avic_access().
  */
-static bool svm_handle_apic_access(struct per_cpu *cpu_data)
+static bool svm_handle_apic_access(struct vmcb *vmcb)
 {
-	struct vmcb *vmcb = &cpu_data->vmcb;
 	struct guest_paging_structures pg_structs;
 	unsigned int inst_len, offset;
 	bool is_write;
@@ -965,7 +960,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		     vmcb->exitinfo2 < XAPIC_BASE + PAGE_SIZE) {
 			/* APIC access in non-AVIC mode */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
-			if (svm_handle_apic_access(cpu_data))
+			if (svm_handle_apic_access(vmcb))
 				return;
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
