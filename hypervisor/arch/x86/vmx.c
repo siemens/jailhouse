@@ -1050,7 +1050,6 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 
 void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
-	union registers *guest_regs = &cpu_data->guest_regs;
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
 	int sipi_vector;
 
@@ -1090,7 +1089,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_MSR_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
-		if (guest_regs->rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
+		if (cpu_data->guest_regs.rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
 			/* ignore writes */
 			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
 			return;
@@ -1124,7 +1123,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		dump_vm_exit_details(reason);
 		break;
 	}
-	dump_guest_regs(guest_regs);
+	dump_guest_regs(&cpu_data->guest_regs);
 	panic_park();
 }
 
