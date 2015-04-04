@@ -810,15 +810,14 @@ out:
 	return ok;
 }
 
-static bool svm_handle_msr_write(union registers *guest_regs,
-		struct per_cpu *cpu_data)
+static bool svm_handle_msr_write(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long efer;
 
-	if (guest_regs->rcx == MSR_EFER) {
+	if (cpu_data->guest_regs.rcx == MSR_EFER) {
 		/* Never let a guest to disable SVME; see APMv2, Sect. 3.1.7 */
-		efer = get_wrmsr_value(guest_regs) | EFER_SVME;
+		efer = get_wrmsr_value(&cpu_data->guest_regs) | EFER_SVME;
 		/* Flush TLB on LME/NXE change: See APMv2, Sect. 15.16 */
 		if ((efer ^ vmcb->efer) & (EFER_LME | EFER_NXE))
 			vcpu_tlb_flush();
@@ -950,7 +949,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		if (!vmcb->exitinfo1)
 			res = vcpu_handle_msr_read();
 		else
-			res = svm_handle_msr_write(guest_regs, cpu_data);
+			res = svm_handle_msr_write(cpu_data);
 		if (res)
 			return;
 		break;
