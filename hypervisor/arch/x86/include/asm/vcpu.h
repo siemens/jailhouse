@@ -99,15 +99,15 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *out);
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state);
-
-void vcpu_handle_hypercall(struct registers *guest_regs);
-
-bool vcpu_handle_io_access(struct registers *guest_regs,
-			   struct vcpu_io_intercept *io);
+void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io);
 
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
 void vcpu_vendor_set_guest_pat(unsigned long val);
+
+void vcpu_handle_hypercall(struct registers *guest_regs);
+
+bool vcpu_handle_io_access(struct registers *guest_regs);
 
 bool vcpu_handle_pt_violation(struct registers *guest_regs,
 			      struct vcpu_pf_intercept *pf);

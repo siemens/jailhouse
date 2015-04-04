@@ -1016,7 +1016,7 @@ static void dump_guest_regs(struct registers *guest_regs)
 	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
-static void vmx_get_vcpu_io_intercept(struct vcpu_io_intercept *out)
+void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
 {
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
 
@@ -1041,7 +1041,6 @@ static void vmx_get_vcpu_pf_intercept(struct vcpu_pf_intercept *out)
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
-	struct vcpu_io_intercept io;
 	struct vcpu_pf_intercept pf;
 	int sipi_vector;
 
@@ -1118,8 +1117,7 @@ void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
-		vmx_get_vcpu_io_intercept(&io);
-		if (vcpu_handle_io_access(guest_regs, &io))
+		if (vcpu_handle_io_access(guest_regs))
 			return;
 		break;
 	case EXIT_REASON_EPT_VIOLATION:

@@ -164,29 +164,31 @@ void vcpu_handle_hypercall(struct registers *guest_regs)
 		vcpu_deactivate_vmm(guest_regs);
 }
 
-bool vcpu_handle_io_access(struct registers *guest_regs,
-			   struct vcpu_io_intercept *io)
+bool vcpu_handle_io_access(struct registers *guest_regs)
 {
+	struct vcpu_io_intercept io;
 	int result = 0;
 
+	vcpu_vendor_get_io_intercept(&io);
+
 	/* string and REP-prefixed instructions are not supported */
-	if (io->rep_or_str)
+	if (io.rep_or_str)
 		goto invalid_access;
 
-	result = x86_pci_config_handler(guest_regs, this_cell(), io->port,
-					io->in, io->size);
+	result = x86_pci_config_handler(guest_regs, this_cell(), io.port,
+					io.in, io.size);
 	if (result == 0)
-		result = i8042_access_handler(guest_regs, io->port,
-				              io->in, io->size);
+		result = i8042_access_handler(guest_regs, io.port, io.in,
+					      io.size);
 
 	if (result == 1) {
-		vcpu_skip_emulated_instruction(io->inst_len);
+		vcpu_skip_emulated_instruction(io.inst_len);
 		return true;
 	}
 
 invalid_access:
 	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
-		     io->in ? "read" : "write", io->port, io->size);
+		     io.in ? "read" : "write", io.port, io.size);
 	return false;
 }
 
