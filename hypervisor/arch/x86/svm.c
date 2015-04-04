@@ -993,7 +993,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case VMEXIT_IOIO:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
-		if (vcpu_handle_io_access(guest_regs))
+		if (vcpu_handle_io_access())
 			return;
 		break;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */

@@ -165,7 +165,7 @@ void vcpu_handle_hypercall(void)
 		vcpu_deactivate_vmm();
 }
 
-bool vcpu_handle_io_access(union registers *guest_regs)
+bool vcpu_handle_io_access(void)
 {
 	struct vcpu_io_intercept io;
 	int result = 0;

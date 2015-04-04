@@ -1101,7 +1101,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
-		if (vcpu_handle_io_access(guest_regs))
+		if (vcpu_handle_io_access())
 			return;
 		break;
 	case EXIT_REASON_EPT_VIOLATION:
