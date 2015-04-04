@@ -979,7 +979,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
-			if (vcpu_handle_mmio_access(guest_regs))
+			if (vcpu_handle_mmio_access())
 				return;
 		}
 

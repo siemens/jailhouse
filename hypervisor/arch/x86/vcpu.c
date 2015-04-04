@@ -191,7 +191,7 @@ invalid_access:
 	return false;
 }
 
-bool vcpu_handle_mmio_access(union registers *guest_regs)
+bool vcpu_handle_mmio_access(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct guest_paging_structures pg_structs;
@@ -212,7 +212,7 @@ bool vcpu_handle_mmio_access(union registers *guest_regs)
 		goto invalid_access;
 
 	if (mmio.is_write)
-		val = guest_regs->by_index[inst.reg_num];
+		val = cpu_data->guest_regs.by_index[inst.reg_num];
 
 	result = ioapic_access_handler(cpu_data->cell, mmio.is_write,
 			               mmio.phys_addr, &val);
@@ -226,7 +226,7 @@ bool vcpu_handle_mmio_access(union registers *guest_regs)
 
 	if (result == 1) {
 		if (!mmio.is_write)
-			guest_regs->by_index[inst.reg_num] = val;
+			cpu_data->guest_regs.by_index[inst.reg_num] = val;
 		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
 	}
