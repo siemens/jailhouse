@@ -772,8 +772,7 @@ out:
  * result in no more than VMEXIT_INVALID. Maybe we can get along without it
  * altogether?
  */
-static bool svm_handle_cr(union registers *guest_regs,
-			  struct per_cpu *cpu_data)
+static bool svm_handle_cr(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	/* Workaround GCC 4.8 warning on uninitialized variable 'reg' */
@@ -798,7 +797,7 @@ static bool svm_handle_cr(union registers *guest_regs,
 	if (reg == 4)
 		val = vmcb->rsp;
 	else
-		val = guest_regs->by_index[15 - reg];
+		val = cpu_data->guest_regs.by_index[15 - reg];
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_MOV_TO_CR);
 	/* Flush TLB on PG/WP/CD/NW change: See APMv2, Sect. 15.16 */
@@ -948,7 +947,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		return;
 	case VMEXIT_CR0_SEL_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
-		if (svm_handle_cr(guest_regs, cpu_data))
+		if (svm_handle_cr(cpu_data))
 			return;
 		break;
 	case VMEXIT_MSR:
