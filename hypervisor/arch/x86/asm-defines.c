@@ -22,8 +22,7 @@ void common(void)
 	OFFSET(PERCPU_LINUX_SP, per_cpu, linux_sp);
 	BLANK();
 
-	OFFSET(PERCPU_VMCB, per_cpu, vmcb);
-	OFFSET(VMCB_RAX, vmcb, rax);
+	OFFSET(PERCPU_VMCB_RAX, per_cpu, vmcb.rax);
 	BLANK();
 
 	/* GCC evaluates constant expressions involving built-ins
