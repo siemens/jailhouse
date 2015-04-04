@@ -1016,16 +1016,16 @@ static void dump_guest_regs(struct registers *guest_regs)
 	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
-void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
+void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)
 {
 	u64 exitq = vmcs_read64(EXIT_QUALIFICATION);
 
 	/* parse exit qualification for I/O instructions (see SDM, 27.2.1 ) */
-	out->port = (exitq >> 16) & 0xFFFF;
-	out->size = (exitq & 0x3) + 1;
-	out->in = !!((exitq & 0x8) >> 3);
-	out->inst_len = vmcs_read64(VM_EXIT_INSTRUCTION_LEN);
-	out->rep_or_str = !!(exitq & 0x30);
+	io->port = (exitq >> 16) & 0xFFFF;
+	io->size = (exitq & 0x3) + 1;
+	io->in = !!((exitq & 0x8) >> 3);
+	io->inst_len = vmcs_read64(VM_EXIT_INSTRUCTION_LEN);
+	io->rep_or_str = !!(exitq & 0x30);
 }
 
 static void vmx_get_vcpu_pf_intercept(struct vcpu_pf_intercept *out)

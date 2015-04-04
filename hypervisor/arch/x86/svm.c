@@ -903,17 +903,17 @@ static void svm_get_vcpu_pf_intercept(struct per_cpu *cpu_data,
 	out->is_write = !!(vmcb->exitinfo1 & 0x2);
 }
 
-void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *out)
+void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)
 {
 	struct vmcb *vmcb = &this_cpu_data()->vmcb;
 	u64 exitinfo = vmcb->exitinfo1;
 
 	/* parse exit info for I/O instructions (see APM, 15.10.2 ) */
-	out->port = (exitinfo >> 16) & 0xFFFF;
-	out->size = (exitinfo >> 4) & 0x7;
-	out->in = !!(exitinfo & 0x1);
-	out->inst_len = vmcb->exitinfo2 - vmcb->rip;
-	out->rep_or_str = !!(exitinfo & 0x0c);
+	io->port = (exitinfo >> 16) & 0xFFFF;
+	io->size = (exitinfo >> 4) & 0x7;
+	io->in = !!(exitinfo & 0x1);
+	io->inst_len = vmcb->exitinfo2 - vmcb->rip;
+	io->rep_or_str = !!(exitinfo & 0x0c);
 }
 
 void vcpu_handle_exit(struct registers *guest_regs, struct per_cpu *cpu_data)
