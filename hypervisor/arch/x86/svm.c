@@ -722,7 +722,7 @@ static bool ctx_advance(struct parse_context *ctx,
 	return true;
 }
 
-static bool x86_parse_mov_to_cr(struct per_cpu *cpu_data,
+static bool svm_parse_mov_to_cr(struct per_cpu *cpu_data,
 				unsigned long pc,
 				unsigned char reg,
 				unsigned long *gpr)
@@ -787,7 +787,7 @@ static bool svm_handle_cr(struct per_cpu *cpu_data)
 		}
 		reg = vmcb->exitinfo1 & 0x07;
 	} else {
-		if (!x86_parse_mov_to_cr(cpu_data, vmcb->rip, 0, &reg)) {
+		if (!svm_parse_mov_to_cr(cpu_data, vmcb->rip, 0, &reg)) {
 			panic_printk("FATAL: Unable to parse MOV-to-CR instruction\n");
 			ok = false;
 			goto out;
