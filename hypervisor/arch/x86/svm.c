@@ -1050,12 +1050,12 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	struct vmcb *vmcb = &this_cpu_data()->vmcb;
 
-	x_state->efer = cpu_data->vmcb.efer;
-	x_state->rflags = cpu_data->vmcb.rflags;
-	x_state->cs = cpu_data->vmcb.cs.selector;
-	x_state->rip = cpu_data->vmcb.rip;
+	x_state->efer = vmcb->efer;
+	x_state->rflags = vmcb->rflags;
+	x_state->cs = vmcb->cs.selector;
+	x_state->rip = vmcb->rip;
 }
 
 /* GIF must be set for interrupts to be delivered (APMv2, Sect. 15.17) */
