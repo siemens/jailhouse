@@ -184,8 +184,6 @@ bool vcpu_handle_io_access(struct registers *guest_regs,
 invalid_access:
 	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
 		     io->in ? "read" : "write", io->port, io->size);
-	panic_printk("PCI address port: %x\n",
-		     cpu_data->cell->pci_addr_port_val);
 	return false;
 }
 
