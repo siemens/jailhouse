@@ -938,10 +938,8 @@ static void dump_guest_regs(struct registers *guest_regs, struct vmcb *vmcb)
 	panic_printk("RDX: %p RSI: %p RDI: %p\n", guest_regs->rdx,
 		     guest_regs->rsi, guest_regs->rdi);
 	panic_printk("CS: %x BASE: %p AR-BYTES: %x EFER.LMA %d\n",
-		     vmcb->cs.selector,
-		     vmcb->cs.base,
-		     vmcb->cs.access_rights,
-		     (vmcb->efer & EFER_LMA));
+		     vmcb->cs.selector, vmcb->cs.base, vmcb->cs.access_rights,
+		     !!(vmcb->efer & EFER_LMA));
 	panic_printk("CR0: %p CR3: %p CR4: %p\n", vmcb->cr0,
 		     vmcb->cr3, vmcb->cr4);
 	panic_printk("EFER: %p\n", vmcb->efer);
