@@ -143,16 +143,13 @@ static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
 	svm_segment->base = segment->base;
 }
 
-static bool svm_set_cell_config(struct cell *cell, struct vmcb *vmcb)
+static void svm_set_cell_config(struct cell *cell, struct vmcb *vmcb)
 {
-	/* No real need for this function; used for consistency with vmx.c */
 	vmcb->iopm_base_pa = paging_hvirt2phys(cell->svm.iopm);
 	vmcb->n_cr3 = paging_hvirt2phys(cell->svm.npt_structs.root_table);
-
-	return true;
 }
 
-static int vmcb_setup(struct per_cpu *cpu_data)
+static void vmcb_setup(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 
@@ -220,7 +217,7 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 	/* Explicitly mark all of the state as new */
 	vmcb->clean_bits = 0;
 
-	return svm_set_cell_config(cpu_data->cell, vmcb);
+	svm_set_cell_config(cpu_data->cell, vmcb);
 }
 
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
@@ -376,8 +373,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 
 	cpu_data->svm_state = SVMON;
 
-	if (!vmcb_setup(cpu_data))
-		return trace_error(-EIO);
+	vmcb_setup(cpu_data);
 
 	/*
 	 * APM Volume 2, 3.1.1: "When writing the CR0 register, software should
@@ -540,7 +536,6 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	};
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long val;
-	bool ok = true;
 
 	vmcb->cr0 = X86_CR0_NW | X86_CR0_CD | X86_CR0_ET;
 	vmcb->cr3 = 0;
@@ -597,13 +592,7 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	/* Almost all of the guest state changed */
 	vmcb->clean_bits = 0;
 
-	ok &= svm_set_cell_config(cpu_data->cell, vmcb);
-
-	/* This is always false, but to be consistent with vmx.c... */
-	if (!ok) {
-		panic_printk("FATAL: CPU reset failed\n");
-		panic_stop();
-	}
+	svm_set_cell_config(cpu_data->cell, vmcb);
 }
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
