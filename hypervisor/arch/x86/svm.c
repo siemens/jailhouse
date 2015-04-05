@@ -459,7 +459,6 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	cpu_data->linux_tss.selector = vmcb->tr.selector;
 
 	cpu_data->linux_efer = vmcb->efer & (~EFER_SVME);
-	cpu_data->linux_fs.base = vmcb->fs.base;
 	cpu_data->linux_gs.base = vmcb->gs.base;
 
 	cpu_data->linux_ds.selector = vmcb->ds.selector;
