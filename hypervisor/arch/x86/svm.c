@@ -526,6 +526,18 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 
 static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 {
+	static const struct svm_segment dataseg_reset_state = {
+		.selector = 0,
+		.base = 0,
+		.limit = 0xffff,
+		.access_rights = 0x0093,
+	};
+	static const struct svm_segment dtr_reset_state = {
+		.selector = 0,
+		.base = 0,
+		.limit = 0xffff,
+		.access_rights = 0,
+	};
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long val;
 	bool ok = true;
@@ -549,30 +561,11 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	vmcb->cs.limit = 0xffff;
 	vmcb->cs.access_rights = 0x009b;
 
-	vmcb->ds.selector = 0;
-	vmcb->ds.base = 0;
-	vmcb->ds.limit = 0xffff;
-	vmcb->ds.access_rights = 0x0093;
-
-	vmcb->es.selector = 0;
-	vmcb->es.base = 0;
-	vmcb->es.limit = 0xffff;
-	vmcb->es.access_rights = 0x0093;
-
-	vmcb->fs.selector = 0;
-	vmcb->fs.base = 0;
-	vmcb->fs.limit = 0xffff;
-	vmcb->fs.access_rights = 0x0093;
-
-	vmcb->gs.selector = 0;
-	vmcb->gs.base = 0;
-	vmcb->gs.limit = 0xffff;
-	vmcb->gs.access_rights = 0x0093;
-
-	vmcb->ss.selector = 0;
-	vmcb->ss.base = 0;
-	vmcb->ss.limit = 0xffff;
-	vmcb->ss.access_rights = 0x0093;
+	vmcb->ds = dataseg_reset_state;
+	vmcb->es = dataseg_reset_state;
+	vmcb->fs = dataseg_reset_state;
+	vmcb->gs = dataseg_reset_state;
+	vmcb->ss = dataseg_reset_state;
 
 	vmcb->tr.selector = 0;
 	vmcb->tr.base = 0;
@@ -584,15 +577,8 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	vmcb->ldtr.limit = 0xffff;
 	vmcb->ldtr.access_rights = 0x0082;
 
-	vmcb->gdtr.selector = 0;
-	vmcb->gdtr.base = 0;
-	vmcb->gdtr.limit = 0xffff;
-	vmcb->gdtr.access_rights = 0;
-
-	vmcb->idtr.selector = 0;
-	vmcb->idtr.base = 0;
-	vmcb->idtr.limit = 0xffff;
-	vmcb->idtr.access_rights = 0;
+	vmcb->gdtr = dtr_reset_state;
+	vmcb->idtr = dtr_reset_state;
 
 	vmcb->efer = EFER_SVME;
 
