@@ -446,19 +446,6 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	unsigned long *stack = (unsigned long *)vmcb->rsp;
 	unsigned long linux_ip = vmcb->rip;
 
-	/*
-	 * Restore the MSRs.
-	 *
-	 * XXX: One could argue this is better to be done in
-	 * arch_cpu_restore(), however, it would require changes
-	 * to cpu_data to store STAR and friends.
-	 */
-	write_msr(MSR_STAR, vmcb->star);
-	write_msr(MSR_LSTAR, vmcb->lstar);
-	write_msr(MSR_CSTAR, vmcb->cstar);
-	write_msr(MSR_SFMASK, vmcb->sfmask);
-	write_msr(MSR_KERNGS_BASE, vmcb->kerngsbase);
-
 	cpu_data->linux_cr0 = vmcb->cr0;
 	cpu_data->linux_cr3 = vmcb->cr3;
 
