@@ -139,22 +139,12 @@ static void set_svm_segment_from_dtr(struct svm_segment *svm_segment,
 	*svm_segment = tmp;
 }
 
-/* TODO: struct segment needs to be x86 generic, not VMX-specific one here */
 static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
 					 const struct segment *segment)
 {
-	u32 ar;
-
 	svm_segment->selector = segment->selector;
-
-	if (segment->access_rights == 0x10000) {
-		svm_segment->access_rights = 0;
-	} else {
-		ar = segment->access_rights;
-		svm_segment->access_rights =
-			((ar & 0xf000) >> 4) | (ar & 0x00ff);
-	}
-
+	svm_segment->access_rights = ((segment->access_rights & 0xf000) >> 4) |
+		(segment->access_rights & 0x00ff);
 	svm_segment->limit = segment->limit;
 	svm_segment->base = segment->base;
 }
