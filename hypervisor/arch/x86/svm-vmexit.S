@@ -15,9 +15,7 @@
 /* SVM VM entry and handling of VM exit */
 	.globl svm_vmentry
 svm_vmentry:
-	vmload %rax
 	vmrun %rax
-	vmsave %rax
 
 	/* XXX: GIF is always cleared here */
 	push -PERCPU_STACK_END+PERCPU_VMCB_RAX(%rsp)

@@ -433,6 +433,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 		"mov 0x20(%%rdi),%%rbx\n\t"
 		"mov 0x28(%%rdi),%%rbp\n\t"
 		"mov %2,%%rsp\n\t"
+		"vmload %%rax\n\t"
 		"jmp svm_vmentry"
 		: /* no output */
 		: "D" (cpu_data->linux_reg), "a" (vmcb_pa), "m" (host_stack));
@@ -456,15 +457,16 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 
 	cpu_data->linux_cs.selector = vmcb->cs.selector;
 
-	cpu_data->linux_tss.selector = vmcb->tr.selector;
+	asm volatile("str %0" : "=m" (cpu_data->linux_tss.selector));
 
 	cpu_data->linux_efer = vmcb->efer & (~EFER_SVME);
 	cpu_data->linux_gs.base = vmcb->gs.base;
 
 	cpu_data->linux_ds.selector = vmcb->ds.selector;
 	cpu_data->linux_es.selector = vmcb->es.selector;
-	cpu_data->linux_fs.selector = vmcb->fs.selector;
-	cpu_data->linux_gs.selector = vmcb->gs.selector;
+
+	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs.selector));
+	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs.selector));
 
 	arch_cpu_restore(cpu_data, 0);
 
@@ -568,6 +570,12 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 	vmcb->clean_bits = 0;
 
 	svm_set_cell_config(cpu_data->cell, vmcb);
+
+	asm volatile(
+		"vmload %%rax"
+		: : "a" (paging_hvirt2phys(vmcb)) : "memory");
+	/* vmload overwrites GS_BASE - restore the host state */
+	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
 }
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
@@ -832,6 +840,8 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 	bool res = false;
 	int sipi_vector;
 
+	vmcb->gs.base = read_msr(MSR_GS_BASE);
+
 	/* Restore GS value expected by per_cpu data accessors */
 	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
 
@@ -859,14 +869,14 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			vcpu_reset();
 		}
 		iommu_check_pending_faults(cpu_data);
-		return;
+		goto vmentry;
 	case VMEXIT_VMMCALL:
 		vcpu_handle_hypercall();
-		return;
+		goto vmentry;
 	case VMEXIT_CR0_SEL_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
 		if (svm_handle_cr(cpu_data))
-			return;
+			goto vmentry;
 		break;
 	case VMEXIT_MSR:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
@@ -875,7 +885,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		else
 			res = svm_handle_msr_write(cpu_data);
 		if (res)
-			return;
+			goto vmentry;
 		break;
 	case VMEXIT_NPF:
 		if ((vmcb->exitinfo1 & 0x7) == 0x7 &&
@@ -884,12 +894,12 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			/* APIC access in non-AVIC mode */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
 			if (svm_handle_apic_access(vmcb))
-				return;
+				goto vmentry;
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
 			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 			if (vcpu_handle_mmio_access())
-				return;
+				goto vmentry;
 		}
 
 		panic_printk("FATAL: Unhandled Nested Page Fault for (%p), "
@@ -898,12 +908,12 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case VMEXIT_XSETBV:
 		if (vcpu_handle_xsetbv())
-			return;
+			goto vmentry;
 		break;
 	case VMEXIT_IOIO:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
 		if (vcpu_handle_io_access())
-			return;
+			goto vmentry;
 		break;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:
@@ -913,6 +923,9 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 	}
 	dump_guest_regs(&cpu_data->guest_regs, vmcb);
 	panic_park();
+
+vmentry:
+	write_msr(MSR_GS_BASE, vmcb->gs.base);
 }
 
 void vcpu_park(void)
