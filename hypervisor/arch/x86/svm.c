@@ -462,10 +462,6 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	cpu_data->linux_fs.base = vmcb->fs.base;
 	cpu_data->linux_gs.base = vmcb->gs.base;
 
-	cpu_data->linux_sysenter_cs = vmcb->sysenter_cs;
-	cpu_data->linux_sysenter_eip = vmcb->sysenter_eip;
-	cpu_data->linux_sysenter_esp = vmcb->sysenter_esp;
-
 	cpu_data->linux_ds.selector = vmcb->ds.selector;
 	cpu_data->linux_es.selector = vmcb->es.selector;
 	cpu_data->linux_fs.selector = vmcb->fs.selector;

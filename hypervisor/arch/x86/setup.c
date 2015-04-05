@@ -286,8 +286,4 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 
 	write_msr(MSR_FS_BASE, cpu_data->linux_fs.base);
 	write_msr(MSR_GS_BASE, cpu_data->linux_gs.base);
-
-	write_msr(MSR_IA32_SYSENTER_CS, cpu_data->linux_sysenter_cs);
-	write_msr(MSR_IA32_SYSENTER_EIP, cpu_data->linux_sysenter_eip);
-	write_msr(MSR_IA32_SYSENTER_ESP, cpu_data->linux_sysenter_esp);
 }
