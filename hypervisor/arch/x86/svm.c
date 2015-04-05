@@ -129,14 +129,8 @@ static int svm_check_features(void)
 static void set_svm_segment_from_dtr(struct svm_segment *svm_segment,
 				     const struct desc_table_reg *dtr)
 {
-	struct svm_segment tmp = { 0 };
-
-	if (dtr) {
-		tmp.base = dtr->base;
-		tmp.limit = dtr->limit & 0xffff;
-	}
-
-	*svm_segment = tmp;
+	svm_segment->base = dtr->base;
+	svm_segment->limit = dtr->limit & 0xffff;
 }
 
 static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
@@ -175,8 +169,8 @@ static int vmcb_setup(struct per_cpu *cpu_data)
 	set_svm_segment_from_segment(&vmcb->gs, &cpu_data->linux_gs);
 	set_svm_segment_from_segment(&vmcb->ss, &invalid_seg);
 	set_svm_segment_from_segment(&vmcb->tr, &cpu_data->linux_tss);
+	set_svm_segment_from_segment(&vmcb->ldtr, &invalid_seg);
 
-	set_svm_segment_from_dtr(&vmcb->ldtr, NULL);
 	set_svm_segment_from_dtr(&vmcb->gdtr, &cpu_data->linux_gdtr);
 	set_svm_segment_from_dtr(&vmcb->idtr, &cpu_data->linux_idtr);
 
