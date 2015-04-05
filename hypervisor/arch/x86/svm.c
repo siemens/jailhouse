@@ -687,38 +687,33 @@ static bool svm_parse_mov_to_cr(struct vmcb *vmcb, unsigned long pc,
 	struct parse_context ctx = {};
 	/* No prefixes are supported yet */
 	u8 opcodes[] = {0x0f, 0x22}, modrm;
-	bool ok = false;
 	int n;
 
 	ctx.remaining = ARRAY_SIZE(opcodes);
 	if (!vcpu_get_guest_paging_structs(&pg_structs))
-		goto out;
+		return false;
 	ctx.cs_base = (vmcb->efer & EFER_LMA) ? 0 : vmcb->cs.base;
 
 	if (!ctx_advance(&ctx, &pc, &pg_structs))
-		goto out;
+		return false;
 
-	for (n = 0; n < ARRAY_SIZE(opcodes); n++, ctx.inst++) {
-		if (*(ctx.inst) != opcodes[n])
-			goto out;
-		if (!ctx_advance(&ctx, &pc, &pg_structs))
-			goto out;
-	}
+	for (n = 0; n < ARRAY_SIZE(opcodes); n++, ctx.inst++)
+		if (*(ctx.inst) != opcodes[n] ||
+		    !ctx_advance(&ctx, &pc, &pg_structs))
+			return false;
 
 	if (!ctx_advance(&ctx, &pc, &pg_structs))
-		goto out;
+		return false;
 
 	modrm = *(ctx.inst);
 
 	if (((modrm & 0x38) >> 3) != reg)
-		goto out;
+		return false;
 
 	if (gpr)
 		*gpr = (modrm & 0x7);
 
-	ok = true;
-out:
-	return ok;
+	return true;
 }
 
 /*
@@ -732,20 +727,17 @@ static bool svm_handle_cr(struct per_cpu *cpu_data)
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	/* Workaround GCC 4.8 warning on uninitialized variable 'reg' */
 	unsigned long reg = -1, val, bits;
-	bool ok = true;
 
 	if (has_assists) {
 		if (!(vmcb->exitinfo1 & (1UL << 63))) {
 			panic_printk("FATAL: Unsupported CR access (LMSW or CLTS)\n");
-			ok = false;
-			goto out;
+			return false;
 		}
 		reg = vmcb->exitinfo1 & 0x07;
 	} else {
 		if (!svm_parse_mov_to_cr(vmcb, vmcb->rip, 0, &reg)) {
 			panic_printk("FATAL: Unable to parse MOV-to-CR instruction\n");
-			ok = false;
-			goto out;
+			return false;
 		}
 	};
 
@@ -765,8 +757,7 @@ static bool svm_handle_cr(struct per_cpu *cpu_data)
 		update_efer(vmcb);
 	vmcb->clean_bits &= ~CLEAN_BITS_CRX;
 
-out:
-	return ok;
+	return true;
 }
 
 static bool svm_handle_msr_write(struct per_cpu *cpu_data)
