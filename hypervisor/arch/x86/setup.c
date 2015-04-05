@@ -200,10 +200,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 	cpu_data->linux_efer = read_msr(MSR_EFER);
 
-	cpu_data->linux_sysenter_cs = read_msr(MSR_IA32_SYSENTER_CS);
-	cpu_data->linux_sysenter_eip = read_msr(MSR_IA32_SYSENTER_EIP);
-	cpu_data->linux_sysenter_esp = read_msr(MSR_IA32_SYSENTER_ESP);
-
 	cpu_data->initialized = true;
 
 	err = apic_cpu_init(cpu_data);
