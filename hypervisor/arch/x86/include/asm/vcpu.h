@@ -113,7 +113,7 @@ bool vcpu_handle_mmio_access(union registers *guest_regs);
 bool vcpu_handle_msr_read(union registers *guest_regs);
 bool vcpu_handle_msr_write(union registers *guest_regs);
 
-bool vcpu_handle_xsetbv(union registers *guest_regs);
+bool vcpu_handle_xsetbv(void);
 
 void vcpu_reset(void);
 

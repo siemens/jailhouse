@@ -989,7 +989,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			     vmcb->exitinfo1 & 0xf);
 		break;
 	case VMEXIT_XSETBV:
-		if (vcpu_handle_xsetbv(guest_regs))
+		if (vcpu_handle_xsetbv())
 			return;
 		break;
 	case VMEXIT_IOIO:

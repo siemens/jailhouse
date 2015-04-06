@@ -312,8 +312,10 @@ bool vcpu_handle_msr_write(union registers *guest_regs)
 	return true;
 }
 
-bool vcpu_handle_xsetbv(union registers *guest_regs)
+bool vcpu_handle_xsetbv(void)
 {
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
+
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_XSETBV]++;
 
 	if (cpuid_ecx(1) & X86_FEATURE_XSAVE &&

@@ -1098,7 +1098,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_XSETBV:
-		if (vcpu_handle_xsetbv(guest_regs))
+		if (vcpu_handle_xsetbv())
 			return;
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
