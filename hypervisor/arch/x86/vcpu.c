@@ -163,14 +163,13 @@ void vcpu_handle_hypercall(struct registers *guest_regs,
 bool vcpu_handle_io_access(struct registers *guest_regs,
 			   struct vcpu_io_intercept *io)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
 	int result = 0;
 
 	/* string and REP-prefixed instructions are not supported */
 	if (io->rep_or_str)
 		goto invalid_access;
 
-	result = x86_pci_config_handler(guest_regs, cpu_data->cell, io->port,
+	result = x86_pci_config_handler(guest_regs, this_cell(), io->port,
 					io->in, io->size);
 	if (result == 0)
 		result = i8042_access_handler(guest_regs, io->port,
