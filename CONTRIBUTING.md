@@ -13,6 +13,9 @@ Contribution Checklist
 
 - follow Documentation/coding-style.txt coding style [**required**]
 
+- add the required copyright header to each new file introduced, see
+  [licensing information](LICENSING.md) [**required**]
+
 - structure patches logically, in small steps [**required**]
     - one separable functionality/fix/refactoring = one patch
     - do not mix those there in a single patch
