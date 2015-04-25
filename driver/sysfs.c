@@ -194,7 +194,7 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 		if (jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
 					JAILHOUSE_CPU_INFO_STATE) ==
 		    JAILHOUSE_CPU_FAILED)
-			cpu_set(cpu, *cpus_failed);
+			cpumask_set_cpu(cpu, cpus_failed);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 	written = scnprintf(buf, PAGE_SIZE, "%*pb\n",

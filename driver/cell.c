@@ -144,7 +144,7 @@ void jailhouse_cell_delete_all(void)
 		if (cpu_up(cpu) != 0)
 			pr_err("Jailhouse: failed to bring CPU %d back "
 			       "online\n", cpu);
-		cpu_clear(cpu, offlined_cpus);
+		cpumask_clear_cpu(cpu, &offlined_cpus);
 	}
 }
 
@@ -205,9 +205,9 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 			err = cpu_down(cpu);
 			if (err)
 				goto error_cpu_online;
-			cpu_set(cpu, offlined_cpus);
+			cpumask_set_cpu(cpu, &offlined_cpus);
 		}
-		cpu_clear(cpu, root_cell->cpus_assigned);
+		cpumask_clear_cpu(cpu, &root_cell->cpus_assigned);
 	}
 
 	id = jailhouse_call_arg1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
@@ -232,8 +232,8 @@ kfree_config_out:
 error_cpu_online:
 	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
-			cpu_clear(cpu, offlined_cpus);
-		cpu_set(cpu, root_cell->cpus_assigned);
+			cpumask_clear_cpu(cpu, &offlined_cpus);
+		cpumask_set_cpu(cpu, &root_cell->cpus_assigned);
 	}
 
 error_cell_delete:
@@ -381,13 +381,13 @@ int jailhouse_cmd_cell_destroy(const char __user *arg)
 		goto unlock_out;
 
 	for_each_cpu(cpu, &cell->cpus_assigned) {
-		if (cpu_isset(cpu, offlined_cpus)) {
+		if (cpumask_test_cpu(cpu, &offlined_cpus)) {
 			if (cpu_up(cpu) != 0)
 				pr_err("Jailhouse: failed to bring CPU %d "
 				       "back online\n", cpu);
-			cpu_clear(cpu, offlined_cpus);
+			cpumask_clear_cpu(cpu, &offlined_cpus);
 		}
-		cpu_set(cpu, root_cell->cpus_assigned);
+		cpumask_set_cpu(cpu, &root_cell->cpus_assigned);
 	}
 
 	pr_info("Destroyed Jailhouse cell \"%s\"\n",
