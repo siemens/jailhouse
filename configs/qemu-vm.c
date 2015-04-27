@@ -1,27 +1,29 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Test configuration for QEMU Q35 VM, 1 GB RAM, 64 MB hypervisor (-192K ACPI)
- * Command line:
+ * Test configuration for QEMU Q35 VM, 1 GB RAM, 4 cores,
+ * 6 MB hypervisor, 60 MB inmates (-4K shared mem device)
  *
- * For Intel-based setup:
- * qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
- *  -drive file=/path/to/image,id=disk,if=none -device ide-hd,drive=disk \
- *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
- *  -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic
- *
- * For AMD-based setups:
- * qemu-system-x86_64 /path/to/image -m 1G -enable-kvm -smp 4 \
- *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
- *  -cpu host,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+svm,+x2apic
- *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2015
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
+ *
+ * QEMU command line for Intel-based setups:
+ * qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
+ *  -drive file=/path/to/image,id=disk,if=none -device ide-hd,drive=disk \
+ *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
+ *  -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic
+ *
+ * QEMU command line for AMD-based setups:
+ * qemu-system-x86_64 /path/to/image -m 1G -enable-kvm -smp 4 \
+ *  -virtfs local,path=/local/path,security_model=passthrough,mount_tag=host \
+ *  -cpu host,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+svm,+x2apic
+ *
+ * Guest kernel command line appendix: memmap=66M$0x3b000000
  */
 
 #include <linux/types.h>
@@ -41,7 +43,7 @@ struct {
 	.header = {
 		.hypervisor_memory = {
 			.phys_start = 0x3b000000,
-			.size = 0x4000000,
+			.size = 0x600000,
 		},
 		.platform_info.x86 = {
 			.mmconfig_base = 0xb0000000,
@@ -77,9 +79,9 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM (inmates) */ {
-			.phys_start = 0x3f000000,
-			.virt_start = 0x3f000000,
-			.size = 0x1ff000,
+			.phys_start = 0x3b600000,
+			.virt_start = 0x3b600000,
+			.size = 0x3bff000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
