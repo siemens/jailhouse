@@ -313,18 +313,38 @@ bool vcpu_handle_msr_write(void)
 
 void vcpu_handle_cpuid(void)
 {
+	static const char signature[12] = "Jailhouse";
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	u32 function = guest_regs->rax;
 
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CPUID]++;
 
-	/* clear upper 32 bits of the involved registers */
-	guest_regs->rax &= 0xffffffff;
-	guest_regs->rbx &= 0xffffffff;
-	guest_regs->rcx &= 0xffffffff;
-	guest_regs->rdx &= 0xffffffff;
+	switch (function) {
+	case JAILHOUSE_CPUID_SIGNATURE:
+		guest_regs->rax = JAILHOUSE_CPUID_FEATURES;
+		guest_regs->rbx = *(u32 *)signature;
+		guest_regs->rcx = *(u32 *)(signature + 4);
+		guest_regs->rdx = *(u32 *)(signature + 8);
+		break;
+	case JAILHOUSE_CPUID_FEATURES:
+		guest_regs->rax = 0;
+		guest_regs->rbx = 0;
+		guest_regs->rcx = 0;
+		guest_regs->rdx = 0;
+		break;
+	default:
+		/* clear upper 32 bits of the involved registers */
+		guest_regs->rax &= 0xffffffff;
+		guest_regs->rbx &= 0xffffffff;
+		guest_regs->rcx &= 0xffffffff;
+		guest_regs->rdx &= 0xffffffff;
 
-	cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
-	      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
+		cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
+		      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
+		if (function == 0x01)
+			guest_regs->rcx |= X86_FEATURE_HYPERVISOR;
+		break;
+	}
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_CPUID);
 }

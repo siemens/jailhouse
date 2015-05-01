@@ -1,12 +1,55 @@
 Hypervisor Interface for Cells
 ==============================
 
-The Jailhouse hypervisor provides two kinds of interfaces to interact with its
-cells during runtime. One is a set of hypercalls which cells can be invoked
-synchronously by executing architecture specific instructions that switch to
-hypervisor mode. The other interface consists of variables located in a
-per-cell memory region that is shared between hypervisor and that particular
-cell.
+The Jailhouse hypervisor provides three kinds of interfaces to interact with
+its cells during runtime. The first is a read-only detection interface. The
+second is a set of hypercalls which cells can invoke synchronously by executing
+architecture specific instructions that switch to hypervisor mode. The third
+interface consists of variables located in a per-cell memory region that is
+shared between hypervisor and that particular cell.
+
+
+Detection
+---------
+
+This interface is useful for cell code that should work not only inside a
+Jailhouse cell. The ABI is architecture specific.
+
+
+x86 ABI
+- - - -
+
+On x86, Jailhouse modifies the register values returned when executing the
+cpuid instruction as follows:
+
+
+Function (EAX): 0x01
+Result in EAX:  passed unmodified
+          EBX:  passed unmodified
+          ECX:  bit 31 ("hypervisor") set, all other bits passed unmodified
+          EDX:  passed unmodified
+
+Note: A cell should first check if bit 31 is set in ECX before querying the
+signature function 0x40000000.
+
+
+Function (EAX): 0x40000000 (signature)
+Result in EAX:  highest supported hypervisor function, currently 0x40000001
+          EBX:  0x6c69614a ("Jail")
+          ECX:  0x73756f68 ("hous")
+          EDX:  0x00000065 ("e")
+
+Note: A cell should first validate the presence of Jailhouse via both checking
+the hypervisor feature bit (function 31) and then the signature (function
+0x40000000) before evaluating the returned values of the feature function
+0x40000001.
+
+
+Function (EAX): 0x40000001 (features)
+Result in EAX:  0
+          EBX:  0
+          ECX:  0
+          EDX:  0
 
 
 Hypercalls
