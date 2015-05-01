@@ -199,6 +199,7 @@ static void vmcb_setup(struct per_cpu *cpu_data)
 
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_NMI;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CR0_SEL_WRITE;
+	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_CPUID;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_IOIO_PROT;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_MSR_PROT;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_SHUTDOWN_EVT;
@@ -879,6 +880,9 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		if (svm_handle_cr(cpu_data))
 			goto vmentry;
 		break;
+	case VMEXIT_CPUID:
+		vcpu_handle_cpuid();
+		goto vmentry;
 	case VMEXIT_MSR:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (!vmcb->exitinfo1)

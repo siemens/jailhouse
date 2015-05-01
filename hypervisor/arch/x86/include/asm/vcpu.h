@@ -113,6 +113,8 @@ bool vcpu_handle_mmio_access(void);
 bool vcpu_handle_msr_read(void);
 bool vcpu_handle_msr_write(void);
 
+void vcpu_handle_cpuid(void);
+
 bool vcpu_handle_xsetbv(void);
 
 void vcpu_reset(bool hard_reset);

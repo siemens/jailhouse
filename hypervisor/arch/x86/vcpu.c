@@ -311,6 +311,24 @@ bool vcpu_handle_msr_write(void)
 	return true;
 }
 
+void vcpu_handle_cpuid(void)
+{
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
+
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CPUID]++;
+
+	/* clear upper 32 bits of the involved registers */
+	guest_regs->rax &= 0xffffffff;
+	guest_regs->rbx &= 0xffffffff;
+	guest_regs->rcx &= 0xffffffff;
+	guest_regs->rdx &= 0xffffffff;
+
+	cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
+	      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
+
+	vcpu_skip_emulated_instruction(X86_INST_LEN_CPUID);
+}
+
 bool vcpu_handle_xsetbv(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;

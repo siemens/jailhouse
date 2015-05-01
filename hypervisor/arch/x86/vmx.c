@@ -881,22 +881,6 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 	vmcs_write64(GUEST_RIP, vmcs_read64(GUEST_RIP) + inst_len);
 }
 
-static void vmx_handle_cpuid(union registers *guest_regs)
-{
-	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CPUID]++;
-
-	/* clear upper 32 bits of the involved registers */
-	guest_regs->rax &= 0xffffffff;
-	guest_regs->rbx &= 0xffffffff;
-	guest_regs->rcx &= 0xffffffff;
-	guest_regs->rdx &= 0xffffffff;
-
-	cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
-	      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
-
-	vcpu_skip_emulated_instruction(X86_INST_LEN_CPUID);
-}
-
 static void update_efer(void)
 {
 	unsigned long efer = vmcs_read64(GUEST_IA32_EFER);
@@ -1076,7 +1060,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		iommu_check_pending_faults(cpu_data);
 		return;
 	case EXIT_REASON_CPUID:
-		vmx_handle_cpuid(&cpu_data->guest_regs);
+		vcpu_handle_cpuid();
 		return;
 	case EXIT_REASON_VMCALL:
 		vcpu_handle_hypercall();
