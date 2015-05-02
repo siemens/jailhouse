@@ -295,6 +295,9 @@ void apic_clear(void)
 	unsigned int xlc = (apic_ext_features() >> 16) & 0xff;
 	int n;
 
+	/* Enable the APIC - the cell may have turned it off */
+	apic_ops.write(APIC_REG_SVR, APIC_SVR_ENABLE_APIC | 0xff);
+
 	/* Mask all available LVTs */
 	apic_mask_lvt(APIC_REG_LVTERR);
 	if (maxlvt >= 6)

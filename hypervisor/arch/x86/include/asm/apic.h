@@ -34,6 +34,7 @@
 #define APIC_REG_EOI			0x0b
 #define APIC_REG_LDR			0x0d
 #define APIC_REG_DFR			0x0e
+#define APIC_REG_SVR			0x0f
 #define APIC_REG_ISR0			0x10
 #define APIC_REG_LVTCMCI		0x2f
 #define APIC_REG_ICR			0x30
@@ -50,6 +51,7 @@
 #define APIC_REG_XLVT3			0x53
 
 #define APIC_EOI_ACK			0
+#define APIC_SVR_ENABLE_APIC		0x00000100
 #define APIC_ICR_VECTOR_MASK		0x000000ff
 #define APIC_ICR_DLVR_MASK		0x00000700
 #define APIC_ICR_DLVR_SHIFT		8
