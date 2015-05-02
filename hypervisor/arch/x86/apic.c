@@ -185,6 +185,7 @@ int apic_init(void)
 		apic_ops.send_ipi = send_xapic_ipi;
 
 		/* adjust reserved bits to xAPIC mode */
+		apic_reserved_bits[APIC_REG_ID] = 0;  /* writes are ignored */
 		apic_reserved_bits[APIC_REG_LDR] = 0; /* separately filtered */
 		apic_reserved_bits[APIC_REG_DFR] = 0; /* separately filtered */
 		apic_reserved_bits[APIC_REG_ICR_HI] = 0x00ffffff;
@@ -518,7 +519,7 @@ unsigned int apic_mmio_access(unsigned long rip,
 		else if (reg >= APIC_REG_XLVT0 && reg <= APIC_REG_XLVT3 &&
 			 apic_invalid_lvt_delivery_mode(reg, val))
 			return 0;
-		else
+		else if (reg != APIC_REG_ID)
 			apic_ops.write(reg, val);
 	} else {
 		val = apic_ops.read(reg);
