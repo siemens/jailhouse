@@ -326,8 +326,9 @@ void apic_clear(void)
 	cpu_relax();
 	disable_irq();
 
-	/* Finally, reset the TPR again */
+	/* Finally, reset the TPR again and disable the APIC */
 	apic_ops.write(APIC_REG_TPR, 0);
+	apic_ops.write(APIC_REG_SVR, 0xff);
 }
 
 static bool apic_valid_ipi_mode(u32 lo_val)
