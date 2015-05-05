@@ -8,8 +8,12 @@
  * Authors:
  *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *
- * Definitions in this file were adapted from Xvisor source code.
- * See http://xhypervisor.org for details.
+ * This file is partially derived from
+ * xvisor/arch/x86/cpu/x86_64/include/vm/amd_vmcb.h, which comes with
+ * Xvisor 0.2 (http://xhypervisor.org).
+ *
+ * Copyright (c) 2005-2007, Advanced Micro Devices, Inc
+ * Copyright (c) 2004, Intel Corporation.
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
