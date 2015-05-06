@@ -280,5 +280,6 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 	gdt[cpu_data->linux_tss.selector / 8] &= ~DESC_TSS_BUSY;
 	asm volatile("ltr %%ax" : : "a" (cpu_data->linux_tss.selector));
 
+	write_msr(MSR_FS_BASE, cpu_data->linux_fs.base);
 	write_msr(MSR_GS_BASE, cpu_data->linux_gs.base);
 }

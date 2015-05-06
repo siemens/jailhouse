@@ -717,9 +717,8 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	cpu_data->linux_tss.selector = vmcs_read32(GUEST_TR_SELECTOR);
 
 	cpu_data->linux_efer = vmcs_read64(GUEST_IA32_EFER);
+	cpu_data->linux_fs.base = vmcs_read64(GUEST_FS_BASE);
 	cpu_data->linux_gs.base = vmcs_read64(GUEST_GS_BASE);
-
-	write_msr(MSR_FS_BASE, vmcs_read64(GUEST_FS_BASE));
 
 	write_msr(MSR_IA32_SYSENTER_CS, vmcs_read32(GUEST_SYSENTER_CS));
 	write_msr(MSR_IA32_SYSENTER_EIP, vmcs_read64(GUEST_SYSENTER_EIP));
