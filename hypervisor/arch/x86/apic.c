@@ -479,6 +479,11 @@ unsigned int apic_mmio_access(unsigned long rip,
 	struct mmio_instruction inst;
 	u32 val;
 
+	if (using_x2apic) {
+		panic_printk("FATAL: xAPIC access in x2APIC mode\n");
+		return 0;
+	}
+
 	inst = x86_mmio_parse(rip, pg_structs, is_write);
 	if (inst.inst_len == 0)
 		return 0;
