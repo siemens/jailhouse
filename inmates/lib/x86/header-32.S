@@ -12,11 +12,14 @@
 
 #include <inmate.h>
 
-#define X86_CR0_PE	0x00000001
-#define X86_CR0_WP	0x00010000
-#define X86_CR0_PG	0x80000000
+#define X86_CR0_PE		0x00000001
+#define X86_CR0_WP		0x00010000
+#define X86_CR0_PG		0x80000000
 
-#define X86_CR4_PSE	0x00000010
+#define X86_CR4_PSE		0x00000010
+
+#define MSR_MTRR_DEF_TYPE	0x000002ff
+#define MTRR_ENABLE		0x00000800
 
 	.code16
 	.section ".boot", "ax"
@@ -47,6 +50,11 @@ start32:
 
 	mov $(X86_CR0_PG | X86_CR0_WP | X86_CR0_PE),%eax
 	mov %eax,%cr0
+
+	movl $MSR_MTRR_DEF_TYPE,%ecx
+	rdmsr
+	or $MTRR_ENABLE,%eax
+	wrmsr
 
 	mov $stack_top,%esp
 
