@@ -479,7 +479,7 @@ static void pci_suppress_msix(struct pci_device *device,
 	union pci_msix_registers regs = device->msix_registers;
 
 	if (suppressed)
-		regs.field.fmask = 1;
+		regs.fmask = 1;
 	pci_write_config(device->info->bdf, cap->start, regs.raw, 4);
 }
 

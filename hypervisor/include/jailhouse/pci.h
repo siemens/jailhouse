@@ -89,7 +89,7 @@ union pci_msix_registers {
 		u16 ignore:14,
 		    fmask:1,
 		    enable:1;
-	} __attribute__((packed)) field;
+	} __attribute__((packed));
 	u32 raw;
 	/** @publicsection */
 } __attribute__((packed));
@@ -102,7 +102,7 @@ union pci_msix_vector {
 		u32 data;
 		u32 masked:1;
 		u32 reserved:31;
-	} __attribute__((packed)) field;
+	} __attribute__((packed));
 	u32 raw[4];
 	/** @publicsection */
 } __attribute__((packed));

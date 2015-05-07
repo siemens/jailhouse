@@ -366,15 +366,14 @@ int arch_pci_update_msi(struct pci_device *device,
 int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 {
 	union x86_msi_vector msi = {
-		.raw.address = device->msix_vectors[index].field.address,
-		.raw.data = device->msix_vectors[index].field.data,
+		.raw.address = device->msix_vectors[index].address,
+		.raw.data = device->msix_vectors[index].data,
 	};
 	struct apic_irq_message irq_msg;
 	int result;
 
-	if (!device->msix_registers.field.enable ||
-	    device->msix_registers.field.fmask ||
-	    device->msix_vectors[index].field.masked)
+	if (!device->msix_registers.enable || device->msix_registers.fmask ||
+	    device->msix_vectors[index].masked)
 		return 0;
 
 	irq_msg = pci_translate_msi_vector(device, index, 0, msi);
@@ -382,18 +381,18 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 				     irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {
-		mmio_write64(&device->msix_table[index].field.address,
-			     device->msix_vectors[index].field.address);
-		mmio_write32(&device->msix_table[index].field.data,
-			     device->msix_vectors[index].field.data);
+		mmio_write64(&device->msix_table[index].address,
+			     device->msix_vectors[index].address);
+		mmio_write32(&device->msix_table[index].data,
+			     device->msix_vectors[index].data);
 		return 0;
 	}
 	if (result < 0)
 		return result;
 
-	mmio_write64(&device->msix_table[index].field.address,
+	mmio_write64(&device->msix_table[index].address,
 		     pci_get_x86_msi_remap_address(result));
-	mmio_write32(&device->msix_table[index].field.data, 0);
+	mmio_write32(&device->msix_table[index].data, 0);
 
 	return 0;
 }

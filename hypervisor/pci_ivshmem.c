@@ -126,11 +126,11 @@ static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
 
 	/* global mask */
 	c.raw = ive->cspace[IVSHMEM_CFG_MSIX_CAP/4];
-	if (!c.field.enable || c.field.fmask)
+	if (!c.enable || c.fmask)
 		return true;
 
 	/* local mask */
-	if (ive->device->msix_vectors[0].field.masked)
+	if (ive->device->msix_vectors[0].masked)
 		return true;
 
 	/* PCI Bus Master */
@@ -143,8 +143,8 @@ static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
 static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
 {
 	union x86_msi_vector msi = {
-		.raw.address = ive->device->msix_vectors[0].field.address,
-		.raw.data = ive->device->msix_vectors[0].field.data,
+		.raw.address = ive->device->msix_vectors[0].address,
+		.raw.data = ive->device->msix_vectors[0].data,
 	};
 	struct apic_irq_message irq_msg;
 
@@ -284,8 +284,8 @@ static int ivshmem_write_msix_control(struct pci_ivshmem_endpoint *ive, u32 val)
 		.raw = ive->cspace[IVSHMEM_CFG_MSIX_CAP/4]
 	};
 
-	newval.field.enable = p->field.enable;
-	newval.field.fmask = p->field.fmask;
+	newval.enable = p->enable;
+	newval.fmask = p->fmask;
 	if (ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] != newval.raw) {
 		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] = newval.raw;
 		return ivshmem_update_msix(ive);
