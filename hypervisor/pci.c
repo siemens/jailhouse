@@ -362,7 +362,7 @@ found:
 		if (index >= device->info->num_msix_vectors)
 			goto invalid_access;
 		if (dword == MSIX_VECTOR_CTRL_DWORD) {
-			mmio_write32(&device->msix_table[index].field.ctrl,
+			mmio_write32(&device->msix_table[index].raw[dword],
 				     *value);
 		} else {
 			device->msix_vectors[index].raw[dword] = *value;

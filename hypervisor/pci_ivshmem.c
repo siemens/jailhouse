@@ -130,7 +130,7 @@ static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
 		return true;
 
 	/* local mask */
-	if (ive->device->msix_vectors[0].field.ctrl & 0x1)
+	if (ive->device->msix_vectors[0].field.masked)
 		return true;
 
 	/* PCI Bus Master */

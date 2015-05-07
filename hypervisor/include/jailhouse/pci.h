@@ -100,7 +100,8 @@ union pci_msix_vector {
 	struct {
 		u64 address;
 		u32 data;
-		u32 ctrl;
+		u32 masked:1;
+		u32 reserved:31;
 	} __attribute__((packed)) field;
 	u32 raw[4];
 	/** @publicsection */
