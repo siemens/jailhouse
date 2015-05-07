@@ -643,7 +643,7 @@ static void vtd_free_int_remap_region(u16 device_id, unsigned int length)
 		printk("Freeing %u interrupt(s) for device %04x at index %d\n",
 		       length, device_id, pos);
 		while (length-- > 0)
-			vtd_update_irte(pos, free_irte);
+			vtd_update_irte(pos++, free_irte);
 	}
 }
 
