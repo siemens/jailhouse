@@ -881,6 +881,8 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 
 static void vmx_handle_cpuid(union registers *guest_regs)
 {
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CPUID]++;
+
 	/* clear upper 32 bits of the involved registers */
 	guest_regs->rax &= 0xffffffff;
 	guest_regs->rbx &= 0xffffffff;
