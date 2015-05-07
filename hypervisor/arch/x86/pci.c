@@ -372,7 +372,9 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 	struct apic_irq_message irq_msg;
 	int result;
 
-	if (!device->msix_registers.field.enable)
+	if (!device->msix_registers.field.enable ||
+	    device->msix_registers.field.fmask ||
+	    device->msix_vectors[index].field.masked)
 		return 0;
 
 	irq_msg = pci_translate_msi_vector(device, index, 0, msi);

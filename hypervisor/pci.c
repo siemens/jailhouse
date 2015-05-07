@@ -361,14 +361,14 @@ found:
 		 */
 		if (index >= device->info->num_msix_vectors)
 			goto invalid_access;
-		if (dword == MSIX_VECTOR_CTRL_DWORD) {
+
+		device->msix_vectors[index].raw[dword] = *value;
+		if (arch_pci_update_msix_vector(device, index) < 0)
+			goto invalid_access;
+
+		if (dword == MSIX_VECTOR_CTRL_DWORD)
 			mmio_write32(&device->msix_table[index].raw[dword],
 				     *value);
-		} else {
-			device->msix_vectors[index].raw[dword] = *value;
-			if (arch_pci_update_msix_vector(device, index) < 0)
-				goto invalid_access;
-		}
 	} else {
 		if (index >= device->info->num_msix_vectors ||
 		    dword == MSIX_VECTOR_CTRL_DWORD)
@@ -492,7 +492,7 @@ static void pci_save_msix(struct pci_device *device,
 		pci_read_config(device->info->bdf, cap->start, 4);
 
 	for (n = 0; n < device->info->num_msix_vectors; n++)
-		for (r = 0; r < 3; r++)
+		for (r = 0; r < 4; r++)
 			device->msix_vectors[n].raw[r] =
 				mmio_read32(&device->msix_table[n].raw[r]);
 }
@@ -503,6 +503,7 @@ static void pci_restore_msix(struct pci_device *device,
 	unsigned int n, r;
 
 	for (n = 0; n < device->info->num_msix_vectors; n++)
+		/* only restore address/data, control is write-through */
 		for (r = 0; r < 3; r++)
 			mmio_write32(&device->msix_table[n].raw[r],
 				     device->msix_vectors[n].raw[r]);
