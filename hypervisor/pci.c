@@ -807,11 +807,18 @@ void pci_shutdown(void)
 	if (!root_cell.pci_devices)
 		return;
 
-	for_each_configured_pci_device(device, &root_cell)
-		if (device->cell)
-			for_each_pci_cap(cap, device, n)
-				if (cap->id == PCI_CAP_MSI)
-					pci_restore_msi(device, cap);
-				else if (cap->id == PCI_CAP_MSIX)
-					pci_restore_msix(device, cap);
+	for_each_configured_pci_device(device, &root_cell) {
+		if (!device->cell)
+			continue;
+
+		for_each_pci_cap(cap, device, n)
+			if (cap->id == PCI_CAP_MSI)
+				pci_restore_msi(device, cap);
+			else if (cap->id == PCI_CAP_MSIX)
+				pci_restore_msix(device, cap);
+
+		if (device->cell != &root_cell)
+			pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
+					 PCI_CMD_INTX_OFF, 2);
+	}
 }
