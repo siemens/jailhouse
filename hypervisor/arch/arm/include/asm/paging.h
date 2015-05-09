@@ -120,30 +120,22 @@
 /*
  * Hypervisor memory attribute indexes:
  *   0: normal WB, RA, WA, non-transient
- *   1: dev-nGnRE
+ *   1: device
  *   2: normal non-cacheable
- *   3: normal WT, RA, transient
- *   4: normal WB, WA, non-transient
- *   5: normal WB, RA, non-transient
- *   6: dev-nGnRnE
- *   7: dev-nGnRnE (unused)
+ *   3-7: unused
  */
-#define DEFAULT_HMAIR0		0xaa4404ff
-#define DEFAULT_HMAIR1		0x0000ee55
+#define DEFAULT_HMAIR0		0x004404ff
+#define DEFAULT_HMAIR1		0x00000000
 #define HMAIR_IDX_WBRAWA	0
-#define HMAIR_IDX_DEV_nGnRE	1
+#define HMAIR_IDX_DEV		1
 #define HMAIR_IDX_NC		2
-#define HMAIR_IDX_WTRA		3
-#define HMAIR_IDX_WBWA		4
-#define HMAIR_IDX_WBRA		5
-#define HMAIR_IDX_DEV_nGnRnE	6
 
 /* Stage 2 memory attributes (MemAttr[3:0]) */
 #define S2_MEMATTR_OWBIWB	0xf
 #define S2_MEMATTR_DEV		0x1
 
 #define S1_PTE_FLAG_NORMAL	PTE_MEMATTR(HMAIR_IDX_WBRAWA)
-#define S1_PTE_FLAG_DEVICE	PTE_MEMATTR(HMAIR_IDX_DEV_nGnRE)
+#define S1_PTE_FLAG_DEVICE	PTE_MEMATTR(HMAIR_IDX_DEV)
 #define S1_PTE_FLAG_UNCACHED	PTE_MEMATTR(HMAIR_IDX_NC)
 
 #define S2_PTE_FLAG_NORMAL	PTE_MEMATTR(S2_MEMATTR_OWBIWB)
