@@ -23,9 +23,10 @@ endef
 # prevent deleting intermediate files which would cause rebuilds
 .SECONDARY: $(addprefix $(obj)/,$(targets))
 
-# obj/NAME-linked.o: ... obj/$(NAME-y)
+# obj/NAME-linked.o: ... obj/$(NAME-y) lib/lib[32].a
 .SECONDEXPANSION:
-$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y))
+$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y)) \
+		   $(INMATES_LIB)/$$(if $$($$*_32),lib32.a,lib.a)
 	$(call if_changed,ld)
 
 $(obj)/%.bin: $(obj)/%-linked.o
@@ -35,10 +36,5 @@ $(obj)/%.bin: $(obj)/%-linked.o
 define DECLARE_32_BIT =
  CFLAGS_$(1).o := -m32
  LDFLAGS_$(1)-linked.o := /dev/null -m elf_i386 -T
+ $(1)_32 := y
 endef
-
-AFLAGS_header-32.o := -m32
-
-$(obj)/%-32.o: c_flags += -m32
-$(obj)/%-32.o: $(obj)/%.c
-	$(call if_changed_rule,cc_o_c)

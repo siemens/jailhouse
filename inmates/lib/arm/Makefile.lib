@@ -31,14 +31,7 @@ mach-$(CONFIG_MACH_VEXPRESS)		:= vexpress
 mach-$(CONFIG_MACH_SUN7I)		:= sun7i
 mach-$(CONFIG_MACH_TEGRA124)		:= tegra124
 
-gic-$(CONFIG_ARM_GIC)			:= gic-v2.o
-gic-$(CONFIG_ARM_GIC_V3)		:= gic-v3.o
-uart-$(CONFIG_SERIAL_AMBA_PL011) 	:= uart-pl011.o
-uart-$(CONFIG_SERIAL_8250_DW)	 	:= uart-8250-dw.o
-uart-$(CONFIG_SERIAL_TEGRA)	 	:= uart-tegra.o
-
 MACHINE					:= mach-$(mach-y)
-DRIVERS					:= $(gic-y) $(uart-y)
 KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
 KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
 
@@ -46,7 +39,8 @@ KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
 .SECONDARY: $(addprefix $(obj)/,$(targets))
 
 .SECONDEXPANSION:
-$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y))
+$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y)) \
+		   $(INMATES_LIB)/lib.a
 	$(call if_changed,ld)
 
 $(obj)/%.bin: $(obj)/%-linked.o

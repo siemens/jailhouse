@@ -12,14 +12,9 @@
 
 include $(INMATES_LIB)/Makefile.lib
 
-LIBDIR := ../../lib/arm
-
 INMATES := gic-demo.bin uart-demo.bin
 
-gic-demo-y := gic-demo.o \
-	$(addprefix $(LIBDIR)/,header.o printk.o gic.o $(DRIVERS))
-
-uart-demo-y := uart-demo.o \
-	$(addprefix $(LIBDIR)/,header.o printk.o $(DRIVERS))
+gic-demo-y	:= gic-demo.o
+uart-demo-y	:= uart-demo.o
 
 $(eval $(call DECLARE_TARGETS,$(INMATES)))

@@ -30,4 +30,7 @@ endif
 OBJCOPYFLAGS := -O binary
 LDFLAGS += -T
 
-subdir-y := demos/$(SRCARCH)
+subdir-y := lib/$(SRCARCH) demos/$(SRCARCH)
+
+# demos depend on the library
+$(obj)/demos/$(SRCARCH): $(obj)/lib/$(SRCARCH)
