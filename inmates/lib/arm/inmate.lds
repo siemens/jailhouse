@@ -36,3 +36,5 @@ SECTIONS {
 		*(.data)
 	}
 }
+
+ENTRY(__reset_entry)

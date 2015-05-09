@@ -14,7 +14,7 @@
 	.section ".boot", "ax"
 	.align 5
 vectors:
-	b	vector_reset
+	b	__reset_entry
 	b	vector_undef
 	b	vector_svc
 	b	vector_pabt
@@ -36,7 +36,8 @@ vectors:
 	vector irq
 	vector fiq
 
-vector_reset:
+	.globl __reset_entry
+__reset_entry:
 	ldr	r0, =vectors
 	mcr	p15, 0, r0, c12, c0, 0	@ VBAR
 

@@ -27,6 +27,8 @@
 	.code16
 	.section ".boot", "ax"
 
+	.globl __reset_entry
+__reset_entry:
 	ljmp $0xf000,$start16
 
 

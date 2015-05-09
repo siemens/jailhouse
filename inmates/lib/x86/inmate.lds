@@ -61,3 +61,5 @@ SECTIONS
 		*(.eh_frame*)
 	}
 }
+
+ENTRY(__reset_entry)
