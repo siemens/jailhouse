@@ -118,7 +118,7 @@
 #define TCR_S_SHIFT		4
 
 /*
- * Memory attribute indexes:
+ * Hypervisor memory attribute indexes:
  *   0: normal WB, RA, WA, non-transient
  *   1: dev-nGnRE
  *   2: normal non-cacheable
@@ -128,14 +128,6 @@
  *   6: dev-nGnRnE
  *   7: dev-nGnRnE (unused)
  */
-#define MEMATTR_WBRAWA		0xff
-#define MEMATTR_DEV_nGnRE	0x04
-#define MEMATTR_NC		0x44
-#define MEMATTR_WTRA		0xaa
-#define MEMATTR_WBWA		0x55
-#define MEMATTR_WBRA		0xee
-#define MEMATTR_DEV_nGnRnE	0x00
-
 #define DEFAULT_HMAIR0		0xaa4404ff
 #define DEFAULT_HMAIR1		0x0000ee55
 #define HMAIR_IDX_WBRAWA	0
@@ -146,14 +138,16 @@
 #define HMAIR_IDX_WBRA		5
 #define HMAIR_IDX_DEV_nGnRnE	6
 
+/* Stage 2 memory attributes (MemAttr[3:0]) */
+#define S2_MEMATTR_OWBIWB	0xf
+#define S2_MEMATTR_DEV		0x1
 
 #define S1_PTE_FLAG_NORMAL	PTE_MEMATTR(HMAIR_IDX_WBRAWA)
 #define S1_PTE_FLAG_DEVICE	PTE_MEMATTR(HMAIR_IDX_DEV_nGnRE)
 #define S1_PTE_FLAG_UNCACHED	PTE_MEMATTR(HMAIR_IDX_NC)
 
-#define S2_PTE_FLAG_NORMAL	PTE_MEMATTR(MEMATTR_WBRAWA)
-#define S2_PTE_FLAG_DEVICE	PTE_MEMATTR(MEMATTR_DEV_nGnRE)
-#define S2_PTE_FLAG_NC		PTE_MEMATTR(MEMATTR_NC)
+#define S2_PTE_FLAG_NORMAL	PTE_MEMATTR(S2_MEMATTR_OWBIWB)
+#define S2_PTE_FLAG_DEVICE	PTE_MEMATTR(S2_MEMATTR_DEV)
 
 #define S1_DEFAULT_FLAGS	(PTE_FLAG_VALID | PTE_ACCESS_FLAG	\
 				| S1_PTE_FLAG_NORMAL | PTE_INNER_SHAREABLE\
