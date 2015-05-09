@@ -15,4 +15,4 @@ subdir-y := driver hypervisor configs inmates
 
 # inmates build depends on generated config.mk of the hypervisor,
 # and the driver needs version.h from there
-$(addprefix $(obj)/,inmates) $(addprefix $(obj)/,driver): $(obj)/hypervisor
+$(obj)/inmates $(obj)/driver: $(obj)/hypervisor
