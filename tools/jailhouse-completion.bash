@@ -1,9 +1,11 @@
 # bash completion for jailhouse
 #
 # Copyright (c) Benjamin Block, 2014
+# Copyright (c) Siemens AG, 2015
 #
 # Authors:
 #  Benjamin Block <bebl@mageta.org>
+#  Jan Kiszka <jan.kiszka@siemens.com>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
@@ -99,6 +101,48 @@ function _jailhouse_get_id() {
 	return 0;
 }
 
+function _jailhouse_cell_linux() {
+	local cur prev word
+
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	options="-h --help -i --initrd -c --cmdline -w --write-params"
+
+	# if we already have begun to write an option
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W "${options}" -- "${cur}") )
+	else
+		# if the previous was on of the following options
+		case "${prev}" in
+		-i|--initrd|-w|--write-params)
+			# search an existing file
+			_filedir
+			return $?
+			;;
+		-c|--cmdline)
+			# we can't really predict this
+			return 0
+			;;
+		esac
+
+		# neither option, nor followup of one. Lets assume we want
+		# the cell or the kernel
+		for n in `seq ${COMP_CWORD-1}`; do
+			word="${COMP_WORDS[n]}"
+			if [[ "${word}" == *.cell ]] && ( [ $n -eq 1 ] ||
+			    [[ "${COMP_WORDS[n-1]}" != -* ]] ); then
+				# we already have a cell, this is the kernel
+				_filedir
+				return 0
+			fi
+		done
+		_filedir "cell"
+	fi
+
+	return 0
+}
+
 function _jailhouse_cell() {
 	local cur prev quoted_cur
 
@@ -166,6 +210,9 @@ function _jailhouse_cell() {
 	destroy)
 		# takes only one argument (id/name)
 		_jailhouse_get_id "${cur}" "${prev}" || return 1
+		;;
+	linux)
+		_jailhouse_cell_linux || return 1
 		;;
 	list)
 		# list all cells
@@ -237,7 +284,7 @@ function _jailhouse() {
 	command="enable disable cell config --help"
 
 	# second level
-	command_cell="create load start shutdown destroy list stats"
+	command_cell="create load start shutdown destroy linux list stats"
 	command_config="create collect"
 
 	# ${COMP_WORDS} array containing the words on the current command line
