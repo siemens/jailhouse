@@ -11,6 +11,7 @@
  */
 
 #include <linux/cpu.h>
+#include <linux/mm.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 
@@ -269,8 +270,8 @@ static int load_image(struct cell *cell,
 {
 	struct jailhouse_preload_image image;
 	const struct jailhouse_memory *mem;
-	unsigned int regions;
-	u64 image_offset;
+	unsigned int regions, page_offs;
+	u64 image_offset, phys_start;
 	void *image_mem;
 	int err = 0;
 
@@ -292,8 +293,10 @@ static int load_image(struct cell *cell,
 	if (regions == 0)
 		return -EINVAL;
 
-	image_mem = jailhouse_ioremap(mem->phys_start + image_offset, 0,
-				      image.size);
+	phys_start = (mem->phys_start + image_offset) & PAGE_MASK;
+	page_offs = offset_in_page(image_offset);
+	image_mem = jailhouse_ioremap(phys_start, 0,
+				      PAGE_ALIGN(image.size + page_offs));
 	if (!image_mem) {
 		pr_err("jailhouse: Unable to map cell RAM at %08llx "
 		       "for image loading\n",
@@ -301,7 +304,7 @@ static int load_image(struct cell *cell,
 		return -EBUSY;
 	}
 
-	if (copy_from_user(image_mem,
+	if (copy_from_user(image_mem + page_offs,
 			   (void __user *)(unsigned long)image.source_address,
 			   image.size))
 		err = -EFAULT;
