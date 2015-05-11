@@ -411,7 +411,7 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 1);
 }
 
-static int vtd_init_ir_emulation(void *reg_base, unsigned int unit_no)
+static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 {
 	struct vtd_emulation *unit = &root_cell_units[unit_no];
 	unsigned long size;
@@ -527,7 +527,7 @@ int iommu_init(void)
 		if (ctrls != 0) {
 			if (ctrls != (VTD_GSTS_IRES | VTD_GSTS_QIES))
 				return trace_error(-EBUSY);
-			err = vtd_init_ir_emulation(reg_base, n);
+			err = vtd_init_ir_emulation(n, reg_base);
 			if (err)
 				return err;
 		} else if (root_cell.vtd.ir_emulation) {
