@@ -61,7 +61,7 @@ grep GenuineIntel /proc/cpuinfo > /dev/null &&
 	for f in $filelist_intel; do
 		copy_file $f
 	done
-grep AuthenticAMD /proc/cpuino > /dev/null &&
+grep AuthenticAMD /proc/cpuinfo > /dev/null &&
 	for f in $filelist_amd; do
 		copy_file $f
 	done
