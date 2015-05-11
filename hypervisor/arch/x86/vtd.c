@@ -195,7 +195,8 @@ static void *vtd_get_fault_rec_reg_addr(void *reg_base)
 		mmio_read64_field(reg_base + VTD_CAP_REG, VTD_CAP_FRO_MASK);
 }
 
-static void vtd_print_fault_record_reg_status(void *reg_base)
+static void vtd_print_fault_record_reg_status(unsigned int unit_no,
+					      void *reg_base)
 {
 	unsigned int sid = mmio_read64_field(reg_base + VTD_FRCD_HI_REG,
 					     VTD_FRCD_HI_SID_MASK);
@@ -206,7 +207,7 @@ static void vtd_print_fault_record_reg_status(void *reg_base)
 	unsigned int type = mmio_read64_field(reg_base + VTD_FRCD_HI_REG,
 					      VTD_FRCD_HI_TYPE);
 
-	printk("VT-d fault event occurred:\n");
+	printk("VT-d fault event reported by IOMMU %d:\n", unit_no);
 	printk(" Source Identifier (bus:dev.func): %02x:%02x.%x\n",
 	       PCI_BDF_PARAMS(sid));
 	printk(" Fault Reason: 0x%x Fault Info: %lx Type %d\n", fr, fi, type);
@@ -228,7 +229,7 @@ void iommu_check_pending_faults(struct per_cpu *cpu_data)
 						     VTD_FSTS_FRI_MASK);
 			fault_reg_addr = vtd_get_fault_rec_reg_addr(reg_base);
 			rec_reg_addr = fault_reg_addr + 16 * fr_index;
-			vtd_print_fault_record_reg_status(rec_reg_addr);
+			vtd_print_fault_record_reg_status(n, rec_reg_addr);
 
 			/* Clear faults in record registers */
 			mmio_write64_field(rec_reg_addr + VTD_FRCD_HI_REG,
