@@ -249,10 +249,14 @@ class PCIDevice:
                     self.num_msi_vectors = 1 << ((msg_ctrl >> 1) & 0x7)
                     self.msi_64bits = (msg_ctrl >> 7) & 1
                 else:  # MSI-X
-                    vectors = (msg_ctrl & 0x7ff) + 1
-                    self.num_msix_vectors = vectors
-                    self.msix_region_size = (vectors * 16 + 0xfff) & 0xf000
-                    self.msix_address = c.msix_address
+                    if c.msix_address != 0:
+                        vectors = (msg_ctrl & 0x7ff) + 1
+                        self.num_msix_vectors = vectors
+                        self.msix_region_size = (vectors * 16 + 0xfff) & 0xf000
+                        self.msix_address = c.msix_address
+                    else:
+                        print('WARNING: Ignoring invalid MSI-X configuration'
+                              ' of device %02x:%02x.%x' % (bus, dev, fn))
 
     def __str__(self):
         return 'PCIDevice: %02x:%02x.%x' % (self.bus, self.dev, self.fn)
