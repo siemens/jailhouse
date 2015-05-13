@@ -298,7 +298,7 @@ bool vcpu_handle_msr_write(void)
 		 */
 		val = get_wrmsr_value(&cpu_data->guest_regs);
 		cpu_data->mtrr_def_type = val;
-		vcpu_vendor_set_guest_pat(val & MTRR_ENABLE ?
+		vcpu_vendor_set_guest_pat((val & MTRR_ENABLE) ?
 					  cpu_data->pat : 0);
 		break;
 	default:
