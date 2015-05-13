@@ -700,7 +700,7 @@ def parse_dmar(pcidevices, ioapics):
                         if chip.bdf == bdf:
                             raise RuntimeError('IOAPICs with identical BDF')
                     ioapic.bdf = bdf
-                    ioapic.dmar_unit = len(units) - 1
+                    ioapic.iommu = len(units) - 1
                 offset += scope_len
 
         # Reserved Memory Region Reporting Structure
