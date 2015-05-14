@@ -107,3 +107,8 @@ asm(
 #else
 #error implement me!
 #endif
+
+void int_send_ipi(unsigned int cpu_id, unsigned int vector)
+{
+	write_msr(X2APIC_ICR, ((u64)cpu_id << 32) | APIC_LVL_ASSERT | vector);
+}

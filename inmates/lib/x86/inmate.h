@@ -36,6 +36,9 @@
 #define HUGE_PAGE_MASK		(~(HUGE_PAGE_SIZE - 1))
 
 #define X2APIC_ID		0x802
+#define X2APIC_ICR		0x830
+
+#define APIC_LVL_ASSERT		(1 << 14)
 
 #define PCI_CFG_VENDOR_ID	0x000
 #define PCI_CFG_DEVICE_ID	0x002
@@ -58,6 +61,8 @@
 
 #define MSIX_CTRL_ENABLE	0x8000
 #define MSIX_CTRL_FMASK		0x4000
+
+#define SMP_MAX_CPUS		255
 
 #ifndef __ASSEMBLY__
 typedef signed char s8;
@@ -207,6 +212,7 @@ typedef void(*int_handler_t)(void);
 
 void int_init(void);
 void int_set_handler(unsigned int vector, int_handler_t handler);
+void int_send_ipi(unsigned int cpu_id, unsigned int vector);
 
 enum ioapic_trigger_mode {
 	TRIGGER_EDGE = 0,
@@ -240,4 +246,9 @@ int pci_find_device(u16 vendor, u16 device, u16 start_bdf);
 int pci_find_cap(u16 bdf, u16 cap);
 void pci_msi_set_vector(u16 bdf, unsigned int vector);
 void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index);
+
+extern volatile u32 smp_num_cpus;
+extern u8 smp_cpu_ids[SMP_MAX_CPUS];
+void smp_wait_for_all_cpus(void);
+void smp_start_cpu(unsigned int cpu_id, void (*entry)(void));
 #endif

@@ -58,25 +58,66 @@ start32:
 	or $MTRR_ENABLE,%eax
 	wrmsr
 
-	mov $stack_top,%esp
-
 	mov $INMATE_DS32,%eax
 	mov %eax,%ds
 	mov %eax,%es
 	mov %eax,%ss
+
+	xor %ebx,%ebx
+	xchg ap_entry,%ebx
+	or %ebx,%ebx
+	jnz call_entry
+
+	mov $1,%edi
+	lock xadd %edi,cpu_number + FSEGMENT_BASE
+
+	cmp $SMP_MAX_CPUS,%edi
+	jae stop
+
+	mov $0x01,%eax
+	cpuid
+	shr $24,%ebx
+	mov %bl,smp_cpu_ids(%edi)
+
+	lock incl smp_num_cpus
+
+	cmp $0,%edi
+	jne stop
 
 	xor %eax,%eax
 	mov $bss_start,%edi
 	mov $bss_dwords,%ecx
 	rep stosl
 
-	mov $inmate_main,%eax
-	call *%eax
+	mov $inmate_main,%ebx
+
+call_entry:
+	mov $stack_top,%esp
+	call *%ebx
 
 stop:	cli
 	hlt
 	jmp stop
 
+
+	.pushsection ".data"
+
+	.globl ap_entry
+ap_entry:
+	.long	0
+
+	.globl smp_num_cpus
+smp_num_cpus:
+	.long	0
+
+	.globl smp_cpu_ids
+smp_cpu_ids:
+	.fill	SMP_MAX_CPUS, 1, 0
+
+	.popsection
+
+cpu_number:
+	.long	0
 
 	.align(16)
 	.global loader_gdt

@@ -70,20 +70,61 @@ start32:
 
 	.code64
 start64:
-	mov $stack_top,%rsp
+	xor %rbx,%rbx
+	xchg ap_entry,%rbx
+	or %rbx,%rbx
+	jnz call_entry
+
+	mov $1,%edi
+	lock xadd %edi,cpu_number + FSEGMENT_BASE
+
+	cmp $SMP_MAX_CPUS,%edi
+	jae stop
+
+	mov $0x01,%eax
+	cpuid
+	shr $24,%ebx
+	mov %bl,smp_cpu_ids(%edi)
+
+	lock incl smp_num_cpus
+
+	cmp $0,%edi
+	jne stop
 
 	xor %rax,%rax
 	mov $bss_start,%rdi
 	mov $bss_qwords,%rcx
 	rep stosq
 
-	mov $inmate_main,%rax
-	callq *%rax
+	mov $inmate_main,%rbx
+
+call_entry:
+	mov $stack_top,%rsp
+	callq *%rbx
 
 stop:	cli
 	hlt
 	jmp stop
 
+
+	.pushsection ".data"
+
+	.globl ap_entry
+ap_entry:
+	.quad	0
+
+	.globl smp_num_cpus
+smp_num_cpus:
+	.long	0
+
+	.globl smp_cpu_ids
+smp_cpu_ids:
+	.fill	SMP_MAX_CPUS, 1, 0
+
+	.popsection
+
+cpu_number:
+	.long	0
 
 	.align(16)
 gdt:
