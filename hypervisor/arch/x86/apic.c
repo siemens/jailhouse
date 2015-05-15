@@ -385,10 +385,10 @@ static void apic_send_ipi(unsigned int target_cpu_id, u32 orig_icr_hi,
 	}
 }
 
-static void apic_send_logical_dest_ipi(unsigned long dest, u32 lo_val,
-				       u32 hi_val)
+static void apic_send_logical_dest_ipi(u32 lo_val, u32 hi_val)
 {
 	unsigned int target_cpu_id = CPU_ID_INVALID;
+	unsigned long dest = hi_val;
 	unsigned int logical_id;
 	unsigned int cluster_id;
 	unsigned int apic_id;
@@ -414,10 +414,16 @@ static void apic_send_logical_dest_ipi(unsigned long dest, u32 lo_val,
 		}
 }
 
+/**
+ * Handle ICR write request.
+ * @param lo_val	Lower 32 bits of ICR
+ * @param hi_val	Higher 32 bits of ICR (x2APIC format, ID in bits 0..7)
+ *
+ * @return True if request was successfully validated and executed.
+ */
 static bool apic_handle_icr_write(u32 lo_val, u32 hi_val)
 {
 	unsigned int target_cpu_id;
-	unsigned long dest;
 
 	if (!apic_valid_ipi_mode(lo_val))
 		return false;
@@ -430,17 +436,13 @@ static bool apic_handle_icr_write(u32 lo_val, u32 hi_val)
 		return true;
 	}
 
-	dest = hi_val;
-	if (!using_x2apic)
-		dest >>= XAPIC_DEST_SHIFT;
-
 	if (lo_val & APIC_ICR_DEST_LOGICAL) {
 		lo_val &= ~APIC_ICR_DEST_LOGICAL;
-		apic_send_logical_dest_ipi(dest, lo_val, hi_val);
+		apic_send_logical_dest_ipi(lo_val, hi_val);
 	} else {
 		target_cpu_id = CPU_ID_INVALID;
-		if (dest <= APIC_MAX_PHYS_ID)
-			target_cpu_id = apic_to_cpu_id[dest];
+		if (hi_val <= APIC_MAX_PHYS_ID)
+			target_cpu_id = apic_to_cpu_id[hi_val];
 		apic_send_ipi(target_cpu_id, hi_val, lo_val);
 	}
 	return true;
@@ -477,7 +479,7 @@ unsigned int apic_mmio_access(unsigned long rip,
 			      unsigned int reg, bool is_write)
 {
 	struct mmio_instruction inst;
-	u32 val;
+	u32 val, dest;
 
 	if (using_x2apic) {
 		panic_printk("FATAL: xAPIC access in x2APIC mode\n");
@@ -498,8 +500,8 @@ unsigned int apic_mmio_access(unsigned long rip,
 			return 0;
 
 		if (reg == APIC_REG_ICR) {
-			if (!apic_handle_icr_write(val,
-					apic_ops.read(APIC_REG_ICR_HI)))
+			dest = apic_ops.read(APIC_REG_ICR_HI) >> 24;
+			if (!apic_handle_icr_write(val, dest))
 				return 0;
 		} else if (reg == APIC_REG_LDR &&
 			 val != 1UL << (this_cpu_id() + XAPIC_DEST_SHIFT)) {
