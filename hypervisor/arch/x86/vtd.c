@@ -179,6 +179,13 @@ static void vtd_init_fault_nmi(void)
 		/* Mask events */
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
 
+		/*
+		 * VT-d spec rev. 2.3 section 7.4 suggests that only reading
+		 * back FSTS or FECTL ensures no interrupt messages are still
+		 * in-flight when we change their destination below.
+		 */
+		mmio_read32(reg_base + VTD_FECTL_REG);
+
 		/* Program MSI message to send NMIs to the target CPU */
 		mmio_write32(reg_base + VTD_FEDATA_REG, MSI_DM_NMI);
 		mmio_write32(reg_base + VTD_FEADDR_REG, (u32)msi.raw.address);
