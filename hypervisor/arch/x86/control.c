@@ -32,6 +32,7 @@ struct exception_frame {
 
 int arch_cell_create(struct cell *cell)
 {
+	unsigned int cpu;
 	int err;
 
 	err = vcpu_cell_init(cell);
@@ -52,6 +53,9 @@ int arch_cell_create(struct cell *cell)
 
 	cell->comm_page.comm_region.pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
+	cell->comm_page.comm_region.num_cpus = 0;
+	for_each_cpu(cpu, cell->cpu_set)
+		cell->comm_page.comm_region.num_cpus++;
 
 	return 0;
 

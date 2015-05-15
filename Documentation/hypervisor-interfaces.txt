@@ -321,6 +321,8 @@ Platform Information for x86
         :   generic part, see above    :   (lower address)
         +------------------------------+
         |   PM Timer Address (16 bit)  |
+        +------------------------------+
+        |   Number of CPUs (16 bit)    |
         +------------------------------+ - higher address
 
 
