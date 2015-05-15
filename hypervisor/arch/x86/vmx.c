@@ -1069,7 +1069,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
 			vmx_vcpu_reset(sipi_vector);
-			vcpu_reset();
+			vcpu_reset(sipi_vector == APIC_BSP_PSEUDO_SIPI);
 		}
 		iommu_check_pending_faults(cpu_data);
 		return;

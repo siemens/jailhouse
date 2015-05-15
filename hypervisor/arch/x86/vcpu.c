@@ -333,12 +333,15 @@ bool vcpu_handle_xsetbv(void)
 	return false;
 }
 
-void vcpu_reset(void)
+void vcpu_reset(bool hard_reset)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
 	memset(&cpu_data->guest_regs, 0, sizeof(cpu_data->guest_regs));
-	cpu_data->pat = PAT_RESET_VALUE;
-	cpu_data->mtrr_def_type = 0;
-	vcpu_vendor_set_guest_pat(0);
+
+	if (hard_reset) {
+		cpu_data->pat = PAT_RESET_VALUE;
+		cpu_data->mtrr_def_type = 0;
+		vcpu_vendor_set_guest_pat(0);
+	}
 }

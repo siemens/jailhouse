@@ -115,6 +115,6 @@ bool vcpu_handle_msr_write(void);
 
 bool vcpu_handle_xsetbv(void);
 
-void vcpu_reset(void);
+void vcpu_reset(bool hard_reset);
 
 #endif
