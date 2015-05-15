@@ -184,7 +184,7 @@ static inline void write_msr(unsigned int msr, u64 val)
 {
 	asm volatile("wrmsr"
 		: /* no output */
-		: "c" (msr), "a" (val), "d" (val >> 32)
+		: "c" (msr), "a" ((u32)val), "d" ((u32)(val >> 32))
 		: "memory");
 }
 
