@@ -35,6 +35,8 @@ struct cell {
 #endif /* CONFIG_PCI */
 };
 
+extern struct cell *root_cell;
+
 void jailhouse_cell_kobj_release(struct kobject *kobj);
 
 struct cell *

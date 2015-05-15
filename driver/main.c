@@ -363,6 +363,18 @@ static int jailhouse_cmd_disable(void)
 
 	preempt_disable();
 
+	if (num_online_cpus() != cpumask_weight(&root_cell->cpus_assigned)) {
+		/*
+		 * Not all assigned CPUs are currently online. If we disable
+		 * now, we will loose the offlined ones.
+		 */
+
+		preempt_enable();
+
+		err = -EBUSY;
+		goto unlock_out;
+	}
+
 	atomic_set(&call_done, 0);
 	on_each_cpu(leave_hypervisor, NULL, 0);
 	while (atomic_read(&call_done) != num_online_cpus())

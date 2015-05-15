@@ -22,8 +22,9 @@
 
 #include <jailhouse/hypercall.h>
 
+struct cell *root_cell;
+
 static LIST_HEAD(cells);
-static struct cell *root_cell;
 static cpumask_t offlined_cpus;
 
 void jailhouse_cell_kobj_release(struct kobject *kobj)
