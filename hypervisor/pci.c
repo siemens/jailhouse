@@ -568,7 +568,7 @@ static int pci_add_device(struct cell *cell, struct pci_device *device)
 		device->next_msix_device = cell->msix_device_list;
 		cell->msix_device_list = device;
 	}
-	return 0;
+	return err;
 
 error_page_free:
 	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
