@@ -30,24 +30,34 @@
 	     (counter) < (dev)->info->num_caps;				\
 	     (cap)++, (counter)++)
 
-/* entry for PCI config space whitelist (granting access) */
-struct pci_cfg_access {
-	u32 reg_num; /* Register number (4-byte aligned) */
-	u32 mask; /* Bit set: access allowed */
+/* entry for PCI config space access control */
+struct pci_cfg_control {
+	enum {
+		PCI_CONFIG_DENY,
+		PCI_CONFIG_ALLOW,
+		PCI_CONFIG_RDONLY,
+	} type;   /* Access type */
+	u32 mask; /* Bit set: access type applies; bit cleared: deny access */
 };
 
-/* --- Whilelists for writing to PCI config space registers --- */
+/* --- Access control for writing to PCI config space registers --- */
 /* Type 1: Endpoints */
-static const struct pci_cfg_access endpoint_write_access[] = {
-	{ 0x04, 0xffffffff }, /* Command, Status */
-	{ 0x0c, 0xff00ffff }, /* BIST, Latency Timer, Cacheline */
-	{ 0x3c, 0x000000ff }, /* Int Line */
+static const struct pci_cfg_control endpoint_write[PCI_CONFIG_HEADER_SIZE] = {
+	[0x04/4] = {PCI_CONFIG_ALLOW,  0xffffffff}, /* Command, Status */
+	[0x0c/4] = {PCI_CONFIG_ALLOW,  0xff00ffff}, /* BIST, Lat., Cacheline */
+	[0x3c/4] = {PCI_CONFIG_ALLOW,  0x000000ff}, /* Int Line */
 };
-/* Type 2: Bridges */
-static const struct pci_cfg_access bridge_write_access[] = {
-	{ 0x04, 0xffffffff }, /* Command, Status */
-	{ 0x0c, 0xff00ffff }, /* BIST, Latency Timer, Cacheline */
-	{ 0x3c, 0xffff00ff }, /* Int Line, Bridge Control */
+
+/* Type 2: Bridges
+ * Note: Ignore limit/base reprogramming attempts because the root cell will
+ *       perform them on bus rescans. */
+static const struct pci_cfg_control bridge_write[PCI_CONFIG_HEADER_SIZE] = {
+	[0x04/4] = {PCI_CONFIG_ALLOW,  0xffffffff}, /* Command, Status */
+	[0x0c/4] = {PCI_CONFIG_ALLOW,  0xff00ffff}, /* BIST, Lat., Cacheline */
+	[0x1c/4] = {PCI_CONFIG_RDONLY, 0x0000ffff}, /* I/O Limit & Base */
+	[0x20/4 ...      /* Memory Limit/Base, Prefetch Memory Limit/Base, */
+	 0x30/4] = {PCI_CONFIG_RDONLY, 0xffffffff}, /* I/O Limit & Base */
+	[0x3c/4] = {PCI_CONFIG_ALLOW,  0xffff00ff}, /* Int Line, Bridge Ctrl */
 };
 
 static void *pci_space;
@@ -231,10 +241,10 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 {
 	const struct jailhouse_pci_capability *cap;
 	/* initialize list to work around wrong compiler warning */
-	const struct pci_cfg_access *list = NULL;
 	unsigned int bias_shift = (address % 4) * 8;
 	u32 mask = BYTE_MASK(size) << bias_shift;
-	unsigned int n, cap_offs, len = 0;
+	struct pci_cfg_control cfg_control;
+	unsigned int cap_offs;
 
 	if (!device)
 		return PCI_ACCESS_REJECT;
@@ -243,26 +253,22 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 		return pci_ivshmem_cfg_write(device, address, size, value);
 
 	if (address < PCI_CONFIG_HEADER_SIZE) {
-		if (device->info->type == JAILHOUSE_PCI_TYPE_DEVICE) {
-			list = endpoint_write_access;
-			len = ARRAY_SIZE(endpoint_write_access);
-		} else if (device->info->type == JAILHOUSE_PCI_TYPE_BRIDGE) {
-			list = bridge_write_access;
-			len = ARRAY_SIZE(bridge_write_access);
-		}
+		if (device->info->type == JAILHOUSE_PCI_TYPE_BRIDGE)
+			cfg_control = bridge_write[address / 4];
+		else /* physical device */
+			cfg_control = endpoint_write[address / 4];
 
-		for (n = 0; n < len; n++) {
-			if (list[n].reg_num == (address & 0xffc) &&
-			    (list[n].mask & mask) == mask)
-				return PCI_ACCESS_PERFORM;
-		}
+		if ((cfg_control.mask & mask) != mask)
+			return PCI_ACCESS_REJECT;
 
-		// HACK to allow PCI bus rescanning in root-cell
-		if (device->info->type == JAILHOUSE_PCI_TYPE_BRIDGE &&
-		    device->cell == &root_cell)
+		switch (cfg_control.type) {
+		case PCI_CONFIG_ALLOW:
+			return PCI_ACCESS_PERFORM;
+		case PCI_CONFIG_RDONLY:
 			return PCI_ACCESS_DONE;
-
-		return PCI_ACCESS_REJECT;
+		default:
+			return PCI_ACCESS_REJECT;
+		}
 	}
 
 	cap = pci_find_capability(device, address);
