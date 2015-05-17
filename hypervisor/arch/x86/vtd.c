@@ -672,9 +672,6 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 	if (result < 0)
 		return result;
 
-	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return 0;
-
 	if (*root_entry_lo & VTD_ROOT_PRESENT) {
 		context_entry_table =
 			paging_phys2hvirt(*root_entry_lo & PAGE_MASK);
@@ -716,9 +713,6 @@ void iommu_remove_pci_device(struct pci_device *device)
 
 	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
 					   device->info->num_msix_vectors));
-
-	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return;
 
 	context_entry_table = paging_phys2hvirt(*root_entry_lo & PAGE_MASK);
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];

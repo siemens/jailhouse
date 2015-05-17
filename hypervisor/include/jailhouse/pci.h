@@ -186,23 +186,23 @@ u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size);
 void arch_pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size);
 
 /**
- * Perform architecture-specific steps on PCI device addition.
+ * Perform architecture-specific steps on physical PCI device addition.
  * @param cell		Cell to which the device is added.
  * @param device	Device to be added.
  *
  * @return 0 on success, negative error code otherwise.
  *
- * @see arch_pci_remove_device
+ * @see arch_pci_remove_physical_device
  */
-int arch_pci_add_device(struct cell *cell, struct pci_device *device);
+int arch_pci_add_physical_device(struct cell *cell, struct pci_device *device);
 
 /**
- * Perform architecture-specific steps on PCI device removal.
+ * Perform architecture-specific steps on physical PCI device removal.
  * @param device	Device to be removed.
  *
- * @see arch_pci_add_device
+ * @see arch_pci_add_physical_device
  */
-void arch_pci_remove_device(struct pci_device *device);
+void arch_pci_remove_physical_device(struct pci_device *device);
 
 /**
  * Avoid MSI vector delivery of a given device.

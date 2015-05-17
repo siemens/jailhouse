@@ -208,12 +208,12 @@ invalid_access:
 
 }
 
-int arch_pci_add_device(struct cell *cell, struct pci_device *device)
+int arch_pci_add_physical_device(struct cell *cell, struct pci_device *device)
 {
 	return iommu_add_pci_device(cell, device);
 }
 
-void arch_pci_remove_device(struct pci_device *device)
+void arch_pci_remove_physical_device(struct pci_device *device)
 {
 	iommu_remove_pci_device(device);
 }

@@ -537,10 +537,10 @@ static int pci_add_virtual_device(struct cell *cell, struct pci_device *device)
 	device->cell = cell;
 	device->next_virtual_device = cell->virtual_device_list;
 	cell->virtual_device_list = device;
-	return arch_pci_add_device(cell, device);
+	return 0;
 }
 
-static int pci_add_device(struct cell *cell, struct pci_device *device)
+static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 {
 	unsigned int size = device->info->msix_region_size;
 	int err;
@@ -548,7 +548,7 @@ static int pci_add_device(struct cell *cell, struct pci_device *device)
 	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
 
-	err = arch_pci_add_device(cell, device);
+	err = arch_pci_add_physical_device(cell, device);
 
 	if (!err && device->info->msix_address) {
 		device->msix_table = page_alloc(&remap_pool, size / PAGE_SIZE);
@@ -573,7 +573,7 @@ static int pci_add_device(struct cell *cell, struct pci_device *device)
 error_page_free:
 	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
 error_remove_dev:
-	arch_pci_remove_device(device);
+	arch_pci_remove_physical_device(device);
 	return err;
 }
 
@@ -581,7 +581,6 @@ static void pci_remove_virtual_device(struct pci_device *device)
 {
 	struct pci_device *prev = device->cell->virtual_device_list;
 
-	arch_pci_remove_device(device);
 	if (prev == device) {
 		device->cell->virtual_device_list = device->next_virtual_device;
 	} else {
@@ -591,14 +590,14 @@ static void pci_remove_virtual_device(struct pci_device *device)
 	}
 }
 
-static void pci_remove_device(struct pci_device *device)
+static void pci_remove_physical_device(struct pci_device *device)
 {
 	unsigned int size = device->info->msix_region_size;
 	struct pci_device *prev_msix_device;
 
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
-	arch_pci_remove_device(device);
+	arch_pci_remove_physical_device(device);
 	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
 			 PCI_CMD_INTX_OFF, 2);
 
@@ -671,11 +670,11 @@ int pci_cell_init(struct cell *cell)
 		root_device = pci_get_assigned_device(&root_cell,
 						      dev_infos[ndev].bdf);
 		if (root_device) {
-			pci_remove_device(root_device);
+			pci_remove_physical_device(root_device);
 			root_device->cell = NULL;
 		}
 
-		err = pci_add_device(cell, device);
+		err = pci_add_physical_device(cell, device);
 		if (err)
 			goto error;
 
@@ -704,7 +703,8 @@ static void pci_return_device_to_root_cell(struct pci_device *device)
 	for_each_configured_pci_device(root_device, &root_cell)
 		if (root_device->info->domain == device->info->domain &&
 		    root_device->info->bdf == device->info->bdf) {
-			if (pci_add_device(&root_cell, root_device) < 0)
+			if (pci_add_physical_device(&root_cell,
+						    root_device) < 0)
 				printk("WARNING: Failed to re-assign PCI "
 				       "device to root cell\n");
 			else
@@ -738,7 +738,7 @@ void pci_cell_exit(struct cell *cell)
 				pci_ivshmem_exit(device);
 				pci_remove_virtual_device(device);
 			} else {
-				pci_remove_device(device);
+				pci_remove_physical_device(device);
 				pci_return_device_to_root_cell(device);
 			}
 		}
