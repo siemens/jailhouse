@@ -143,6 +143,10 @@ struct {
 			% endif
 			.domain = ${hex(d.domain)},
 			.bdf = ${hex(d.bdf())},
+			.bar_mask = {
+				${'0x%08x' % d.bars.mask[0]}, ${'0x%08x' % d.bars.mask[1]}, ${'0x%08x' % d.bars.mask[2]},
+				${'0x%08x' % d.bars.mask[3]}, ${'0x%08x' % d.bars.mask[4]}, ${'0x%08x' % d.bars.mask[5]},
+			},
 			.caps_start = ${d.caps_start},
 			.num_caps = ${d.num_caps},
 			.num_msi_vectors = ${d.num_msi_vectors},

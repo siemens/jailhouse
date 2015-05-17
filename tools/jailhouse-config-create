@@ -82,6 +82,7 @@ inputs['files'].add('/proc/cpuinfo')
 inputs['files'].add('/proc/cmdline')
 inputs['files'].add('/proc/ioports')
 inputs['files'].add('/sys/bus/pci/devices/*/config')
+inputs['files'].add('/sys/bus/pci/devices/*/resource')
 inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
 inputs['files'].add('/sys/firmware/acpi/tables/APIC')
 inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
@@ -152,6 +153,30 @@ def input_listdir(dir, wildcards):
     dirs.sort()
     return dirs
 
+
+class PCIBARs:
+    IORESOURCE_IO = 0x00000100
+    IORESOURCE_MEM = 0x00000200
+    IORESOURCE_MEM_64 = 0x00100000
+
+    def __init__(self, dir):
+        self.mask = []
+        f = input_open(os.path.join(dir, 'resource'), 'r')
+        for n in range(6):
+            (start, end, flags) = f.readline().split()
+            flags = int(flags, 16)
+            if flags & PCIBARs.IORESOURCE_IO:
+                mask = ~(int(end, 16) - int(start, 16))
+            elif flags & PCIBARs.IORESOURCE_MEM:
+                mask = ~(int(end, 16) - int(start, 16))
+                if flags & PCIBARs.IORESOURCE_MEM_64:
+                    self.mask.append(mask & 0xffffffff)
+                    mask >>= 32
+                    n += 1
+            else:
+                mask = 0
+            self.mask.append(mask & 0xffffffff)
+        f.close()
 
 class PCICapability:
     def __init__(self, id, start, len, flags, content, msix_address):
@@ -226,13 +251,14 @@ class PCICapability:
 
 
 class PCIDevice:
-    def __init__(self, type, domain, bus, dev, fn, caps, path):
+    def __init__(self, type, domain, bus, dev, fn, bars, caps, path):
         self.type = type
         self.iommu = None
         self.domain = domain
         self.bus = bus
         self.dev = dev
         self.fn = fn
+        self.bars = bars
         self.caps = caps
         self.path = path
         self.caps_start = 0
@@ -279,9 +305,10 @@ class PCIDevice:
         domain = int(a[0], 16)
         bus = int(a[1], 16)
         df = a[2].split('.')
+        bars = PCIBARs(dpath)
         caps = PCICapability.parse_pcicaps(dpath)
         return PCIDevice(type, domain, bus, int(df[0], 16), int(df[1], 16),
-                         caps, dpath)
+                         bars, caps, dpath)
 
 
 class PCIPCIBridge(PCIDevice):
