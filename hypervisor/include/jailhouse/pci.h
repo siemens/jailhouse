@@ -24,9 +24,14 @@
 # define PCI_STS_CAPS		(1 << 4)
 #define PCI_CFG_BAR		0x10
 # define PCI_BAR_64BIT		0x4
+#define PCI_CFG_BAR_END		0x27
+#define PCI_CFG_ROMBAR		0x30
+#define PCI_CFG_CAPS		0x34
 #define PCI_CFG_INT		0x3c
 
 #define PCI_CONFIG_HEADER_SIZE	0x40
+
+#define PCI_NUM_BARS		6
 
 #define PCI_DEV_CLASS_MEM	0x05
 
@@ -117,6 +122,8 @@ struct pci_device {
 	const struct jailhouse_pci_device *info;
 	/** Owning cell. */
 	struct cell *cell;
+	/** Shadow BAR */
+	u32 bar[PCI_NUM_BARS];
 
 	/** Shadow state of MSI config space registers. */
 	union pci_msi_registers msi_registers;
