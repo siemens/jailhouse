@@ -161,10 +161,10 @@ static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
 		return 0;
 
 	if (!apic_filter_irq_dest(ive->device->cell, &irq_msg)) {
-		printk("WARNING: ivshmem MSI-X target outside of "
-		       "cell \"%s\" device %02x:%02x.%x\n",
-		       ive->device->cell->config->name,
-		       PCI_BDF_PARAMS(ive->device->info->bdf));
+		panic_printk("FATAL: ivshmem MSI-X target outside of "
+			     "cell \"%s\" device %02x:%02x.%x\n",
+			     ive->device->cell->config->name,
+			     PCI_BDF_PARAMS(ive->device->info->bdf));
 		return -EPERM;
 	}
 	/* now copy the whole struct into our cache and mark the cache
@@ -217,12 +217,12 @@ static int ivshmem_msix_mmio(struct pci_ivshmem_endpoint *ive, bool is_write,
 	u32 *msix_table = (u32 *)ive->device->msix_vectors;
 
 	if (offset % 4)
-		return -1;
+		goto fail;
 
 	/* MSI-X PBA */
 	if (offset >= 0x10 * IVSHMEM_MSIX_VECTORS) {
 		if (is_write) {
-			return -1;
+			goto fail;
 		} else {
 			*value = 0;
 			return 1;
@@ -238,6 +238,10 @@ static int ivshmem_msix_mmio(struct pci_ivshmem_endpoint *ive, bool is_write,
 		}
 		return 1;
 	}
+
+fail:
+	panic_printk("FATAL: Invalid PCI MSI-X table/PBA access, device "
+		     "%02x:%02x.%x\n", PCI_BDF_PARAMS(ive->device->info->bdf));
 	return -1;
 }
 
@@ -274,6 +278,8 @@ static int ivshmem_register_mmio(struct pci_ivshmem_endpoint *ive,
 		}
 		return 1;
 	}
+	panic_printk("FATAL: Invalid ivshmem register %s, number %02x\n",
+		     is_write ? "write" : "read", offset);
 	return -1;
 }
 
