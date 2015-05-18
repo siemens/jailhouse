@@ -788,8 +788,7 @@ def parse_ivrs(pcidevices, ioapics):
 
             bdf_start_range = None
             while block_length > 0:
-                (entry_type, device_id, dte_setting) = struct.unpack(
-                    '<BHB', f.read(4))
+                (entry_type, device_id) = struct.unpack('<BHx', f.read(4))
                 block_length -= 4
 
                 if entry_type == 0x01:
