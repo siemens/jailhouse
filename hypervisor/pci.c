@@ -266,10 +266,10 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	if (!device)
 		return PCI_ACCESS_REJECT;
 
-	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_cfg_write(device, address, size, value);
-
 	value <<= bias_shift;
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return pci_ivshmem_cfg_write(device, address / 4, mask, value);
 
 	/* Emulate BARs for physical devices */
 	if (device->info->type == JAILHOUSE_PCI_TYPE_DEVICE &&

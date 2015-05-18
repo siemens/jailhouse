@@ -299,51 +299,6 @@ static int ivshmem_write_msix_control(struct pci_ivshmem_endpoint *ive, u32 val)
 	return 0;
 }
 
-static enum pci_access ivshmem_cfg_write32(struct pci_ivshmem_endpoint *ive,
-					   u8 reg, u32 val)
-{
-	switch (reg) {
-	case PCI_CFG_COMMAND:
-		if(ivshmem_write_command(ive, val & 0xffff))
-			return PCI_ACCESS_REJECT;
-		break;
-	case PCI_CFG_BAR ... (PCI_CFG_BAR + 5 * 4):
-		ivshmem_write_bar(ive, reg, val);
-		break;
-	case IVSHMEM_CFG_MSIX_CAP:
-		if (ivshmem_write_msix_control(ive, val))
-			return PCI_ACCESS_REJECT;
-	}
-	return PCI_ACCESS_DONE;
-}
-
-static enum pci_access ivshmem_cfg_write16(struct pci_ivshmem_endpoint *ive,
-					   u8 reg, u16 val)
-{
-	u32 row, shift;
-
-	shift = (reg % 4) * 8;
-	row = ive->cspace[reg / 4];
-	row &= ~(BYTE_MASK(2) << shift);
-	row |= val << shift;
-
-	return ivshmem_cfg_write32(ive, reg - (reg % 4), row);
-}
-
-static enum pci_access ivshmem_cfg_write8(struct pci_ivshmem_endpoint *ive,
-					  u8 reg, u8 val)
-{
-	u32 row;
-	u8 *rowp;
-
-	row = ive->cspace[reg / 4];
-	rowp = (u8 *)&row;
-	rowp[(reg % 4)] = val;
-
-	return ivshmem_cfg_write32(ive, reg - (reg % 4), row);
-}
-
-
 static struct pci_ivshmem_data **ivshmem_find(struct pci_device *d,
 					      int *cellnum)
 {
@@ -458,33 +413,38 @@ int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 
 /**
  * Handler for MMIO-write-accesses to PCI config space of this virtual device.
- * @param dev		The device that access should be performed on.
- * @param address	Config space address accessed.
- * @param sz		The amount of bytes to write.
- * @param value		The value to write to the config space.
+ * @param device	The device that access should be performed on.
+ * @param row		Config space DWORD row of the access.
+ * @param mask		Mask selected the DWORD bytes to write.
+ * @param value		DWORD to write to the config space.
  *
  * @return PCI_ACCESS_REJECT or PCI_ACCESS_DONE.
  *
  * @see pci_cfg_write_moderate
  */
-enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, u16 address,
-				      u8 sz, u32 value)
+enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
+				      u32 mask, u32 value)
 {
 	struct pci_ivshmem_endpoint *ive = dev->ivshmem_endpoint;
 
-	if (address > (sizeof(default_cspace) - sz))
+	if (row >= ARRAY_SIZE(default_cspace))
 		return PCI_ACCESS_REJECT;
 
-	switch (sz) {
-	case 1:
-		return ivshmem_cfg_write8(ive, address, (u8)value);
-	case 2:
-		return ivshmem_cfg_write16(ive, address, (u16)value);
-	case 4:
-		return ivshmem_cfg_write32(ive, address, value);
-	default:
-		return PCI_ACCESS_REJECT;
+	value |= ive->cspace[row] & ~mask;
+
+	switch (row) {
+	case PCI_CFG_COMMAND / 4:
+		if (ivshmem_write_command(ive, value))
+			return PCI_ACCESS_REJECT;
+		break;
+	case PCI_CFG_BAR / 4 ... PCI_CFG_BAR / 4 + 5:
+		ivshmem_write_bar(ive, row * 4, value);
+		break;
+	case IVSHMEM_CFG_MSIX_CAP / 4:
+		if (ivshmem_write_msix_control(ive, value))
+			return PCI_ACCESS_REJECT;
 	}
+	return PCI_ACCESS_DONE;
 }
 
 /**
