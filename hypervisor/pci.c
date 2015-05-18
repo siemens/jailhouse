@@ -380,7 +380,7 @@ found:
 	return 1;
 
 invalid_access:
-	panic_printk("FATAL: Invalid PCI MSIX BAR write, device "
+	panic_printk("FATAL: Invalid PCI MSI-X table/PBA access, device "
 		     "%02x:%02x.%x\n", PCI_BDF_PARAMS(device->info->bdf));
 	return -1;
 }
