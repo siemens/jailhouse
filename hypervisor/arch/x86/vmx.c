@@ -775,6 +775,9 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
 		val = 0xfff0;
 		sipi_vector = 0xf0;
+
+		/* only cleared on hard reset */
+		ok &= vmcs_write64(GUEST_IA32_DEBUGCTL, 0);
 	}
 	ok &= vmcs_write64(GUEST_RIP, val);
 
@@ -830,7 +833,6 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	ok &= vmcs_write64(GUEST_SYSENTER_ESP, 0);
 
 	ok &= vmcs_write64(GUEST_DR7, 0x00000400);
-	ok &= vmcs_write64(GUEST_IA32_DEBUGCTL, 0);
 
 	ok &= vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_ACTIVE);
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
