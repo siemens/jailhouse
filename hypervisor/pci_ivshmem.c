@@ -428,8 +428,6 @@ int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 	for (device = cell->virtual_device_list; device;
 	     device = device->next_virtual_device) {
 		ive = device->ivshmem_endpoint;
-		if (!ive)
-			continue;
 		if ((ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MEM) == 0)
 			continue;
 
@@ -471,9 +469,6 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, u16 address,
 	if (address > (sizeof(default_cspace) - sz))
 		return PCI_ACCESS_REJECT;
 
-	if (!ive)
-		return PCI_ACCESS_REJECT;
-
 	switch (sz) {
 	case 1:
 		return ivshmem_cfg_write8(ive, address, (u8)value);
@@ -503,8 +498,6 @@ enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
 	struct pci_ivshmem_endpoint *ive = dev->ivshmem_endpoint;
 
 	if (address > (sizeof(default_cspace) - sz))
-		goto fail;
-	if (!ive)
 		goto fail;
 
 	switch (sz) {
