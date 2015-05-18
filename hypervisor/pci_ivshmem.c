@@ -301,7 +301,7 @@ static enum pci_access ivshmem_cfg_write32(struct pci_ivshmem_endpoint *ive,
 		if(ivshmem_write_command(ive, val & 0xffff))
 			return PCI_ACCESS_REJECT;
 		break;
-	case PCI_CFG_BAR ... (PCI_CFG_BAR + 3*8):
+	case PCI_CFG_BAR ... (PCI_CFG_BAR + 5 * 4):
 		ivshmem_write_bar(ive, reg, val);
 		break;
 	case IVSHMEM_CFG_MSIX_CAP:
