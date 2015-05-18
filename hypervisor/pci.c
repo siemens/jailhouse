@@ -190,11 +190,8 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 		return PCI_ACCESS_DONE;
 	}
 
-	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_cfg_read(device, address, size, value);
-
-	/* Emulate BARs for physical devices */
-	if (device->info->type == JAILHOUSE_PCI_TYPE_DEVICE) {
+	/* Emulate BARs for physical and virtual devices */
+	if (device->info->type != JAILHOUSE_PCI_TYPE_BRIDGE) {
 		/* Emulate BAR access, always returning the shadow value. */
 		if (address >= PCI_CFG_BAR && address <= PCI_CFG_BAR_END) {
 			bar_no = (address - PCI_CFG_BAR) / 4;
@@ -208,6 +205,9 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 			return PCI_ACCESS_DONE;
 		}
 	}
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return pci_ivshmem_cfg_read(device, address, size, value);
 
 	if (address < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
@@ -268,11 +268,8 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 
 	value <<= bias_shift;
 
-	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_cfg_write(device, address / 4, mask, value);
-
-	/* Emulate BARs for physical devices */
-	if (device->info->type == JAILHOUSE_PCI_TYPE_DEVICE &&
+	/* Emulate BARs for physical and virtual devices */
+	if (device->info->type != JAILHOUSE_PCI_TYPE_BRIDGE &&
 	    address >= PCI_CFG_BAR && address <= PCI_CFG_BAR_END) {
 		bar_no = (address - PCI_CFG_BAR) / 4;
 		mask &= device->info->bar_mask[bar_no];
@@ -284,7 +281,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	if (address < PCI_CONFIG_HEADER_SIZE) {
 		if (device->info->type == JAILHOUSE_PCI_TYPE_BRIDGE)
 			cfg_control = bridge_write[address / 4];
-		else /* physical device */
+		else /* physical or virtual device */
 			cfg_control = endpoint_write[address / 4];
 
 		if ((cfg_control.mask & mask) != mask)
@@ -292,6 +289,9 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 
 		switch (cfg_control.type) {
 		case PCI_CONFIG_ALLOW:
+			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+				return pci_ivshmem_cfg_write(device,
+						address / 4, mask, value);
 			return PCI_ACCESS_PERFORM;
 		case PCI_CONFIG_RDONLY:
 			return PCI_ACCESS_DONE;
@@ -299,6 +299,9 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 			return PCI_ACCESS_REJECT;
 		}
 	}
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return pci_ivshmem_cfg_write(device, address / 4, mask, value);
 
 	cap = pci_find_capability(device, address);
 	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))

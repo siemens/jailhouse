@@ -100,12 +100,6 @@ static u32 ivshmem_cfg_read32(struct pci_ivshmem_endpoint *ive, u8 reg)
 	return ive->cspace[reg / 4];
 }
 
-static u64 ivshmem_cfg_read64(struct pci_ivshmem_endpoint *ive, u8 reg)
-{
-	return ((u64)ivshmem_cfg_read32(ive, reg + 4) << 32) |
-	       ivshmem_cfg_read32(ive, reg);
-}
-
 static u16 ivshmem_cfg_read16(struct pci_ivshmem_endpoint *ive, u8 reg)
 {
 	unsigned int bias = reg % 4;
@@ -195,20 +189,6 @@ static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
 
 	*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
 	return 0;
-}
-
-static void ivshmem_write_bar(struct pci_ivshmem_endpoint *ive, u8 reg, u32 val)
-{
-	int barn = (reg - PCI_CFG_BAR) / 8;
-	struct virt_pci_bar *bar = &(ive->bars[barn]);
-	u32 newval;
-
-	if (reg & 4)
-		newval = val & ((~(bar->sz - 1)) >> 32);
-	else
-		newval = (val & (~(bar->sz - 1) & ~0xf)) | (bar->flags & 0xf);
-
-	ive->cspace[reg / 4] = newval;
 }
 
 static int ivshmem_msix_mmio(struct pci_ivshmem_endpoint *ive, bool is_write,
@@ -392,16 +372,16 @@ int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 		if ((ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MEM) == 0)
 			continue;
 
-		/* register BAR access */
-		mem_start = ivshmem_cfg_read64(ive, PCI_CFG_BAR) & ~0xf;
+		/* BAR0: registers */
+		mem_start = (*(u64 *)&device->bar[0]) & ~0xfL;
 		mem_sz = ive->bars[0].sz;
 		if (addr >= mem_start && addr <= (mem_start + mem_sz - 4))
 			return ivshmem_register_mmio(ive, is_write,
 						     addr - mem_start,
 						     value);
 
-		/* MSI-X BAR access */
-		mem_start = ivshmem_cfg_read64(ive, PCI_CFG_BAR + 2 * 8) & ~0xf;
+		/* BAR4: MSI-X */
+		mem_start = (*(u64 *)&device->bar[4]) & ~0xfL;
 		mem_sz = ive->bars[2].sz;
 		if (addr >= mem_start && addr <= (mem_start + mem_sz - 4))
 			return ivshmem_msix_mmio(ive, is_write,
@@ -436,9 +416,6 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
 	case PCI_CFG_COMMAND / 4:
 		if (ivshmem_write_command(ive, value))
 			return PCI_ACCESS_REJECT;
-		break;
-	case PCI_CFG_BAR / 4 ... PCI_CFG_BAR / 4 + 5:
-		ivshmem_write_bar(ive, row * 4, value);
 		break;
 	case IVSHMEM_CFG_MSIX_CAP / 4:
 		if (ivshmem_write_msix_control(ive, value))
