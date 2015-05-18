@@ -95,25 +95,6 @@ static const struct virt_pci_bar default_bars[3] = {
 	}
 };
 
-static u32 ivshmem_cfg_read32(struct pci_ivshmem_endpoint *ive, u8 reg)
-{
-	return ive->cspace[reg / 4];
-}
-
-static u16 ivshmem_cfg_read16(struct pci_ivshmem_endpoint *ive, u8 reg)
-{
-	unsigned int bias = reg % 4;
-
-	return (u16)(ivshmem_cfg_read32(ive, reg - bias) >> (bias * 8));
-}
-
-static u8 ivshmem_cfg_read8(struct pci_ivshmem_endpoint *ive, u8 reg)
-{
-	unsigned int bias = reg % 4;
-
-	return (u8)(ivshmem_cfg_read32(ive, reg - bias) >> (bias * 8));
-}
-
 static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
 {
 	union pci_msix_registers c;
@@ -428,7 +409,6 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
  * Handler for MMIO-read-accesses to PCI config space of this virtual device.
  * @param dev		The device that access should be performed on.
  * @param address	Config space address accessed.
- * @param sz		The amount of bytes to read.
  * @param value		Pointer to the return value.
  *
  * @return PCI_ACCESS_DONE.
@@ -436,31 +416,14 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
  * @see pci_cfg_read_moderate
  */
 enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
-				     u8 sz, u32 *value)
+				     u32 *value)
 {
 	struct pci_ivshmem_endpoint *ive = dev->ivshmem_endpoint;
 
-	if (address > (sizeof(default_cspace) - sz))
-		goto fail;
-
-	switch (sz) {
-	case 1:
-		*value = (u32)ivshmem_cfg_read8(ive, address);
-		break;
-	case 2:
-		*value = (u32)ivshmem_cfg_read16(ive, address);
-		break;
-	case 4:
-		*value = ivshmem_cfg_read32(ive, address);
-		break;
-	default:
-		goto fail;
-	}
-	return PCI_ACCESS_DONE;
-
-fail:
-	*value = -1;
-	/* the caller can not deal with PCI_ACCESS_REJECT for reads */
+	if (address < sizeof(default_cspace))
+		*value = ive->cspace[address / 4] >> ((address % 4) * 8);
+	else
+		*value = -1;
 	return PCI_ACCESS_DONE;
 }
 

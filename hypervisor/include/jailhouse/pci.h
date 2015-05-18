@@ -252,7 +252,7 @@ int pci_ivshmem_update_msix(struct pci_device *dev);
 enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
 				      u32 mask, u32 value);
 enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
-				     u8 sz, u32 *value);
+				     u32 *value);
 int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 				u64 addr, u32 *value);
 /** @} PCI-IVSHMEM */

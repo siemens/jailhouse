@@ -207,7 +207,7 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 	}
 
 	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_cfg_read(device, address, size, value);
+		return pci_ivshmem_cfg_read(device, address, value);
 
 	if (address < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
