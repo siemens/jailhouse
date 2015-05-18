@@ -260,7 +260,7 @@ static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
 static int ivshmem_register_mmio(struct pci_ivshmem_endpoint *ive,
 				 bool is_write, u32 offset, u32 *value)
 {
-	/* IVPosition, ro and always returns 0 */
+	/* read-only IVPosition */
 	if (offset == IVSHMEM_REG_IVPOS && !is_write) {
 		*value = ive->ivpos;
 		return 1;
