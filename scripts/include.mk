@@ -48,3 +48,8 @@ INSTALL_DIR     ?= $(INSTALL) -d -m 755
 $(sort $(INSTALL_DIRECTORIES:%=$(DESTDIR)%) \
 	$(INSTALL_DIRECTORIES:%=$(DESTDIR)%/jailhouse)):
 	$(INSTALL_DIR) $@
+
+ARCH ?= $(shell uname -m)
+ifeq ($(ARCH),x86_64)
+	ARCH = x86
+endif

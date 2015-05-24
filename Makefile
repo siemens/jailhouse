@@ -58,7 +58,13 @@ modules_install: modules
 firmware_install: $(DESTDIR)$(firmwaredir) modules
 	$(INSTALL_DATA) hypervisor/jailhouse*.bin $<
 
-install: modules_install firmware_install
+ifeq ($(ARCH),)
+TOOL_INMATES_INSTALL := tool_inmates_install
+tool_inmates_install: $(DESTDIR)$(libexecdir)/jailhouse
+	$(INSTALL_DATA) inmates/tools/$(ARCH)/*.bin $<
+endif
+
+install: modules_install firmware_install $(TOOL_INMATES_INSTALL)
 	$(Q)$(MAKE) -C tools $@
 
 .PHONY: modules_install install clean firmware_install modules tools docs \
