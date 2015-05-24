@@ -34,6 +34,9 @@ struct extension {
 };
 
 static const struct extension extensions[] = {
+	{ "cell", "linux", "CELLCONFIG KERNEL [-i | --initrd FILE]\n"
+	  "              [-c | --cmdline \"STRING\"] "
+					"[-w | --write-params FILE]" },
 	{ "cell", "list", "" },
 	{ "cell", "stats", "{ ID | [--name] NAME }" },
 	{ "config", "create", "[-h] [-g] [-r ROOT] "

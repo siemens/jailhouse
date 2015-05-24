@@ -20,6 +20,7 @@ TARGETS := jailhouse
 
 INST_TARGETS := $(TARGETS)
 HELPERS := \
+	jailhouse-cell-linux \
 	jailhouse-cell-list \
 	jailhouse-cell-stats \
 	jailhouse-config-create
@@ -58,6 +59,7 @@ install-bin: $(INST_TARGETS) $(DESTDIR)$(sbindir)
 
 install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
 	$(INSTALL_PROGRAM) $^
+	$(Q)$(call patch_dirvar,libexecdir,$(lastword $^)/jailhouse-cell-linux)
 	$(Q)$(call patch_dirvar,datadir,$(lastword $^)/jailhouse-config-create)
 
 install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
