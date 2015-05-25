@@ -1057,7 +1057,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			vmx_vcpu_reset(sipi_vector);
 			vcpu_reset(sipi_vector == APIC_BSP_PSEUDO_SIPI);
 		}
-		iommu_check_pending_faults(cpu_data);
+		iommu_check_pending_faults();
 		return;
 	case EXIT_REASON_CPUID:
 		vcpu_handle_cpuid();

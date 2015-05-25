@@ -870,7 +870,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			svm_vcpu_reset(cpu_data, sipi_vector);
 			vcpu_reset(sipi_vector == APIC_BSP_PSEUDO_SIPI);
 		}
-		iommu_check_pending_faults(cpu_data);
+		iommu_check_pending_faults();
 		goto vmentry;
 	case VMEXIT_VMMCALL:
 		vcpu_handle_hypercall();

@@ -90,7 +90,7 @@ void iommu_shutdown(void)
 	/* TODO: Implement */
 }
 
-void iommu_check_pending_faults(struct per_cpu *cpu_data)
+void iommu_check_pending_faults(void)
 {
 	/* TODO: Implement */
 }

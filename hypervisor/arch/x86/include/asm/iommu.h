@@ -46,7 +46,7 @@ void iommu_config_commit(struct cell *cell_added_removed);
 
 void iommu_shutdown(void);
 
-void iommu_check_pending_faults(struct per_cpu *cpu_data);
+void iommu_check_pending_faults(void);
 
 int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value);
 
