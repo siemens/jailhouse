@@ -194,6 +194,15 @@ static void vtd_init_fault_nmi(void)
 		/* Unmask events */
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 0);
 	}
+
+	/*
+	 * There is a race window between setting the new reporting CPU ID and
+	 * updating the target programming in the register. If a fault hits us
+	 * in this window and no other NMIs arrive after that, the event will
+	 * not be reported. Address this by triggering an NMI on the new
+	 * reporting CPU.
+	 */
+	apic_send_nmi_ipi(cpu_data);
 }
 
 static void *vtd_get_fault_rec_reg_addr(void *reg_base)
