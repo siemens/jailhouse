@@ -139,6 +139,9 @@ void jailhouse_cell_delete_all(void)
 	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
 				     JAILHOUSE_PCI_ACTION_DEL);
 
+	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_DEVICE,
+				     JAILHOUSE_PCI_ACTION_RELEASE);
+
 	list_for_each_entry_safe(cell, tmp, &cells, entry)
 		jailhouse_cell_delete(cell);
 
@@ -211,6 +214,9 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		}
 		cpumask_clear_cpu(cpu, &root_cell->cpus_assigned);
 	}
+
+	jailhouse_pci_do_all_devices(cell, JAILHOUSE_PCI_TYPE_DEVICE,
+	                             JAILHOUSE_PCI_ACTION_CLAIM);
 
 	id = jailhouse_call_arg1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
 	if (id < 0) {
@@ -393,6 +399,9 @@ int jailhouse_cmd_cell_destroy(const char __user *arg)
 		}
 		cpumask_set_cpu(cpu, &root_cell->cpus_assigned);
 	}
+
+	jailhouse_pci_do_all_devices(cell, JAILHOUSE_PCI_TYPE_DEVICE,
+	                             JAILHOUSE_PCI_ACTION_RELEASE);
 
 	pr_info("Destroyed Jailhouse cell \"%s\"\n",
 		kobject_name(&cell->kobj));

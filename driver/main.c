@@ -480,11 +480,17 @@ static int __init jailhouse_init(void)
 	if (err)
 		goto exit_sysfs;
 
+	err = jailhouse_pci_register();
+	if (err)
+		goto exit_misc;
+
 	register_reboot_notifier(&jailhouse_shutdown_nb);
 
 	init_hypercall();
 
 	return 0;
+exit_misc:
+	misc_deregister(&jailhouse_misc_dev);
 
 exit_sysfs:
 	jailhouse_sysfs_exit(jailhouse_dev);
@@ -499,6 +505,7 @@ static void __exit jailhouse_exit(void)
 	unregister_reboot_notifier(&jailhouse_shutdown_nb);
 	misc_deregister(&jailhouse_misc_dev);
 	jailhouse_sysfs_exit(jailhouse_dev);
+	jailhouse_pci_unregister();
 	root_device_unregister(jailhouse_dev);
 }
 

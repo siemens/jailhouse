@@ -13,7 +13,10 @@
 
 #include "cell.h"
 
-enum { JAILHOUSE_PCI_ACTION_ADD, JAILHOUSE_PCI_ACTION_DEL };
+enum {
+	JAILHOUSE_PCI_ACTION_ADD, JAILHOUSE_PCI_ACTION_DEL,
+	JAILHOUSE_PCI_ACTION_CLAIM, JAILHOUSE_PCI_ACTION_RELEASE,
+};
 
 #ifdef CONFIG_PCI
 
@@ -22,6 +25,8 @@ void jailhouse_pci_do_all_devices(struct cell *cell, unsigned int type,
 int jailhouse_pci_cell_setup(struct cell *cell,
 			     const struct jailhouse_cell_desc *cell_desc);
 void jailhouse_pci_cell_cleanup(struct cell *cell);
+int jailhouse_pci_register(void);
+void jailhouse_pci_unregister(void);
 
 #else /* !CONFIG_PCI */
 
@@ -39,6 +44,15 @@ jailhouse_pci_cell_setup(struct cell *cell,
 }
 
 static inline void jailhouse_pci_cell_cleanup(struct cell *cell)
+{
+}
+
+static inline int jailhouse_pci_register(void)
+{
+	return 0;
+}
+
+static inline void jailhouse_pci_unregister(void)
 {
 }
 
