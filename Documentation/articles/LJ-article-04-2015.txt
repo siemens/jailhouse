@@ -1,0 +1,395 @@
+Get to know Jailhouse
+=====================
+
+By Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
+
+Originally appeared in Linux Journal issue 252 (April 2015).
+Minor fixes and updates applied.
+
+As you read Linux Journal, you probably know Linux has rich
+virtualization ecosystem. KVM is de-facto standard, VirtualBox is widely
+used for desktop virtualization, veterans should remember Xen (it's
+still in a good shape, by the way!) and there is also VMware (which
+isn't free but runs on Linux as well). This is not to mention a
+multitude of lesser-known hypervisors like educational lguest or hobbyst
+Xvisor. In such crowded landscape, is there a place for a newcomer?
+
+There is likely not much sense in creating Yet Another Linux-based
+"versatile" hypervisor (except doing it just for fun, you know). But
+there are some specific use cases which general-purpose solutions don't
+address quite well. One of such areas is real-time virtualization, that
+is frequently met in industrial automation, medicine,
+telecommunications, and high-performance computing. In these
+applications, dedicating a whole CPU or its core to the software that
+runs bare-metal (with no underlying OS) is a way to meet strict deadline
+requirements. While it is possible to pin KVM instance to processor core
+and pass-through PCI devices to guests, tests [1] show the worst-case
+latency may be above some realistic requirements. As usual with Free
+Software, the situation is getting better with time, but there one other
+thing.
+
+And it's security. Sensitive software systems go through rigorous
+certifications (like Common Criteria) or even formal verification
+procedures. If you want them to run virtualized (say, for consolidation
+purposes), the hypervisor must isolate them from non-certifiable
+workloads. This implies the hypervisor itself must be small enough,
+otherwise it may end up being larger (and more "suspicious") than the
+software it segregates thus devastating the whole idea of isolation.
+
+So looks like there is some room for a lightweight (for real-time camp),
+small and simple (for security folks) open-source Linux-friendly
+hypervisor for real-time and certifiable workloads. And it's where
+Jailhouse comes into a play (this being said, safety, not security
+is the primary focus at this point).
+
+New guy in a block
+------------------
+
+Jailhouse was born in Siemens and is developed as Free Software project
+(GPLv2) since November 2013. On May 2015, Jailhouse 0.5 was released to
+general public. Jailhouse is rather young and more of research project
+than ready-to-use tool, so it's a good time to get acquainted with it
+now, and stay prepared to meet it in the production.
+
+From the technical point of view, Jailhouse is static partitioning
+hypervisor that runs bare-metal but cooperates with Linux closely. It
+means Jailhouse doesn't emulate resources you don't have - it just
+splits your hardware into isolated compartments called "cells" that are
+wholly dedicated to guest software programs called "inmates". One of
+these cells runs Linux OS and is known as "root cell"; other cells
+borrow CPUs and devices from the root cell as they are created.
+Besides Linux, Jailhouse supports bare-metal applications but
+it can't run general-purpose OS (like Windows or FreeBSD) unmodified: as
+discussed, there are plenty of other options, if you need to. One day,
+Jailhouse may also support running KVM in the root cell, thus delivering
+the best of two worlds.
+
+As said above, Jailhouse cooperates with Linux closely and relies on it
+for hardware bootstrapping, hypervisor launch and doing management tasks
+(like creating new cells). Bootstrapping is really essential here, as it
+is rather complex task for modern computers, and implementing it within
+Jailhouse would make it a way more complex. This being said, Jailhouse
+doesn't meld with the kernel as KVM (which is a kernel module on x86, or
+even linked-in on ARM) does. It is loaded as firmware image (the same way
+Wi-Fi adapters load their firmware blobs) and resides in dedicated memory
+region which you should reserve at Linux boot time. Jailhouse's kernel
+module (jailhouse.ko, also called "driver") loads the firmware and creates
+/dev/jailhouse device which jailhouse userspace tool uses, but it doesn't
+contain any hypervisor logic.
+
+Jailhouse is an example of Asynchronous Multiprocessing (AMP)
+architecture. Compared to traditional Symmetric Multiprocessing (SMP)
+systems, CPU cores in Jailhouse are not treated equal: say, cores 0 and
+1 may run Linux and have access to SATA hard drive while core 2 runs a
+bare-metal application which only has access to serial port. As most
+computers Jailhouse can run on have shared L2/L3 caches, this means
+there is a possibility for cache thrashing. To understand why it
+happens, consider that Jailhouse maps the same guest physical memory
+address (GPA) to different host (or real) physical address for different
+inmates. If two inmates occasionally have the same GPA (naturally
+containing diverse data) in the same L2/L3 cache line due to cache
+associativity, they will interfere each other's work and degrade the
+performance. This effect is yet to be measured, and Jailhouse currently
+has no dedicated means to mitigate it. However there is a vision that
+for many applications this performance loss won't be crucial. Future CPUs
+may also introduce some QoS mechanisms to manage caches better. Moreover,
+this issue is not specific in Jailhouse and also affects e.g. cloud platforms.
+
+Now you have enough background to understand what Jailhouse is (and what
+isn't). I hope you are interested; if it's the case, let's see how to
+install and run it on your system.
+
+Getting up-to-date
+------------------
+
+Sometimes you may need very latest KVM and QEMU to give Jailhouse a try.
+KVM is part of the kernel, and updating the critical system component
+just to try some new software would probably seem overkill. Luckily,
+there is another way.
+
+kvm-kmod [2] is a tool to take KVM modules from one kernel and compile
+them for another, and is usually used to build latest KVM for your
+current kernel. The build process is detailed in the README, but in a
+nutshell you clone the repository, initialize a submodule (it's the
+source for KVM) and run configure script followed by make. When modules
+are ready, just insmod them instead of what your distribution provides
+(don't forget to unload those first). If you want the change permanent,
+run 'make modules_install'. kvm-kmod can take KVM sources fromever you
+point to, but the defaults are usually sufficient.
+
+Compiling QEMU is easier but more time-consuming. It follows the usual
+'configure && make' procedure, and doesn't need to be installed
+system-wide (which is package manager-friendly). Just put
+'/path/to/qemu/x86_64-softmmu/qemu-system-x86_64' instead of plain
+'qemu-system-x86_64' in the text's examples.
+
+Building Jailhouse
+------------------
+
+Despite having a 0.5 release now, Jailhouse is still a young project
+that is developed in quick paces. You are unlikely to find it in your
+distribution's repositories for the same reasons, so the preferred way
+to get Jailhouse is to build it from Git.
+
+To run Jailhouse, you'll need a recent multicore VT-x-enabled Intel x86
+64-bit CPU, and a motherboard with VT-d support. Version 0.5 introduced
+support for AMD64 (albeit AMD IOMMU support is still in the works) and
+ARM (v7 or better). At least 1GB RAM is recommended, and even more for
+nested setup we discuss below. On software side, you'll need the usual
+developer tools (make, gcc, git) and headers for your Linux kernel.
+
+Running Jailhouse on real hardware isn't straightforward at this time,
+and if you only want to play with it, there is a better alternative.
+Given that you meet CPU requirements, the hypervisor should run well
+under KVM/QEMU; this is known as nested setup. Jailhouse relies on some
+bleeding-edge features, so you'll need at least Linux 3.17 and QEMU 2.1
+for everything to work smoothly. Unless you are on rolling release
+distribution, this could be a problem, so you may want to compile these
+tools by yourself. This is detailed in the sidebar, and I suggest you
+have a look at it even if you are lucky enough to have the required
+versions pre-packaged: Jailhouse evolves and may need yet unreleased
+features and fixes by the time you read this.
+
+Make sure you have nested mode enabled in KVM. Both kvm-intel and
+kvm-amd kernel modules accept 'nested=1' parameter which is responsible
+just for that. You can set it manually, in modprobe command line (don't
+forget to unload previous module's instance first). Alternatively, add
+'options kvm-intel nested=1' (or similar kvm-amd line) to a new file
+under /etc/modprobe.d.
+
+You should also reserve memory for Jailhouse and inmates. To do this,
+simply add 'memmap=66M$0x3b000000' to QEMU guest kernel command line.
+For one-time usage, do this from the GRUB menu (press 'e', edit the
+command line, press 'F10'). To make the change persistent, edit
+GRUB_CMDLINE_LINUX variable in /etc/default/grub at QEMU guest side
+and regenerate the configuration with grub-mkconfig. If you are using
+GRUB 2, make sure you escape the dollar sign in 'memmap=' with three
+slashes (\\\).
+
+Now, take a JeOS edition of your favorite distribution. You can produce
+one with SUSE Studio, ubuntu-vm-builder and similar, or just install a
+minimal system the ordinary way yourself. It is recommended to have the
+same kernel on the host and inside QEMU. Now, run the virtual machine as
+(Intel CPU assumed):
+
+qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
+ -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic \
+ -drive file=LinuxInstallation.img,id=disk,if=none \
+ -virtfs local,path=/path/to/jailhouse,security_model=passthrough,mount_tag=host \
+ -device ide-hd,drive=disk -serial stdio -serial file:com2.txt
+
+Note we enabled 9p (-virtfs) to access the host filesystem from QEMU
+guest side; /path/to/jailhouse is where you are going to compile
+Jailhouse now. Cd to this directory and run:
+
+git clone git@github.com:siemens/jailhouse.git jailhouse cd jailhouse
+make
+
+Now, switch to the guest and mount 9p filesystem (for example, with
+'mount -t 9p host /mnt'). Cd to /mnt/jailhouse and execute:
+
+sudo make firmware_install sudo insmod jailhouse.ko
+
+This copies Jailhouse binary image you've built to /lib/firmware and
+inserts Jailhouse driver module. You can now enable Jailhouse with:
+
+sudo tools/jailhouse enable configs/qemu-vm.cell
+
+As the command returns, type 'dmesg | tail'. If you see "The Jailhouse
+is opening." message, you've successfully launched the hypervisor, and
+your Linux guest now runs under Jailhouse (which itself runs under
+KVM/QEMU). If you get an error, it is an indication that your CPU misses
+some required feature. If the guest hangs, this is most likely due to
+your host kernel or QEMU are not up-to-date enough for Jailhouse, or
+something is wrong with qemu-vm cell config. Jailhouse sends all its
+messages to serial port, and QEMU simply prints them to the terminal
+where it was started. Look at the messages to see what resource
+(I/O port, memory and so on) caused the problem, and read on for the
+details of Jailhouse configuration.
+
+Configs and inmates
+-------------------
+
+Creating Jailhouse configuration files isn't straightforward. As the
+codebase must be kept small, most of the logic that takes place
+automatically in other hypervisors must be done manually here (albeit
+with some help from the tools that come with Jailhouse). Compared to
+libvirt or VirtualBox XML, Jailhouse configuration files are very
+detailed and rather low-level. The configuration is currently expressed
+in form of plain C files (found under configs/ in the sources) compiled
+into raw binaries, however another format (like DeviceTree) could be
+used in future versions.
+
+Most of the time, you wouldn't need to create a cell config from
+scratch, unless you authored a whole new inmate, or want the hypervisor
+to run on your specific hardware (that's addressed in the sidebar).
+
+Cell configuration files contain information like hypervisor base
+address (it should be within area you reserved with 'memmap=' earlier),
+a mask of CPUs assigned to the cell (for root cells, it's 0xff, or all
+CPUs in the system), the list of memory regions and the permissions this
+cell has to them, I/O ports bitmap (0 marks a port as cell-accessible),
+and the list of PCI devices.
+
+Each Jailhouse cell has its own config file, so you'll have one config
+for the root cell describing the platform Jailhouse executes on (like
+qemu-vm.c we saw above) and several others for each running cell. It's
+possible for inmates to share one config file (and thus one cell), but
+then only one of these inmates will be active at given time.
+
+In order to launch an inmate, you need to create its cell first:
+
+sudo tools/jailhouse cell create configs/apic-demo.cell
+
+apic-demo.cell is cell configuration file that comes with Jailhouse (I
+also assume you still use QEMU setup described earlier). This cell
+doesn't use any PCI devices, but in more complex cases it is recommended
+to unload Linux drivers before moving devices to the cell with this
+command.
+
+Now, the inmate image can be loaded into memory:
+
+sudo tools/jailhouse cell load apic-demo inmates/demos/x86/apic-demo.bin
+-a 0xf0000
+
+Jailhouse treats all inmates as opaque binaries, and although it
+provides a small framework to develop them faster, the only thing it
+needs to know about the inmate image is its base address. Jailhouse
+expects an inmate entry point at 0xffff0 (which is different from x86
+reset vector). apic-demo.bin is a standard demo inmate that comes with
+Jailhouse, and inmates framework linker script ensures that if the
+binary is mapped at 0xf0000, the entry point will be at the right
+address. 'apic-demo' is just a name, and it can be almost anything you
+want.
+
+Finally, start the cell with:
+
+tools/jailhouse cell start apic-demo
+
+Now, switch back to the terminal you run QEMU from. You'll see lines
+like this one are being sent to the serial port:
+
+Calibrated APIC frequency: 1000008 kHz Timer fired, jitter: 38400 ns,
+min: 38400 ns, max: 38400 ns ...
+
+apic-demo is a purely demonstrational inmate. It programs APIC timer
+(found on each contemporary CPU's core) to fire at 10 Hz, and measures
+actual time between the events happening. Jitter is the difference
+between the expected and actual time (the latency), and the smaller it
+is, the less visible (in terms of performance) the hypervisor is.
+Although this test isn't quite comprehensive, it is important as
+Jailhouse targets realtime inmates and needs to be as lightweight as
+possible.
+
+Jailhouse also provides some means for getting cell statistics. At the
+most basic level, there is sysfs interface under /sys/devices/jailhouse.
+Several tools exist that pretty-print this data. For instance, you can
+list cells currently on the system with:
+
+sudo tools/jailhouse cell list
+
+For more detailed statistics, run:
+
+sudo tools/jailhouse cell stat apic-demo
+
+The data you see is updated periodically (as in top utility) and contains
+various low-level counters like the number of hypercalls issued, or the
+number of I/O port accesses. The lifetime total and per-second values are
+given for each entry. It's mainly for developers, but higher numbers mean
+the inmate causes hypervisor involvement more often, thus degrading the
+performance. Ideally, these should be close to zero, as jitter in apic-demo.
+To exit the tool, press Q.
+
+Tearing down
+------------
+
+Jailhouse comes with several demo inmates, not only apic-demo. Let's try
+something different. Stop the inmate with:
+
+sudo tools/jailhouse cell destroy apic-demo JAILHOUSE_CELL_DESTROY:
+Operation not permitted
+
+What's the reason? Remember apic-demo cell had 'running/locked' state in
+the cell list. Jailhouse introduces locked state to prevent changes to
+the configuration; a cell that locks the hypervisor is essentially more
+important than the root one (think it does some critical job at the
+power plant while Linux is mostly for management purposes on that
+system). Luckily, apic-demo is a toy inmate and it unlocks Jailhouse
+after the first shutdown attempt, so the second one should succeed.
+Execute the command above one more time, and apic-demo should disappear
+from the cell listing.
+
+Now, create tiny-demo cell (which is originally for tiny-demo.bin, also
+from the Jailhouse demo inmates set) and load 32-bit-demo.bin into it
+the usual way:
+
+sudo tools/jailhouse cell create configs/tiny-demo.cell sudo
+tools/jailhouse cell load tiny-demo inmates/demos/x86/32-bit-demo.bin -a
+0xf0000 sudo tools/jailhouse cell start tiny-demo
+
+Look into com2.txt in the host (the same directory you started QEMU
+from). Not only this shows that cells can be reused by the inmates
+provided they have compatible resource requirements, it is also a proof
+that Jailhouse can run 32-bit inmates (the hypervisor itself and the
+root cell always run in 64-bit mode).
+
+When you are done with Jailhouse, you can disable it with:
+
+sudo tools/jailhouse disable
+
+For this to succeed, the must be no cells in "running/locked" state.
+
+This is the end of our short trip to Jailhouse: I hope you enjoyed your
+stay. For now, Jailhouse is not a ready-to-consume product, so you may
+not see an immediate use of it. However, it's actively developed and
+somewhat unique to Linux ecosystem, and if you have a need for real-time
+application virtualization, it makes sense to keep a close eye on its
+progress.
+
+Jailhouse for real
+------------------
+
+QEMU is great for giving Jailhouse a try, but it's also possible to test
+it on real hardware. However, you should never do this on your PC: with
+low-level tool Jailhouse is, you can easily hang your root cell where
+Linux runs, which may result in filesystem and data corruption.
+
+Jailhouse comes with helper tool to generate cell configs, but usually
+you still need to tweak the resultant file. The tool depends on Python;
+if you don't have it on your testing board, Jailhouse lets you to
+collect required data and generate the configuration on your main Linux
+PC (it's safe):
+
+sudo tools/jailhouse config collect data.tar
+
+Copy data.tar to your PC or notebook and untar
+
+tools/jailhouse config create -r path/to/untarred/data configs/myboard.c
+
+Configuration tool reads many files under /proc and /sys (either
+collected or directly), analyzes them and generates memory regions, PCI
+devices list and other things required for Jailhouse to run.
+
+Post-processing the generated config is mostly trial and error process.
+You enable Jailhouse and try to do something. If the system locks up,
+you analyze serial output and decide if you need to grant access. If you
+are trying to run Jailhouse on a memory-constrained system (less than 1
+GB RAM), be careful with hypervisor memory area, as the configuration
+tool can currently get it wrong. Don't forget to reserve memory for
+Jailhouse through kernel command line the same way you did it with QEMU.
+On some AMD-based systems, you may need to adjust Memory Mapped I/O
+(MMIO) regions, because Jailhouse doesn't support AMD IOMMU technology
+yet while the configuration tool implies it.
+
+To capture Jailhouse serial output, you'll likely need serial-to-USB
+adapter and null modem cable. Many modern motherboards come with no COM
+ports, but they have headers you can connect a socket to. Once you connect
+your board to main Linux PC, run minicom or alike to see the output (remember
+to set port's baud rate to 115200 in program's settings).
+
+References
+----------
+
+1.  Static System Partitioning and KVM (KVM Forum 2013 slides):
+    https://docs.google.com/file/d/0B6HTUUWSPdd-Zl93MVhlMnRJRjg
+2.  kvm-kmod homepage: http://git.kiszka.org/?p=kvm-kmod.git
