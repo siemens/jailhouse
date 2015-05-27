@@ -175,7 +175,8 @@ same kernel on the host and inside QEMU. Now, run the virtual machine as
 qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
  -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic \
  -drive file=LinuxInstallation.img,id=disk,if=none \
- -virtfs local,path=/path/to/jailhouse,security_model=passthrough,mount_tag=host \
+ -fsdev local,path=/path/to/jailhouse,security_model=passthrough,id=vfs \
+ -device virtio-9p-pci,addr=1f.7,mount_tag=host,fsdev=vfs \
  -device ide-hd,drive=disk -serial stdio -serial file:com2.txt
 
 Note we enabled 9p (-virtfs) to access the host filesystem from QEMU
