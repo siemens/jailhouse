@@ -178,6 +178,7 @@ class PCIBARs:
             self.mask.append(mask & 0xffffffff)
         f.close()
 
+
 class PCICapability:
     def __init__(self, id, start, len, flags, content, msix_address):
         self.id = id
