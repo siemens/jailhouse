@@ -37,6 +37,10 @@ Source code:
  - https://github.com/siemens/jailhouse.git
  - git@github.com:siemens/jailhouse.git
 
+Frequently Asked Questions (FAQ):
+
+ - See [FAQ file](FAQ.md)
+
 Mailing list:
 
   - jailhouse-dev@googlegroups.com
