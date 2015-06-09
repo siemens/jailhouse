@@ -86,10 +86,5 @@
 
 #endif /* CONFIG_MACH_TEGRA124 */
 
-#define HOTPLUG_SPIN	1
-/*
-#define HOTPLUG_PSCI	1
-*/
-
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_PLATFORM_H */
