@@ -14,7 +14,7 @@ include $(INMATES_LIB)/Makefile.lib
 
 always := lib.a
 
-lib-y				:= header.o gic.o printk.o
+lib-y				:= header.o gic.o printk.o timer.o
 lib-$(CONFIG_ARM_GIC)		+= gic-v2.o
 lib-$(CONFIG_ARM_GIC_V3)	+= gic-v3.o
 lib-$(CONFIG_SERIAL_AMBA_PL011)	+= uart-pl011.o

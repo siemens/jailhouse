@@ -97,6 +97,8 @@
 #define TPIDRURO	SYSREG_32(0, c13, c0, 3)
 #define TPIDRPRW	SYSREG_32(0, c13, c0, 4)
 
+#define CNTFRQ		SYSREG_32(0, c14, c0, 0)
+
 #define ATS1HR		SYSREG_32(4, c7, c8, 0)
 
 #define ICIALLUIS	SYSREG_32(0, c7, c1, 0)
