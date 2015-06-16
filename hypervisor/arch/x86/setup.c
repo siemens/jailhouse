@@ -74,11 +74,7 @@ int arch_init_early(void)
 	for (vector = IRQ_DESC_START; vector < NUM_IDT_DESC; vector++)
 		set_idt_int_gate(vector, (unsigned long)irq_entry);
 
-	err = vcpu_vendor_init();
-	if (err)
-		return err;
-
-	return 0;
+	return vcpu_vendor_init();
 }
 
 /*
@@ -233,11 +229,7 @@ int arch_init_late(void)
 	if (err)
 		return err;
 
-	err = ioapic_init();
-	if (err)
-		return err;
-
-	return 0;
+	return ioapic_init();
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
