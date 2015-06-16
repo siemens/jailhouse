@@ -11,44 +11,13 @@
  */
 
 #include <asm/gic_common.h>
-#include <asm/sysregs.h>
 #include <inmates/inmate.h>
 #include <mach/timer.h>
 
 #define BEATS_PER_SEC		10
-#define TICKS_PER_BEAT		(TIMER_FREQ / BEATS_PER_SEC)
 
+static u64 ticks_per_beat;
 static volatile u64 expected_ticks;
-
-static void timer_arm(u64 timeout)
-{
-	arm_write_sysreg(CNTV_TVAL_EL0, timeout);
-	arm_write_sysreg(CNTV_CTL_EL0, 1);
-}
-
-static u64 get_actual_ticks(void)
-{
-	u64 pct64;
-
-	arm_read_sysreg(CNTPCT, pct64);
-	return pct64;
-}
-
-static unsigned long emul_division(u64 val, u64 div)
-{
-	unsigned long cnt = 0;
-
-	while (val > div) {
-		val -= div;
-		cnt++;
-	}
-	return cnt;
-}
-
-static inline unsigned long ticks_to_ns(u64 ticks)
-{
-	return emul_division(ticks * 1000, TIMER_FREQ / 1000 / 1000);
-}
 
 static void handle_IRQ(unsigned int irqn)
 {
@@ -58,15 +27,16 @@ static void handle_IRQ(unsigned int irqn)
 	if (irqn != TIMER_IRQ)
 		return;
 
-	delta = get_actual_ticks() - expected_ticks;
+	delta = timer_get_ticks() - expected_ticks;
 	if (delta < min_delta)
 		min_delta = delta;
 	if (delta > max_delta)
 		max_delta = delta;
 
 	printk("Timer fired, jitter: %6ld ns, min: %6ld ns, max: %6ld ns\n",
-	       ticks_to_ns(delta), ticks_to_ns(min_delta),
-	       ticks_to_ns(max_delta));
+	       (long)timer_ticks_to_ns(delta),
+	       (long)timer_ticks_to_ns(min_delta),
+	       (long)timer_ticks_to_ns(max_delta));
 
 #ifdef CONFIG_MACH_SUN7I
 	/* let green LED on Banana Pi blink */
@@ -74,8 +44,8 @@ static void handle_IRQ(unsigned int irqn)
 	mmio_write32(LED_REG, mmio_read32(LED_REG) ^ (1<<24));
 #endif
 
-	expected_ticks = get_actual_ticks() + TICKS_PER_BEAT;
-	timer_arm(TICKS_PER_BEAT);
+	expected_ticks = timer_get_ticks() + ticks_per_beat;
+	timer_start(ticks_per_beat);
 }
 
 void inmate_main(void)
@@ -85,8 +55,9 @@ void inmate_main(void)
 	gic_enable_irq(TIMER_IRQ);
 
 	printk("Initializing the timer...\n");
-	expected_ticks = get_actual_ticks() + TICKS_PER_BEAT;
-	timer_arm(TICKS_PER_BEAT);
+	ticks_per_beat = timer_get_frequency() / BEATS_PER_SEC;
+	expected_ticks = timer_get_ticks() + ticks_per_beat;
+	timer_start(ticks_per_beat);
 
 	while (1)
 		asm volatile("wfi" : : : "memory");

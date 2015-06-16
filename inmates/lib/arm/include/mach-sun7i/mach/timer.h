@@ -11,4 +11,3 @@
  */
 
 #define TIMER_IRQ	27
-#define TIMER_FREQ	24000000
