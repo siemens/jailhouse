@@ -724,7 +724,7 @@ static bool svm_handle_cr(struct per_cpu *cpu_data)
 			panic_printk("FATAL: Unable to parse MOV-to-CR instruction\n");
 			return false;
 		}
-	};
+	}
 
 	if (reg == 4)
 		val = vmcb->rsp;
