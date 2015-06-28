@@ -326,22 +326,35 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 
 int vcpu_vendor_cell_init(struct cell *cell)
 {
+	int err = -ENOMEM;
+
 	/* allocate io_bitmap */
 	cell->vmx.io_bitmap = page_alloc(&mem_pool, 2);
 	if (!cell->vmx.io_bitmap)
-		return -ENOMEM;
+		return err;
 
 	/* build root EPT of cell */
 	cell->vmx.ept_structs.root_paging = ept_paging;
 	cell->vmx.ept_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!cell->vmx.ept_structs.root_table)
-		return -ENOMEM;
+		goto err_free_io_bitmap;
 
-	return paging_create(&cell->vmx.ept_structs,
-			     paging_hvirt2phys(apic_access_page),
-			     PAGE_SIZE, XAPIC_BASE,
-			     EPT_FLAG_READ|EPT_FLAG_WRITE|EPT_FLAG_WB_TYPE,
-			     PAGING_NON_COHERENT);
+	err = paging_create(&cell->vmx.ept_structs,
+			    paging_hvirt2phys(apic_access_page),
+			    PAGE_SIZE, XAPIC_BASE,
+			    EPT_FLAG_READ | EPT_FLAG_WRITE | EPT_FLAG_WB_TYPE,
+			    PAGING_NON_COHERENT);
+	if (err)
+		goto err_free_root_table;
+
+	return 0;
+
+err_free_root_table:
+	page_free(&mem_pool, cell->vmx.ept_structs.root_table, 1);
+err_free_io_bitmap:
+	page_free(&mem_pool, cell->vmx.io_bitmap, 2);
+
+	return err;
 }
 
 int vcpu_map_memory_region(struct cell *cell,

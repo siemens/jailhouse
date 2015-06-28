@@ -288,19 +288,19 @@ int vcpu_vendor_init(void)
 
 int vcpu_vendor_cell_init(struct cell *cell)
 {
+	int err = -ENOMEM;
 	u64 flags;
-	int err;
 
 	/* allocate iopm (two 4-K pages + 3 bits) */
 	cell->svm.iopm = page_alloc(&mem_pool, 3);
 	if (!cell->svm.iopm)
-		return -ENOMEM;
+		return err;
 
 	/* build root NPT of cell */
 	cell->svm.npt_structs.root_paging = npt_paging;
 	cell->svm.npt_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!cell->svm.npt_structs.root_table)
-		return -ENOMEM;
+		goto err_free_iopm;
 
 	if (!has_avic) {
 		/*
@@ -319,6 +319,15 @@ int vcpu_vendor_cell_init(struct cell *cell)
 				    flags,
 				    PAGING_NON_COHERENT);
 	}
+	if (err)
+		goto err_free_root_table;
+
+	return 0;
+
+err_free_root_table:
+	page_free(&mem_pool, cell->svm.npt_structs.root_table, 1);
+err_free_iopm:
+	page_free(&mem_pool, cell->svm.iopm, 3);
 
 	return err;
 }
