@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2015
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -195,7 +195,7 @@ int cell_init(struct cell *cell)
 	return 0;
 }
 
-static void destroy_cpu_set(struct cell *cell)
+static void cell_exit(struct cell *cell)
 {
 	if (cell->cpu_set != &cell->small_cpu_set)
 		page_free(&mem_pool, cell->cpu_set, 1);
@@ -334,6 +334,8 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 	arch_cell_destroy(cell);
 
 	config_commit(cell);
+
+	cell_exit(cell);
 }
 
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
@@ -414,19 +416,19 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	/* don't assign the CPU we are currently running on */
 	if (cell_owns_cpu(cell, cpu_data->cpu_id)) {
 		err = trace_error(-EBUSY);
-		goto err_free_cpu_set;
+		goto err_cell_exit;
 	}
 
 	/* the root cell's cpu set must be super-set of new cell's set */
 	for_each_cpu(cpu, cell->cpu_set)
 		if (!cell_owns_cpu(&root_cell, cpu)) {
 			err = trace_error(-EBUSY);
-			goto err_free_cpu_set;
+			goto err_cell_exit;
 		}
 
 	err = arch_cell_create(cell);
 	if (err)
-		goto err_free_cpu_set;
+		goto err_cell_exit;
 
 	for_each_cpu(cpu, cell->cpu_set) {
 		arch_park_cpu(cpu);
@@ -481,11 +483,12 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 err_destroy_cell:
 	cell_destroy_internal(cpu_data, cell);
-err_free_cpu_set:
-	destroy_cpu_set(cell);
+	/* cell_destroy_internal already calls cell_exit */
+	goto err_free_cell;
+err_cell_exit:
+	cell_exit(cell);
 err_free_cell:
 	page_free(&mem_pool, cell, cell_pages);
-
 err_resume:
 	cell_resume(cpu_data);
 
@@ -630,7 +633,6 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	printk("Closing cell \"%s\"\n", cell->config->name);
 
 	cell_destroy_internal(cpu_data, cell);
-	destroy_cpu_set(cell);
 
 	previous = &root_cell;
 	while (previous->next != cell)
