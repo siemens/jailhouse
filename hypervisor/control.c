@@ -630,6 +630,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 	printk("Closing cell \"%s\"\n", cell->config->name);
 
 	cell_destroy_internal(cpu_data, cell);
+	destroy_cpu_set(cell);
 
 	previous = &root_cell;
 	while (previous->next != cell)
