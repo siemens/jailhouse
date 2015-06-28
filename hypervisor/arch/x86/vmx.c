@@ -375,6 +375,7 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 	paging_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
 		       PAGING_NON_COHERENT);
 	page_free(&mem_pool, cell->vmx.ept_structs.root_table, 1);
+	page_free(&mem_pool, cell->vmx.io_bitmap, 2);
 }
 
 void vcpu_tlb_flush(void)
