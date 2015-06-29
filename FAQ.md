@@ -31,10 +31,12 @@ to CPU cache thrashing.
 A: These concerns do have grounds. However, what is "slow" is determined by
 Service Level Agreement (SLA), and we hope the effect will be negligible in the
 majority of cases. Jailhouse faces the same problem here as cloud services do,
-and they are expected to be quite successful despite it. Future chips may
-introduce QoS mechanisms for cache control, which will be helpful as well. Of
-course, running code under Jailhouse is slightly slower than on a dedicated
-uniprocessor machine, but virtualization always comes at price.
+and they are expected to be quite successful despite it. Future processors may
+introduce QoS mechanisms for cache control, which will be helpful as well. One
+example for such a feature is Intel's Cache Allocation Technology (CAT) which is
+announced for new Xeon processors. Of course, running code under Jailhouse is
+slightly slower than on a dedicated uniprocessor machine, but virtualization
+always comes at price.
 
 Debugging
 ---------

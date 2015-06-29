@@ -7,6 +7,8 @@ x86 support
     - allow per cell (managing inter-core/inter-cell impacts)
   - NMI control/status port - moderation or emulation required?
   - whitelist-based MSR access
+  - add support for Intel Cache Allocation Technology (cache quality
+    enforcement)
 
 ARM support
   - v7 (32-bit) [WIP]
