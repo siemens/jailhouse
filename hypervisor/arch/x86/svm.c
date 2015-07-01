@@ -298,9 +298,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 
 	/* build root NPT of cell */
 	cell->svm.npt_structs.root_paging = npt_paging;
-	cell->svm.npt_structs.root_table = page_alloc(&mem_pool, 1);
-	if (!cell->svm.npt_structs.root_table)
-		goto err_free_iopm;
+	cell->svm.npt_structs.root_table = (page_table_t)cell->root_table_page;
 
 	if (!has_avic) {
 		/*
@@ -320,12 +318,10 @@ int vcpu_vendor_cell_init(struct cell *cell)
 				    PAGING_NON_COHERENT);
 	}
 	if (err)
-		goto err_free_root_table;
+		goto err_free_iopm;
 
 	return 0;
 
-err_free_root_table:
-	page_free(&mem_pool, cell->svm.npt_structs.root_table, 1);
 err_free_iopm:
 	page_free(&mem_pool, cell->svm.iopm, 3);
 
@@ -362,7 +358,6 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->svm.npt_structs, XAPIC_BASE, PAGE_SIZE,
 		       PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->svm.npt_structs.root_table, 1);
 	page_free(&mem_pool, cell->svm.iopm, 3);
 }
 

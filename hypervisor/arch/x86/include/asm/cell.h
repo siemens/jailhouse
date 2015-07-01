@@ -92,6 +92,9 @@ struct cell {
 		u8 padding[PAGE_SIZE];
 	} __attribute__((aligned(PAGE_SIZE))) comm_page;
 	/**< Page containing the communication region (shared with cell). */
+
+	/** Buffer for the EPT/NPT root-level page table. */
+	u8 __attribute__((aligned(PAGE_SIZE))) root_table_page[PAGE_SIZE];
 };
 
 extern struct cell root_cell;

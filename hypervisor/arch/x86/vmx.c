@@ -335,9 +335,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 
 	/* build root EPT of cell */
 	cell->vmx.ept_structs.root_paging = ept_paging;
-	cell->vmx.ept_structs.root_table = page_alloc(&mem_pool, 1);
-	if (!cell->vmx.ept_structs.root_table)
-		goto err_free_io_bitmap;
+	cell->vmx.ept_structs.root_table = (page_table_t)cell->root_table_page;
 
 	err = paging_create(&cell->vmx.ept_structs,
 			    paging_hvirt2phys(apic_access_page),
@@ -345,12 +343,10 @@ int vcpu_vendor_cell_init(struct cell *cell)
 			    EPT_FLAG_READ | EPT_FLAG_WRITE | EPT_FLAG_WB_TYPE,
 			    PAGING_NON_COHERENT);
 	if (err)
-		goto err_free_root_table;
+		goto err_free_io_bitmap;
 
 	return 0;
 
-err_free_root_table:
-	page_free(&mem_pool, cell->vmx.ept_structs.root_table, 1);
 err_free_io_bitmap:
 	page_free(&mem_pool, cell->vmx.io_bitmap, 2);
 
@@ -387,7 +383,6 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
 		       PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->vmx.ept_structs.root_table, 1);
 	page_free(&mem_pool, cell->vmx.io_bitmap, 2);
 }
 
