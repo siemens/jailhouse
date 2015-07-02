@@ -13,7 +13,7 @@
 #
 
 BUILT_IN_OBJECTS := built-in-amd.o built-in-intel.o
-COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o \
+COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
 		  paging.o ../../pci.o pci.o ioapic.o i8042.o vcpu.o \
 		  ../../pci_ivshmem.o
 

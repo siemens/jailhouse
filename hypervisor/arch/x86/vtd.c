@@ -463,8 +463,7 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 int iommu_init(void)
 {
 	unsigned long version, caps, ecaps, ctrls, sllps_caps = ~0UL;
-	unsigned int pt_levels, num_did, n;
-	unsigned int units = 0;
+	unsigned int units, pt_levels, num_did, n;
 	void *reg_base;
 	u64 base_addr;
 	int err;
@@ -482,9 +481,7 @@ int iommu_init(void)
 
 	int_remap_table_size_log2 = n;
 
-	while (units < JAILHOUSE_MAX_IOMMU_UNITS &&
-	       system_config->platform_info.x86.iommu_base[units])
-		units++;
+	units = iommu_count_units();
 	if (units == 0)
 		return trace_error(-EINVAL);
 

@@ -21,6 +21,8 @@
 #include <asm/cell.h>
 #include <asm/percpu.h>
 
+unsigned int iommu_count_units(void);
+
 int iommu_init(void);
 
 int iommu_cell_init(struct cell *cell);
