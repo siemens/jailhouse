@@ -482,7 +482,8 @@ int iommu_init(void)
 
 	int_remap_table_size_log2 = n;
 
-	while (system_config->platform_info.x86.iommu_base[units])
+	while (units < JAILHOUSE_MAX_IOMMU_UNITS &&
+	       system_config->platform_info.x86.iommu_base[units])
 		units++;
 	if (units == 0)
 		return trace_error(-EINVAL);
