@@ -23,7 +23,8 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -fno-stack-protector -fno-builtin-ffsl
 
 ifeq ($(SRCARCH),x86)
-KBUILD_CFLAGS += -mcmodel=kernel
+KBUILD_CFLAGS += -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+KBUILD_CFLAGS += $(call cc-option,-mno-avx,)
 KBUILD_CPPFLAGS += -m64
 BUILD_VARIANTS := amd intel
 endif
