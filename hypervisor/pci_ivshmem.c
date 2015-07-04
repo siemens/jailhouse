@@ -296,6 +296,9 @@ static void ivshmem_connect_cell(struct pci_ivshmem_data *iv,
 	struct pci_ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
 	struct pci_ivshmem_endpoint *ive = &iv->eps[cellnum];
 
+	d->bar[0] = PCI_BAR_64BIT;
+	d->bar[4] = PCI_BAR_64BIT;
+
 	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
 	memcpy(ive->bars, &default_bars, sizeof(default_bars));
 
