@@ -515,7 +515,7 @@ void pci_ivshmem_exit(struct pci_device *dev)
 
 	ivshmem_disconnect_cell(iv, cellnum);
 
-	if (iv->eps[0].device == dev) {
+	if (cellnum == 0) {
 		if (!iv->eps[1].device) {
 			*ivp = iv->next;
 			page_free(&mem_pool, iv, 1);
