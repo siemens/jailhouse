@@ -513,6 +513,8 @@ void pci_ivshmem_exit(struct pci_device *dev)
 
 	iv = *ivp;
 
+	ivshmem_disconnect_cell(iv, cellnum);
+
 	if (iv->eps[0].device == dev) {
 		if (!iv->eps[1].device) {
 			*ivp = iv->next;
@@ -521,5 +523,4 @@ void pci_ivshmem_exit(struct pci_device *dev)
 		}
 		iv->eps[0] = iv->eps[1];
 	}
-	ivshmem_disconnect_cell(iv, 1);
 }
