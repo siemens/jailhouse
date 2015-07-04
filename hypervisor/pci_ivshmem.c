@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014, 2015
  *
  * Author:
  *  Henning Schild <henning.schild@siemens.com>
@@ -44,15 +44,12 @@
 
 #define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
 
-struct virt_pci_bar {
-	char flags;
-	u64 sz;
-};
+#define IVSHMEM_BAR0_SIZE	256
+#define IVSHMEM_BAR4_SIZE	((0x18 * IVSHMEM_MSIX_VECTORS + 0xf) & ~0xf)
 
 struct pci_ivshmem_endpoint {
 	u32 cspace[IVSHMEM_CFG_SIZE / sizeof(u32)];
 	u32 ivpos;
-	struct virt_pci_bar bars[3];
 	struct pci_device *device;
 	struct pci_ivshmem_endpoint *remote;
 	struct apic_irq_message irq_msg;
@@ -77,22 +74,6 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = PCI_CFG_BAR/8 + 2,
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS |
 					   (PCI_CFG_BAR/8 + 2),
-};
-
-static const struct virt_pci_bar default_bars[3] = {
-	{
-		.flags = PCI_BAR_64BIT,
-		.sz = 256,
-	},
-	{
-		/* in jailhouse we leave this BAR empty, the shared memory
-		 * location and size are in our custom registers
-		 * IVSHMEM_CFG_SHMEM */
-	},
-	{	/* used for MSI-X vectors */
-		.flags = PCI_BAR_64BIT,
-		.sz = ((0x18 * IVSHMEM_MSIX_VECTORS) + 15) & ~0xf,
-	}
 };
 
 static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
@@ -300,7 +281,6 @@ static void ivshmem_connect_cell(struct pci_ivshmem_data *iv,
 	d->bar[4] = PCI_BAR_64BIT;
 
 	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
-	memcpy(ive->bars, &default_bars, sizeof(default_bars));
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] = (u32)(mem->virt_start >> 32);
@@ -348,7 +328,7 @@ int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 {
 	struct pci_ivshmem_endpoint *ive;
 	struct pci_device *device;
-	u64 mem_start, mem_sz;
+	u64 mem_start;
 
 	for (device = cell->virtual_device_list; device;
 	     device = device->next_virtual_device) {
@@ -358,16 +338,16 @@ int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 
 		/* BAR0: registers */
 		mem_start = (*(u64 *)&device->bar[0]) & ~0xfL;
-		mem_sz = ive->bars[0].sz;
-		if (addr >= mem_start && addr <= (mem_start + mem_sz - 4))
+		if (addr >= mem_start &&
+		    addr <= (mem_start + IVSHMEM_BAR0_SIZE - 4))
 			return ivshmem_register_mmio(ive, is_write,
 						     addr - mem_start,
 						     value);
 
 		/* BAR4: MSI-X */
 		mem_start = (*(u64 *)&device->bar[4]) & ~0xfL;
-		mem_sz = ive->bars[2].sz;
-		if (addr >= mem_start && addr <= (mem_start + mem_sz - 4))
+		if (addr >= mem_start &&
+		    addr <= (mem_start + IVSHMEM_BAR4_SIZE - 4))
 			return ivshmem_msix_mmio(ive, is_write,
 						 addr - mem_start, value);
 	}
