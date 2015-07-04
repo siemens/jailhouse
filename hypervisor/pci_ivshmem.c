@@ -213,11 +213,10 @@ static int ivshmem_register_mmio(struct pci_ivshmem_endpoint *ive,
 	}
 
 	if (offset == IVSHMEM_REG_DBELL) {
-		if (is_write) {
+		if (is_write)
 			ivshmem_write_doorbell(ive);
-		} else {
+		else
 			*value = 0;
-		}
 		return 1;
 	}
 	panic_printk("FATAL: Invalid ivshmem register %s, number %02x\n",
