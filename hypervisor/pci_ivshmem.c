@@ -469,7 +469,6 @@ int pci_ivshmem_init(struct cell *cell, struct pci_device *dev)
 	ivshmem_connect_cell(*ivp, dev, mem, 0);
 
 connected:
-	dev->cell = cell;
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(dev->info->bdf), cell->config->name);
 
