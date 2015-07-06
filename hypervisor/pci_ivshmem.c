@@ -76,6 +76,43 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 					   (PCI_CFG_BAR/8 + 2),
 };
 
+static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
+{
+	struct pci_ivshmem_endpoint *remote = ive->remote;
+	struct apic_irq_message irq_msg;
+
+	if (!remote)
+		return;
+
+	/* get a copy of the struct before using it, the read barrier makes
+	 * sure the copy is consistent */
+	irq_msg = remote->irq_msg;
+	memory_load_barrier();
+	if (irq_msg.valid)
+		apic_send_irq(irq_msg);
+}
+
+static int ivshmem_register_mmio(struct pci_ivshmem_endpoint *ive,
+				 bool is_write, u32 offset, u32 *value)
+{
+	/* read-only IVPosition */
+	if (offset == IVSHMEM_REG_IVPOS && !is_write) {
+		*value = ive->ivpos;
+		return 1;
+	}
+
+	if (offset == IVSHMEM_REG_DBELL) {
+		if (is_write)
+			ivshmem_write_doorbell(ive);
+		else
+			*value = 0;
+		return 1;
+	}
+	panic_printk("FATAL: Invalid ivshmem register %s, number %02x\n",
+		     is_write ? "write" : "read", offset);
+	return -1;
+}
+
 static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
 {
 	union pci_msix_registers c;
@@ -133,26 +170,6 @@ static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
 	return 0;
 }
 
-/**
- * update the command register
- * note that we only accept writes to two flags
- */
-static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
-{
-	u16 *cmd = (u16 *)&ive->cspace[PCI_CFG_COMMAND/4];
-	int err;
-
-	if ((val & PCI_CMD_MASTER) != (*cmd & PCI_CMD_MASTER)) {
-		*cmd = (*cmd & ~PCI_CMD_MASTER) | (val & PCI_CMD_MASTER);
-		err = ivshmem_update_msix(ive);
-		if (err)
-			return err;
-	}
-
-	*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
-	return 0;
-}
-
 static int ivshmem_msix_mmio(struct pci_ivshmem_endpoint *ive, bool is_write,
 			     u32 offset, u32 *value)
 {
@@ -187,41 +204,24 @@ fail:
 	return -1;
 }
 
-static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
+/**
+ * update the command register
+ * note that we only accept writes to two flags
+ */
+static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
 {
-	struct pci_ivshmem_endpoint *remote = ive->remote;
-	struct apic_irq_message irq_msg;
+	u16 *cmd = (u16 *)&ive->cspace[PCI_CFG_COMMAND/4];
+	int err;
 
-	if (!remote)
-		return;
-
-	/* get a copy of the struct before using it, the read barrier makes
-	 * sure the copy is consistent */
-	irq_msg = remote->irq_msg;
-	memory_load_barrier();
-	if (irq_msg.valid)
-		apic_send_irq(irq_msg);
-}
-
-static int ivshmem_register_mmio(struct pci_ivshmem_endpoint *ive,
-				 bool is_write, u32 offset, u32 *value)
-{
-	/* read-only IVPosition */
-	if (offset == IVSHMEM_REG_IVPOS && !is_write) {
-		*value = ive->ivpos;
-		return 1;
+	if ((val & PCI_CMD_MASTER) != (*cmd & PCI_CMD_MASTER)) {
+		*cmd = (*cmd & ~PCI_CMD_MASTER) | (val & PCI_CMD_MASTER);
+		err = ivshmem_update_msix(ive);
+		if (err)
+			return err;
 	}
 
-	if (offset == IVSHMEM_REG_DBELL) {
-		if (is_write)
-			ivshmem_write_doorbell(ive);
-		else
-			*value = 0;
-		return 1;
-	}
-	panic_printk("FATAL: Invalid ivshmem register %s, number %02x\n",
-		     is_write ? "write" : "read", offset);
-	return -1;
+	*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
+	return 0;
 }
 
 static int ivshmem_write_msix_control(struct pci_ivshmem_endpoint *ive, u32 val)
