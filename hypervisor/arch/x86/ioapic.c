@@ -268,6 +268,82 @@ static struct cell_ioapic *ioapic_find_by_address(struct cell *cell,
 	return NULL;
 }
 
+/**
+ * x86_ioapic_handler() - Handler for accesses to IOAPIC
+ * @cell:	Request issuing cell
+ * @is_write:	True if write access
+ * @addr:	Address accessed
+ * @value:	Pointer to value for reading/writing
+ *
+ * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
+ */
+int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
+			  u32 *value)
+{
+	union ioapic_redir_entry *shadow_table;
+	struct cell_ioapic *ioapic;
+	u32 index, entry;
+
+	ioapic = ioapic_find_by_address(cell, addr);
+	if (!ioapic)
+		return 0;
+
+	switch (addr - ioapic->info->address) {
+	case IOAPIC_REG_INDEX:
+		if (is_write)
+			ioapic->index_reg_val = *value;
+		else
+			*value = ioapic->index_reg_val;
+		return 1;
+	case IOAPIC_REG_DATA:
+		index = ioapic->index_reg_val;
+
+		if (index == IOAPIC_ID || index == IOAPIC_VER) {
+			if (is_write)
+				goto invalid_access;
+			*value = ioapic_reg_read(ioapic->phys_ioapic, index);
+			return 1;
+		}
+
+		if (index < IOAPIC_REDIR_TBL_START ||
+		    index > IOAPIC_REDIR_TBL_END)
+			goto invalid_access;
+
+		entry = (index - IOAPIC_REDIR_TBL_START) / 2;
+		if ((ioapic->pin_bitmap & (1UL << entry)) == 0)
+			goto invalid_access;
+
+		if (is_write) {
+			if (ioapic_virt_redir_write(ioapic, index, *value) < 0)
+				goto invalid_access;
+		} else {
+			index -= IOAPIC_REDIR_TBL_START;
+			shadow_table = ioapic->phys_ioapic->shadow_redir_table;
+			*value = shadow_table[index / 2].raw[index % 2];
+		}
+		return 1;
+	case IOAPIC_REG_EOI:
+		if (!is_write || ioapic->pin_bitmap == 0)
+			goto invalid_access;
+		/*
+		 * Just write the EOI if the cell has any assigned pin. It
+		 * would be complex to virtualize it in a way that cells are
+		 * unable to ack vectors of other cells. It is therefore not
+		 * recommended to use level-triggered IOAPIC interrupts in
+		 * non-root cells.
+		 */
+		mmio_write32(ioapic->phys_ioapic->reg_base + IOAPIC_REG_EOI,
+			     *value);
+		return 1;
+	}
+
+invalid_access:
+	panic_printk("FATAL: Invalid IOAPIC %s, reg: %x, index: %x\n",
+		     is_write ? "write" : "read", addr - ioapic->info->address,
+		     ioapic->index_reg_val);
+	return -1;
+}
+
 int ioapic_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *irqchip =
@@ -356,82 +432,6 @@ void ioapic_config_commit(struct cell *cell_added_removed)
 				panic_stop();
 			}
 		}
-}
-
-/**
- * x86_ioapic_handler() - Handler for accesses to IOAPIC
- * @cell:	Request issuing cell
- * @is_write:	True if write access
- * @addr:	Address accessed
- * @value:	Pointer to value for reading/writing
- *
- * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
- */
-int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
-			  u32 *value)
-{
-	union ioapic_redir_entry *shadow_table;
-	struct cell_ioapic *ioapic;
-	u32 index, entry;
-
-	ioapic = ioapic_find_by_address(cell, addr);
-	if (!ioapic)
-		return 0;
-
-	switch (addr - ioapic->info->address) {
-	case IOAPIC_REG_INDEX:
-		if (is_write)
-			ioapic->index_reg_val = *value;
-		else
-			*value = ioapic->index_reg_val;
-		return 1;
-	case IOAPIC_REG_DATA:
-		index = ioapic->index_reg_val;
-
-		if (index == IOAPIC_ID || index == IOAPIC_VER) {
-			if (is_write)
-				goto invalid_access;
-			*value = ioapic_reg_read(ioapic->phys_ioapic, index);
-			return 1;
-		}
-
-		if (index < IOAPIC_REDIR_TBL_START ||
-		    index > IOAPIC_REDIR_TBL_END)
-			goto invalid_access;
-
-		entry = (index - IOAPIC_REDIR_TBL_START) / 2;
-		if ((ioapic->pin_bitmap & (1UL << entry)) == 0)
-			goto invalid_access;
-
-		if (is_write) {
-			if (ioapic_virt_redir_write(ioapic, index, *value) < 0)
-				goto invalid_access;
-		} else {
-			index -= IOAPIC_REDIR_TBL_START;
-			shadow_table = ioapic->phys_ioapic->shadow_redir_table;
-			*value = shadow_table[index / 2].raw[index % 2];
-		}
-		return 1;
-	case IOAPIC_REG_EOI:
-		if (!is_write || ioapic->pin_bitmap == 0)
-			goto invalid_access;
-		/*
-		 * Just write the EOI if the cell has any assigned pin. It
-		 * would be complex to virtualize it in a way that cells are
-		 * unable to ack vectors of other cells. It is therefore not
-		 * recommended to use level-triggered IOAPIC interrupts in
-		 * non-root cells.
-		 */
-		mmio_write32(ioapic->phys_ioapic->reg_base + IOAPIC_REG_EOI,
-			     *value);
-		return 1;
-	}
-
-invalid_access:
-	panic_printk("FATAL: Invalid IOAPIC %s, reg: %x, index: %x\n",
-		     is_write ? "write" : "read", addr - ioapic->info->address,
-		     ioapic->index_reg_val);
-	return -1;
 }
 
 void ioapic_shutdown(void)
