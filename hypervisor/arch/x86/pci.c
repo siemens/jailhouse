@@ -166,9 +166,9 @@ int x86_pci_config_handler(u16 port, bool dir_in, unsigned int size)
 			goto invalid_access;
 
 		if (dir_in)
-			set_guest_rax_reg(cell->pci_addr_port_val, size);
+			set_guest_rax_reg(cell->arch.pci_addr_port_val, size);
 		else
-			cell->pci_addr_port_val = get_guest_rax_reg(size);
+			cell->arch.pci_addr_port_val = get_guest_rax_reg(size);
 		result = 1;
 	} else if (port >= PCI_REG_DATA_PORT &&
 		   port < (PCI_REG_DATA_PORT + 4)) {
@@ -182,7 +182,7 @@ int x86_pci_config_handler(u16 port, bool dir_in, unsigned int size)
 		 * are not affected by concurrent manipulations by other CPUs
 		 * of this cell.
 		 */
-		addr_port_val = cell->pci_addr_port_val;
+		addr_port_val = cell->arch.pci_addr_port_val;
 
 		bdf = addr_port_val >> PCI_ADDR_BDF_SHIFT;
 		device = pci_get_assigned_device(cell, bdf);
@@ -203,7 +203,7 @@ int x86_pci_config_handler(u16 port, bool dir_in, unsigned int size)
 invalid_access:
 	panic_printk("FATAL: Invalid PCI config %s, port: %x, size %d, "
 		     "address port: %x\n", dir_in ? "read" : "write", port,
-		     size, cell->pci_addr_port_val);
+		     size, cell->arch.pci_addr_port_val);
 	return -1;
 
 }

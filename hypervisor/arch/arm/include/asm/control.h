@@ -13,9 +13,6 @@
 #ifndef _JAILHOUSE_ASM_CONTROL_H
 #define _JAILHOUSE_ASM_CONTROL_H
 
-#include <asm/cell.h>
-#include <asm/percpu.h>
-
 #define SGI_INJECT	0
 #define SGI_CPU_OFF	1
 
@@ -23,6 +20,9 @@
 #define CACHES_CLEAN_INVALIDATE	1
 
 #ifndef __ASSEMBLY__
+
+#include <jailhouse/cell.h>
+#include <asm/percpu.h>
 
 void arch_cpu_dcaches_flush(unsigned int action);
 void arch_cpu_icache_flush(void);

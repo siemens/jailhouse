@@ -368,7 +368,7 @@ int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value)
 	unsigned int n;
 	u64 base_addr;
 
-	if (!this_cell()->vtd.ir_emulation)
+	if (!this_cell()->arch.vtd.ir_emulation)
 		return 0;
 
 	for (n = 0; n < dmar_units; n++) {
@@ -433,7 +433,7 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 	unsigned long size;
 	u64 iqt;
 
-	root_cell.vtd.ir_emulation = true;
+	root_cell.arch.vtd.ir_emulation = true;
 
 	unit->irta = mmio_read64(reg_base + VTD_IRTA_REG);
 	unit->irt_entries = 2 << (unit->irta & VTD_IRTA_SIZE_MASK);
@@ -544,7 +544,7 @@ int iommu_init(void)
 			err = vtd_init_ir_emulation(n, reg_base);
 			if (err)
 				return err;
-		} else if (root_cell.vtd.ir_emulation) {
+		} else if (root_cell.arch.vtd.ir_emulation) {
 			/* IR+QI must be either on or off in all units */
 			return trace_error(-EIO);
 		}
@@ -693,7 +693,7 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 
 	context_entry = &context_entry_table[PCI_DEVFN(bdf)];
 	context_entry->lo_word = VTD_CTX_PRESENT | VTD_CTX_TTYPE_MLP_UNTRANS |
-		paging_hvirt2phys(cell->vtd.pg_structs.root_table);
+		paging_hvirt2phys(cell->arch.vtd.pg_structs.root_table);
 	context_entry->hi_word =
 		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
 		(cell->id << VTD_CTX_DID_SHIFT);
@@ -750,9 +750,9 @@ int iommu_cell_init(struct cell *cell)
 	if (cell->id >= dmar_num_did)
 		return trace_error(-ERANGE);
 
-	cell->vtd.pg_structs.root_paging = vtd_paging;
-	cell->vtd.pg_structs.root_table = page_alloc(&mem_pool, 1);
-	if (!cell->vtd.pg_structs.root_table)
+	cell->arch.vtd.pg_structs.root_paging = vtd_paging;
+	cell->arch.vtd.pg_structs.root_table = page_alloc(&mem_pool, 1);
+	if (!cell->arch.vtd.pg_structs.root_table)
 		return -ENOMEM;
 
 	/* reserve regions for IRQ chips (if not done already) */
@@ -785,7 +785,7 @@ int iommu_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		flags |= VTD_PAGE_WRITE;
 
-	return paging_create(&cell->vtd.pg_structs, mem->phys_start,
+	return paging_create(&cell->arch.vtd.pg_structs, mem->phys_start,
 			     mem->size, mem->virt_start, flags,
 			     PAGING_COHERENT);
 }
@@ -800,7 +800,7 @@ int iommu_unmap_memory_region(struct cell *cell,
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
 
-	return paging_destroy(&cell->vtd.pg_structs, mem->virt_start,
+	return paging_destroy(&cell->arch.vtd.pg_structs, mem->virt_start,
 			      mem->size, PAGING_COHERENT);
 }
 
@@ -912,7 +912,7 @@ void iommu_cell_exit(struct cell *cell)
 	if (dmar_units == 0)
 		return;
 
-	page_free(&mem_pool, cell->vtd.pg_structs.root_table, 1);
+	page_free(&mem_pool, cell->arch.vtd.pg_structs.root_table, 1);
 
 	/*
 	 * Note that reservation regions of IOAPICs won't be released because
@@ -993,7 +993,7 @@ void iommu_shutdown(void)
 		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
 			vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 0);
 			vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 0);
-			if (root_cell.vtd.ir_emulation)
+			if (root_cell.arch.vtd.ir_emulation)
 				vtd_restore_ir(n, reg_base);
 			else
 				vtd_update_gcmd_reg(reg_base, VTD_GCMD_QIE, 0);
@@ -1002,5 +1002,5 @@ void iommu_shutdown(void)
 
 bool iommu_cell_emulates_ir(struct cell *cell)
 {
-	return cell->vtd.ir_emulation;
+	return cell->arch.vtd.ir_emulation;
 }

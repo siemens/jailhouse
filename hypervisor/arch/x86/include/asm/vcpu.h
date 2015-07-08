@@ -13,11 +13,10 @@
 #ifndef _JAILHOUSE_ASM_VCPU_H
 #define _JAILHOUSE_ASM_VCPU_H
 
-#include <jailhouse/entry.h>
+#include <jailhouse/cell.h>
 #include <jailhouse/cell-config.h>
+#include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
-#include <jailhouse/types.h>
-#include <asm/cell.h>
 #include <asm/percpu.h>
 #include <asm/processor.h>
 

@@ -10,9 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/cell.h>
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
-#include <asm/cell.h>
 #include <asm/control.h>
 #include <asm/gic_common.h>
 #include <asm/irqchip.h>

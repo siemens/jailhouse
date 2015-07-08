@@ -317,7 +317,7 @@ int vcpu_vendor_init(void)
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys, unsigned long flags)
 {
-	return paging_virt2phys(&cpu_data->cell->vmx.ept_structs, gphys,
+	return paging_virt2phys(&cpu_data->cell->arch.vmx.ept_structs, gphys,
 				flags);
 }
 
@@ -326,15 +326,16 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	int err = -ENOMEM;
 
 	/* allocate io_bitmap */
-	cell->vmx.io_bitmap = page_alloc(&mem_pool, 2);
-	if (!cell->vmx.io_bitmap)
+	cell->arch.vmx.io_bitmap = page_alloc(&mem_pool, 2);
+	if (!cell->arch.vmx.io_bitmap)
 		return err;
 
 	/* build root EPT of cell */
-	cell->vmx.ept_structs.root_paging = ept_paging;
-	cell->vmx.ept_structs.root_table = (page_table_t)cell->root_table_page;
+	cell->arch.vmx.ept_structs.root_paging = ept_paging;
+	cell->arch.vmx.ept_structs.root_table =
+		(page_table_t)cell->arch.root_table_page;
 
-	err = paging_create(&cell->vmx.ept_structs,
+	err = paging_create(&cell->arch.vmx.ept_structs,
 			    paging_hvirt2phys(apic_access_page),
 			    PAGE_SIZE, XAPIC_BASE,
 			    EPT_FLAG_READ | EPT_FLAG_WRITE | EPT_FLAG_WB_TYPE,
@@ -345,7 +346,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	return 0;
 
 err_free_io_bitmap:
-	page_free(&mem_pool, cell->vmx.io_bitmap, 2);
+	page_free(&mem_pool, cell->arch.vmx.io_bitmap, 2);
 
 	return err;
 }
@@ -365,22 +366,22 @@ int vcpu_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
 		phys_start = paging_hvirt2phys(&cell->comm_page);
 
-	return paging_create(&cell->vmx.ept_structs, phys_start, mem->size,
+	return paging_create(&cell->arch.vmx.ept_structs, phys_start, mem->size,
 			     mem->virt_start, flags, PAGING_NON_COHERENT);
 }
 
 int vcpu_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 {
-	return paging_destroy(&cell->vmx.ept_structs, mem->virt_start,
+	return paging_destroy(&cell->arch.vmx.ept_structs, mem->virt_start,
 			      mem->size, PAGING_NON_COHERENT);
 }
 
 void vcpu_vendor_cell_exit(struct cell *cell)
 {
-	paging_destroy(&cell->vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
+	paging_destroy(&cell->arch.vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
 		       PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->vmx.io_bitmap, 2);
+	page_free(&mem_pool, cell->arch.vmx.io_bitmap, 2);
 }
 
 void vcpu_tlb_flush(void)
@@ -437,14 +438,14 @@ static bool vmx_set_cell_config(void)
 	u8 *io_bitmap;
 	bool ok = true;
 
-	io_bitmap = cell->vmx.io_bitmap;
+	io_bitmap = cell->arch.vmx.io_bitmap;
 	ok &= vmcs_write64(IO_BITMAP_A, paging_hvirt2phys(io_bitmap));
 	ok &= vmcs_write64(IO_BITMAP_B,
 			   paging_hvirt2phys(io_bitmap + PAGE_SIZE));
 
 	ok &= vmcs_write64(EPT_POINTER,
-			paging_hvirt2phys(cell->vmx.ept_structs.root_table) |
-			EPT_TYPE_WRITEBACK | EPT_PAGE_WALK_LEN);
+		paging_hvirt2phys(cell->arch.vmx.ept_structs.root_table) |
+		EPT_TYPE_WRITEBACK | EPT_PAGE_WALK_LEN);
 
 	return ok;
 }
@@ -1131,8 +1132,8 @@ void vmx_entry_failure(void)
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *iobm)
 {
-	iobm->data = cell->vmx.io_bitmap;
-	iobm->size = sizeof(cell->vmx.io_bitmap);
+	iobm->data = cell->arch.vmx.io_bitmap;
+	iobm->size = sizeof(cell->arch.vmx.io_bitmap);
 }
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)

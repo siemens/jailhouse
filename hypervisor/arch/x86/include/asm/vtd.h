@@ -13,10 +13,10 @@
 #ifndef _JAILHOUSE_ASM_VTD_H
 #define _JAILHOUSE_ASM_VTD_H
 
+#include <jailhouse/cell.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/utils.h>
 #include <asm/apic.h>
-#include <asm/cell.h>
 
 #include <jailhouse/cell-config.h>
 

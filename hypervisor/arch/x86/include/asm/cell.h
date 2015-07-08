@@ -18,14 +18,14 @@
 #include <jailhouse/paging.h>
 
 #include <jailhouse/cell-config.h>
-#include <jailhouse/hypercall.h>
 
 struct cell_ioapic;
-struct pci_device;
 
-/** Cell-related states. */
-/* TODO: factor out arch-independent bits, define struct arch_cell */
-struct cell {
+/** x86-specific cell states. */
+struct arch_cell {
+	/** Buffer for the EPT/NPT root-level page table. */
+	u8 __attribute__((aligned(PAGE_SIZE))) root_table_page[PAGE_SIZE];
+
 	union {
 		struct {
 			/** PIO access bitmap. */
@@ -52,31 +52,6 @@ struct cell {
 		/* TODO: No struct vtd equivalent for SVM code yet. */
 	};
 
-	/** ID of the cell. */
-	unsigned int id;
-	/** Number of pages used for storing cell-specific states and
-	 * configuration data. */
-	unsigned int data_pages;
-	/** Pointer to static cell description. */
-	struct jailhouse_cell_desc *config;
-
-	/** Pointer to cell's CPU set. */
-	struct cpu_set *cpu_set;
-	/** Stores the cell's CPU set if small enough. */
-	struct cpu_set small_cpu_set;
-
-	/** True while the cell can be loaded by the root cell. */
-	bool loadable;
-
-	/** Pointer to next cell in the system. */
-	struct cell *next;
-
-	/** List of PCI devices assigned to this cell. */
-	struct pci_device *pci_devices;
-	/** List of PCI devices assigned to this cell that support MSI-X. */
-	struct pci_device *msix_device_list;
-	/** List of virtual PCI devices assigned to this cell. */
-	struct pci_device *virtual_device_list;
 	/** Shadow value of PCI config space address port register. */
 	u32 pci_addr_port_val;
 
@@ -84,19 +59,6 @@ struct cell {
 	struct cell_ioapic *ioapics;
 	/** Number of assigned IOAPICs. */
 	unsigned int num_ioapics;
-
-	union {
-		/** Communication region. */
-		struct jailhouse_comm_region comm_region;
-		/** Padding to full page size. */
-		u8 padding[PAGE_SIZE];
-	} __attribute__((aligned(PAGE_SIZE))) comm_page;
-	/**< Page containing the communication region (shared with cell). */
-
-	/** Buffer for the EPT/NPT root-level page table. */
-	u8 __attribute__((aligned(PAGE_SIZE))) root_table_page[PAGE_SIZE];
 };
-
-extern struct cell root_cell;
 
 #endif /* !_JAILHOUSE_ASM_CELL_H */

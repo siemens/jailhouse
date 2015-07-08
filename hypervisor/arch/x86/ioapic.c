@@ -39,8 +39,8 @@ enum ioapic_handover {PINS_ACTIVE, PINS_MASKED};
 	     (ioapic)++, (counter)++)
 
 #define for_each_cell_ioapic(ioapic, cell, counter)		\
-	for ((ioapic) = (cell)->ioapics, (counter) = 0;		\
-	     (counter) < (cell)->num_ioapics;			\
+	for ((ioapic) = (cell)->arch.ioapics, (counter) = 0;	\
+	     (counter) < (cell)->arch.num_ioapics;		\
 	     (ioapic)++, (counter)++)
 
 static struct phys_ioapic phys_ioapics[IOAPIC_MAX_CHIPS];
@@ -281,8 +281,8 @@ int ioapic_cell_init(struct cell *cell)
 	if (cell->config->num_irqchips > IOAPIC_MAX_CHIPS)
 		return trace_error(-ERANGE);
 
-	cell->ioapics = page_alloc(&mem_pool, 1);
-	if (!cell->ioapics)
+	cell->arch.ioapics = page_alloc(&mem_pool, 1);
+	if (!cell->arch.ioapics)
 		return -ENOMEM;
 
 	for (n = 0; n < cell->config->num_irqchips; n++, irqchip++) {
@@ -290,12 +290,12 @@ int ioapic_cell_init(struct cell *cell)
 		if (!phys_ioapic)
 			return -ENOMEM;
 
-		ioapic = &cell->ioapics[n];
+		ioapic = &cell->arch.ioapics[n];
 		ioapic->info = irqchip;
 		ioapic->cell = cell;
 		ioapic->phys_ioapic = phys_ioapic;
 		ioapic->pin_bitmap = (u32)irqchip->pin_bitmap;
-		cell->num_ioapics++;
+		cell->arch.num_ioapics++;
 
 		if (cell != &root_cell) {
 			root_ioapic = ioapic_find_by_address(&root_cell,
@@ -326,7 +326,7 @@ void ioapic_cell_exit(struct cell *cell)
 				root_ioapic->info->pin_bitmap;
 	}
 
-	page_free(&mem_pool, cell->ioapics, 1);
+	page_free(&mem_pool, cell->arch.ioapics, 1);
 }
 
 void ioapic_config_commit(struct cell *cell_added_removed)

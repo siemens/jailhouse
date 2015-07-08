@@ -11,12 +11,12 @@
  */
 
 #include <jailhouse/entry.h>
+#include <jailhouse/cell.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/types.h>
 #include <asm/apic.h>
-#include <asm/cell.h>
 #include <asm/iommu.h>
 #include <asm/percpu.h>
 

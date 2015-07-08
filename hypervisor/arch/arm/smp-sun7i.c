@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/cell.h>
+#include <jailhouse/cell.h>
 #include <asm/psci.h>
 #include <asm/smp.h>
 

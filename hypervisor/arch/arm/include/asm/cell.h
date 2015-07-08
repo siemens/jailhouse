@@ -23,6 +23,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/hypercall.h>
 
+/** ARM-specific cell states. */
 struct arch_cell {
 	struct paging_structures mm;
 	struct smp_ops *smp;
@@ -35,27 +36,9 @@ struct arch_cell {
 	unsigned int last_virt_id;
 };
 
-struct cell {
-	struct arch_cell arch;
-
-	unsigned int id;
-	unsigned int data_pages;
-	struct jailhouse_cell_desc *config;
-
-	struct cpu_set *cpu_set;
-	struct cpu_set small_cpu_set;
-
-	bool loadable;
-
-	struct cell *next;
-
-	union {
-		struct jailhouse_comm_region comm_region;
-		u8 padding[PAGE_SIZE];
-	} __attribute__((aligned(PAGE_SIZE))) comm_page;
+/** PCI-related cell states. */
+struct pci_cell {
 };
-
-extern struct cell root_cell;
 
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_CELL_H */

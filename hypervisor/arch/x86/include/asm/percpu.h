@@ -27,7 +27,7 @@
 
 #ifndef __ASSEMBLY__
 
-#include <asm/cell.h>
+#include <jailhouse/cell.h>
 #include <asm/spinlock.h>
 #include <asm/svm.h>
 #include <asm/vmx.h>

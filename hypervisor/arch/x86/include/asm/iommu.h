@@ -14,11 +14,11 @@
 #define _JAILHOUSE_ASM_IOMMU_H
 
 #include <jailhouse/entry.h>
+#include <jailhouse/cell.h>
 #include <jailhouse/cell-config.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/types.h>
 #include <asm/apic.h>
-#include <asm/cell.h>
 #include <asm/percpu.h>
 
 unsigned int iommu_count_units(void);
