@@ -52,8 +52,12 @@
 
 #ifndef __ASSEMBLY__
 
+#include <jailhouse/types.h>
+
+struct cell;
 struct trap_context;
 struct per_cpu;
+
 struct psci_mbox {
 	unsigned long entry;
 	unsigned long context;

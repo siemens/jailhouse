@@ -10,6 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/types.h>
+
 struct mmio_access {
 	unsigned long addr;
 	bool is_write;
