@@ -21,12 +21,9 @@
 #include <jailhouse/hypercall.h>
 #include <asm/apic.h>
 #include <asm/control.h>
-#include <asm/io.h>
 #include <asm/iommu.h>
-#include <asm/pci.h>
 #include <asm/vcpu.h>
 #include <asm/vmx.h>
-#include <asm/vtd.h>
 
 #define CR0_IDX		0
 #define CR4_IDX		1
