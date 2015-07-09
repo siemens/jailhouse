@@ -52,7 +52,7 @@
 #define PCI_BDF_PARAMS(bdf)	(bdf) >> 8, ((bdf) >> 3) & 0x1f, (bdf) & 7
 
 /** Static limit of MSI-X vectors supported by Jailhouse per device. */
-#define PCI_MAX_MSIX_VECTORS	16
+#define PCI_MAX_MSIX_VECTORS	2048
 
 /**
  * Access moderation return codes.
