@@ -578,7 +578,7 @@ static int pci_add_virtual_device(struct cell *cell, struct pci_device *device)
 
 static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 {
-	unsigned int n, size = device->info->msix_region_size;
+	unsigned int n, pages, size = device->info->msix_region_size;
 	int err;
 
 	printk("Adding PCI device %02x:%02x.%x to cell \"%s\"\n",
@@ -605,11 +605,25 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 		if (err)
 			goto error_page_free;
 
+		if (device->info->num_msix_vectors > PCI_EMBEDDED_MSIX_VECTS) {
+			pages = PAGES(sizeof(union pci_msix_vector) *
+				      device->info->num_msix_vectors);
+			device->msix_vectors = page_alloc(&mem_pool, pages);
+			if (!device->msix_vectors) {
+				err = -ENOMEM;
+				goto error_unmap_table;
+			}
+		}
+
 		device->next_msix_device = cell->msix_device_list;
 		cell->msix_device_list = device;
 	}
 	return err;
 
+error_unmap_table:
+	/* cannot fail, destruction of same size as construction */
+	paging_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
+		       size, PAGING_NON_COHERENT);
 error_page_free:
 	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
 error_remove_dev:
@@ -648,6 +662,11 @@ static void pci_remove_physical_device(struct pci_device *device)
 	paging_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
 		       size, PAGING_NON_COHERENT);
 	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
+
+	if (device->msix_vectors != device->msix_vector_array)
+		page_free(&mem_pool, device->msix_vectors,
+			  PAGES(sizeof(union pci_msix_vector) *
+				device->info->num_msix_vectors));
 
 	prev_msix_device = device->cell->msix_device_list;
 	if (prev_msix_device == device) {
@@ -689,13 +708,9 @@ int pci_cell_init(struct cell *cell)
 	 * handy pointers. The cell pointer also encodes active ownership.
 	 */
 	for (ndev = 0; ndev < cell->config->num_pci_devices; ndev++) {
-		if (dev_infos[ndev].num_msix_vectors > PCI_MAX_MSIX_VECTORS) {
-			err = trace_error(-ERANGE);
-			goto error;
-		}
-
 		device = &cell->pci_devices[ndev];
 		device->info = &dev_infos[ndev];
+		device->msix_vectors = device->msix_vector_array;
 
 		if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
 			err = pci_ivshmem_init(cell, device);

@@ -56,8 +56,8 @@
 /** Extract PCI bus, device and function as parameter list from BDF form. */
 #define PCI_BDF_PARAMS(bdf)	(bdf) >> 8, ((bdf) >> 3) & 0x1f, (bdf) & 7
 
-/** Static limit of MSI-X vectors supported by Jailhouse per device. */
-#define PCI_MAX_MSIX_VECTORS	16
+/** MSI-X vectors supported per device without extra allocation. */
+#define PCI_EMBEDDED_MSIX_VECTS	16
 
 /**
  * Access moderation return codes.
@@ -139,7 +139,9 @@ struct pci_device {
 	/** Real MSI-X table. */
 	union pci_msix_vector *msix_table;
 	/** Shadow state of MSI-X table. */
-	union pci_msix_vector msix_vectors[PCI_MAX_MSIX_VECTORS];
+	union pci_msix_vector *msix_vectors;
+	/** Buffer for shadow table of up to PCI_EMBEDDED_MSIX_VECTS vectors. */
+	union pci_msix_vector msix_vector_array[PCI_EMBEDDED_MSIX_VECTS];
 };
 
 int pci_init(void);
