@@ -26,32 +26,35 @@ static void __attribute__((naked)) __attribute__((noinline))
 cpu_switch_el2(unsigned long phys_bootstrap, virt2phys_t virt2phys)
 {
 	asm volatile(
-	/*
-	 * The linux hyp stub allows to install the vectors with a single hvc.
-	 * The vector base address is in r0 (phys_bootstrap).
-	 */
-	"hvc	#0\n"
+		/*
+		 * The linux hyp stub allows to install the vectors with a
+		 * single hvc. The vector base address is in r0
+		 * (phys_bootstrap).
+		 */
+		"hvc	#0\n\t"
 
-	/*
-	 * Now that the bootstrap vectors are installed, call setup_el2 with
-	 * the translated physical values of lr and sp as arguments
-	 */
-	"mov	r0, sp\n"
-	"push	{lr}\n"
-	"blx	%0\n"
-	"pop	{lr}\n"
-	"push	{r0}\n"
-	"mov	r0, lr\n"
-	"blx	%0\n"
-	"pop	{r1}\n"
-	"hvc	#0\n"
-	:
-	: "r" (virt2phys)
-	/*
-	 * The call to virt2phys may clobber all temp registers. This list
-	 * ensures that the compiler uses a decent register for hvirt2phys.
-	 */
-	: "cc", "memory", "r0", "r1", "r2", "r3");
+		/*
+		 * Now that the bootstrap vectors are installed, call setup_el2
+		 * with the translated physical values of lr and sp as
+		 * arguments.
+		 */
+		"mov	r0, sp\n\t"
+		"push	{lr}\n\t"
+		"blx	%0\n\t"
+		"pop	{lr}\n\t"
+		"push	{r0}\n\t"
+		"mov	r0, lr\n\t"
+		"blx	%0\n\t"
+		"pop	{r1}\n\t"
+		"hvc	#0\n\t"
+		:
+		: "r" (virt2phys)
+		/*
+		 * The call to virt2phys may clobber all temp registers. This
+		 * list ensures that the compiler uses a decent register for
+		 * hvirt2phys.
+		 */
+		: "cc", "memory", "r0", "r1", "r2", "r3");
 }
 
 static inline void  __attribute__((always_inline))
@@ -59,19 +62,19 @@ cpu_switch_phys2virt(phys2virt_t phys2virt)
 {
 	/* phys2virt is allowed to touch the stack */
 	asm volatile(
-	"mov	r0, lr\n"
-	"blx	%0\n"
-	/* Save virt_lr */
-	"push	{r0}\n"
-	/* Translate phys_sp */
-	"mov	r0, sp\n"
-	"blx	%0\n"
-	/* Jump back to virtual addresses */
-	"mov	sp, r0\n"
-	"pop	{pc}\n"
-	:
-	: "r" (phys2virt)
-	: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
+		"mov	r0, lr\n\t"
+		"blx	%0\n\t"
+		/* Save virt_lr */
+		"push	{r0}\n\t"
+		/* Translate phys_sp */
+		"mov	r0, sp\n\t"
+		"blx	%0\n\t"
+		/* Jump back to virtual addresses */
+		"mov	sp, r0\n\t"
+		"pop	{pc}\n\t"
+		:
+		: "r" (phys2virt)
+		: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
 }
 
 #endif /* !__ASSEMBLY__ */

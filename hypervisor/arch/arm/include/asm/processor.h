@@ -163,13 +163,13 @@ struct registers {
 	unsigned long usr[NUM_USR_REGS];
 };
 
-#define dmb(domain)	asm volatile("dmb " #domain "\n" ::: "memory")
-#define dsb(domain)	asm volatile("dsb " #domain "\n" ::: "memory")
-#define isb()		asm volatile("isb\n")
+#define dmb(domain)	asm volatile("dmb " #domain ::: "memory")
+#define dsb(domain)	asm volatile("dsb " #domain ::: "memory")
+#define isb()		asm volatile("isb")
 
-#define wfe()		asm volatile("wfe\n")
-#define wfi()		asm volatile("wfi\n")
-#define sev()		asm volatile("sev\n")
+#define wfe()		asm volatile("wfe")
+#define wfi()		asm volatile("wfi")
+#define sev()		asm volatile("sev")
 
 unsigned int smc(unsigned int r0, ...);
 unsigned int hvc(unsigned int r0, ...);

@@ -152,7 +152,7 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 	cpu_switch_phys2virt(phys2virt);
 
 	/* Not reached (cannot be a while(1), it confuses the compiler) */
-	asm volatile("b	.\n");
+	asm volatile("b	.");
 }
 
 /*

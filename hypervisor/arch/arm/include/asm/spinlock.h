@@ -40,23 +40,24 @@ static inline void spin_lock(spinlock_t *lock)
 
 	/* Take the lock by updating the high part atomically */
 	asm volatile (
-"	.arch_extension mp\n"
-"	pldw	[%3]\n"
-"1:	ldrex	%0, [%3]\n"
-"	add	%1, %0, %4\n"
-"	strex	%2, %1, [%3]\n"
-"	teq	%2, #0\n"
-"	bne	1b"
-	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
-	: "r" (&lock->slock), "I" (1 << TICKET_SHIFT)
-	: "cc");
+		".arch_extension mp\n\t"
+		"pldw	[%3]\n\t"
+		"1:\n\t"
+		"ldrex	%0, [%3]\n\t"
+		"add	%1, %0, %4\n\t"
+		"strex	%2, %1, [%3]\n\t"
+		"teq	%2, #0\n\t"
+		"bne	1b\n\t"
+		: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+		: "r" (&lock->slock), "I" (1 << TICKET_SHIFT)
+		: "cc");
 
 	while (lockval.tickets.next != lockval.tickets.owner)
 		asm volatile (
-		"wfe\n"
-		"ldrh	%0, [%1]\n"
-		: "=r" (lockval.tickets.owner)
-		: "r" (&lock->tickets.owner));
+			"wfe\n\t"
+			"ldrh	%0, [%1]\n\t"
+			: "=r" (lockval.tickets.owner)
+			: "r" (&lock->tickets.owner));
 
 	/* Ensure we have the lock before doing any more memory ops */
 	dmb(ish);

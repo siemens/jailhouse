@@ -114,18 +114,21 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 	cpu_prepare_return_el1(cpu_data, 0);
 
 	asm volatile(
-	/* Reset the hypervisor stack */
-	"mov	sp, %0\n"
-	/*
-	 * We don't care about clobbering the other registers from now on. Must
-	 * be in sync with arch_entry.
-	 */
-	"ldm	%1, {r0 - r12}\n"
-	/* After this, the kernel won't be able to access the hypervisor code */
-	"eret\n"
-	:
-	: "r" (cpu_data->stack + PERCPU_STACK_END),
-	  "r" (cpu_data->linux_reg));
+		/* Reset the hypervisor stack */
+		"mov	sp, %0\n\t"
+		/*
+		 * We don't care about clobbering the other registers from now
+		 * on. Must be in sync with arch_entry.
+		 */
+		"ldm	%1, {r0 - r12}\n\t"
+		/*
+		 * After this, the kernel won't be able to access the hypervisor
+		 * code.
+		 */
+		"eret\n\t"
+		:
+		: "r" (cpu_data->stack + PERCPU_STACK_END),
+		  "r" (cpu_data->linux_reg));
 
 	__builtin_unreachable();
 }
