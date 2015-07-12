@@ -237,8 +237,8 @@ static void check_mmu_map(unsigned long virt_addr, unsigned long phys_addr)
  * Jumping to EL2 in the same C code represents an interesting challenge, since
  * it will switch from virtual addresses to physical ones, and then back to
  * virtual after setting up the EL2 MMU.
- * To this end, the setup_mmu and cpu_switch_el2 functions are naked and must
- * handle the stack themselves.
+ * To this end, the setup_mmu_el2 and cpu_switch_el2 functions are naked and
+ * must handle the stack themselves.
  */
 int switch_exception_level(struct per_cpu *cpu_data)
 {
