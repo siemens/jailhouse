@@ -15,7 +15,6 @@
 #include <asm/smp.h>
 
 static struct smp_ops sun7i_smp_ops = {
-	.type = SMP_SPIN,
 	.init = psci_cell_init,
 	.cpu_spin = psci_emulate_spin,
 };

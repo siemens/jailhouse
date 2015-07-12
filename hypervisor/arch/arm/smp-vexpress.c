@@ -63,7 +63,6 @@ static int smp_mmio(struct per_cpu *cpu_data, struct mmio_access *access)
 }
 
 static struct smp_ops vexpress_smp_ops = {
-	.type = SMP_SPIN,
 	.init = smp_init,
 	.mmio_handler = smp_mmio,
 	.cpu_spin = smp_spin,
@@ -74,7 +73,6 @@ static struct smp_ops vexpress_smp_ops = {
  * an access to the mbox from the primary.
  */
 static struct smp_ops vexpress_guest_smp_ops = {
-	.type = SMP_SPIN,
 	.init = psci_cell_init,
 	.mmio_handler = smp_mmio,
 	.cpu_spin = psci_emulate_spin,

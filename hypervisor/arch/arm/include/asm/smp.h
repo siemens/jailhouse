@@ -15,17 +15,11 @@
 
 #ifndef __ASSEMBLY__
 
-enum smp_type {
-	SMP_PSCI,
-	SMP_SPIN
-};
-
 struct mmio_access;
 struct per_cpu;
 struct cell;
 
 struct smp_ops {
-	enum smp_type type;
 	int (*init)(struct cell *cell);
 
 	/*
