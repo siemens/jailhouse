@@ -39,11 +39,6 @@ struct smp_ops {
 	unsigned long (*cpu_spin)(struct per_cpu *cpu_data);
 };
 
-int arch_generic_smp_init(unsigned long mbox);
-int arch_generic_smp_mmio(struct per_cpu *cpu_data, struct mmio_access *access,
-			  unsigned long mbox);
-unsigned long arch_generic_smp_spin(unsigned long mbox);
-
 int arch_smp_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access);
 unsigned long arch_smp_spin(struct per_cpu *cpu_data, struct smp_ops *ops);
 void register_smp_ops(struct cell *cell);

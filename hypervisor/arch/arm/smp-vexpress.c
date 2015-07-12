@@ -10,34 +10,56 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/processor.h>
-#include <asm/control.h>
 #include <asm/irqchip.h>
 #include <asm/paging.h>
 #include <asm/platform.h>
+#include <asm/setup.h>
 #include <asm/smp.h>
 
-static unsigned long hotplug_mbox;
+static const unsigned long hotplug_mbox = SYSREGS_BASE + 0x30;
 
 static int smp_init(struct cell *cell)
 {
-	/* vexpress SYSFLAGS */
-	hotplug_mbox = SYSREGS_BASE + 0x30;
+	void *mbox_page = (void *)(hotplug_mbox & PAGE_MASK);
+	int err;
 
 	/* Map the mailbox page */
-	arch_generic_smp_init(hotplug_mbox);
+	err = arch_map_device(mbox_page, mbox_page, PAGE_SIZE);
+	if (err)
+		printk("Unable to map spin mbox page\n");
 
-	return 0;
+	return err;
 }
 
 static unsigned long smp_spin(struct per_cpu *cpu_data)
 {
-	return arch_generic_smp_spin(hotplug_mbox);
+	/*
+	 * This is super-dodgy: we assume nothing wrote to the flag register
+	 * since the kernel called smp_prepare_cpus, at initialisation.
+	 */
+	return mmio_read32((void *)hotplug_mbox);
 }
 
 static int smp_mmio(struct per_cpu *cpu_data, struct mmio_access *access)
 {
-	return arch_generic_smp_mmio(cpu_data, access, hotplug_mbox);
+	unsigned int cpu;
+	unsigned long mbox_page = hotplug_mbox & PAGE_MASK;
+
+	if (access->addr < mbox_page || access->addr >= mbox_page + PAGE_SIZE)
+		return TRAP_UNHANDLED;
+
+	if (access->addr != hotplug_mbox || !access->is_write)
+		/* Ignore all other accesses */
+		return TRAP_HANDLED;
+
+	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id) {
+		per_cpu(cpu)->guest_mbox.entry = access->val;
+		psci_try_resume(cpu);
+	}
+
+	return TRAP_HANDLED;
 }
 
 static struct smp_ops vexpress_smp_ops = {
