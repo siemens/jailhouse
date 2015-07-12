@@ -90,6 +90,41 @@ static void destroy_id_maps(void)
 	}
 }
 
+static void __attribute__((naked)) __attribute__((noinline))
+cpu_switch_el2(unsigned long phys_bootstrap, virt2phys_t virt2phys)
+{
+	asm volatile(
+		/*
+		 * The linux hyp stub allows to install the vectors with a
+		 * single hvc. The vector base address is in r0
+		 * (phys_bootstrap).
+		 */
+		"hvc	#0\n\t"
+
+		/*
+		 * Now that the bootstrap vectors are installed, call setup_el2
+		 * with the translated physical values of lr and sp as
+		 * arguments.
+		 */
+		"mov	r0, sp\n\t"
+		"push	{lr}\n\t"
+		"blx	%0\n\t"
+		"pop	{lr}\n\t"
+		"push	{r0}\n\t"
+		"mov	r0, lr\n\t"
+		"blx	%0\n\t"
+		"pop	{r1}\n\t"
+		"hvc	#0\n\t"
+		:
+		: "r" (virt2phys)
+		/*
+		 * The call to virt2phys may clobber all temp registers. This
+		 * list ensures that the compiler uses a decent register for
+		 * hvirt2phys.
+		 */
+		: "cc", "memory", "r0", "r1", "r2", "r3");
+}
+
 /*
  * This code is put in the id-mapped `.trampoline' section, allowing to enable
  * and disable the MMU in a readable and portable fashion.
