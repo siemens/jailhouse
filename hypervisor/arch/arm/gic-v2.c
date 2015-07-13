@@ -198,6 +198,8 @@ static int gic_cell_init(struct cell *cell)
 
 static void gic_cell_exit(struct cell *cell)
 {
+	paging_destroy(&cell->arch.mm, (unsigned long)gicc_base, gicc_size,
+		       PAGING_NON_COHERENT);
 	/* Reset interrupt routing of the cell's spis */
 	gic_target_spis(cell, &root_cell);
 }
