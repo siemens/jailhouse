@@ -34,7 +34,7 @@ static bool arm_page_table_empty(page_table_t page_table)
 	unsigned long n;
 	pt_entry_t pte;
 
-	for (n = 0, pte = page_table; n < PAGE_SIZE / sizeof(pt_entry_t); n++, pte++)
+	for (n = 0, pte = page_table; n < PAGE_SIZE / sizeof(u64); n++, pte++)
 		if (arm_entry_valid(pte, PTE_FLAG_VALID))
 			return false;
 	return true;
