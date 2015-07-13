@@ -171,8 +171,6 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 
 static int gic_cell_init(struct cell *cell)
 {
-	struct jailhouse_memory gicv_region;
-
 	/*
 	 * target_cpu_map has not been populated by all available CPUs when the
 	 * setup code initialises the root cell. It is assumed that the kernel
@@ -182,23 +180,20 @@ static int gic_cell_init(struct cell *cell)
 	if (cell != &root_cell)
 		gic_target_spis(cell, cell);
 
-	gicv_region.phys_start = (unsigned long)gicv_base;
 	/*
+	 * Let the guest access the virtual CPU interface instead of the
+	 * physical one.
+	 *
 	 * WARN: some SoCs (EXYNOS4) use a modified GIC which doesn't have any
 	 * banked CPU interface, so we should map per-CPU physical addresses
 	 * here.
 	 * As for now, none of them seem to have virtualization extensions.
 	 */
-	gicv_region.virt_start = (unsigned long)gicc_base;
-	gicv_region.size = gicc_size;
-	gicv_region.flags = JAILHOUSE_MEM_IO | JAILHOUSE_MEM_READ
-			  | JAILHOUSE_MEM_WRITE;
-
-	/*
-	 * Let the guest access the virtual CPU interface instead of the
-	 * physical one
-	 */
-	return arch_map_memory_region(cell, &gicv_region);
+	return paging_create(&cell->arch.mm, (unsigned long)gicv_base,
+			     gicc_size, (unsigned long)gicc_base,
+			     (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
+			      S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
+			     PAGING_NON_COHERENT);
 }
 
 static void gic_cell_exit(struct cell *cell)
