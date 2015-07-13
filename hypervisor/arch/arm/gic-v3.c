@@ -213,9 +213,10 @@ static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
 	}
 }
 
-static void gic_cell_init(struct cell *cell)
+static int gic_cell_init(struct cell *cell)
 {
 	gic_route_spis(cell, cell);
+	return 0;
 }
 
 static void gic_cell_exit(struct cell *cell)

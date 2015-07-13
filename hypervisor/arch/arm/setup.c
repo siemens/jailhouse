@@ -96,7 +96,9 @@ int arch_init_late(void)
 	int err;
 
 	/* Setup the SPI bitmap */
-	irqchip_cell_init(&root_cell);
+	err = irqchip_cell_init(&root_cell);
+	if (err)
+		return err;
 
 	/* Platform-specific SMP operations */
 	register_smp_ops(&root_cell);

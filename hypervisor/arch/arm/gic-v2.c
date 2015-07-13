@@ -169,7 +169,7 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 		mmio_write32(gicc_base + GICC_DIR, irq_id);
 }
 
-static void gic_cell_init(struct cell *cell)
+static int gic_cell_init(struct cell *cell)
 {
 	struct jailhouse_memory gicv_region;
 
@@ -198,7 +198,7 @@ static void gic_cell_init(struct cell *cell)
 	 * Let the guest access the virtual CPU interface instead of the
 	 * physical one
 	 */
-	arch_map_memory_region(cell, &gicv_region);
+	return arch_map_memory_region(cell, &gicv_region);
 }
 
 static void gic_cell_exit(struct cell *cell)

@@ -349,7 +349,11 @@ int arch_cell_create(struct cell *cell)
 	}
 	cell->arch.last_virt_id = virt_id - 1;
 
-	irqchip_cell_init(cell);
+	err = irqchip_cell_init(cell);
+	if (err) {
+		arch_mmu_cell_destroy(cell);
+		return err;
+	}
 	irqchip_root_cell_shrink(cell);
 
 	register_smp_ops(cell);

@@ -257,13 +257,13 @@ irqchip_find_config(struct jailhouse_cell_desc *config)
 		return NULL;
 }
 
-void irqchip_cell_init(struct cell *cell)
+int irqchip_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *pins = irqchip_find_config(cell->config);
 
 	cell->arch.spis = (pins ? pins->pin_bitmap : 0);
 
-	irqchip.cell_init(cell);
+	return irqchip.cell_init(cell);
 }
 
 void irqchip_cell_exit(struct cell *cell)
