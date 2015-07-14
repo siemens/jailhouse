@@ -14,8 +14,11 @@
 
 #include <jailhouse/cell.h>
 #include <jailhouse/cell-config.h>
+#include <jailhouse/control.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/string.h>
 #include <asm/amd_iommu.h>
 #include <asm/apic.h>
 #include <asm/iommu.h>
@@ -109,16 +112,287 @@ union buf_entry {
 
 #define BUF_LEN_EXPONENT_SHIFT		56
 
+/* Allocate minimum space possible (4K or 256 entries) */
+#define BUF_SIZE(name, entry)		((1UL << name##_LEN_EXPONENT) * \
+					  sizeof(entry))
+
+#define CMD_BUF_LEN_EXPONENT		8
+#define EVT_LOG_LEN_EXPONENT		8
+
+#define CMD_BUF_SIZE			BUF_SIZE(CMD_BUF, union buf_entry)
+#define EVT_LOG_SIZE			BUF_SIZE(EVT_LOG, union buf_entry)
+
+#define BITS_PER_SHORT			16
+
+#define AMD_IOMMU_MAX_PAGE_TABLE_LEVELS	4
+
+static struct amd_iommu {
+	int idx;
+	void *mmio_base;
+	/* Command Buffer, Event Log */
+	unsigned char *cmd_buf_base;
+	unsigned char *evt_log_base;
+	/* Device table */
+	void *devtable_segments[DEV_TABLE_SEG_MAX];
+	u8 dev_tbl_seg_sup;
+	u32 cmd_tail_ptr;
+	bool he_supported;
+} iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
+
+#define for_each_iommu(iommu) for (iommu = iommu_units; \
+				   iommu < iommu_units + iommu_units_count; \
+				   iommu++)
+
+static unsigned int iommu_units_count;
+static struct paging amd_iommu_paging[AMD_IOMMU_MAX_PAGE_TABLE_LEVELS];
+
+/*
+ * Interrupt remapping is not emulated on AMD,
+ * thus we have no MMIO to intercept.
+ */
 unsigned int iommu_mmio_count_regions(struct cell *cell)
 {
 	return 0;
 }
 
+bool iommu_cell_emulates_ir(struct cell *cell)
+{
+	return false;
+}
+
+static int amd_iommu_init_pci(struct amd_iommu *entry,
+			      struct jailhouse_iommu *iommu)
+{
+	u64 caps_header, hi, lo;
+
+	/* Check alignment */
+	if (iommu->size & (iommu->size - 1))
+		return trace_error(-EINVAL);
+
+	/* Check that EFR is supported */
+	caps_header = pci_read_config(iommu->amd_bdf, iommu->amd_base_cap, 4);
+	if (!(caps_header & CAPS_IOMMU_EFR_SUP))
+		return trace_error(-EIO);
+
+	lo = pci_read_config(iommu->amd_bdf,
+			     iommu->amd_base_cap + CAPS_IOMMU_BASE_LOW_REG, 4);
+	hi = pci_read_config(iommu->amd_bdf,
+			     iommu->amd_base_cap + CAPS_IOMMU_BASE_HI_REG, 4);
+
+	if (lo & CAPS_IOMMU_ENABLE &&
+	    ((hi << 32) | lo) != (iommu->base | CAPS_IOMMU_ENABLE)) {
+		printk("FATAL: IOMMU %d config is locked in invalid state.\n",
+		       entry->idx);
+		return trace_error(-EPERM);
+	}
+
+	/* Should be configured by BIOS, but we want to be sure */
+	pci_write_config(iommu->amd_bdf,
+			 iommu->amd_base_cap + CAPS_IOMMU_BASE_HI_REG,
+			 (u32)(iommu->base >> 32), 4);
+	pci_write_config(iommu->amd_bdf,
+			 iommu->amd_base_cap + CAPS_IOMMU_BASE_LOW_REG,
+			 (u32)(iommu->base & 0xffffffff) | CAPS_IOMMU_ENABLE,
+			 4);
+
+	/* Allocate and map MMIO space */
+	entry->mmio_base = page_alloc(&remap_pool, PAGES(iommu->size));
+	if (!entry->mmio_base)
+		return -ENOMEM;
+
+	return paging_create(&hv_paging_structs, iommu->base, iommu->size,
+			     (unsigned long)entry->mmio_base,
+			     PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
+			     PAGING_NON_COHERENT);
+}
+
+static int amd_iommu_init_features(struct amd_iommu *entry,
+				   struct jailhouse_iommu *iommu)
+{
+	u64 efr = mmio_read64(entry->mmio_base + AMD_EXT_FEATURES_REG);
+	unsigned char smi_filter_regcnt;
+	u64 val, ctrl_reg = 0, smi_freg = 0;
+	unsigned int n;
+	void *reg_base;
+
+	/*
+	 * Require SMI Filter support. Enable and lock filter but
+	 * mark all entries as invalid to disable SMI delivery.
+	 */
+	if (!(efr & AMD_EXT_FEAT_SMI_FSUP_MASK))
+		return trace_error(-EINVAL);
+
+	/* Figure out if hardware events are supported. */
+	if (iommu->amd_features)
+		entry->he_supported =
+			iommu->amd_features & ACPI_REPORTING_HE_SUP;
+	else
+		entry->he_supported = efr & AMD_EXT_FEAT_HE_SUP;
+
+	smi_filter_regcnt = (1 << (efr & AMD_EXT_FEAT_SMI_FRC_MASK) >>
+		AMD_EXT_FEAT_SMI_FRC_SHIFT);
+	for (n = 0; n < smi_filter_regcnt; n++) {
+		reg_base = entry->mmio_base + AMD_SMI_FILTER0_REG + (n << 3);
+		smi_freg = mmio_read64(reg_base);
+
+		if (!(smi_freg & AMD_SMI_FILTER_LOCKED)) {
+			/*
+			 * Program unlocked register the way we need:
+			 * invalid and locked.
+			 */
+			mmio_write64(reg_base, AMD_SMI_FILTER_LOCKED);
+		} else if (smi_freg & AMD_SMI_FILTER_VALID) {
+			/*
+			 * The register is locked and programed
+			 * the way we don't want - error.
+			 */
+			printk("ERROR: SMI Filter register %d is locked "
+			       "and can't be reprogrammed.\n"
+			       "Reboot and check no other component uses the "
+			       "IOMMU %d.\n", n, entry->idx);
+			return trace_error(-EPERM);
+		}
+		/*
+		 * The register is locked, but programmed
+		 * the way we need - OK to go.
+		 */
+	}
+
+	ctrl_reg |= (AMD_CONTROL_SMIF_EN | AMD_CONTROL_SMIFLOG_EN);
+
+	/* Enable maximum Device Table segmentation possible */
+	entry->dev_tbl_seg_sup = (efr & AMD_EXT_FEAT_SEG_SUP_MASK) >>
+		AMD_EXT_FEAT_SEG_SUP_SHIFT;
+	if (entry->dev_tbl_seg_sup) {
+		val = (u64)entry->dev_tbl_seg_sup << AMD_CONTROL_SEG_EN_SHIFT;
+		ctrl_reg |= val & AMD_CONTROL_SEG_EN_MASK;
+	}
+
+	mmio_write64(entry->mmio_base + AMD_CONTROL_REG, ctrl_reg);
+
+	return 0;
+}
+
+static int amd_iommu_init_buffers(struct amd_iommu *entry,
+				  struct jailhouse_iommu *iommu)
+{
+	/* Allocate and configure command buffer */
+	entry->cmd_buf_base = page_alloc(&mem_pool, PAGES(CMD_BUF_SIZE));
+	if (!entry->cmd_buf_base)
+		return -ENOMEM;
+
+	mmio_write64(entry->mmio_base + AMD_CMD_BUF_BASE_REG,
+		     paging_hvirt2phys(entry->cmd_buf_base) |
+		     ((u64)CMD_BUF_LEN_EXPONENT << BUF_LEN_EXPONENT_SHIFT));
+
+	entry->cmd_tail_ptr = 0;
+
+	/* Allocate and configure event log */
+	entry->evt_log_base = page_alloc(&mem_pool, PAGES(EVT_LOG_SIZE));
+	if (!entry->evt_log_base)
+		return -ENOMEM;
+
+	mmio_write64(entry->mmio_base + AMD_EVT_LOG_BASE_REG,
+		     paging_hvirt2phys(entry->evt_log_base) |
+		     ((u64)EVT_LOG_LEN_EXPONENT << BUF_LEN_EXPONENT_SHIFT));
+
+	return 0;
+}
+
+static void amd_iommu_enable_command_processing(struct amd_iommu *iommu)
+{
+	u64 ctrl_reg;
+
+	ctrl_reg = mmio_read64(iommu->mmio_base + AMD_CONTROL_REG);
+	ctrl_reg |= AMD_CONTROL_IOMMU_EN | AMD_CONTROL_CMD_BUF_EN |
+		AMD_CONTROL_EVT_LOG_EN | AMD_CONTROL_EVT_INT_EN;
+	mmio_write64(iommu->mmio_base + AMD_CONTROL_REG, ctrl_reg);
+}
+
+static void amd_iommu_set_next_pt_l4(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(3) |
+		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P;
+}
+
+static void amd_iommu_set_next_pt_l3(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(2) |
+		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P;
+}
+
+static void amd_iommu_set_next_pt_l2(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(1) |
+		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P;
+}
+
+static unsigned long amd_iommu_get_phys_l3(pt_entry_t pte, unsigned long virt)
+{
+	if (*pte & AMD_IOMMU_PTE_PG_MODE_MASK)
+		return INVALID_PHYS_ADDR;
+	return (*pte & BIT_MASK(51, 30)) | (virt & BIT_MASK(29, 0));
+}
+
+static unsigned long amd_iommu_get_phys_l2(pt_entry_t pte, unsigned long virt)
+{
+	if (*pte & AMD_IOMMU_PTE_PG_MODE_MASK)
+		return INVALID_PHYS_ADDR;
+	return (*pte & BIT_MASK(51, 21)) | (virt & BIT_MASK(20, 0));
+}
+
 int iommu_init(void)
 {
-	printk("WARNING: AMD IOMMU support is not implemented yet\n");
-	/* TODO: Implement */
-	return 0;
+	struct jailhouse_iommu *iommu;
+	struct amd_iommu *entry;
+	unsigned int n;
+	int err;
+
+	iommu = &system_config->platform_info.x86.iommu_units[0];
+	for (n = 0; iommu->base && n < iommu_count_units(); iommu++, n++) {
+		entry = &iommu_units[iommu_units_count];
+
+		entry->idx = n;
+
+		/* Protect against accidental VT-d configs. */
+		if (!iommu->amd_bdf)
+			return trace_error(-EINVAL);
+
+		printk("AMD IOMMU @0x%lx/0x%x\n", iommu->base, iommu->size);
+
+		/* Initialize PCI registers and MMIO space */
+		err = amd_iommu_init_pci(entry, iommu);
+		if (err)
+			return err;
+
+		/* Setup IOMMU features */
+		err = amd_iommu_init_features(entry, iommu);
+		if (err)
+			return err;
+
+		/* Initialize command buffer and event log */
+		err = amd_iommu_init_buffers(entry, iommu);
+		if (err)
+			return err;
+
+		/* Enable the IOMMU */
+		amd_iommu_enable_command_processing(entry);
+
+		iommu_units_count++;
+	}
+
+	/*
+	 * Derive amd_iommu_paging from very similar x86_64_paging,
+	 * replicating all 4 levels.
+	 */
+	memcpy(amd_iommu_paging, x86_64_paging, sizeof(amd_iommu_paging));
+	amd_iommu_paging[0].set_next_pt = amd_iommu_set_next_pt_l4;
+	amd_iommu_paging[1].set_next_pt = amd_iommu_set_next_pt_l3;
+	amd_iommu_paging[2].set_next_pt = amd_iommu_set_next_pt_l2;
+	amd_iommu_paging[1].get_phys = amd_iommu_get_phys_l3;
+	amd_iommu_paging[2].get_phys = amd_iommu_get_phys_l2;
+
+	return iommu_cell_init(&root_cell);
 }
 
 int iommu_cell_init(struct cell *cell)
@@ -181,16 +455,19 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 
 void iommu_shutdown(void)
 {
-	/* TODO: Implement */
+	struct amd_iommu *iommu;
+	u64 ctrl_reg;
+
+	for_each_iommu(iommu) {
+		/* Disable the IOMMU */
+		ctrl_reg = mmio_read64(iommu->mmio_base + AMD_CONTROL_REG);
+		ctrl_reg &= ~(AMD_CONTROL_IOMMU_EN | AMD_CONTROL_CMD_BUF_EN |
+			AMD_CONTROL_EVT_LOG_EN | AMD_CONTROL_EVT_INT_EN);
+		mmio_write64(iommu->mmio_base + AMD_CONTROL_REG, ctrl_reg);
+	}
 }
 
 void iommu_check_pending_faults(void)
 {
 	/* TODO: Implement */
-}
-
-bool iommu_cell_emulates_ir(struct cell *cell)
-{
-	/* TODO: Implement */
-	return false;
 }

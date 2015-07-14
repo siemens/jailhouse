@@ -49,7 +49,10 @@ struct arch_cell {
 			 * cell. */
 			bool ir_emulation;
 		} vtd; /**< Intel VT-d specific fields. */
-		/* TODO: No struct vtd equivalent for SVM code yet. */
+		struct {
+			/** Paging structures used for DMA requests. */
+			struct paging_structures pg_structs;
+		} amd_iommu; /**< AMD IOMMU specific fields. */
 	};
 
 	/** Shadow value of PCI config space address port register. */
