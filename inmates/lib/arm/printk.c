@@ -19,10 +19,13 @@ static struct uart_chip chip;
 
 static void console_write(const char *msg)
 {
-	char c;
+	char c = 0;
 
 	while (1) {
-		c = *msg++;
+		if (c == '\n')
+			c = '\r';
+		else
+			c = *msg++;
 		if (!c)
 			break;
 

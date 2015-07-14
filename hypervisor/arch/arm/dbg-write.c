@@ -30,10 +30,13 @@ void arch_dbg_write_init(void)
 
 void arch_dbg_write(const char *msg)
 {
-	char c;
+	char c = 0;
 
 	while (1) {
-		c = *msg++;
+		if (c == '\n')
+			c = '\r';
+		else
+			c = *msg++;
 		if (!c)
 			break;
 

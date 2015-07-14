@@ -117,9 +117,9 @@ static void __vprintk(const char *fmt, va_list ap)
 
 	while (1) {
 		c = *fmt++;
-		if (c == 0)
+		if (c == 0) {
 			break;
-		else if (c == '%') {
+		} else if (c == '%') {
 			*p = 0;
 			console_write(buf);
 			p = buf;
@@ -181,15 +181,9 @@ static void __vprintk(const char *fmt, va_list ap)
 				*p++ = c;
 				break;
 			}
-		} else if (c == '\n') {
+		} else {
 			*p++ = c;
-			*p = 0;
-			console_write(buf);
-			p = buf;
-			*p++ = '\r';
-		} else
-			*p++ = c;
-
+		}
 		if (p >= &buf[sizeof(buf) - 1]) {
 			*p = 0;
 			console_write(buf);
