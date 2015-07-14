@@ -122,7 +122,7 @@ void arch_reset_self(struct per_cpu *cpu_data)
 
 			smc(PSCI_CPU_OFF, 0, 0, 0);
 			smc(PSCI_CPU_OFF_V0_1_UBOOT, 0, 0, 0);
-			printk("FATAL: PSCI_CPU_OFF failed\n");
+			panic_printk("FATAL: PSCI_CPU_OFF failed\n");
 			panic_stop();
 		}
 #endif
@@ -168,7 +168,7 @@ static void arch_dump_exit(const char *reason)
 	unsigned long pc;
 
 	arm_read_banked_reg(ELR_hyp, pc);
-	printk("Unhandled HYP %s exit at 0x%x\n", reason, pc);
+	panic_printk("Unhandled HYP %s exit at 0x%x\n", reason, pc);
 }
 
 static void arch_dump_abt(bool is_data)
@@ -182,7 +182,7 @@ static void arch_dump_abt(bool is_data)
 	else
 		arm_read_sysreg(HIFAR, hxfar);
 
-	printk("  paddr=0x%lx esr=0x%x\n", hxfar, esr);
+	panic_printk("  paddr=0x%lx esr=0x%x\n", hxfar, esr);
 }
 
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
