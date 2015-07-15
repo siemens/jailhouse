@@ -8,6 +8,10 @@
  *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *  Jan Kiszka <jan.kiszka@siemens.com>
  *
+ * Commands posting and event log parsing code, as well as many defines
+ * were adapted from Linux's amd_iommu driver written by Joerg Roedel
+ * and Leo Duran.
+ *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
@@ -412,6 +416,33 @@ int iommu_cell_init(struct cell *cell)
 	return 0;
 }
 
+static void amd_iommu_completion_wait(struct amd_iommu *iommu);
+
+static void amd_iommu_submit_command(struct amd_iommu *iommu,
+				     union buf_entry *cmd, bool draining)
+{
+	u32 head, next_tail, bytes_free;
+	unsigned char *cur_ptr;
+
+	head = mmio_read64(iommu->mmio_base + AMD_CMD_BUF_HEAD_REG);
+	next_tail = (iommu->cmd_tail_ptr + sizeof(*cmd)) % CMD_BUF_SIZE;
+	bytes_free = (head - next_tail) % CMD_BUF_SIZE;
+
+	/* Leave space for COMPLETION_WAIT that drains the buffer. */
+	if (bytes_free < (2 * sizeof(*cmd)) && !draining)
+		/* Drain the buffer */
+		amd_iommu_completion_wait(iommu);
+
+	cur_ptr = &iommu->cmd_buf_base[iommu->cmd_tail_ptr];
+	memcpy(cur_ptr, cmd, sizeof(*cmd));
+
+	/* Just to be sure. */
+	arch_paging_flush_cpu_caches(cur_ptr, sizeof(*cmd));
+
+	iommu->cmd_tail_ptr =
+		(iommu->cmd_tail_ptr + sizeof(*cmd)) % CMD_BUF_SIZE;
+}
+
 int iommu_map_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem)
 {
@@ -478,6 +509,50 @@ void iommu_cell_exit(struct cell *cell)
 		return;
 
 	page_free(&mem_pool, cell->arch.amd_iommu.pg_structs.root_table, 1);
+}
+
+static void wait_for_zero(volatile u64 *sem, unsigned long mask)
+{
+	while (*sem & mask)
+		cpu_relax();
+}
+
+static void amd_iommu_invalidate_pages(struct amd_iommu *iommu,
+				       u16 domain_id)
+{
+	union buf_entry invalidate_pages = {{ 0 }};
+
+	/*
+	 * Flush everything, including PDEs, in whole address range, i.e.
+	 * 0x7ffffffffffff000 with S bit (see Sect. 2.2.3).
+	 */
+	invalidate_pages.raw32[1] = domain_id;
+	invalidate_pages.raw32[2] = 0xfffff000 | CMD_INV_IOMMU_PAGES_SIZE |
+		CMD_INV_IOMMU_PAGES_PDE;
+	invalidate_pages.raw32[3] = 0x7fffffff;
+	invalidate_pages.type = CMD_INV_IOMMU_PAGES;
+
+	amd_iommu_submit_command(iommu, &invalidate_pages, false);
+}
+
+static void amd_iommu_completion_wait(struct amd_iommu *iommu)
+{
+	union buf_entry completion_wait = {{ 0 }};
+	volatile u64 sem = 1;
+	long addr;
+
+	addr = paging_hvirt2phys(&sem);
+
+	completion_wait.raw32[0] = (addr & BIT_MASK(31, 3)) |
+		CMD_COMPL_WAIT_STORE;
+	completion_wait.raw32[1] = (addr & BIT_MASK(51, 32)) >> 32;
+	completion_wait.type = CMD_COMPL_WAIT;
+
+	amd_iommu_submit_command(iommu, &completion_wait, true);
+	mmio_write64(iommu->mmio_base + AMD_CMD_BUF_TAIL_REG,
+		     iommu->cmd_tail_ptr);
+
+	wait_for_zero(&sem, -1);
 }
 
 void iommu_config_commit(struct cell *cell_added_removed)
