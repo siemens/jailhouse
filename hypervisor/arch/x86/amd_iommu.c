@@ -397,7 +397,18 @@ int iommu_init(void)
 
 int iommu_cell_init(struct cell *cell)
 {
-	/* TODO: Implement */
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return 0;
+
+	if (cell->id > 0xffff)
+		return trace_error(-ERANGE);
+
+	cell->arch.amd_iommu.pg_structs.root_paging = amd_iommu_paging;
+	cell->arch.amd_iommu.pg_structs.root_table = page_alloc(&mem_pool, 1);
+	if (!cell->arch.amd_iommu.pg_structs.root_table)
+		return trace_error(-ENOMEM);
+
 	return 0;
 }
 
@@ -427,7 +438,12 @@ void iommu_remove_pci_device(struct pci_device *device)
 
 void iommu_cell_exit(struct cell *cell)
 {
-	/* TODO: Implement */
+	/* TODO: Again, this a copy of vtd.c:iommu_cell_exit */
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return;
+
+	page_free(&mem_pool, cell->arch.amd_iommu.pg_structs.root_table, 1);
 }
 
 void iommu_config_commit(struct cell *cell_added_removed)
