@@ -32,6 +32,10 @@
 #include <asm/svm.h>
 #include <asm/vmx.h>
 
+/* Round up sizeof(struct per_cpu) to the next power of two. */
+#define PERCPU_SIZE_SHIFT \
+	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
+
 /**
  * @defgroup Per-CPU Per-CPU Subsystem
  *
@@ -159,10 +163,6 @@ struct per_cpu {
 		};
 	};
 } __attribute__((aligned(PAGE_SIZE)));
-
-/* Round up sizeof(struct per_cpu) to the next power of two. */
-#define PERCPU_SIZE_SHIFT \
-	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
 
 /**
  * Define CPU-local accessor for a per-CPU field.
