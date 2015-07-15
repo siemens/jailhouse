@@ -788,6 +788,79 @@ void iommu_shutdown(void)
 	}
 }
 
+static void amd_iommu_print_event(struct amd_iommu *iommu,
+				  union buf_entry *entry)
+{
+	printk("AMD IOMMU %d reported event\n", iommu->idx);
+	printk(" EventCode: %lx, Operand 1: %lx, Operand 2: %lx\n",
+	       entry->type, entry->raw64[0], entry->raw64[1]);
+	switch (entry->type) {
+		case EVENT_TYPE_ILL_DEV_TAB_ENTRY...EVENT_TYPE_PAGE_TAB_HW_ERR:
+		case EVENT_TYPE_IOTLB_INV_TIMEOUT...EVENT_TYPE_INV_PPR_REQ:
+			printk(" DeviceId (bus:dev.func): %02x:%02x.%x\n",
+			       PCI_BDF_PARAMS(entry->raw32[0] & 0xffff));
+			break;
+		case EVENT_TYPE_ILL_CMD_ERR:
+		case EVENT_TYPE_CMD_HW_ERR:
+			panic_printk("FATAL: IOMMU %d command error\n");
+			panic_stop();
+	}
+}
+
+static void amd_iommu_restart_event_log(struct amd_iommu *iommu)
+{
+	void *base = iommu->mmio_base;
+
+	wait_for_zero(base + AMD_STATUS_REG, AMD_STATUS_EVT_LOG_RUN);
+
+	mmio_write64_field(base + AMD_CONTROL_REG, AMD_CONTROL_EVT_LOG_EN, 0);
+
+	/* Simply start from the scratch */
+	mmio_write64(base + AMD_EVT_LOG_HEAD_REG, 0);
+	mmio_write64(base + AMD_EVT_LOG_TAIL_REG, 0);
+
+	/* Clear EventOverflow (RW1C) */
+	mmio_write64_field(base + AMD_STATUS_REG, AMD_STATUS_EVT_OVERFLOW, 1);
+
+	/* Bring logging back */
+	mmio_write64_field(base + AMD_CONTROL_REG, AMD_CONTROL_EVT_LOG_EN, 1);
+}
+
+static void amd_iommu_poll_events(struct amd_iommu *iommu)
+{
+	union buf_entry *evt;
+	u32 head, tail;
+	u64 status;
+
+	status = mmio_read64(iommu->mmio_base + AMD_STATUS_REG);
+
+	if (status & AMD_STATUS_EVT_OVERFLOW) {
+		printk("IOMMU %d: Event Log overflow occurred, "
+		       "some events were lost!\n", iommu->idx);
+		amd_iommu_restart_event_log(iommu);
+	}
+
+	while (status & AMD_STATUS_EVT_LOG_INT) {
+		/* Clear EventLogInt (RW1C) */
+		mmio_write64_field(iommu->mmio_base + AMD_STATUS_REG,
+				   AMD_STATUS_EVT_LOG_INT, 1);
+
+		head = mmio_read32(iommu->mmio_base + AMD_EVT_LOG_HEAD_REG);
+		tail = mmio_read32(iommu->mmio_base + AMD_EVT_LOG_TAIL_REG);
+
+		while (head != tail) {
+			evt = (union buf_entry *)(iommu->evt_log_base + head);
+			amd_iommu_print_event(iommu, evt);
+			head = (head + sizeof(*evt)) % EVT_LOG_SIZE;
+		}
+
+		mmio_write32(iommu->evt_log_base + AMD_EVT_LOG_HEAD_REG, head);
+
+		/* Re-read status to catch new events, as Linux does */
+		status = mmio_read64(iommu->mmio_base + AMD_STATUS_REG);
+	}
+}
+
 void iommu_check_pending_faults(void)
 {
 	/* TODO: Implement */
