@@ -490,15 +490,144 @@ int iommu_unmap_memory_region(struct cell *cell,
 			mem->size, PAGING_COHERENT);
 }
 
+static void amd_iommu_inv_dte(struct amd_iommu *iommu, u16 device_id)
+{
+	union buf_entry invalidate_dte = {{ 0 }};
+
+	invalidate_dte.raw32[0] = device_id;
+	invalidate_dte.type = CMD_INV_DEVTAB_ENTRY;
+
+	amd_iommu_submit_command(iommu, &invalidate_dte, false);
+}
+
+static struct dev_table_entry *get_dev_table_entry(struct amd_iommu *iommu,
+						   u16 bdf, bool allocate)
+{
+	struct dev_table_entry *devtable_seg;
+	u8 seg_idx, seg_shift;
+	u64 reg_base, reg_val;
+	u16 seg_mask;
+	u32 seg_size;
+
+	if (!iommu->dev_tbl_seg_sup) {
+		seg_mask = 0;
+		seg_idx = 0;
+		seg_size = DEV_TABLE_SIZE;
+	} else {
+		seg_shift = BITS_PER_SHORT - iommu->dev_tbl_seg_sup;
+		seg_mask = ~((1 << seg_shift) - 1);
+		seg_idx = (seg_mask & bdf) >> seg_shift;
+		seg_size = DEV_TABLE_SIZE / (1 << iommu->dev_tbl_seg_sup);
+	}
+
+	/*
+	 * Device table segmentation is tricky in Jailhouse. As cells can
+	 * "share" the IOMMU, we don't know maximum bdf in each segment
+	 * because cells are initialized independently. Thus, we can't simply
+	 * adjust segment sizes for our maximum bdfs.
+	 *
+	 * The next best things is to lazily allocate segments as we add
+	 * device using maximum possible size for segments. In the worst case
+	 * scenario, we waste around 2M chunk per IOMMU.
+	 */
+	devtable_seg = iommu->devtable_segments[seg_idx];
+	if (!devtable_seg) {
+		/* If we are not permitted to allocate, just fail */
+		if (!allocate)
+			return NULL;
+
+		devtable_seg = page_alloc(&mem_pool, PAGES(seg_size));
+		if (!devtable_seg)
+			return NULL;
+		iommu->devtable_segments[seg_idx] = devtable_seg;
+
+		if (!seg_idx)
+			reg_base = AMD_DEV_TABLE_BASE_REG;
+		else
+			reg_base = AMD_DEV_TABLE_SEG1_REG + (seg_idx - 1) * 8;
+
+		/* Size in Kbytes = (m + 1) * 4, see Sect 3.3.6 */
+		reg_val = paging_hvirt2phys(devtable_seg) |
+			(seg_size / PAGE_SIZE - 1);
+		mmio_write64(iommu->mmio_base + reg_base, reg_val);
+	}
+
+	return &devtable_seg[bdf & ~seg_mask];
+}
+
 int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 {
-	/* TODO: Implement */
+	struct dev_table_entry *dte = NULL;
+	struct amd_iommu *iommu;
+	u16 bdf;
+
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return 0;
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return 0;
+
+	if (device->info->iommu >= JAILHOUSE_MAX_IOMMU_UNITS)
+		return trace_error(-ERANGE);
+
+	iommu = &iommu_units[device->info->iommu];
+	bdf = device->info->bdf;
+
+	dte = get_dev_table_entry(iommu, bdf, true);
+	if (!dte)
+		return -ENOMEM;
+
+	memset(dte, 0, sizeof(*dte));
+
+	/* DomainID */
+	dte->raw64[1] = cell->id & 0xffff;
+
+	/* Translation information */
+	dte->raw64[0] = DTE_IR | DTE_IW |
+		paging_hvirt2phys(cell->arch.amd_iommu.pg_structs.root_table) |
+		DTE_PAGING_MODE_4_LEVEL | DTE_TRANSLATION_VALID | DTE_VALID;
+
+	/* TODO: Interrupt remapping. For now, just forward them unmapped. */
+
+	/* Flush caches, just to be sure. */
+	arch_paging_flush_cpu_caches(dte, sizeof(*dte));
+
+	amd_iommu_inv_dte(iommu, bdf);
+
 	return 0;
 }
 
 void iommu_remove_pci_device(struct pci_device *device)
 {
-	/* TODO: Implement */
+	struct dev_table_entry *dte = NULL;
+	struct amd_iommu *iommu;
+	u16 bdf;
+
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return;
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return;
+
+	iommu = &iommu_units[device->info->iommu];
+	bdf = device->info->bdf;
+
+	dte = get_dev_table_entry(iommu, bdf, false);
+	if (!dte)
+		return;
+
+	/*
+	 * Clear DTE_TRANSLATION_VALID, but keep the entry valid
+	 * to block any DMA requests.
+	 */
+	dte->raw64[0] = DTE_VALID;
+
+	/* Flush caches, just to be sure. */
+	arch_paging_flush_cpu_caches(dte, sizeof(*dte));
+
+	amd_iommu_inv_dte(iommu, bdf);
 }
 
 void iommu_cell_exit(struct cell *cell)
