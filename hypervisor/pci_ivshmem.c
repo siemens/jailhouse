@@ -365,10 +365,10 @@ int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
  *
  * @see pci_cfg_write_moderate
  */
-enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
-				      u32 mask, u32 value)
+enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
+				      unsigned int row, u32 mask, u32 value)
 {
-	struct pci_ivshmem_endpoint *ive = dev->ivshmem_endpoint;
+	struct pci_ivshmem_endpoint *ive = device->ivshmem_endpoint;
 
 	if (row >= ARRAY_SIZE(default_cspace))
 		return PCI_ACCESS_REJECT;
@@ -389,7 +389,7 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
 
 /**
  * Handler for MMIO-read-accesses to PCI config space of this virtual device.
- * @param dev		The device that access should be performed on.
+ * @param device	The device that access should be performed on.
  * @param address	Config space address accessed.
  * @param value		Pointer to the return value.
  *
@@ -397,10 +397,10 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
  *
  * @see pci_cfg_read_moderate
  */
-enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
+enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value)
 {
-	struct pci_ivshmem_endpoint *ive = dev->ivshmem_endpoint;
+	struct pci_ivshmem_endpoint *ive = device->ivshmem_endpoint;
 
 	if (address < sizeof(default_cspace))
 		*value = ive->cspace[address / 4] >> ((address % 4) * 8);
@@ -411,37 +411,37 @@ enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
 
 /**
  * Update cached MSI-X state of the given ivshmem device.
- * @param dev	The device to be updated.
+ * @param device	The device to be updated.
  *
  * @return 0 on success, negative error code otherwise.
  */
-int pci_ivshmem_update_msix(struct pci_device *dev)
+int pci_ivshmem_update_msix(struct pci_device *device)
 {
-	return ivshmem_update_msix(dev->ivshmem_endpoint);
+	return ivshmem_update_msix(device->ivshmem_endpoint);
 }
 
 /**
  * Register a new ivshmem device.
  * @param cell		The cell the device should be attached to.
- * @param dev		The device to be registered.
+ * @param device	The device to be registered.
  *
  * @return 0 on success, negative error code otherwise.
  */
-int pci_ivshmem_init(struct cell *cell, struct pci_device *dev)
+int pci_ivshmem_init(struct cell *cell, struct pci_device *device)
 {
 	const struct jailhouse_memory *mem, *mem0;
 	struct pci_ivshmem_data **ivp;
 	struct pci_device *dev0;
 
-	if (dev->info->num_msix_vectors != 1)
+	if (device->info->num_msix_vectors != 1)
 		return trace_error(-EINVAL);
 
-	if (dev->info->shmem_region >= cell->config->num_memory_regions)
+	if (device->info->shmem_region >= cell->config->num_memory_regions)
 		return trace_error(-EINVAL);
 
 	mem = jailhouse_cell_mem_regions(cell->config)
-		+ dev->info->shmem_region;
-	ivp = ivshmem_find(dev, NULL);
+		+ device->info->shmem_region;
+	ivp = ivshmem_find(device, NULL);
 	if (ivp) {
 		dev0 = (*ivp)->eps[0].device;
 		mem0 = jailhouse_cell_mem_regions(dev0->cell->config) +
@@ -452,7 +452,7 @@ int pci_ivshmem_init(struct cell *cell, struct pci_device *dev)
 		    (mem0->size == mem->size)) {
 			if ((*ivp)->eps[1].device)
 				return trace_error(-EBUSY);
-			ivshmem_connect_cell(*ivp, dev, mem, 1);
+			ivshmem_connect_cell(*ivp, device, mem, 1);
 			printk("Virtual PCI connection established "
 				"\"%s\" <--> \"%s\"\n",
 				cell->config->name, dev0->cell->config->name);
@@ -466,26 +466,26 @@ int pci_ivshmem_init(struct cell *cell, struct pci_device *dev)
 	*ivp = page_alloc(&mem_pool, 1);
 	if (!(*ivp))
 		return -ENOMEM;
-	ivshmem_connect_cell(*ivp, dev, mem, 0);
+	ivshmem_connect_cell(*ivp, device, mem, 0);
 
 connected:
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
-	       PCI_BDF_PARAMS(dev->info->bdf), cell->config->name);
+	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
 
 	return 0;
 }
 
 /**
  * Unregister a ivshmem device, typically when the corresponding cell exits.
- * @param dev		The device to be stopped.
+ * @param device	The device to be stopped.
  *
  */
-void pci_ivshmem_exit(struct pci_device *dev)
+void pci_ivshmem_exit(struct pci_device *device)
 {
 	struct pci_ivshmem_data **ivp, *iv;
 	int cellnum;
 
-	ivp = ivshmem_find(dev, &cellnum);
+	ivp = ivshmem_find(device, &cellnum);
 	if (!ivp || !(*ivp))
 		return;
 

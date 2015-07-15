@@ -248,12 +248,12 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index);
  * @defgroup PCI-IVSHMEM ivshmem
  * @{
  */
-int pci_ivshmem_init(struct cell *cell, struct pci_device *dev);
-void pci_ivshmem_exit(struct pci_device *dev);
-int pci_ivshmem_update_msix(struct pci_device *dev);
-enum pci_access pci_ivshmem_cfg_write(struct pci_device *dev, unsigned int row,
-				      u32 mask, u32 value);
-enum pci_access pci_ivshmem_cfg_read(struct pci_device *dev, u16 address,
+int pci_ivshmem_init(struct cell *cell, struct pci_device *device);
+void pci_ivshmem_exit(struct pci_device *device);
+int pci_ivshmem_update_msix(struct pci_device *device);
+enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
+				      unsigned int row, u32 mask, u32 value);
+enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value);
 int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
 				u64 addr, u32 *value);
