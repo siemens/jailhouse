@@ -415,14 +415,48 @@ int iommu_cell_init(struct cell *cell)
 int iommu_map_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem)
 {
-	/* TODO: Implement */
-	return 0;
+	unsigned long flags = AMD_IOMMU_PTE_P;
+
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return 0;
+
+	/*
+	 * Check that the address is not outside scope of current page
+	 * tables. With 4 levels, we only support 48 address bits.
+	 */
+	if (mem->virt_start & BIT_MASK(63, 48))
+		return trace_error(-E2BIG);
+
+	if (!(mem->flags & JAILHOUSE_MEM_DMA))
+		return 0;
+
+	if (mem->flags & JAILHOUSE_MEM_READ)
+		flags |= AMD_IOMMU_PTE_IR;
+	if (mem->flags & JAILHOUSE_MEM_WRITE)
+		flags |= AMD_IOMMU_PTE_IW;
+
+	return paging_create(&cell->arch.amd_iommu.pg_structs, mem->phys_start,
+			mem->size, mem->virt_start, flags, PAGING_COHERENT);
 }
+
 int iommu_unmap_memory_region(struct cell *cell,
 			      const struct jailhouse_memory *mem)
 {
-	/* TODO: Implement */
-	return 0;
+	/*
+         * TODO: This is almost a complete copy of vtd.c counterpart
+	 * (sans QEMU hack). Think of unification.
+	 */
+
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return 0;
+
+	if (!(mem->flags & JAILHOUSE_MEM_DMA))
+		return 0;
+
+	return paging_destroy(&cell->arch.amd_iommu.pg_structs, mem->virt_start,
+			mem->size, PAGING_COHERENT);
 }
 
 int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
