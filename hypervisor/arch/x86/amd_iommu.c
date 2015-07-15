@@ -861,7 +861,40 @@ static void amd_iommu_poll_events(struct amd_iommu *iommu)
 	}
 }
 
+static void amd_iommu_handle_hardware_event(struct amd_iommu *iommu)
+{
+	union buf_entry hev_entry;
+	u64 hev;
+
+	hev = mmio_read64(iommu->mmio_base + AMD_HEV_STATUS_REG);
+
+	/* Check if hardware event is present and print it */
+	if (hev & AMD_HEV_VALID) {
+		if (hev & AMD_HEV_OVERFLOW)
+			printk("IOMMU %d: Hardware Event Overflow occurred, "
+			       "some events were lost!\n", iommu->idx);
+		hev_entry.raw64[0] =
+			mmio_read64(iommu->mmio_base + AMD_HEV_UPPER_REG);
+		hev_entry.raw64[1] =
+			mmio_read64(iommu->mmio_base + AMD_HEV_LOWER_REG);
+
+		amd_iommu_print_event(iommu, &hev_entry);
+
+		/* Clear Hardware Event */
+		mmio_write64(iommu->mmio_base + AMD_HEV_STATUS_REG, 0);
+	}
+}
+
 void iommu_check_pending_faults(void)
 {
-	/* TODO: Implement */
+	struct amd_iommu *iommu;
+
+	if (this_cpu_data()->cpu_id != fault_reporting_cpu_id)
+		return;
+
+	for_each_iommu(iommu) {
+		if (iommu->he_supported)
+			amd_iommu_handle_hardware_event(iommu);
+		amd_iommu_poll_events(iommu);
+	}
 }
