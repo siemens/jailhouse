@@ -684,9 +684,76 @@ static void amd_iommu_completion_wait(struct amd_iommu *iommu)
 	wait_for_zero(&sem, -1);
 }
 
+static void amd_iommu_init_fault_nmi(void)
+{
+	union x86_msi_vector msi_vec = {{ 0 }};
+	union pci_msi_registers msi_reg;
+	struct per_cpu *cpu_data;
+	struct amd_iommu *iommu;
+	int n;
+
+	cpu_data = iommu_select_fault_reporting_cpu();
+
+	/* Send NMI to fault reporting CPU */
+	msi_vec.native.address = MSI_ADDRESS_VALUE;
+	msi_vec.native.destination = cpu_data->apic_id;
+
+	msi_reg.msg32.enable = 1;
+	msi_reg.msg64.address = msi_vec.raw.address;
+	msi_reg.msg64.data = MSI_DM_NMI;
+
+	for_each_iommu(iommu) {
+		struct jailhouse_iommu *cfg =
+		    &system_config->platform_info.x86.iommu_units[iommu->idx];
+
+		/* Disable MSI during interrupt reprogramming. */
+		pci_write_config(cfg->amd_bdf, cfg->amd_msi_cap + 2 , 0, 2);
+
+		/*
+		 * Write new MSI capability block, re-enabling interrupts with
+		 * the last word.
+		 */
+		for (n = 3; n >= 0; n--)
+			pci_write_config(cfg->amd_bdf, cfg->amd_msi_cap + 4 * n,
+					 msi_reg.raw[n], 4);
+	}
+
+	/*
+	 * There is a race window in between we change fault_reporting_cpu_id
+	 * and actually reprogram the MSI. To prevent event loss, signal an
+	 * interrupt when done, so iommu_check_pending_faults() is called
+	 * upon completion even if no further NMIs due to events would occurr.
+	 *
+	 * Note we can't simply use CMD_COMPL_WAIT_INT_MASK in
+	 * amd_iommu_completion_wait(), as it seems that IOMMU either signal
+	 * an interrupt or do memory write, but not both.
+	 */
+	apic_send_nmi_ipi(cpu_data);
+}
+
 void iommu_config_commit(struct cell *cell_added_removed)
 {
-	/* TODO: Implement */
+	struct amd_iommu *iommu;
+
+	// HACK for QEMU
+	if (iommu_units_count == 0)
+		return;
+
+	/* Ensure we'll get NMI on completion, or if anything goes wrong. */
+	if (cell_added_removed)
+		amd_iommu_init_fault_nmi();
+
+	for_each_iommu(iommu) {
+		/* Flush caches */
+		if (cell_added_removed) {
+			amd_iommu_invalidate_pages(iommu,
+					cell_added_removed->id & 0xffff);
+			amd_iommu_invalidate_pages(iommu,
+					root_cell.id & 0xffff);
+		}
+		/* Execute all commands in the buffer */
+		amd_iommu_completion_wait(iommu);
+	}
 }
 
 struct apic_irq_message iommu_get_remapped_root_int(unsigned int iommu,
