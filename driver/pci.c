@@ -86,6 +86,8 @@ static void jailhouse_pci_claim_release(const struct jailhouse_pci_device *dev,
 	if (!bus)
 		return;
 	l_dev = pci_get_slot(bus, dev->bdf & 0xff);
+	if (!l_dev)
+		return;
 	drv = l_dev->dev.driver;
 
 	if (action == JAILHOUSE_PCI_ACTION_CLAIM) {
