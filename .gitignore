@@ -17,3 +17,6 @@ hypervisor/include/generated
 *.s
 ci/out
 ci/*.tar.xz
+
+cscope.*
+ncscope.*
