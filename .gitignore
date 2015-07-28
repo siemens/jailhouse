@@ -1,8 +1,8 @@
+# Built outputs
 *.[oa]
 *.mod.[co]
 *.cmd
 *.bin
-*.sw[pon]
 .tmp_versions
 Module.symvers
 modules.order
@@ -18,5 +18,7 @@ hypervisor/include/generated
 ci/out
 ci/*.tar.xz
 
+# Tools outputs
+*.sw[pon]
 cscope.*
 ncscope.*
