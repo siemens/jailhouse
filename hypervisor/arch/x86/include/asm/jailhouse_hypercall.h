@@ -78,10 +78,10 @@
 #define __MAKE_UL(x)	x ## UL
 
 /**
- * @defgroup Hypercalls
+ * @defgroup Hypercalls Hypercall Subsystem
  *
- * The hypercall subsystem provides an interface for cells
- * to call into Jailhouse.
+ * The hypercall subsystem provides an interface for cells to invoke Jailhouse
+ * services and interact via the communication region.
  *
  * @{
  */
@@ -97,13 +97,27 @@
  */
 extern bool jailhouse_use_vmcall;
 
+#ifdef DOXYGEN_CPP
+/* included to expand COMM_REGION_GENERIC_HEADER */
+#include <jailhouse/hypercall.h>
+#endif
+
+/** Communication region between hypervisor and a cell. */
 struct jailhouse_comm_region {
 	COMM_REGION_GENERIC_HEADER;
 
+	/** I/O port address of the PM timer (x86-specific). */
 	__u16 pm_timer_address;
+	/** Number of CPUs available to the cell (x86-specific). */
 	__u16 num_cpus;
 };
 
+/**
+ * Invoke a hypervisor without additional arguments.
+ * @param num		Hypercall number.
+ *
+ * @return Result of the hypercall, semantic depends on the invoked service.
+ */
 static inline __u32 jailhouse_call(__u32 num)
 {
 	__u32 result;
@@ -115,6 +129,13 @@ static inline __u32 jailhouse_call(__u32 num)
 	return result;
 }
 
+/**
+ * Invoke a hypervisor with one argument.
+ * @param num		Hypercall number.
+ * @param arg1		First argument.
+ *
+ * @return Result of the hypercall, semantic depends on the invoked service.
+ */
 static inline __u32 jailhouse_call_arg1(__u32 num, unsigned long arg1)
 {
 	__u32 result;
@@ -127,6 +148,14 @@ static inline __u32 jailhouse_call_arg1(__u32 num, unsigned long arg1)
 	return result;
 }
 
+/**
+ * Invoke a hypervisor with two arguments.
+ * @param num		Hypercall number.
+ * @param arg1		First argument.
+ * @param arg2		Second argument.
+ *
+ * @return Result of the hypercall, semantic depends on the invoked service.
+ */
 static inline __u32 jailhouse_call_arg2(__u32 num, unsigned long arg1,
 					unsigned long arg2)
 {
@@ -140,6 +169,11 @@ static inline __u32 jailhouse_call_arg2(__u32 num, unsigned long arg1,
 	return result;
 }
 
+/**
+ * Send a message from the hypervisor to a cell via the communication region.
+ * @param comm_region	Pointer to Communication Region.
+ * @param msg		Message to be sent.
+ */
 static inline void
 jailhouse_send_msg_to_cell(struct jailhouse_comm_region *comm_region,
 			   __u32 msg)
@@ -150,6 +184,12 @@ jailhouse_send_msg_to_cell(struct jailhouse_comm_region *comm_region,
 	comm_region->msg_to_cell = msg;
 }
 
+/**
+ * Send a reply message from a cell to the hypervisor via the communication
+ * region.
+ * @param comm_region	Pointer to Communication Region.
+ * @param reply		Reply to be sent.
+ */
 static inline void
 jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
 			       __u32 reply)
