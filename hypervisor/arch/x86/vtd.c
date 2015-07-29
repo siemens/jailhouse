@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Siemens AG, 2013-2015
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -265,11 +265,9 @@ static int vtd_emulate_inv_int(unsigned int unit_no, unsigned int index)
 	if (!irte_usage->used)
 		return 0;
 
-	/* check all virtual PCI devices first */
-	for (device = root_cell.virtual_device_list; device;
-	     device = device->next_virtual_device)
-		if (device->info->bdf == irte_usage->device_id)
-			return pci_ivshmem_update_msix(device);
+	device = pci_get_assigned_device(&root_cell, irte_usage->device_id);
+	if (device && device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+		return pci_ivshmem_update_msix(device);
 
 	irq_msg = iommu_get_remapped_root_int(unit_no, irte_usage->device_id,
 					      irte_usage->vector, index);
