@@ -1023,7 +1023,8 @@ if ourmem is None:
     ourmem = alloc_mem(regions, total)
 elif (total > ourmem[1]):
     raise RuntimeError('Your memmap reservation is too small you need >="' +
-                       hex(total) + '"')
+                       hex(total) + '". Hint: your kernel cmd line needs '
+                       '"memmap=' + hex(total) + '$' + hex(ourmem[0]) + '"')
 
 hvmem[0] = ourmem[0]
 
