@@ -62,7 +62,7 @@ static const struct pci_cfg_control bridge_write[PCI_CONFIG_HEADER_SIZE] = {
 };
 
 static void *pci_space;
-static u64 mmcfg_start, mmcfg_end;
+static u64 mmcfg_start, mmcfg_size;
 static u8 end_bus;
 
 unsigned int pci_mmio_count_regions(struct cell *cell)
@@ -70,6 +70,9 @@ unsigned int pci_mmio_count_regions(struct cell *cell)
 	const struct jailhouse_pci_device *dev_infos =
 		jailhouse_cell_pci_devices(cell->config);
 	unsigned int n, regions = 0;
+
+	if (system_config->platform_info.x86.mmconfig_base)
+		regions++;
 
 	for (n = 0; n < cell->config->num_pci_devices; n++)
 		if (dev_infos[n].type == JAILHOUSE_PCI_TYPE_IVSHMEM)
@@ -353,7 +356,6 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
  */
 int pci_init(void)
 {
-	unsigned int mmcfg_size;
 	int err;
 
 	err = pci_cell_init(&root_cell);
@@ -366,7 +368,6 @@ int pci_init(void)
 
 	end_bus = system_config->platform_info.x86.mmconfig_end_bus;
 	mmcfg_size = (end_bus + 1) * 256 * 4096;
-	mmcfg_end = mmcfg_start + mmcfg_size - 4;
 
 	pci_space = page_alloc(&remap_pool, mmcfg_size / PAGE_SIZE);
 	if (!pci_space)
@@ -434,6 +435,45 @@ invalid_access:
 	return -1;
 }
 
+static enum mmio_result pci_mmconfig_access_handler(void *arg,
+						    struct mmio_access *mmio)
+{
+	u32 reg_addr = mmio->address & 0xfff;
+	struct pci_device *device;
+	enum pci_access result;
+	u32 val;
+
+	/* access must be DWORD-aligned */
+	if (reg_addr & 0x3)
+		goto invalid_access;
+
+	device = pci_get_assigned_device(this_cell(), mmio->address >> 12);
+
+	if (mmio->is_write) {
+		result = pci_cfg_write_moderate(device, reg_addr, 4,
+						mmio->value);
+		if (result == PCI_ACCESS_REJECT)
+			goto invalid_access;
+		if (result == PCI_ACCESS_PERFORM)
+			mmio_write32(pci_space + mmio->address, mmio->value);
+	} else {
+		result = pci_cfg_read_moderate(device, reg_addr, 4, &val);
+		if (result == PCI_ACCESS_PERFORM)
+			mmio->value = mmio_read32(pci_space + mmio->address);
+		else
+			mmio->value = val;
+	}
+
+	return MMIO_HANDLED;
+
+invalid_access:
+	panic_printk("FATAL: Invalid PCI MMCONFIG write, device %02x:%02x.%x, "
+		     "reg: %\n", PCI_BDF_PARAMS(mmio->address >> 12),
+		     reg_addr);
+	return MMIO_ERROR;
+
+}
+
 /**
  * Handler for MMIO-accesses to PCI config space.
  * @param cell		Request issuing cell.
@@ -446,40 +486,7 @@ invalid_access:
 int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 			    u64 addr, u32 *value)
 {
-	u32 mmcfg_offset, reg_addr;
-	struct pci_device *device;
-	enum pci_access access;
-
-	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end)
-		return pci_msix_access_handler(cell, is_write, addr, value);
-
-	mmcfg_offset = addr - mmcfg_start;
-	reg_addr = mmcfg_offset & 0xfff;
-	/* access must be DWORD-aligned */
-	if (reg_addr & 0x3)
-		goto invalid_access;
-
-	device = pci_get_assigned_device(cell, mmcfg_offset >> 12);
-
-	if (is_write) {
-		access = pci_cfg_write_moderate(device, reg_addr, 4, *value);
-		if (access == PCI_ACCESS_REJECT)
-			goto invalid_access;
-		if (access == PCI_ACCESS_PERFORM)
-			mmio_write32(pci_space + mmcfg_offset, *value);
-	} else {
-		access = pci_cfg_read_moderate(device, reg_addr, 4, value);
-		if (access == PCI_ACCESS_PERFORM)
-			*value = mmio_read32(pci_space + mmcfg_offset);
-	}
-
-	return 1;
-
-invalid_access:
-	panic_printk("FATAL: Invalid PCI MMCONFIG write, device %02x:%02x.%x, "
-		     "reg: %\n", PCI_BDF_PARAMS(mmcfg_offset >> 12), reg_addr);
-	return -1;
-
+	return pci_msix_access_handler(cell, is_write, addr, value);
 }
 
 /**
@@ -682,6 +689,10 @@ int pci_cell_init(struct cell *cell)
 	struct pci_device *device, *root_device;
 	unsigned int ndev, ncap;
 	int err;
+
+	if (pci_space)
+		mmio_region_register(cell, mmcfg_start, mmcfg_size,
+				     pci_mmconfig_access_handler, NULL);
 
 	cell->pci_devices = page_alloc(&mem_pool, devlist_pages);
 	if (!cell->pci_devices)
