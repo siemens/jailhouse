@@ -198,7 +198,6 @@ bool vcpu_handle_mmio_access(void)
 	struct vcpu_mmio_intercept intercept;
 	struct vcpu_execution_state x_state;
 	struct mmio_instruction inst;
-	u32 val;
 
 	vcpu_vendor_get_execution_state(&x_state);
 	vcpu_vendor_get_mmio_intercept(&intercept);
@@ -211,20 +210,11 @@ bool vcpu_handle_mmio_access(void)
 		goto invalid_access;
 
 	mmio.is_write = intercept.is_write;
-	if (mmio.is_write) {
+	if (mmio.is_write)
 		mmio.value = guest_regs->by_index[inst.reg_num];
-		val = mmio.value;
-	}
 
 	mmio.address = intercept.phys_addr;
 	result = mmio_handle_access(&mmio);
-
-	if (result == MMIO_UNHANDLED) {
-		result = pci_mmio_access_handler(this_cell(), mmio.is_write,
-						 intercept.phys_addr, &val);
-		mmio.value = val;
-	}
-
 	if (result == MMIO_HANDLED) {
 		if (!mmio.is_write)
 			guest_regs->by_index[inst.reg_num] = mmio.value;

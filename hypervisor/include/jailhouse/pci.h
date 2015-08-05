@@ -160,9 +160,6 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 				       unsigned int size, u32 value);
 
-int pci_mmio_access_handler(const struct cell *cell, bool is_write, u64 addr,
-			    u32 *value);
-
 int pci_cell_init(struct cell *cell);
 void pci_cell_exit(struct cell *cell);
 

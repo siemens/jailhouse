@@ -77,6 +77,8 @@ unsigned int pci_mmio_count_regions(struct cell *cell)
 	for (n = 0; n < cell->config->num_pci_devices; n++)
 		if (dev_infos[n].type == JAILHOUSE_PCI_TYPE_IVSHMEM)
 			regions += PCI_IVSHMEM_NUM_MMIO_REGIONS;
+		else if (dev_infos[n].msix_address)
+			regions++;
 
 	return regions;
 }
@@ -379,32 +381,21 @@ int pci_init(void)
 			     PAGING_NON_COHERENT);
 }
 
-static int pci_msix_access_handler(const struct cell *cell, bool is_write,
-				   u64 addr, u32 *value)
+static enum mmio_result pci_msix_access_handler(void *arg,
+						struct mmio_access *mmio)
 {
-	unsigned int dword = (addr % sizeof(union pci_msix_vector)) >> 2;
-	struct pci_device *device = cell->msix_device_list;
+	unsigned int dword =
+		(mmio->address % sizeof(union pci_msix_vector)) >> 2;
+	struct pci_device *device = arg;
 	unsigned int index;
-	u64 offs;
 
-	while (device) {
-		if (addr >= device->info->msix_address &&
-		    addr < device->info->msix_address +
-			   device->info->msix_region_size)
-			goto found;
-		device = device->next_msix_device;
-	}
-	return 0;
-
-found:
 	/* access must be DWORD-aligned */
-	if (addr & 0x3)
+	if (mmio->address & 0x3)
 		goto invalid_access;
 
-	offs = addr - device->info->msix_address;
-	index = offs / sizeof(union pci_msix_vector);
+	index = mmio->address / sizeof(union pci_msix_vector);
 
-	if (is_write) {
+	if (mmio->is_write) {
 		/*
 		 * The PBA may share a page with the MSI-X table. Writing to
 		 * PBA entries is undefined. We declare it as invalid.
@@ -412,27 +403,27 @@ found:
 		if (index >= device->info->num_msix_vectors)
 			goto invalid_access;
 
-		device->msix_vectors[index].raw[dword] = *value;
+		device->msix_vectors[index].raw[dword] = mmio->value;
 		if (arch_pci_update_msix_vector(device, index) < 0)
 			goto invalid_access;
 
 		if (dword == MSIX_VECTOR_CTRL_DWORD)
 			mmio_write32(&device->msix_table[index].raw[dword],
-				     *value);
+				     mmio->value);
 	} else {
 		if (index >= device->info->num_msix_vectors ||
 		    dword == MSIX_VECTOR_CTRL_DWORD)
-			*value =
-			    mmio_read32(((void *)device->msix_table) + offs);
+			mmio->value = mmio_read32(((void *)device->msix_table) +
+						  mmio->address);
 		else
-			*value = device->msix_vectors[index].raw[dword];
+			mmio->value = device->msix_vectors[index].raw[dword];
 	}
-	return 1;
+	return MMIO_HANDLED;
 
 invalid_access:
 	panic_printk("FATAL: Invalid PCI MSI-X table/PBA access, device "
 		     "%02x:%02x.%x\n", PCI_BDF_PARAMS(device->info->bdf));
-	return -1;
+	return MMIO_ERROR;
 }
 
 static enum mmio_result pci_mmconfig_access_handler(void *arg,
@@ -472,21 +463,6 @@ invalid_access:
 		     reg_addr);
 	return MMIO_ERROR;
 
-}
-
-/**
- * Handler for MMIO-accesses to PCI config space.
- * @param cell		Request issuing cell.
- * @param is_write	True if write access.
- * @param addr		Address accessed.
- * @param value		Pointer to value for reading/writing.
- *
- * @return 1 if handled successfully, 0 if unhandled, -1 on access error.
- */
-int pci_mmio_access_handler(const struct cell *cell, bool is_write,
-			    u64 addr, u32 *value)
-{
-	return pci_msix_access_handler(cell, is_write, addr, value);
 }
 
 /**
@@ -623,6 +599,8 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 
 		device->next_msix_device = cell->msix_device_list;
 		cell->msix_device_list = device;
+		mmio_region_register(cell, device->info->msix_address, size,
+				     pci_msix_access_handler, device);
 	}
 	return err;
 
@@ -669,6 +647,7 @@ static void pci_remove_physical_device(struct pci_device *device)
 			prev_msix_device = prev_msix_device->next_msix_device;
 		prev_msix_device->next_msix_device = device->next_msix_device;
 	}
+	mmio_region_unregister(device->cell, device->info->msix_address);
 }
 
 /**
