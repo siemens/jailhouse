@@ -22,6 +22,7 @@
 #include <asm/percpu.h>
 
 unsigned int iommu_count_units(void);
+unsigned int iommu_mmio_count_regions(struct cell *cell);
 
 int iommu_init(void);
 
@@ -49,8 +50,6 @@ void iommu_config_commit(struct cell *cell_added_removed);
 void iommu_shutdown(void);
 
 void iommu_check_pending_faults(void);
-
-int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value);
 
 bool iommu_cell_emulates_ir(struct cell *cell);
 

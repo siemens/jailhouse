@@ -72,6 +72,11 @@ static DEFINE_SPINLOCK(inv_queue_lock);
 static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_IOMMU_UNITS];
 static bool dmar_units_initialized;
 
+unsigned int iommu_mmio_count_regions(struct cell *cell)
+{
+	return cell == &root_cell ? iommu_count_units() : 0;
+}
+
 static unsigned int inv_queue_write(void *inv_queue, unsigned int index,
 				    struct vtd_entry content)
 {
@@ -318,23 +323,24 @@ static int vtd_emulate_qi_request(unsigned int unit_no,
 	return -EINVAL;
 }
 
-static int vtd_unit_access_handler(unsigned int unit_no, bool is_write,
-				   unsigned int reg, u32 *value)
+static enum mmio_result vtd_unit_access_handler(void *arg,
+						struct mmio_access *mmio)
 {
-	struct vtd_emulation *unit = &root_cell_units[unit_no];
+	struct vtd_emulation *unit = arg;
+	unsigned int unit_no = unit - root_cell_units;
 	struct vtd_entry inv_desc;
 	void *inv_desc_page;
 
-	if (reg == VTD_FSTS_REG && !is_write) {
+	if (mmio->address == VTD_FSTS_REG && !mmio->is_write) {
 		/*
 		 * Nothing to report this way, vtd_check_pending_faults takes
 		 * care for the whole system.
 		 */
-		*value = 0;
-		return 1;
+		mmio->value = 0;
+		return MMIO_HANDLED;
 	}
-	if (reg == VTD_IQT_REG && is_write) {
-		while (unit->iqh != (*value & ~PAGE_MASK)) {
+	if (mmio->address == VTD_IQT_REG && mmio->is_write) {
+		while (unit->iqh != (mmio->value & ~PAGE_MASK)) {
 			inv_desc_page =
 				paging_get_guest_pages(NULL, unit->iqa, 1,
 						       PAGE_READONLY_FLAGS);
@@ -350,33 +356,15 @@ static int vtd_unit_access_handler(unsigned int unit_no, bool is_write,
 			unit->iqh += 1 << VTD_IQH_QH_SHIFT;
 			unit->iqh &= ~PAGE_MASK;
 		}
-		return 1;
+		return MMIO_HANDLED;
 	}
 	panic_printk("FATAL: Unhandled DMAR unit %s access, register %02x\n",
-		     is_write ? "write" : "read", reg);
-	return -1;
+		     mmio->is_write ? "write" : "read", mmio->address);
+	return MMIO_ERROR;
 
 invalid_iq_entry:
 	panic_printk("FATAL: Invalid/unsupported invalidation queue entry\n");
 	return -1;
-}
-
-int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value)
-{
-	unsigned int n;
-	u64 base_addr;
-
-	if (!this_cell()->arch.vtd.ir_emulation)
-		return 0;
-
-	for (n = 0; n < dmar_units; n++) {
-		base_addr = system_config->platform_info.x86.iommu_base[n];
-		if (addr >= base_addr && addr < base_addr + PAGE_SIZE)
-			return vtd_unit_access_handler(n, is_write,
-						       addr - base_addr,
-						       value);
-	}
-	return 0;
 }
 
 static void vtd_init_unit(void *reg_base, void *inv_queue)
@@ -428,10 +416,14 @@ static void vtd_init_unit(void *reg_base, void *inv_queue)
 static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 {
 	struct vtd_emulation *unit = &root_cell_units[unit_no];
-	unsigned long size;
+	unsigned long base, size;
 	u64 iqt;
 
 	root_cell.arch.vtd.ir_emulation = true;
+
+	base = system_config->platform_info.x86.iommu_base[unit_no];
+	mmio_region_register(&root_cell, base, PAGE_SIZE,
+			     vtd_unit_access_handler, unit);
 
 	unit->irta = mmio_read64(reg_base + VTD_IRTA_REG);
 	unit->irt_entries = 2 << (unit->irta & VTD_IRTA_SIZE_MASK);

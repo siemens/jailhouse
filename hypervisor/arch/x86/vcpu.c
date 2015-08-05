@@ -224,11 +224,6 @@ bool vcpu_handle_mmio_access(void)
 						 intercept.phys_addr, &val);
 		mmio.value = val;
 	}
-	if (result == MMIO_UNHANDLED) {
-		result = iommu_mmio_access_handler(mmio.is_write,
-						   intercept.phys_addr, &val);
-		mmio.value = val;
-	}
 
 	if (result == MMIO_HANDLED) {
 		if (!mmio.is_write)

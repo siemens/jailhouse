@@ -16,6 +16,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <asm/ioapic.h>
+#include <asm/iommu.h>
 #include <asm/vcpu.h>
 
 #define X86_MAX_INST_LEN	15
@@ -174,5 +175,5 @@ error:
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return ioapic_mmio_count_regions(cell);
+	return ioapic_mmio_count_regions(cell) + iommu_mmio_count_regions(cell);
 }

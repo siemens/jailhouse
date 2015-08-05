@@ -20,6 +20,11 @@
 #include <asm/iommu.h>
 #include <asm/percpu.h>
 
+unsigned int iommu_mmio_count_regions(struct cell *cell)
+{
+	return 0;
+}
+
 int iommu_init(void)
 {
 	printk("WARNING: AMD IOMMU support is not implemented yet\n");
@@ -93,12 +98,6 @@ void iommu_shutdown(void)
 void iommu_check_pending_faults(void)
 {
 	/* TODO: Implement */
-}
-
-int iommu_mmio_access_handler(bool is_write, u64 addr, u32 *value)
-{
-	/* TODO: Implement */
-	return 0;
 }
 
 bool iommu_cell_emulates_ir(struct cell *cell)
