@@ -191,49 +191,63 @@ invalid_access:
 
 bool vcpu_handle_mmio_access(void)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	enum mmio_result result = MMIO_UNHANDLED;
+	struct mmio_access mmio = {.size = 4};
 	struct guest_paging_structures pg_structs;
+	struct vcpu_mmio_intercept intercept;
 	struct vcpu_execution_state x_state;
-	struct vcpu_mmio_intercept mmio;
 	struct mmio_instruction inst;
-	int result = 0;
 	u32 val;
 
 	vcpu_vendor_get_execution_state(&x_state);
-	vcpu_vendor_get_mmio_intercept(&mmio);
+	vcpu_vendor_get_mmio_intercept(&intercept);
 
 	if (!vcpu_get_guest_paging_structs(&pg_structs))
 		goto invalid_access;
 
-	inst = x86_mmio_parse(x_state.rip, &pg_structs, mmio.is_write);
+	inst = x86_mmio_parse(x_state.rip, &pg_structs, intercept.is_write);
 	if (!inst.inst_len || inst.access_size != 4)
 		goto invalid_access;
 
-	if (mmio.is_write)
-		val = cpu_data->guest_regs.by_index[inst.reg_num];
+	mmio.is_write = intercept.is_write;
+	if (mmio.is_write) {
+		mmio.value = guest_regs->by_index[inst.reg_num];
+		val = mmio.value;
+	}
 
-	result = ioapic_access_handler(cpu_data->cell, mmio.is_write,
-			               mmio.phys_addr, &val);
-	if (result == 0)
-		result = pci_mmio_access_handler(cpu_data->cell, mmio.is_write,
-						 mmio.phys_addr, &val);
+	mmio.address = intercept.phys_addr;
+	result = mmio_handle_access(&mmio);
 
-	if (result == 0)
+	if (result == MMIO_UNHANDLED) {
+		result = ioapic_access_handler(this_cell(), mmio.is_write,
+					       intercept.phys_addr, &val);
+		mmio.value = val;
+	}
+	if (result == MMIO_UNHANDLED) {
+		result = pci_mmio_access_handler(this_cell(), mmio.is_write,
+						 intercept.phys_addr, &val);
+		mmio.value = val;
+	}
+	if (result == MMIO_UNHANDLED) {
 		result = iommu_mmio_access_handler(mmio.is_write,
-				                   mmio.phys_addr, &val);
+						   intercept.phys_addr, &val);
+		mmio.value = val;
+	}
 
-	if (result == 1) {
+	if (result == MMIO_HANDLED) {
 		if (!mmio.is_write)
-			cpu_data->guest_regs.by_index[inst.reg_num] = val;
+			guest_regs->by_index[inst.reg_num] = mmio.value;
 		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
 	}
 
 invalid_access:
 	/* report only unhandled access failures */
-	if (result == 0)
+	if (result == MMIO_UNHANDLED)
 		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
-			     mmio.is_write ? "write" : "read", mmio.phys_addr);
+			     intercept.is_write ? "write" : "read",
+			     intercept.phys_addr);
 	return false;
 }
 
