@@ -132,8 +132,9 @@ int psci_cell_init(struct cell *cell)
 	return 0;
 }
 
-long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx)
+long psci_dispatch(struct trap_context *ctx)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
 	u32 function_id = ctx->regs[0];
 
 	switch (function_id) {

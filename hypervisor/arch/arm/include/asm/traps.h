@@ -33,8 +33,7 @@ struct trap_context {
 	u32 pc;
 };
 
-typedef int (*trap_handler)(struct per_cpu *cpu_data,
-			     struct trap_context *ctx);
+typedef int (*trap_handler)(struct trap_context *ctx);
 
 #define arm_read_banked_reg(reg, val)					\
 	asm volatile ("mrs %0, " #reg "\n" : "=r" (val))
@@ -91,7 +90,7 @@ void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 		     bool is_read);
 void arch_skip_instruction(struct trap_context *ctx);
 
-int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx);
+int arch_handle_dabt(struct trap_context *ctx);
 
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_TRAPS_H */

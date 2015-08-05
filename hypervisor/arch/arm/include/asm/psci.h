@@ -73,7 +73,7 @@ void psci_suspend(struct per_cpu *cpu_data);
 long psci_resume(unsigned int target);
 long psci_try_resume(unsigned int cpu_id);
 
-long psci_dispatch(struct per_cpu *cpu_data, struct trap_context *ctx);
+long psci_dispatch(struct trap_context *ctx);
 
 int psci_cell_init(struct cell *cell);
 unsigned long psci_emulate_spin(struct per_cpu *cpu_data);

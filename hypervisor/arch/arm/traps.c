@@ -189,7 +189,7 @@ void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 	}
 }
 
-static void dump_guest_regs(struct per_cpu *cpu_data, struct trap_context *ctx)
+static void dump_guest_regs(struct trap_context *ctx)
 {
 	u8 reg;
 	unsigned long reg_val;
@@ -205,12 +205,12 @@ static void dump_guest_regs(struct per_cpu *cpu_data, struct trap_context *ctx)
 	panic_printk("\n");
 }
 
-static int arch_handle_smc(struct per_cpu *cpu_data, struct trap_context *ctx)
+static int arch_handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
 	if (IS_PSCI_FN(regs[0]))
-		regs[0] = psci_dispatch(cpu_data, ctx);
+		regs[0] = psci_dispatch(ctx);
 	else
 		regs[0] = smc(regs[0], regs[1], regs[2], regs[3]);
 
@@ -219,19 +219,19 @@ static int arch_handle_smc(struct per_cpu *cpu_data, struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
-static int arch_handle_hvc(struct per_cpu *cpu_data, struct trap_context *ctx)
+static int arch_handle_hvc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
 	if (IS_PSCI_FN(regs[0]))
-		regs[0] = psci_dispatch(cpu_data, ctx);
+		regs[0] = psci_dispatch(ctx);
 	else
 		regs[0] = hypercall(regs[0], regs[1], regs[2]);
 
 	return TRAP_HANDLED;
 }
 
-static int arch_handle_cp15_32(struct per_cpu *cpu_data, struct trap_context *ctx)
+static int arch_handle_cp15_32(struct trap_context *ctx)
 {
 	u32 opc2	= ctx->esr >> 17 & 0x7;
 	u32 opc1	= ctx->esr >> 14 & 0x7;
@@ -255,7 +255,7 @@ static int arch_handle_cp15_32(struct per_cpu *cpu_data, struct trap_context *ct
 	return TRAP_UNHANDLED;
 }
 
-static int arch_handle_cp15_64(struct per_cpu *cpu_data, struct trap_context *ctx)
+static int arch_handle_cp15_64(struct trap_context *ctx)
 {
 	unsigned long rt_val, rt2_val;
 	u32 opc1	= ctx->esr >> 16 & 0x7;
@@ -315,7 +315,7 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 	}
 
 	if (trap_handlers[exception_class])
-		ret = trap_handlers[exception_class](cpu_data, &ctx);
+		ret = trap_handlers[exception_class](&ctx);
 
 	switch (ret) {
 	case TRAP_UNHANDLED:
@@ -324,7 +324,7 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 			     (ret == TRAP_UNHANDLED ? "unhandled trap" :
 						      "forbidden access"),
 			     exception_class);
-		dump_guest_regs(cpu_data, &ctx);
+		dump_guest_regs(&ctx);
 		panic_park();
 	}
 

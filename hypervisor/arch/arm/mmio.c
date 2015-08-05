@@ -88,7 +88,7 @@ void arm_mmio_perform_access(struct mmio_access *mmio)
 	       mmio->size);
 }
 
-int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
+int arch_handle_dabt(struct trap_context *ctx)
 {
 	struct mmio_access mmio;
 	unsigned long hpfar;
@@ -111,7 +111,7 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 	mmio.address = hpfar << 8;
 	mmio.address |= hdfar & 0xfff;
 
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 
 	/*
 	 * Invalid instruction syndrome means multiple access or writeback, there
