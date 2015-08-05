@@ -220,11 +220,6 @@ bool vcpu_handle_mmio_access(void)
 	result = mmio_handle_access(&mmio);
 
 	if (result == MMIO_UNHANDLED) {
-		result = ioapic_access_handler(this_cell(), mmio.is_write,
-					       intercept.phys_addr, &val);
-		mmio.value = val;
-	}
-	if (result == MMIO_UNHANDLED) {
 		result = pci_mmio_access_handler(this_cell(), mmio.is_write,
 						 intercept.phys_addr, &val);
 		mmio.value = val;

@@ -77,6 +77,11 @@ struct cell_ioapic {
 	u32 pin_bitmap;
 };
 
+static inline unsigned int ioapic_mmio_count_regions(struct cell *cell)
+{
+	return cell->config->num_irqchips;
+}
+
 int ioapic_init(void);
 void ioapic_prepare_handover(void);
 
@@ -84,8 +89,5 @@ int ioapic_cell_init(struct cell *cell);
 void ioapic_cell_exit(struct cell *cell);
 
 void ioapic_config_commit(struct cell *cell_added_removed);
-
-int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
-			  u32 *value);
 
 void ioapic_shutdown(void);

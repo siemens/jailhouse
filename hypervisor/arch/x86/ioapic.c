@@ -259,50 +259,35 @@ static struct cell_ioapic *ioapic_find_by_address(struct cell *cell,
 	struct cell_ioapic *ioapic;
 	unsigned int n;
 
-	for_each_cell_ioapic(ioapic, cell, n) {
-		unsigned long base = ioapic->info->address;
-
-		if (address >= base && address < base + PAGE_SIZE)
+	for_each_cell_ioapic(ioapic, cell, n)
+		if (address == ioapic->info->address)
 			return ioapic;
-	}
 	return NULL;
 }
 
-/**
- * x86_ioapic_handler() - Handler for accesses to IOAPIC
- * @cell:	Request issuing cell
- * @is_write:	True if write access
- * @addr:	Address accessed
- * @value:	Pointer to value for reading/writing
- *
- * Return: 1 if handled successfully, 0 if unhandled, -1 on access error
- */
-int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
-			  u32 *value)
+static enum mmio_result ioapic_access_handler(void *arg,
+					      struct mmio_access *mmio)
 {
 	union ioapic_redir_entry *shadow_table;
-	struct cell_ioapic *ioapic;
+	struct cell_ioapic *ioapic = arg;
 	u32 index, entry;
 
-	ioapic = ioapic_find_by_address(cell, addr);
-	if (!ioapic)
-		return 0;
-
-	switch (addr - ioapic->info->address) {
+	switch (mmio->address) {
 	case IOAPIC_REG_INDEX:
-		if (is_write)
-			ioapic->index_reg_val = *value;
+		if (mmio->is_write)
+			ioapic->index_reg_val = mmio->value;
 		else
-			*value = ioapic->index_reg_val;
-		return 1;
+			mmio->value = ioapic->index_reg_val;
+		return MMIO_HANDLED;
 	case IOAPIC_REG_DATA:
 		index = ioapic->index_reg_val;
 
 		if (index == IOAPIC_ID || index == IOAPIC_VER) {
-			if (is_write)
+			if (mmio->is_write)
 				goto invalid_access;
-			*value = ioapic_reg_read(ioapic->phys_ioapic, index);
-			return 1;
+			mmio->value = ioapic_reg_read(ioapic->phys_ioapic,
+						      index);
+			return MMIO_HANDLED;
 		}
 
 		if (index < IOAPIC_REDIR_TBL_START ||
@@ -313,17 +298,18 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 		if ((ioapic->pin_bitmap & (1UL << entry)) == 0)
 			goto invalid_access;
 
-		if (is_write) {
-			if (ioapic_virt_redir_write(ioapic, index, *value) < 0)
+		if (mmio->is_write) {
+			if (ioapic_virt_redir_write(ioapic, index,
+						    mmio->value) < 0)
 				goto invalid_access;
 		} else {
 			index -= IOAPIC_REDIR_TBL_START;
 			shadow_table = ioapic->phys_ioapic->shadow_redir_table;
-			*value = shadow_table[index / 2].raw[index % 2];
+			mmio->value = shadow_table[index / 2].raw[index % 2];
 		}
-		return 1;
+		return MMIO_HANDLED;
 	case IOAPIC_REG_EOI:
-		if (!is_write || ioapic->pin_bitmap == 0)
+		if (!mmio->is_write || ioapic->pin_bitmap == 0)
 			goto invalid_access;
 		/*
 		 * Just write the EOI if the cell has any assigned pin. It
@@ -333,15 +319,15 @@ int ioapic_access_handler(struct cell *cell, bool is_write, u64 addr,
 		 * non-root cells.
 		 */
 		mmio_write32(ioapic->phys_ioapic->reg_base + IOAPIC_REG_EOI,
-			     *value);
-		return 1;
+			     mmio->value);
+		return MMIO_HANDLED;
 	}
 
 invalid_access:
 	panic_printk("FATAL: Invalid IOAPIC %s, reg: %x, index: %x\n",
-		     is_write ? "write" : "read", addr - ioapic->info->address,
+		     mmio->is_write ? "write" : "read", mmio->address,
 		     ioapic->index_reg_val);
-	return -1;
+	return MMIO_ERROR;
 }
 
 int ioapic_cell_init(struct cell *cell)
@@ -372,6 +358,9 @@ int ioapic_cell_init(struct cell *cell)
 		ioapic->phys_ioapic = phys_ioapic;
 		ioapic->pin_bitmap = (u32)irqchip->pin_bitmap;
 		cell->arch.num_ioapics++;
+
+		mmio_region_register(cell, irqchip->address, PAGE_SIZE,
+				     ioapic_access_handler, ioapic);
 
 		if (cell != &root_cell) {
 			root_ioapic = ioapic_find_by_address(&root_cell,
