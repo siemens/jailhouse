@@ -597,8 +597,6 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 			}
 		}
 
-		device->next_msix_device = cell->msix_device_list;
-		cell->msix_device_list = device;
 		mmio_region_register(cell, device->info->msix_address, size,
 				     pci_msix_access_handler, device);
 	}
@@ -618,7 +616,6 @@ error_remove_dev:
 static void pci_remove_physical_device(struct pci_device *device)
 {
 	unsigned int size = device->info->msix_region_size;
-	struct pci_device *prev_msix_device;
 
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
@@ -639,14 +636,6 @@ static void pci_remove_physical_device(struct pci_device *device)
 			  PAGES(sizeof(union pci_msix_vector) *
 				device->info->num_msix_vectors));
 
-	prev_msix_device = device->cell->msix_device_list;
-	if (prev_msix_device == device) {
-		device->cell->msix_device_list = device->next_msix_device;
-	} else {
-		while (prev_msix_device->next_msix_device != device)
-			prev_msix_device = prev_msix_device->next_msix_device;
-		prev_msix_device->next_msix_device = device->next_msix_device;
-	}
 	mmio_region_unregister(device->cell, device->info->msix_address);
 }
 

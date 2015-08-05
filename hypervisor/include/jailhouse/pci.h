@@ -134,8 +134,6 @@ struct pci_device {
 
 	/** Shadow state of MSI-X config space registers. */
 	union pci_msix_registers msix_registers;
-	/** Next PCI device in this cell with MSI-X support. */
-	struct pci_device *next_msix_device;
 	/** ivshmem specific data. */
 	struct pci_ivshmem_endpoint *ivshmem_endpoint;
 	/** Real MSI-X table. */
