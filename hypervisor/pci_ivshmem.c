@@ -20,6 +20,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
@@ -50,6 +51,8 @@
 struct pci_ivshmem_endpoint {
 	u32 cspace[IVSHMEM_CFG_SIZE / sizeof(u32)];
 	u32 ivpos;
+	u64 bar0_address;
+	u64 bar4_address;
 	struct pci_device *device;
 	struct pci_ivshmem_endpoint *remote;
 	struct apic_irq_message irq_msg;
@@ -92,25 +95,27 @@ static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
 		apic_send_irq(irq_msg);
 }
 
-static int ivshmem_register_mmio(struct pci_ivshmem_endpoint *ive,
-				 bool is_write, u32 offset, u32 *value)
+static enum mmio_result ivshmem_register_mmio(void *arg,
+					      struct mmio_access *mmio)
 {
+	struct pci_ivshmem_endpoint *ive = arg;
+
 	/* read-only IVPosition */
-	if (offset == IVSHMEM_REG_IVPOS && !is_write) {
-		*value = ive->ivpos;
-		return 1;
+	if (mmio->address == IVSHMEM_REG_IVPOS && !mmio->is_write) {
+		mmio->value = ive->ivpos;
+		return MMIO_HANDLED;
 	}
 
-	if (offset == IVSHMEM_REG_DBELL) {
-		if (is_write)
+	if (mmio->address == IVSHMEM_REG_DBELL) {
+		if (mmio->is_write)
 			ivshmem_write_doorbell(ive);
 		else
-			*value = 0;
-		return 1;
+			mmio->value = 0;
+		return MMIO_HANDLED;
 	}
 	panic_printk("FATAL: Invalid ivshmem register %s, number %02x\n",
-		     is_write ? "write" : "read", offset);
-	return -1;
+		     mmio->is_write ? "write" : "read", mmio->address);
+	return MMIO_ERROR;
 }
 
 static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
@@ -170,38 +175,38 @@ static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
 	return 0;
 }
 
-static int ivshmem_msix_mmio(struct pci_ivshmem_endpoint *ive, bool is_write,
-			     u32 offset, u32 *value)
+static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 {
+	struct pci_ivshmem_endpoint *ive = arg;
 	u32 *msix_table = (u32 *)ive->device->msix_vectors;
 
-	if (offset % 4)
+	if (mmio->address % 4)
 		goto fail;
 
 	/* MSI-X PBA */
-	if (offset >= 0x10 * IVSHMEM_MSIX_VECTORS) {
-		if (is_write) {
+	if (mmio->address >= 0x10 * IVSHMEM_MSIX_VECTORS) {
+		if (mmio->is_write) {
 			goto fail;
 		} else {
-			*value = 0;
-			return 1;
+			mmio->value = 0;
+			return MMIO_HANDLED;
 		}
 	/* MSI-X Table */
 	} else {
-		if (is_write) {
-			msix_table[offset/4] = *value;
+		if (mmio->is_write) {
+			msix_table[mmio->address / 4] = mmio->value;
 			if (ivshmem_update_msix(ive))
-				return -1;
+				return MMIO_ERROR;
 		} else {
-			*value = msix_table[offset/4];
+			mmio->value = msix_table[mmio->address / 4];
 		}
-		return 1;
+		return MMIO_HANDLED;
 	}
 
 fail:
 	panic_printk("FATAL: Invalid PCI MSI-X table/PBA access, device "
 		     "%02x:%02x.%x\n", PCI_BDF_PARAMS(ive->device->info->bdf));
-	return -1;
+	return MMIO_ERROR;
 }
 
 /**
@@ -211,6 +216,7 @@ fail:
 static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
 {
 	u16 *cmd = (u16 *)&ive->cspace[PCI_CFG_COMMAND/4];
+	struct pci_device *device = ive->device;
 	int err;
 
 	if ((val & PCI_CMD_MASTER) != (*cmd & PCI_CMD_MASTER)) {
@@ -220,7 +226,25 @@ static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
 			return err;
 	}
 
-	*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
+	if ((val & PCI_CMD_MEM) != (*cmd & PCI_CMD_MEM)) {
+		if (*cmd & PCI_CMD_MEM) {
+			mmio_region_unregister(device->cell, ive->bar0_address);
+			mmio_region_unregister(device->cell, ive->bar4_address);
+		}
+		if (val & PCI_CMD_MEM) {
+			ive->bar0_address = (*(u64 *)&device->bar[0]) & ~0xfL;
+			mmio_region_register(device->cell, ive->bar0_address,
+					     IVSHMEM_BAR0_SIZE,
+					     ivshmem_register_mmio, ive);
+
+			ive->bar4_address = (*(u64 *)&device->bar[4]) & ~0xfL;
+			mmio_region_register(device->cell, ive->bar4_address,
+					     IVSHMEM_BAR4_SIZE,
+					     ivshmem_msix_mmio, ive);
+		}
+		*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
+	}
+
 	return 0;
 }
 
@@ -303,55 +327,16 @@ static void ivshmem_disconnect_cell(struct pci_ivshmem_data *iv, int cellnum)
 {
 	struct pci_ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
 	struct pci_ivshmem_endpoint *ive = &iv->eps[cellnum];
+	u16 cmd = *(u16 *)&ive->cspace[PCI_CFG_COMMAND / 4];
 
+	if (cmd & PCI_CMD_MEM) {
+		mmio_region_unregister(this_cell(), ive->bar0_address);
+		mmio_region_unregister(this_cell(), ive->bar4_address);
+	}
 	ive->device->ivshmem_endpoint = NULL;
 	ive->device = NULL;
 	ive->remote = NULL;
 	remote->remote = NULL;
-}
-
-/**
- * Handler for MMIO-accesses to this virtual PCI devices memory. Both for the
- * BAR containing the registers, and the MSI-X BAR.
- * @param cell		The cell that issued the access.
- * @param is_write	True if write access.
- * @param addr		Address accessed.
- * @param value		Pointer to value for reading/writing.
- *
- * @return 1 if handled successfully, 0 if unhandled, -1 on access error.
- *
- * @see pci_mmio_access_handler
- */
-int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
-				u64 addr, u32 *value)
-{
-	struct pci_ivshmem_endpoint *ive;
-	struct pci_device *device;
-	u64 mem_start;
-
-	for (device = cell->virtual_device_list; device;
-	     device = device->next_virtual_device) {
-		ive = device->ivshmem_endpoint;
-		if ((ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MEM) == 0)
-			continue;
-
-		/* BAR0: registers */
-		mem_start = (*(u64 *)&device->bar[0]) & ~0xfL;
-		if (addr >= mem_start &&
-		    addr <= (mem_start + IVSHMEM_BAR0_SIZE - 4))
-			return ivshmem_register_mmio(ive, is_write,
-						     addr - mem_start,
-						     value);
-
-		/* BAR4: MSI-X */
-		mem_start = (*(u64 *)&device->bar[4]) & ~0xfL;
-		if (addr >= mem_start &&
-		    addr <= (mem_start + IVSHMEM_BAR4_SIZE - 4))
-			return ivshmem_msix_mmio(ive, is_write,
-						 addr - mem_start, value);
-	}
-
-	return 0;
 }
 
 /**

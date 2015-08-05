@@ -65,6 +65,19 @@ static void *pci_space;
 static u64 mmcfg_start, mmcfg_end;
 static u8 end_bus;
 
+unsigned int pci_mmio_count_regions(struct cell *cell)
+{
+	const struct jailhouse_pci_device *dev_infos =
+		jailhouse_cell_pci_devices(cell->config);
+	unsigned int n, regions = 0;
+
+	for (n = 0; n < cell->config->num_pci_devices; n++)
+		if (dev_infos[n].type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+			regions += PCI_IVSHMEM_NUM_MMIO_REGIONS;
+
+	return regions;
+}
+
 static void *pci_get_device_mmcfg_base(u16 bdf)
 {
 	return pci_space + ((unsigned long)bdf << 12);
@@ -436,15 +449,9 @@ int pci_mmio_access_handler(const struct cell *cell, bool is_write,
 	u32 mmcfg_offset, reg_addr;
 	struct pci_device *device;
 	enum pci_access access;
-	int ret;
 
-	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end) {
-		ret = pci_msix_access_handler(cell, is_write, addr, value);
-		if (ret == 0)
-			ret = ivshmem_mmio_access_handler(cell, is_write, addr,
-							  value);
-		return ret;
-	}
+	if (!pci_space || addr < mmcfg_start || addr > mmcfg_end)
+		return pci_msix_access_handler(cell, is_write, addr, value);
 
 	mmcfg_offset = addr - mmcfg_start;
 	reg_addr = mmcfg_offset & 0xfff;

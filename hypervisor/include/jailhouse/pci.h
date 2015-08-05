@@ -38,6 +38,10 @@
 #define PCI_CAP_MSI		0x05
 #define PCI_CAP_MSIX		0x11
 
+#define PCI_IVSHMEM_NUM_MMIO_REGIONS	2
+
+struct cell;
+
 /**
  * @defgroup PCI PCI Subsystem
  *
@@ -143,6 +147,8 @@ struct pci_device {
 	/** Buffer for shadow table of up to PCI_EMBEDDED_MSIX_VECTS vectors. */
 	union pci_msix_vector msix_vector_array[PCI_EMBEDDED_MSIX_VECTS];
 };
+
+unsigned int pci_mmio_count_regions(struct cell *cell);
 
 int pci_init(void);
 
@@ -255,8 +261,6 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
 				      unsigned int row, u32 mask, u32 value);
 enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value);
-int ivshmem_mmio_access_handler(const struct cell *cell, bool is_write,
-				u64 addr, u32 *value);
 /** @} PCI-IVSHMEM */
 /** @} PCI */
 #endif /* !_JAILHOUSE_PCI_H */

@@ -175,5 +175,6 @@ error:
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return ioapic_mmio_count_regions(cell) + iommu_mmio_count_regions(cell);
+	return pci_mmio_count_regions(cell) + ioapic_mmio_count_regions(cell) +
+		iommu_mmio_count_regions(cell);
 }
