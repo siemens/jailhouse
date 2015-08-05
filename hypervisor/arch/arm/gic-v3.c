@@ -396,7 +396,7 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 	if (ret == TRAP_HANDLED)
 		return ret;
 
-	arch_mmio_access(access);
+	arm_mmio_perform_access(access);
 	return TRAP_HANDLED;
 }
 

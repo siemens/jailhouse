@@ -55,41 +55,37 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	arm_write_sysreg(DFAR, addr);
 }
 
-int arch_mmio_access(struct mmio_access *access)
+void arm_mmio_perform_access(struct mmio_access *access)
 {
 	void *addr = (void *)access->addr;
 
-	if (access->is_write) {
+	if (access->is_write)
 		switch (access->size) {
 		case 1:
 			mmio_write8(addr, access->val);
-			break;
+			return;
 		case 2:
 			mmio_write16(addr, access->val);
-			break;
+			return;
 		case 4:
 			mmio_write32(addr, access->val);
-			break;
-		default:
-			return -EINVAL;
+			return;
 		}
-	} else {
+	else
 		switch (access->size) {
 		case 1:
 			access->val = mmio_read8(addr);
-			break;
+			return;
 		case 2:
 			access->val = mmio_read16(addr);
-			break;
+			return;
 		case 4:
 			access->val = mmio_read32(addr);
-			break;
-		default:
-			return -EINVAL;
+			return;
 		}
-	}
 
-	return 0;
+	printk("WARNING: Ignoring unsupported MMIO access size %d\n",
+	       access->size);
 }
 
 int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)

@@ -71,7 +71,7 @@ static int restrict_bitmask_access(struct per_cpu *cpu_data,
 
 	if (!access->is_write) {
 		/* Restrict the read value */
-		arch_mmio_access(access);
+		arm_mmio_perform_access(access);
 		access->val &= access_mask;
 		return TRAP_HANDLED;
 	}
@@ -87,13 +87,13 @@ static int restrict_bitmask_access(struct per_cpu *cpu_data,
 		spin_lock(&dist_lock);
 
 		access->is_write = false;
-		arch_mmio_access(access);
+		arm_mmio_perform_access(access);
 		access->is_write = true;
 
 		/* Clear 0 bits */
 		access->val &= ~(access_mask & ~access_val);
 		access->val |= access_val;
-		arch_mmio_access(access);
+		arm_mmio_perform_access(access);
 
 		spin_unlock(&dist_lock);
 
@@ -210,10 +210,10 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 		/* Combine with external SPIs */
 		access->val |= (itargetsr & ~access_mask);
 		/* And do the access */
-		arch_mmio_access(access);
+		arm_mmio_perform_access(access);
 		spin_unlock(&dist_lock);
 	} else {
-		arch_mmio_access(access);
+		arm_mmio_perform_access(access);
 		access->val &= access_mask;
 	}
 
@@ -364,7 +364,7 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 
 	/* The sub-handlers return TRAP_UNHANDLED to allow the access */
 	if (ret == TRAP_UNHANDLED) {
-		arch_mmio_access(access);
+		arm_mmio_perform_access(access);
 		ret = TRAP_HANDLED;
 	}
 

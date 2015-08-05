@@ -19,4 +19,4 @@ struct mmio_access {
 	unsigned long val;
 };
 
-int arch_mmio_access(struct mmio_access *access);
+void arm_mmio_perform_access(struct mmio_access *mmio);
