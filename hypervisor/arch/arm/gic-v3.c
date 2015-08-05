@@ -213,6 +213,67 @@ static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
 	}
 }
 
+static int gic_handle_redist_access(struct mmio_access *mmio)
+{
+	struct cell *cell = this_cell();
+	unsigned int cpu;
+	unsigned int reg;
+	int ret = TRAP_UNHANDLED;
+	unsigned int virt_id;
+	void *virt_redist = 0;
+	void *phys_redist = 0;
+	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
+	void *address = (void *)mmio->address;
+
+	/*
+	 * The redistributor accessed by the cell is not the one stored in these
+	 * cpu_datas, but the one associated to its virtual id. So we first
+	 * need to translate the redistributor address.
+	 */
+	for_each_cpu(cpu, cell->cpu_set) {
+		virt_id = arm_cpu_phys2virt(cpu);
+		virt_redist = per_cpu(virt_id)->gicr_base;
+		if (address >= virt_redist && address < virt_redist
+				+ redist_size) {
+			phys_redist = per_cpu(cpu)->gicr_base;
+			break;
+		}
+	}
+
+	if (phys_redist == NULL)
+		return TRAP_FORBIDDEN;
+
+	reg = address - virt_redist;
+	mmio->address = (unsigned long)phys_redist + reg;
+
+	/* Change the ID register, all other accesses are allowed. */
+	if (!mmio->is_write) {
+		switch (reg) {
+		case GICR_TYPER:
+			if (virt_id == cell->arch.last_virt_id)
+				mmio->value = GICR_TYPER_Last;
+			else
+				mmio->value = 0;
+			/* AArch64 can use a writeq for this register */
+			if (mmio->size == 8)
+				mmio->value |= (u64)virt_id << 32;
+
+			ret = TRAP_HANDLED;
+			break;
+		case GICR_TYPER + 4:
+			/* Upper bits contain the affinity */
+			mmio->value = virt_id;
+			ret = TRAP_HANDLED;
+			break;
+		}
+	}
+	if (ret == TRAP_HANDLED)
+		return ret;
+
+	arm_mmio_perform_access(mmio);
+	return TRAP_HANDLED;
+}
+
 static int gic_cell_init(struct cell *cell)
 {
 	gic_route_spis(cell, cell);
@@ -337,67 +398,6 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	gic_write_lr(free_lr, lr);
 
 	return 0;
-}
-
-static int gic_handle_redist_access(struct mmio_access *mmio)
-{
-	struct cell *cell = this_cell();
-	unsigned int cpu;
-	unsigned int reg;
-	int ret = TRAP_UNHANDLED;
-	unsigned int virt_id;
-	void *virt_redist = 0;
-	void *phys_redist = 0;
-	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
-	void *address = (void *)mmio->address;
-
-	/*
-	 * The redistributor accessed by the cell is not the one stored in these
-	 * cpu_datas, but the one associated to its virtual id. So we first
-	 * need to translate the redistributor address.
-	 */
-	for_each_cpu(cpu, cell->cpu_set) {
-		virt_id = arm_cpu_phys2virt(cpu);
-		virt_redist = per_cpu(virt_id)->gicr_base;
-		if (address >= virt_redist && address < virt_redist
-				+ redist_size) {
-			phys_redist = per_cpu(cpu)->gicr_base;
-			break;
-		}
-	}
-
-	if (phys_redist == NULL)
-		return TRAP_FORBIDDEN;
-
-	reg = address - virt_redist;
-	mmio->address = (unsigned long)phys_redist + reg;
-
-	/* Change the ID register, all other accesses are allowed. */
-	if (!mmio->is_write) {
-		switch (reg) {
-		case GICR_TYPER:
-			if (virt_id == cell->arch.last_virt_id)
-				mmio->value = GICR_TYPER_Last;
-			else
-				mmio->value = 0;
-			/* AArch64 can use a writeq for this register */
-			if (mmio->size == 8)
-				mmio->value |= (u64)virt_id << 32;
-
-			ret = TRAP_HANDLED;
-			break;
-		case GICR_TYPER + 4:
-			/* Upper bits contain the affinity */
-			mmio->value = virt_id;
-			ret = TRAP_HANDLED;
-			break;
-		}
-	}
-	if (ret == TRAP_HANDLED)
-		return ret;
-
-	arm_mmio_perform_access(mmio);
-	return TRAP_HANDLED;
 }
 
 static int gic_mmio_access(struct mmio_access *mmio)
