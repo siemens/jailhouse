@@ -95,6 +95,7 @@ void arm_mmio_perform_access(struct mmio_access *mmio)
 
 int arch_handle_dabt(struct trap_context *ctx)
 {
+	enum mmio_result mmio_result;
 	struct mmio_access mmio;
 	unsigned long hpfar;
 	unsigned long hdfar;
@@ -142,27 +143,33 @@ int arch_handle_dabt(struct trap_context *ctx)
 	mmio.is_write = is_write;
 	mmio.size = size;
 
-	ret = irqchip_mmio_access(&mmio);
-	if (ret == TRAP_UNHANDLED)
-		ret = arch_smp_mmio_access(&mmio);
+	mmio_result = mmio_handle_access(&mmio);
+	if (mmio_result == MMIO_ERROR)
+		return TRAP_FORBIDDEN;
+	if (mmio_result == MMIO_UNHANDLED) {
+		ret = irqchip_mmio_access(&mmio);
+		if (ret == TRAP_UNHANDLED)
+			ret = arch_smp_mmio_access(&mmio);
 
-	if (ret == TRAP_HANDLED) {
-		/* Put the read value into the dest register */
-		if (!is_write) {
-			if (sse)
-				mmio.value = sign_extend(mmio.value, 8 * size);
-			access_cell_reg(ctx, srt, &mmio.value, false);
-		}
-
-		arch_skip_instruction(ctx);
+		if (ret == TRAP_FORBIDDEN)
+			return TRAP_FORBIDDEN;
+		if (ret == TRAP_UNHANDLED)
+			goto error_unhandled;
 	}
 
-	if (ret != TRAP_UNHANDLED)
-		return ret;
+	/* Put the read value into the dest register */
+	if (!is_write) {
+		if (sse)
+			mmio.value = sign_extend(mmio.value, 8 * size);
+		access_cell_reg(ctx, srt, &mmio.value, false);
+	}
+
+	arch_skip_instruction(ctx);
+	return TRAP_HANDLED;
 
 error_unhandled:
 	panic_printk("Unhandled data %s at 0x%x(%d)\n",
 		(is_write ? "write" : "read"), mmio.address, size);
 
-	return ret;
+	return TRAP_UNHANDLED;
 }
