@@ -42,20 +42,20 @@ static unsigned long smp_spin(struct per_cpu *cpu_data)
 	return mmio_read32((void *)hotplug_mbox);
 }
 
-static int smp_mmio(struct per_cpu *cpu_data, struct mmio_access *access)
+static int smp_mmio(struct per_cpu *cpu_data, struct mmio_access *mmio)
 {
 	unsigned int cpu;
 	unsigned long mbox_page = hotplug_mbox & PAGE_MASK;
 
-	if (access->addr < mbox_page || access->addr >= mbox_page + PAGE_SIZE)
+	if (mmio->address < mbox_page || mmio->address >= mbox_page + PAGE_SIZE)
 		return TRAP_UNHANDLED;
 
-	if (access->addr != hotplug_mbox || !access->is_write)
+	if (mmio->address != hotplug_mbox || !mmio->is_write)
 		/* Ignore all other accesses */
 		return TRAP_HANDLED;
 
 	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id) {
-		per_cpu(cpu)->guest_mbox.entry = access->val;
+		per_cpu(cpu)->guest_mbox.entry = mmio->value;
 		psci_try_resume(cpu);
 	}
 

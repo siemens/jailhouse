@@ -55,42 +55,42 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	arm_write_sysreg(DFAR, addr);
 }
 
-void arm_mmio_perform_access(struct mmio_access *access)
+void arm_mmio_perform_access(struct mmio_access *mmio)
 {
-	void *addr = (void *)access->addr;
+	void *addr = (void *)mmio->address;
 
-	if (access->is_write)
-		switch (access->size) {
+	if (mmio->is_write)
+		switch (mmio->size) {
 		case 1:
-			mmio_write8(addr, access->val);
+			mmio_write8(addr, mmio->value);
 			return;
 		case 2:
-			mmio_write16(addr, access->val);
+			mmio_write16(addr, mmio->value);
 			return;
 		case 4:
-			mmio_write32(addr, access->val);
+			mmio_write32(addr, mmio->value);
 			return;
 		}
 	else
-		switch (access->size) {
+		switch (mmio->size) {
 		case 1:
-			access->val = mmio_read8(addr);
+			mmio->value = mmio_read8(addr);
 			return;
 		case 2:
-			access->val = mmio_read16(addr);
+			mmio->value = mmio_read16(addr);
 			return;
 		case 4:
-			access->val = mmio_read32(addr);
+			mmio->value = mmio_read32(addr);
 			return;
 		}
 
 	printk("WARNING: Ignoring unsupported MMIO access size %d\n",
-	       access->size);
+	       mmio->size);
 }
 
 int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 {
-	struct mmio_access access;
+	struct mmio_access mmio;
 	unsigned long hpfar;
 	unsigned long hdfar;
 	int ret		= TRAP_UNHANDLED;
@@ -108,8 +108,8 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 
 	arm_read_sysreg(HPFAR, hpfar);
 	arm_read_sysreg(HDFAR, hdfar);
-	access.addr = hpfar << 8;
-	access.addr |= hdfar & 0xfff;
+	mmio.address = hpfar << 8;
+	mmio.address |= hdfar & 0xfff;
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 
@@ -128,25 +128,25 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 
 	if (is_write) {
 		/* Load the value to write from the src register */
-		access_cell_reg(ctx, srt, &access.val, true);
+		access_cell_reg(ctx, srt, &mmio.value, true);
 		if (sse)
-			access.val = sign_extend(access.val, 8 * size);
+			mmio.value = sign_extend(mmio.value, 8 * size);
 	} else {
-		access.val = 0;
+		mmio.value = 0;
 	}
-	access.is_write = is_write;
-	access.size = size;
+	mmio.is_write = is_write;
+	mmio.size = size;
 
-	ret = irqchip_mmio_access(cpu_data, &access);
+	ret = irqchip_mmio_access(cpu_data, &mmio);
 	if (ret == TRAP_UNHANDLED)
-		ret = arch_smp_mmio_access(cpu_data, &access);
+		ret = arch_smp_mmio_access(cpu_data, &mmio);
 
 	if (ret == TRAP_HANDLED) {
 		/* Put the read value into the dest register */
 		if (!is_write) {
 			if (sse)
-				access.val = sign_extend(access.val, 8 * size);
-			access_cell_reg(ctx, srt, &access.val, false);
+				mmio.value = sign_extend(mmio.value, 8 * size);
+			access_cell_reg(ctx, srt, &mmio.value, false);
 		}
 
 		arch_skip_instruction(ctx);
@@ -157,7 +157,7 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 
 error_unhandled:
 	panic_printk("Unhandled data %s at 0x%x(%d)\n",
-		(is_write ? "write" : "read"), access.addr, size);
+		(is_write ? "write" : "read"), mmio.address, size);
 
 	return ret;
 }

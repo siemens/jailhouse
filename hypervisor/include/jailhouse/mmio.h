@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2015
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -114,6 +114,19 @@ static inline void mmio_write64_field(void *address, u64 mask, u64 value)
 			((value << (__builtin_ffsl(mask) - 1)) & mask));
 }
 /** @} */
+
+/** MMIO access description. */
+struct mmio_access {
+	/** Address to access, depending on the context, an absolute address or
+	 * relative offset to region start. */
+	unsigned long address;
+	/** Size of the access. */
+	unsigned int size;
+	/** True if write access. */
+	bool is_write;
+	/** The value to be written or the read value to return. */
+	unsigned long value;
+};
 
 /** @} */
 #endif /* !_JAILHOUSE_MMIO_H */

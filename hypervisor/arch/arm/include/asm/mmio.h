@@ -10,13 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/types.h>
-
-struct mmio_access {
-	unsigned long addr;
-	bool is_write;
-	unsigned int size;
-	unsigned long val;
-};
+struct mmio_access;
 
 void arm_mmio_perform_access(struct mmio_access *mmio);

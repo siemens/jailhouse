@@ -36,12 +36,12 @@ static u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
  * Most of the GIC distributor writes only reconfigure the IRQs corresponding to
  * the bits of the written value, by using separate `set' and `clear' registers.
  * Such registers can be handled by setting the `is_poke' boolean, which allows
- * to simply restrict the access->val with the cell configuration mask.
+ * to simply restrict the mmio->value with the cell configuration mask.
  * Others, such as the priority registers, will need to be read and written back
  * with a restricted value, by using the distributor lock.
  */
 static int restrict_bitmask_access(struct per_cpu *cpu_data,
-				   struct mmio_access *access,
+				   struct mmio_access *mmio,
 				   unsigned int reg_index,
 				   unsigned int bits_per_irq,
 				   bool is_poke)
@@ -69,37 +69,37 @@ static int restrict_bitmask_access(struct per_cpu *cpu_data,
 			access_mask |= spi_bits << bit_nr;
 	}
 
-	if (!access->is_write) {
+	if (!mmio->is_write) {
 		/* Restrict the read value */
-		arm_mmio_perform_access(access);
-		access->val &= access_mask;
+		arm_mmio_perform_access(mmio);
+		mmio->value &= access_mask;
 		return TRAP_HANDLED;
 	}
 
 	if (!is_poke) {
 		/*
 		 * Modify the existing value of this register by first reading
-		 * it into access->val
+		 * it into mmio->value
 		 * Relies on a spinlock since we need two mmio accesses.
 		 */
-		unsigned long access_val = access->val;
+		unsigned long access_val = mmio->value;
 
 		spin_lock(&dist_lock);
 
-		access->is_write = false;
-		arm_mmio_perform_access(access);
-		access->is_write = true;
+		mmio->is_write = false;
+		arm_mmio_perform_access(mmio);
+		mmio->is_write = true;
 
 		/* Clear 0 bits */
-		access->val &= ~(access_mask & ~access_val);
-		access->val |= access_val;
-		arm_mmio_perform_access(access);
+		mmio->value &= ~(access_mask & ~access_val);
+		mmio->value |= access_val;
+		arm_mmio_perform_access(mmio);
 
 		spin_unlock(&dist_lock);
 
 		return TRAP_HANDLED;
 	} else {
-		access->val &= access_mask;
+		mmio->value &= access_mask;
 		/* Do the access */
 		return TRAP_UNHANDLED;
 	}
@@ -109,13 +109,13 @@ static int restrict_bitmask_access(struct per_cpu *cpu_data,
  * GICv3 uses a 64bit register IROUTER for each IRQ
  */
 static int handle_irq_route(struct per_cpu *cpu_data,
-			    struct mmio_access *access, unsigned int irq)
+			    struct mmio_access *mmio, unsigned int irq)
 {
 	struct cell *cell = cpu_data->cell;
 	unsigned int cpu;
 
 	/* Ignore aff3 on AArch32 (return 0) */
-	if (access->size == 4 && (access->addr % 8))
+	if (mmio->size == 4 && (mmio->address % 8))
 		return TRAP_HANDLED;
 
 	/* SGIs and PPIs are res0 */
@@ -131,9 +131,9 @@ static int handle_irq_route(struct per_cpu *cpu_data,
 		return TRAP_HANDLED;
 
 	/* Translate the virtual cpu id into the physical one */
-	if (access->is_write) {
-		access->val = arm_cpu_virt2phys(cell, access->val);
-		if (access->val == -1) {
+	if (mmio->is_write) {
+		mmio->value = arm_cpu_virt2phys(cell, mmio->value);
+		if (mmio->value == -1) {
 			printk("Attempt to route IRQ%d outside of cell\n", irq);
 			return TRAP_FORBIDDEN;
 		}
@@ -141,7 +141,7 @@ static int handle_irq_route(struct per_cpu *cpu_data,
 		return TRAP_UNHANDLED;
 	} else {
 		cpu = mmio_read32(gicd_base + GICD_IROUTER + 8 * irq);
-		access->val = arm_cpu_phys2virt(cpu);
+		mmio->value = arm_cpu_phys2virt(cpu);
 		return TRAP_HANDLED;
 	}
 }
@@ -150,7 +150,7 @@ static int handle_irq_route(struct per_cpu *cpu_data,
  * GICv2 uses 8bit values for each IRQ in the ITARGETRs registers
  */
 static int handle_irq_target(struct per_cpu *cpu_data,
-			     struct mmio_access *access, unsigned int reg)
+			     struct mmio_access *mmio, unsigned int reg)
 {
 	/*
 	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
@@ -174,8 +174,8 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 	 * necessary.
 	 */
 	offset = spi % 4;
-	access->val <<= 8 * offset;
-	access->size = 4;
+	mmio->value <<= 8 * offset;
+	mmio->size = 4;
 	spi -= offset;
 
 	for (i = 0; i < 4; i++, spi++) {
@@ -184,10 +184,10 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 		else
 			continue;
 
-		if (!access->is_write)
+		if (!mmio->is_write)
 			continue;
 
-		targets = (access->val >> (8 * i)) & 0xff;
+		targets = (mmio->value >> (8 * i)) & 0xff;
 
 		/* Check that the targeted interface belongs to the cell */
 		for (cpu = 0; cpu < 8; cpu++) {
@@ -202,31 +202,31 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 		}
 	}
 
-	if (access->is_write) {
+	if (mmio->is_write) {
 		spin_lock(&dist_lock);
 		u32 itargetsr =
 			mmio_read32(gicd_base + GICD_ITARGETSR + reg + offset);
-		access->val &= access_mask;
+		mmio->value &= access_mask;
 		/* Combine with external SPIs */
-		access->val |= (itargetsr & ~access_mask);
+		mmio->value |= (itargetsr & ~access_mask);
 		/* And do the access */
-		arm_mmio_perform_access(access);
+		arm_mmio_perform_access(mmio);
 		spin_unlock(&dist_lock);
 	} else {
-		arm_mmio_perform_access(access);
-		access->val &= access_mask;
+		arm_mmio_perform_access(mmio);
+		mmio->value &= access_mask;
 	}
 
 	return TRAP_HANDLED;
 }
 
 static int handle_sgir_access(struct per_cpu *cpu_data,
-			      struct mmio_access *access)
+			      struct mmio_access *mmio)
 {
 	struct sgi sgi;
-	unsigned long val = access->val;
+	unsigned long val = mmio->value;
 
-	if (!access->is_write)
+	if (!mmio->is_write)
 		return TRAP_HANDLED;
 
 	sgi.targets = (val >> 16) & 0xff;
@@ -303,19 +303,19 @@ int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
 }
 
 int gic_handle_dist_access(struct per_cpu *cpu_data,
-			   struct mmio_access *access)
+			   struct mmio_access *mmio)
 {
 	int ret;
-	unsigned long reg = access->addr - (unsigned long)gicd_base;
+	unsigned long reg = mmio->address - (unsigned long)gicd_base;
 
 	switch (reg) {
 	case REG_RANGE(GICD_IROUTER, 1024, 8):
-		ret = handle_irq_route(cpu_data, access,
+		ret = handle_irq_route(cpu_data, mmio,
 				(reg - GICD_IROUTER) / 8);
 		break;
 
 	case REG_RANGE(GICD_ITARGETSR, 1024, 1):
-		ret = handle_irq_target(cpu_data, access, reg - GICD_ITARGETSR);
+		ret = handle_irq_target(cpu_data, mmio, reg - GICD_ITARGETSR);
 		break;
 
 	case REG_RANGE(GICD_ICENABLER, 32, 4):
@@ -324,27 +324,27 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 	case REG_RANGE(GICD_ISPENDR, 32, 4):
 	case REG_RANGE(GICD_ICACTIVER, 32, 4):
 	case REG_RANGE(GICD_ISACTIVER, 32, 4):
-		ret = restrict_bitmask_access(cpu_data, access,
+		ret = restrict_bitmask_access(cpu_data, mmio,
 				(reg & 0x7f) / 4, 1, true);
 		break;
 
 	case REG_RANGE(GICD_IGROUPR, 32, 4):
-		ret = restrict_bitmask_access(cpu_data, access,
+		ret = restrict_bitmask_access(cpu_data, mmio,
 				(reg & 0x7f) / 4, 1, false);
 		break;
 
 	case REG_RANGE(GICD_ICFGR, 64, 4):
-		ret = restrict_bitmask_access(cpu_data, access,
+		ret = restrict_bitmask_access(cpu_data, mmio,
 				(reg & 0xff) / 4, 2, false);
 		break;
 
 	case REG_RANGE(GICD_IPRIORITYR, 255, 4):
-		ret = restrict_bitmask_access(cpu_data, access,
+		ret = restrict_bitmask_access(cpu_data, mmio,
 				(reg & 0x3ff) / 4, 8, false);
 		break;
 
 	case GICD_SGIR:
-		ret = handle_sgir_access(cpu_data, access);
+		ret = handle_sgir_access(cpu_data, mmio);
 		break;
 
 	case GICD_CTLR:
@@ -354,7 +354,7 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 	case REG_RANGE(GICD_PIDR4, 4, 4):
 	case REG_RANGE(GICD_CIDR0, 4, 4):
 		/* Allow read access, ignore write */
-		ret = (access->is_write ? TRAP_HANDLED : TRAP_UNHANDLED);
+		ret = (mmio->is_write ? TRAP_HANDLED : TRAP_UNHANDLED);
 		break;
 
 	default:
@@ -364,7 +364,7 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 
 	/* The sub-handlers return TRAP_UNHANDLED to allow the access */
 	if (ret == TRAP_UNHANDLED) {
-		arm_mmio_perform_access(access);
+		arm_mmio_perform_access(mmio);
 		ret = TRAP_HANDLED;
 	}
 

@@ -340,7 +340,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 }
 
 static int gic_handle_redist_access(struct per_cpu *cpu_data,
-				    struct mmio_access *access)
+				    struct mmio_access *mmio)
 {
 	unsigned int cpu;
 	unsigned int reg;
@@ -349,7 +349,7 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 	void *virt_redist = 0;
 	void *phys_redist = 0;
 	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
-	void *address = (void *)access->addr;
+	void *address = (void *)mmio->address;
 
 	/*
 	 * The redistributor accessed by the cell is not the one stored in these
@@ -370,25 +370,25 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 		return TRAP_FORBIDDEN;
 
 	reg = address - virt_redist;
-	access->addr = (unsigned long)phys_redist + reg;
+	mmio->address = (unsigned long)phys_redist + reg;
 
 	/* Change the ID register, all other accesses are allowed. */
-	if (!access->is_write) {
+	if (!mmio->is_write) {
 		switch (reg) {
 		case GICR_TYPER:
 			if (virt_id == cpu_data->cell->arch.last_virt_id)
-				access->val = GICR_TYPER_Last;
+				mmio->value = GICR_TYPER_Last;
 			else
-				access->val = 0;
+				mmio->value = 0;
 			/* AArch64 can use a writeq for this register */
-			if (access->size == 8)
-				access->val |= (u64)virt_id << 32;
+			if (mmio->size == 8)
+				mmio->value |= (u64)virt_id << 32;
 
 			ret = TRAP_HANDLED;
 			break;
 		case GICR_TYPER + 4:
 			/* Upper bits contain the affinity */
-			access->val = virt_id;
+			mmio->value = virt_id;
 			ret = TRAP_HANDLED;
 			break;
 		}
@@ -396,20 +396,20 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 	if (ret == TRAP_HANDLED)
 		return ret;
 
-	arm_mmio_perform_access(access);
+	arm_mmio_perform_access(mmio);
 	return TRAP_HANDLED;
 }
 
 static int gic_mmio_access(struct per_cpu *cpu_data,
-			   struct mmio_access *access)
+			   struct mmio_access *mmio)
 {
-	void *address = (void *)access->addr;
+	void *address = (void *)mmio->address;
 
 	if (address >= gicd_base && address < gicd_base + gicd_size)
-		return gic_handle_dist_access(cpu_data, access);
+		return gic_handle_dist_access(cpu_data, mmio);
 
 	if (address >= gicr_base && address < gicr_base + gicr_size)
-		return gic_handle_redist_access(cpu_data, access);
+		return gic_handle_redist_access(cpu_data, mmio);
 
 	return TRAP_UNHANDLED;
 }
