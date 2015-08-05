@@ -27,13 +27,12 @@ struct smp_ops {
 	 * returns TRAP_HANDLED when the mailbox is targeted, or else
 	 * TRAP_UNHANDLED.
 	 */
-	int (*mmio_handler)(struct per_cpu *cpu_data,
-			    struct mmio_access *access);
+	int (*mmio_handler)(struct mmio_access *access);
 	/* Returns an address */
 	unsigned long (*cpu_spin)(struct per_cpu *cpu_data);
 };
 
-int arch_smp_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access);
+int arch_smp_mmio_access(struct mmio_access *access);
 unsigned long arch_smp_spin(struct per_cpu *cpu_data, struct smp_ops *ops);
 void register_smp_ops(struct cell *cell);
 

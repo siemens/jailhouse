@@ -271,13 +271,12 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
-static int gic_mmio_access(struct per_cpu *cpu_data,
-			   struct mmio_access *mmio)
+static int gic_mmio_access(struct mmio_access *mmio)
 {
 	void *address = (void *)mmio->address;
 
 	if (address >= gicd_base && address < gicd_base + gicd_size)
-		return gic_handle_dist_access(cpu_data, mmio);
+		return gic_handle_dist_access(mmio);
 
 	return TRAP_UNHANDLED;
 }

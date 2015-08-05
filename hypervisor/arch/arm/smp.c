@@ -28,12 +28,12 @@ unsigned long arch_smp_spin(struct per_cpu *cpu_data, struct smp_ops *ops)
 	return ops->cpu_spin(cpu_data);
 }
 
-int arch_smp_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access)
+int arch_smp_mmio_access(struct mmio_access *access)
 {
-	struct smp_ops *smp_ops = cpu_data->cell->arch.smp;
+	struct smp_ops *smp_ops = this_cell()->arch.smp;
 
 	if (smp_ops->mmio_handler)
-		return smp_ops->mmio_handler(cpu_data, access);
+		return smp_ops->mmio_handler(access);
 
 	return TRAP_UNHANDLED;
 }

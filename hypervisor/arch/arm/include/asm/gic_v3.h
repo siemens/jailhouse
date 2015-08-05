@@ -260,8 +260,7 @@ static inline u32 gic_read_iar(void)
 	return irq_id;
 }
 
-struct per_cpu;
-int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir);
+int gicv3_handle_sgir_write(u64 sgir);
 
 #endif /* __ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_GIC_V3_H */

@@ -40,12 +40,12 @@ static u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
  * Others, such as the priority registers, will need to be read and written back
  * with a restricted value, by using the distributor lock.
  */
-static int restrict_bitmask_access(struct per_cpu *cpu_data,
-				   struct mmio_access *mmio,
+static int restrict_bitmask_access(struct mmio_access *mmio,
 				   unsigned int reg_index,
 				   unsigned int bits_per_irq,
 				   bool is_poke)
 {
+	struct cell *cell = this_cell();
 	unsigned int spi;
 	unsigned long access_mask = 0;
 	/*
@@ -65,7 +65,7 @@ static int restrict_bitmask_access(struct per_cpu *cpu_data,
 	first_irq -= 32;
 	for (spi = first_irq; spi < first_irq + irqs_per_reg; spi++) {
 		unsigned int bit_nr = (spi - first_irq) * bits_per_irq;
-		if (spi_in_cell(cpu_data->cell, spi))
+		if (spi_in_cell(cell, spi))
 			access_mask |= spi_bits << bit_nr;
 	}
 
@@ -108,10 +108,9 @@ static int restrict_bitmask_access(struct per_cpu *cpu_data,
 /*
  * GICv3 uses a 64bit register IROUTER for each IRQ
  */
-static int handle_irq_route(struct per_cpu *cpu_data,
-			    struct mmio_access *mmio, unsigned int irq)
+static int handle_irq_route(struct mmio_access *mmio, unsigned int irq)
 {
-	struct cell *cell = cpu_data->cell;
+	struct cell *cell = this_cell();
 	unsigned int cpu;
 
 	/* Ignore aff3 on AArch32 (return 0) */
@@ -149,13 +148,13 @@ static int handle_irq_route(struct per_cpu *cpu_data,
 /*
  * GICv2 uses 8bit values for each IRQ in the ITARGETRs registers
  */
-static int handle_irq_target(struct per_cpu *cpu_data,
-			     struct mmio_access *mmio, unsigned int reg)
+static int handle_irq_target(struct mmio_access *mmio, unsigned int reg)
 {
 	/*
 	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
 	 * access corresponds to the reg index
 	 */
+	struct cell *cell = this_cell();
 	unsigned int i, cpu;
 	unsigned int spi = reg - 32;
 	unsigned int offset;
@@ -179,7 +178,7 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 	spi -= offset;
 
 	for (i = 0; i < 4; i++, spi++) {
-		if (spi_in_cell(cpu_data->cell, spi))
+		if (spi_in_cell(cell, spi))
 			access_mask |= 0xff << (8 * i);
 		else
 			continue;
@@ -194,7 +193,7 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 			if (!(targets & target_cpu_map[cpu]))
 				continue;
 
-			if (per_cpu(cpu)->cell == cpu_data->cell)
+			if (per_cpu(cpu)->cell == cell)
 				continue;
 
 			printk("Attempt to route SPI%d outside of cell\n", spi);
@@ -220,8 +219,7 @@ static int handle_irq_target(struct per_cpu *cpu_data,
 	return TRAP_HANDLED;
 }
 
-static int handle_sgir_access(struct per_cpu *cpu_data,
-			      struct mmio_access *mmio)
+static int handle_sgir_access(struct mmio_access *mmio)
 {
 	struct sgi sgi;
 	unsigned long val = mmio->value;
@@ -236,7 +234,7 @@ static int handle_sgir_access(struct per_cpu *cpu_data,
 	sgi.aff3 = 0;
 	sgi.id = val & 0xf;
 
-	return gic_handle_sgir_write(cpu_data, &sgi, false);
+	return gic_handle_sgir_write(&sgi, false);
 }
 
 /*
@@ -261,9 +259,9 @@ int gic_probe_cpu_id(unsigned int cpu)
 	return 0;
 }
 
-int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
-			  bool virt_input)
+int gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned int cpu;
 	unsigned long targets;
 	unsigned int this_cpu = cpu_data->cpu_id;
@@ -302,20 +300,18 @@ int gic_handle_sgir_write(struct per_cpu *cpu_data, struct sgi *sgi,
 	return TRAP_HANDLED;
 }
 
-int gic_handle_dist_access(struct per_cpu *cpu_data,
-			   struct mmio_access *mmio)
+int gic_handle_dist_access(struct mmio_access *mmio)
 {
 	int ret;
 	unsigned long reg = mmio->address - (unsigned long)gicd_base;
 
 	switch (reg) {
 	case REG_RANGE(GICD_IROUTER, 1024, 8):
-		ret = handle_irq_route(cpu_data, mmio,
-				(reg - GICD_IROUTER) / 8);
+		ret = handle_irq_route(mmio, (reg - GICD_IROUTER) / 8);
 		break;
 
 	case REG_RANGE(GICD_ITARGETSR, 1024, 1):
-		ret = handle_irq_target(cpu_data, mmio, reg - GICD_ITARGETSR);
+		ret = handle_irq_target(mmio, reg - GICD_ITARGETSR);
 		break;
 
 	case REG_RANGE(GICD_ICENABLER, 32, 4):
@@ -324,27 +320,24 @@ int gic_handle_dist_access(struct per_cpu *cpu_data,
 	case REG_RANGE(GICD_ISPENDR, 32, 4):
 	case REG_RANGE(GICD_ICACTIVER, 32, 4):
 	case REG_RANGE(GICD_ISACTIVER, 32, 4):
-		ret = restrict_bitmask_access(cpu_data, mmio,
-				(reg & 0x7f) / 4, 1, true);
+		ret = restrict_bitmask_access(mmio, (reg & 0x7f) / 4, 1, true);
 		break;
 
 	case REG_RANGE(GICD_IGROUPR, 32, 4):
-		ret = restrict_bitmask_access(cpu_data, mmio,
-				(reg & 0x7f) / 4, 1, false);
+		ret = restrict_bitmask_access(mmio, (reg & 0x7f) / 4, 1, false);
 		break;
 
 	case REG_RANGE(GICD_ICFGR, 64, 4):
-		ret = restrict_bitmask_access(cpu_data, mmio,
-				(reg & 0xff) / 4, 2, false);
+		ret = restrict_bitmask_access(mmio, (reg & 0xff) / 4, 2, false);
 		break;
 
 	case REG_RANGE(GICD_IPRIORITYR, 255, 4):
-		ret = restrict_bitmask_access(cpu_data, mmio,
-				(reg & 0x3ff) / 4, 8, false);
+		ret = restrict_bitmask_access(mmio, (reg & 0x3ff) / 4, 8,
+					      false);
 		break;
 
 	case GICD_SGIR:
-		ret = handle_sgir_access(cpu_data, mmio);
+		ret = handle_sgir_access(mmio);
 		break;
 
 	case GICD_CTLR:

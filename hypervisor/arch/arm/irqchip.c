@@ -237,10 +237,10 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 		irqchip.cpu_reset(cpu_data, true);
 }
 
-int irqchip_mmio_access(struct per_cpu *cpu_data, struct mmio_access *access)
+int irqchip_mmio_access(struct mmio_access *access)
 {
 	if (irqchip.mmio_access)
-		return irqchip.mmio_access(cpu_data, access);
+		return irqchip.mmio_access(access);
 
 	return TRAP_UNHANDLED;
 }

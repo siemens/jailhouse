@@ -137,9 +137,9 @@ int arch_handle_dabt(struct per_cpu *cpu_data, struct trap_context *ctx)
 	mmio.is_write = is_write;
 	mmio.size = size;
 
-	ret = irqchip_mmio_access(cpu_data, &mmio);
+	ret = irqchip_mmio_access(&mmio);
 	if (ret == TRAP_UNHANDLED)
-		ret = arch_smp_mmio_access(cpu_data, &mmio);
+		ret = arch_smp_mmio_access(&mmio);
 
 	if (ret == TRAP_HANDLED) {
 		/* Put the read value into the dest register */

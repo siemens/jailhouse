@@ -257,7 +257,7 @@ static int gic_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
-int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir)
+int gicv3_handle_sgir_write(u64 sgir)
 {
 	struct sgi sgi;
 	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
@@ -270,7 +270,7 @@ int gicv3_handle_sgir_write(struct per_cpu *cpu_data, u64 sgir)
 	sgi.aff3 = sgir >> ICC_SGIR_AFF3_SHIFT & 0xff;
 	sgi.id = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
-	return gic_handle_sgir_write(cpu_data, &sgi, true);
+	return gic_handle_sgir_write(&sgi, true);
 }
 
 static void gic_eoi_irq(u32 irq_id, bool deactivate)
@@ -339,9 +339,9 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
-static int gic_handle_redist_access(struct per_cpu *cpu_data,
-				    struct mmio_access *mmio)
+static int gic_handle_redist_access(struct mmio_access *mmio)
 {
+	struct cell *cell = this_cell();
 	unsigned int cpu;
 	unsigned int reg;
 	int ret = TRAP_UNHANDLED;
@@ -356,7 +356,7 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 	 * cpu_datas, but the one associated to its virtual id. So we first
 	 * need to translate the redistributor address.
 	 */
-	for_each_cpu(cpu, cpu_data->cell->cpu_set) {
+	for_each_cpu(cpu, cell->cpu_set) {
 		virt_id = arm_cpu_phys2virt(cpu);
 		virt_redist = per_cpu(virt_id)->gicr_base;
 		if (address >= virt_redist && address < virt_redist
@@ -376,7 +376,7 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 	if (!mmio->is_write) {
 		switch (reg) {
 		case GICR_TYPER:
-			if (virt_id == cpu_data->cell->arch.last_virt_id)
+			if (virt_id == cell->arch.last_virt_id)
 				mmio->value = GICR_TYPER_Last;
 			else
 				mmio->value = 0;
@@ -400,16 +400,15 @@ static int gic_handle_redist_access(struct per_cpu *cpu_data,
 	return TRAP_HANDLED;
 }
 
-static int gic_mmio_access(struct per_cpu *cpu_data,
-			   struct mmio_access *mmio)
+static int gic_mmio_access(struct mmio_access *mmio)
 {
 	void *address = (void *)mmio->address;
 
 	if (address >= gicd_base && address < gicd_base + gicd_size)
-		return gic_handle_dist_access(cpu_data, mmio);
+		return gic_handle_dist_access(mmio);
 
 	if (address >= gicr_base && address < gicr_base + gicr_size)
-		return gic_handle_redist_access(cpu_data, mmio);
+		return gic_handle_redist_access(mmio);
 
 	return TRAP_UNHANDLED;
 }

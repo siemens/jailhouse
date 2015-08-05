@@ -42,8 +42,9 @@ static unsigned long smp_spin(struct per_cpu *cpu_data)
 	return mmio_read32((void *)hotplug_mbox);
 }
 
-static int smp_mmio(struct per_cpu *cpu_data, struct mmio_access *mmio)
+static int smp_mmio(struct mmio_access *mmio)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned int cpu;
 	unsigned long mbox_page = hotplug_mbox & PAGE_MASK;
 

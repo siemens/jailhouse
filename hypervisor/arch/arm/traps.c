@@ -273,8 +273,7 @@ static int arch_handle_cp15_64(struct per_cpu *cpu_data, struct trap_context *ct
 	/* Trapped ICC_SGI1R write */
 	if (!read && opc1 == 0 && crm == 12) {
 		arch_skip_instruction(ctx);
-		return gicv3_handle_sgir_write(cpu_data,
-				(u64)rt2_val << 32 | rt_val);
+		return gicv3_handle_sgir_write((u64)rt2_val << 32 | rt_val);
 	}
 #else
 	/* Avoid `unused' warning... */
