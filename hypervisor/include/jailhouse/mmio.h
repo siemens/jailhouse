@@ -16,6 +16,8 @@
 #include <jailhouse/types.h>
 #include <asm/mmio.h>
 
+struct cell;
+
 /**
  * @defgroup IO I/O Access Subsystem
  *
@@ -115,6 +117,9 @@ static inline void mmio_write64_field(void *address, u64 mask, u64 value)
 }
 /** @} */
 
+/** MMIO access result. */
+enum mmio_result {MMIO_ERROR = -1, MMIO_UNHANDLED, MMIO_HANDLED};
+
 /** MMIO access description. */
 struct mmio_access {
 	/** Address to access, depending on the context, an absolute address or
@@ -127,6 +132,44 @@ struct mmio_access {
 	/** The value to be written or the read value to return. */
 	unsigned long value;
 };
+
+/** MMIO callback handler.
+ * @param arg		Opaque argument defined via mmio_region_register().
+ * @param mmio		MMIO access description. @a mmio->address will be
+ * 			provided as offset to the region start.
+ *
+ * @return MMIO_HANDLED on success, MMIO_ERROR otherwise.
+ */
+typedef enum mmio_result (*mmio_handler)(void *arg, struct mmio_access *mmio);
+
+/** MMIO region coordinates. */
+struct mmio_region_location {
+	/** Start address of the region. */
+	unsigned long start;
+	/** Region size. */
+	unsigned long size;
+};
+
+/** MMIO region access callback description. */
+struct mmio_region_handler {
+	/** Access handler. */
+	mmio_handler handler;
+	/** Argument to pass to the handler. */
+	void *arg;
+};
+
+int mmio_cell_init(struct cell *cell);
+
+void mmio_region_register(struct cell *cell, unsigned long start,
+			  unsigned long size, mmio_handler handler,
+			  void *handler_arg);
+void mmio_region_unregister(struct cell *cell, unsigned long start);
+
+enum mmio_result mmio_handle_access(struct mmio_access *mmio);
+
+void mmio_cell_exit(struct cell *cell);
+
+unsigned int arch_mmio_count_regions(struct cell *cell);
 
 /** @} */
 #endif /* !_JAILHOUSE_MMIO_H */

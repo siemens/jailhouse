@@ -12,6 +12,7 @@
 
 #include <jailhouse/entry.h>
 #include <jailhouse/control.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/processor.h>
@@ -175,6 +176,7 @@ int cell_init(struct cell *cell)
 		jailhouse_cell_cpu_set(cell->config);
 	unsigned long cpu_set_size = cell->config->cpu_set_size;
 	struct cpu_set *cpu_set;
+	int err;
 
 	cell->id = get_free_cell_id();
 
@@ -192,11 +194,17 @@ int cell_init(struct cell *cell)
 
 	cell->cpu_set = cpu_set;
 
-	return 0;
+	err = mmio_cell_init(cell);
+	if (err && cell->cpu_set != &cell->small_cpu_set)
+		page_free(&mem_pool, cell->cpu_set, 1);
+
+	return err;
 }
 
 static void cell_exit(struct cell *cell)
 {
+	mmio_cell_exit(cell);
+
 	if (cell->cpu_set != &cell->small_cpu_set)
 		page_free(&mem_pool, cell->cpu_set, 1);
 }

@@ -13,9 +13,11 @@
 #ifndef _JAILHOUSE_CELL_H
 #define _JAILHOUSE_CELL_H
 
+#include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/pci.h>
 #include <asm/cell.h>
+#include <asm/spinlock.h>
 
 #include <jailhouse/cell-config.h>
 #include <jailhouse/hypercall.h>
@@ -58,6 +60,18 @@ struct cell {
 	struct pci_device *msix_device_list;
 	/** List of virtual PCI devices assigned to this cell. */
 	struct pci_device *virtual_device_list;
+
+	/** Lock protecting changes to mmio_locations, mmio_handlers, and
+	 * num_mmio_regions. */
+	spinlock_t mmio_region_lock;
+	/** MMIO region description table. */
+	struct mmio_region_location *mmio_locations;
+	/** MMIO region handler table. */
+	struct mmio_region_handler *mmio_handlers;
+	/** Number of MMIO regions in use. */
+	unsigned int num_mmio_regions;
+	/** Maximum number of MMIO regions. */
+	unsigned int max_mmio_regions;
 };
 
 extern struct cell root_cell;

@@ -170,3 +170,8 @@ error:
 	inst.inst_len = 0;
 	return inst;
 }
+
+unsigned int arch_mmio_count_regions(struct cell *cell)
+{
+	return 1;
+}
