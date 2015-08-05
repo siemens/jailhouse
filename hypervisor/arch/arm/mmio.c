@@ -18,7 +18,7 @@
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return 1;
+	return smp_mmio_regions;
 }
 
 /* Taken from the ARM ARM pseudocode for taking a data abort */
@@ -148,8 +148,6 @@ int arch_handle_dabt(struct trap_context *ctx)
 		return TRAP_FORBIDDEN;
 	if (mmio_result == MMIO_UNHANDLED) {
 		ret = irqchip_mmio_access(&mmio);
-		if (ret == TRAP_UNHANDLED)
-			ret = arch_smp_mmio_access(&mmio);
 
 		if (ret == TRAP_FORBIDDEN)
 			return TRAP_FORBIDDEN;

@@ -14,6 +14,8 @@
 #include <asm/smp.h>
 #include <asm/traps.h>
 
+const unsigned int __attribute__((weak)) smp_mmio_regions;
+
 unsigned long arch_smp_spin(struct per_cpu *cpu_data, struct smp_ops *ops)
 {
 	/*
@@ -26,14 +28,4 @@ unsigned long arch_smp_spin(struct per_cpu *cpu_data, struct smp_ops *ops)
 		return 0;
 
 	return ops->cpu_spin(cpu_data);
-}
-
-int arch_smp_mmio_access(struct mmio_access *access)
-{
-	struct smp_ops *smp_ops = this_cell()->arch.smp;
-
-	if (smp_ops->mmio_handler)
-		return smp_ops->mmio_handler(access);
-
-	return TRAP_UNHANDLED;
 }

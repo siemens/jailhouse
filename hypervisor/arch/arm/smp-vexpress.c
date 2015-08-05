@@ -18,7 +18,26 @@
 #include <asm/setup.h>
 #include <asm/smp.h>
 
+const unsigned int smp_mmio_regions = 1;
+
 static const unsigned long hotplug_mbox = SYSREGS_BASE + 0x30;
+
+static enum mmio_result smp_mmio(void *arg, struct mmio_access *mmio)
+{
+	struct per_cpu *cpu_data = this_cpu_data();
+	unsigned int cpu;
+
+	if (mmio->address != (hotplug_mbox & PAGE_OFFS_MASK) || !mmio->is_write)
+		/* Ignore all other accesses */
+		return MMIO_HANDLED;
+
+	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id) {
+		per_cpu(cpu)->guest_mbox.entry = mmio->value;
+		psci_try_resume(cpu);
+	}
+
+	return MMIO_HANDLED;
+}
 
 static int smp_init(struct cell *cell)
 {
@@ -27,10 +46,14 @@ static int smp_init(struct cell *cell)
 
 	/* Map the mailbox page */
 	err = arch_map_device(mbox_page, mbox_page, PAGE_SIZE);
-	if (err)
+	if (err) {
 		printk("Unable to map spin mbox page\n");
+		return err;
+	}
 
-	return err;
+	mmio_region_register(cell, (unsigned long)mbox_page, PAGE_SIZE,
+			     smp_mmio, NULL);
+	return 0;
 }
 
 static unsigned long smp_spin(struct per_cpu *cpu_data)
@@ -42,30 +65,8 @@ static unsigned long smp_spin(struct per_cpu *cpu_data)
 	return mmio_read32((void *)hotplug_mbox);
 }
 
-static int smp_mmio(struct mmio_access *mmio)
-{
-	struct per_cpu *cpu_data = this_cpu_data();
-	unsigned int cpu;
-	unsigned long mbox_page = hotplug_mbox & PAGE_MASK;
-
-	if (mmio->address < mbox_page || mmio->address >= mbox_page + PAGE_SIZE)
-		return TRAP_UNHANDLED;
-
-	if (mmio->address != hotplug_mbox || !mmio->is_write)
-		/* Ignore all other accesses */
-		return TRAP_HANDLED;
-
-	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id) {
-		per_cpu(cpu)->guest_mbox.entry = mmio->value;
-		psci_try_resume(cpu);
-	}
-
-	return TRAP_HANDLED;
-}
-
 static struct smp_ops vexpress_smp_ops = {
 	.init = smp_init,
-	.mmio_handler = smp_mmio,
 	.cpu_spin = smp_spin,
 };
 
@@ -75,7 +76,6 @@ static struct smp_ops vexpress_smp_ops = {
  */
 static struct smp_ops vexpress_guest_smp_ops = {
 	.init = psci_cell_init,
-	.mmio_handler = smp_mmio,
 	.cpu_spin = psci_emulate_spin,
 };
 
