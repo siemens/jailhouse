@@ -237,14 +237,6 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 		irqchip.cpu_reset(cpu_data, true);
 }
 
-int irqchip_mmio_access(struct mmio_access *access)
-{
-	if (irqchip.mmio_access)
-		return irqchip.mmio_access(access);
-
-	return TRAP_UNHANDLED;
-}
-
 static const struct jailhouse_irqchip *
 irqchip_find_config(struct jailhouse_cell_desc *config)
 {

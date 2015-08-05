@@ -12,4 +12,4 @@
 
 struct mmio_access;
 
-void arm_mmio_perform_access(struct mmio_access *mmio);
+void arm_mmio_perform_access(unsigned long base, struct mmio_access *mmio);

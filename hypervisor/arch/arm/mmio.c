@@ -18,7 +18,7 @@
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return smp_mmio_regions;
+	return irqchip_mmio_count_regions(cell) + smp_mmio_regions;
 }
 
 /* Taken from the ARM ARM pseudocode for taking a data abort */
@@ -60,9 +60,9 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	arm_write_sysreg(DFAR, addr);
 }
 
-void arm_mmio_perform_access(struct mmio_access *mmio)
+void arm_mmio_perform_access(unsigned long base, struct mmio_access *mmio)
 {
-	void *addr = (void *)mmio->address;
+	void *addr = (void *)(base + mmio->address);
 
 	if (mmio->is_write)
 		switch (mmio->size) {
@@ -99,7 +99,6 @@ int arch_handle_dabt(struct trap_context *ctx)
 	struct mmio_access mmio;
 	unsigned long hpfar;
 	unsigned long hdfar;
-	int ret		= TRAP_UNHANDLED;
 	/* Decode the syndrome fields */
 	u32 icc		= ESR_ICC(ctx->esr);
 	u32 isv		= icc >> 24;
@@ -146,14 +145,8 @@ int arch_handle_dabt(struct trap_context *ctx)
 	mmio_result = mmio_handle_access(&mmio);
 	if (mmio_result == MMIO_ERROR)
 		return TRAP_FORBIDDEN;
-	if (mmio_result == MMIO_UNHANDLED) {
-		ret = irqchip_mmio_access(&mmio);
-
-		if (ret == TRAP_FORBIDDEN)
-			return TRAP_FORBIDDEN;
-		if (ret == TRAP_UNHANDLED)
-			goto error_unhandled;
-	}
+	if (mmio_result == MMIO_UNHANDLED)
+		goto error_unhandled;
 
 	/* Put the read value into the dest register */
 	if (!is_write) {

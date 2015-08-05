@@ -171,6 +171,8 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 
 static int gic_cell_init(struct cell *cell)
 {
+	int err;
+
 	/*
 	 * target_cpu_map has not been populated by all available CPUs when the
 	 * setup code initialises the root cell. It is assumed that the kernel
@@ -189,11 +191,17 @@ static int gic_cell_init(struct cell *cell)
 	 * here.
 	 * As for now, none of them seem to have virtualization extensions.
 	 */
-	return paging_create(&cell->arch.mm, (unsigned long)gicv_base,
-			     gicc_size, (unsigned long)gicc_base,
-			     (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
-			      S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
-			     PAGING_NON_COHERENT);
+	err = paging_create(&cell->arch.mm, (unsigned long)gicv_base,
+			    gicc_size, (unsigned long)gicc_base,
+			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
+			     S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
+			    PAGING_NON_COHERENT);
+	if (err)
+		return err;
+
+	mmio_region_register(cell, (unsigned long)gicd_base, gicd_size,
+			     gic_handle_dist_access, NULL);
+	return 0;
 }
 
 static void gic_cell_exit(struct cell *cell)
@@ -271,14 +279,9 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
-static int gic_mmio_access(struct mmio_access *mmio)
+unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
-	void *address = (void *)mmio->address;
-
-	if (address >= gicd_base && address < gicd_base + gicd_size)
-		return gic_handle_dist_access(mmio);
-
-	return TRAP_UNHANDLED;
+	return 1;
 }
 
 struct irqchip_ops gic_irqchip = {
@@ -292,5 +295,4 @@ struct irqchip_ops gic_irqchip = {
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
 	.eoi_irq = gic_eoi_irq,
-	.mmio_access = gic_mmio_access,
 };

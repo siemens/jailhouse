@@ -213,17 +213,16 @@ static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
 	}
 }
 
-static int gic_handle_redist_access(struct mmio_access *mmio)
+static enum mmio_result gic_handle_redist_access(void *arg,
+						 struct mmio_access *mmio)
 {
 	struct cell *cell = this_cell();
 	unsigned int cpu;
-	unsigned int reg;
-	int ret = TRAP_UNHANDLED;
 	unsigned int virt_id;
 	void *virt_redist = 0;
 	void *phys_redist = 0;
 	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
-	void *address = (void *)mmio->address;
+	void *address = (void *)(mmio->address + (unsigned long)gicr_base);
 
 	/*
 	 * The redistributor accessed by the cell is not the one stored in these
@@ -241,14 +240,13 @@ static int gic_handle_redist_access(struct mmio_access *mmio)
 	}
 
 	if (phys_redist == NULL)
-		return TRAP_FORBIDDEN;
+		return MMIO_ERROR;
 
-	reg = address - virt_redist;
-	mmio->address = (unsigned long)phys_redist + reg;
+	mmio->address = address - virt_redist;
 
 	/* Change the ID register, all other accesses are allowed. */
 	if (!mmio->is_write) {
-		switch (reg) {
+		switch (mmio->address) {
 		case GICR_TYPER:
 			if (virt_id == cell->arch.last_virt_id)
 				mmio->value = GICR_TYPER_Last;
@@ -258,25 +256,26 @@ static int gic_handle_redist_access(struct mmio_access *mmio)
 			if (mmio->size == 8)
 				mmio->value |= (u64)virt_id << 32;
 
-			ret = TRAP_HANDLED;
-			break;
+			return MMIO_HANDLED;
 		case GICR_TYPER + 4:
 			/* Upper bits contain the affinity */
 			mmio->value = virt_id;
-			ret = TRAP_HANDLED;
-			break;
+			return MMIO_HANDLED;
 		}
 	}
-	if (ret == TRAP_HANDLED)
-		return ret;
-
-	arm_mmio_perform_access(mmio);
-	return TRAP_HANDLED;
+	arm_mmio_perform_access((unsigned long)phys_redist, mmio);
+	return MMIO_HANDLED;
 }
 
 static int gic_cell_init(struct cell *cell)
 {
 	gic_route_spis(cell, cell);
+
+	mmio_region_register(cell, (unsigned long)gicd_base, gicd_size,
+			     gic_handle_dist_access, NULL);
+	mmio_region_register(cell, (unsigned long)gicr_base, gicr_size,
+			     gic_handle_redist_access, NULL);
+
 	return 0;
 }
 
@@ -400,17 +399,9 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
-static int gic_mmio_access(struct mmio_access *mmio)
+unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
-	void *address = (void *)mmio->address;
-
-	if (address >= gicd_base && address < gicd_base + gicd_size)
-		return gic_handle_dist_access(mmio);
-
-	if (address >= gicr_base && address < gicr_base + gicr_size)
-		return gic_handle_redist_access(mmio);
-
-	return TRAP_UNHANDLED;
+	return 2;
 }
 
 struct irqchip_ops gic_irqchip = {
@@ -423,5 +414,4 @@ struct irqchip_ops gic_irqchip = {
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
 	.eoi_irq = gic_eoi_irq,
-	.mmio_access = gic_mmio_access,
 };

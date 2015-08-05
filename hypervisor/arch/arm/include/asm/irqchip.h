@@ -81,6 +81,8 @@ struct pending_irq {
 	struct pending_irq *prev;
 } __attribute__((packed));
 
+unsigned int irqchip_mmio_count_regions(struct cell *cell);
+
 int irqchip_init(void);
 int irqchip_cpu_init(struct per_cpu *cpu_data);
 int irqchip_cpu_reset(struct per_cpu *cpu_data);
@@ -93,8 +95,6 @@ void irqchip_root_cell_shrink(struct cell *cell);
 int irqchip_send_sgi(struct sgi *sgi);
 void irqchip_handle_irq(struct per_cpu *cpu_data);
 void irqchip_eoi_irq(u32 irqn, bool deactivate);
-
-int irqchip_mmio_access(struct mmio_access *access);
 
 int irqchip_inject_pending(struct per_cpu *cpu_data);
 int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
