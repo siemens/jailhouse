@@ -575,14 +575,6 @@ void pci_prepare_handover(void)
 	}
 }
 
-static int pci_add_virtual_device(struct cell *cell, struct pci_device *device)
-{
-	device->cell = cell;
-	device->next_virtual_device = cell->virtual_device_list;
-	cell->virtual_device_list = device;
-	return 0;
-}
-
 static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 {
 	unsigned int n, pages, size = device->info->msix_region_size;
@@ -636,19 +628,6 @@ error_page_free:
 error_remove_dev:
 	arch_pci_remove_physical_device(device);
 	return err;
-}
-
-static void pci_remove_virtual_device(struct pci_device *device)
-{
-	struct pci_device *prev = device->cell->virtual_device_list;
-
-	if (prev == device) {
-		device->cell->virtual_device_list = device->next_virtual_device;
-	} else {
-		while (prev->next_virtual_device != device)
-			prev = prev->next_virtual_device;
-		prev->next_virtual_device = device->next_virtual_device;
-	}
 }
 
 static void pci_remove_physical_device(struct pci_device *device)
@@ -723,9 +702,9 @@ int pci_cell_init(struct cell *cell)
 			err = pci_ivshmem_init(cell, device);
 			if (err)
 				goto error;
-			err = pci_add_virtual_device(cell, device);
-			if (err)
-				goto error;
+
+			device->cell = cell;
+
 			continue;
 		}
 
@@ -798,7 +777,6 @@ void pci_cell_exit(struct cell *cell)
 		if (device->cell) {
 			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
 				pci_ivshmem_exit(device);
-				pci_remove_virtual_device(device);
 			} else {
 				pci_remove_physical_device(device);
 				pci_return_device_to_root_cell(device);
