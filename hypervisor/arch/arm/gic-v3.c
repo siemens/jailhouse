@@ -318,7 +318,7 @@ static int gic_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
-int gicv3_handle_sgir_write(u64 sgir)
+void gicv3_handle_sgir_write(u64 sgir)
 {
 	struct sgi sgi;
 	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
@@ -331,7 +331,7 @@ int gicv3_handle_sgir_write(u64 sgir)
 	sgi.aff3 = sgir >> ICC_SGIR_AFF3_SHIFT & 0xff;
 	sgi.id = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
-	return gic_handle_sgir_write(&sgi, true);
+	gic_handle_sgir_write(&sgi, true);
 }
 
 static void gic_eoi_irq(u32 irq_id, bool deactivate)

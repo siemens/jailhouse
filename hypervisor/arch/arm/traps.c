@@ -273,7 +273,8 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	/* Trapped ICC_SGI1R write */
 	if (!read && opc1 == 0 && crm == 12) {
 		arch_skip_instruction(ctx);
-		return gicv3_handle_sgir_write((u64)rt2_val << 32 | rt_val);
+		gicv3_handle_sgir_write((u64)rt2_val << 32 | rt_val);
+		return TRAP_HANDLED;
 	}
 #else
 	/* Avoid `unused' warning... */

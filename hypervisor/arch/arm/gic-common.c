@@ -234,7 +234,8 @@ static int handle_sgir_access(struct mmio_access *mmio)
 	sgi.aff3 = 0;
 	sgi.id = val & 0xf;
 
-	return gic_handle_sgir_write(&sgi, false);
+	gic_handle_sgir_write(&sgi, false);
+	return TRAP_HANDLED;
 }
 
 /*
@@ -259,7 +260,7 @@ int gic_probe_cpu_id(unsigned int cpu)
 	return 0;
 }
 
-int gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
+void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned int cpu;
@@ -296,8 +297,6 @@ int gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 	/* Let the other CPUS inject their SGIs */
 	sgi->id = SGI_INJECT;
 	irqchip_send_sgi(sgi);
-
-	return TRAP_HANDLED;
 }
 
 int gic_handle_dist_access(struct mmio_access *mmio)
