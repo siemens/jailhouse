@@ -70,10 +70,8 @@ int vcpu_cell_init(struct cell *cell)
 		return trace_error(-EINVAL);
 
 	err = vcpu_vendor_cell_init(cell);
-	if (err) {
-		vcpu_cell_exit(cell);
+	if (err)
 		return err;
-	}
 
 	vcpu_vendor_get_cell_io_bitmap(cell, &cell_iobm);
 	memset(cell_iobm.data, -1, cell_iobm.size);
