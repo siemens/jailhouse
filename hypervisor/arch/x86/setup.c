@@ -18,6 +18,7 @@
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
+#include <asm/cat.h>
 #include <asm/ioapic.h>
 #include <asm/iommu.h>
 #include <asm/vcpu.h>
@@ -229,7 +230,11 @@ int arch_init_late(void)
 	if (err)
 		return err;
 
-	return ioapic_init();
+	err = ioapic_init();
+	if (err)
+		return err;
+
+	return cat_init();
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)

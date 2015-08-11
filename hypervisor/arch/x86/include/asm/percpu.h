@@ -127,8 +127,10 @@ struct per_cpu {
 	/** Pending SIPI vector; -1 if none is pending. */
 	int sipi_vector;
 	/** Set to true for a pending TLB flush for the paging layer that does
-	 *  host physical <-> guest physical memory mappings */
+	 *  host physical <-> guest physical memory mappings. */
 	bool flush_vcpu_caches;
+	/** Set to true for pending cache allocation updates (Intel only). */
+	bool update_cat;
 	/** Set to true for instructing the CPU to disable hypervisor mode. */
 	bool shutdown_cpu;
 	/** State of the shutdown process. Possible values:

@@ -59,6 +59,11 @@ struct arch_cell {
 	struct cell_ioapic *ioapics;
 	/** Number of assigned IOAPICs. */
 	unsigned int num_ioapics;
+
+	/** Class Of Service for cache allocation (Intel only). */
+	u32 cos;
+	/** Allocated L3 cache region (Intel only). */
+	u64 cat_mask;
 };
 
 #endif /* !_JAILHOUSE_ASM_CELL_H */

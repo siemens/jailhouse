@@ -21,5 +21,5 @@ always := $(BUILT_IN_OBJECTS)
 
 obj-y := $(BUILT_IN_OBJECTS)
 
-built-in-amd-y := $(COMMON_OBJECTS) svm.o amd_iommu.o svm-vmexit.o
-built-in-intel-y := $(COMMON_OBJECTS) vmx.o vtd.o vmx-vmexit.o
+built-in-amd-y := $(COMMON_OBJECTS) svm.o amd_iommu.o svm-vmexit.o cat-stubs.o
+built-in-intel-y := $(COMMON_OBJECTS) vmx.o vtd.o vmx-vmexit.o cat.o

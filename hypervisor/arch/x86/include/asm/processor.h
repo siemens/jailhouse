@@ -27,6 +27,9 @@
 #define X86_FEATURE_XSAVE				(1 << 26)
 #define X86_FEATURE_HYPERVISOR				(1 << 31)
 
+/* leaf 0x07, subleaf 0, EBX */
+#define X86_FEATURE_CAT					(1 << 15)
+
 /* leaf 0x80000001, ECX */
 #define X86_FEATURE_SVM					(1 << 2)
 
@@ -86,6 +89,8 @@
 #define MSR_X2APIC_BASE					0x00000800
 #define MSR_X2APIC_ICR					0x00000830
 #define MSR_X2APIC_END					0x0000083f
+#define MSR_IA32_PQR_ASSOC				0x00000c8f
+#define MSR_IA32_L3_MASK_0				0x00000c90
 #define MSR_EFER					0xc0000080
 #define MSR_STAR					0xc0000081
 #define MSR_LSTAR					0xc0000082
@@ -105,6 +110,13 @@
 #define EFER_LME					0x00000100
 #define EFER_LMA					0x00000400
 #define EFER_NXE					0x00000800
+
+#define PQR_ASSOC_COS_SHIFT				32
+
+#define CAT_RESID_L3					1
+
+#define CAT_CBM_LEN_MASK				BIT_MASK(4, 0)
+#define CAT_COS_MAX_MASK				BIT_MASK(15, 0)
 
 #define GDT_DESC_NULL					0
 #define GDT_DESC_CODE					1

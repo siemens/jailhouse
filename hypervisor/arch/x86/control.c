@@ -15,6 +15,7 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
+#include <asm/cat.h>
 #include <asm/control.h>
 #include <asm/ioapic.h>
 #include <asm/iommu.h>
@@ -51,6 +52,10 @@ int arch_cell_create(struct cell *cell)
 	if (err)
 		goto error_pci_exit;
 
+	err = cat_cell_init(cell);
+	if (err)
+		goto error_ioapic_exit;
+
 	cell->comm_page.comm_region.pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 	cell->comm_page.comm_region.num_cpus = 0;
@@ -59,6 +64,8 @@ int arch_cell_create(struct cell *cell)
 
 	return 0;
 
+error_ioapic_exit:
+	ioapic_cell_exit(cell);
 error_pci_exit:
 	pci_cell_exit(cell);
 error_iommu_exit:
@@ -113,6 +120,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 
 void arch_cell_destroy(struct cell *cell)
 {
+	cat_cell_exit(cell);
 	ioapic_cell_exit(cell);
 	pci_cell_exit(cell);
 	iommu_cell_exit(cell);
@@ -262,6 +270,11 @@ void x86_check_events(void)
 	if (cpu_data->flush_vcpu_caches) {
 		cpu_data->flush_vcpu_caches = false;
 		vcpu_tlb_flush();
+	}
+
+	if (cpu_data->update_cat) {
+		cpu_data->update_cat = false;
+		cat_update();
 	}
 
 	spin_unlock(&cpu_data->control_lock);
