@@ -325,12 +325,12 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 
 int vcpu_vendor_cell_init(struct cell *cell)
 {
-	int err = -ENOMEM;
+	int err;
 
 	/* allocate io_bitmap */
 	cell->arch.vmx.io_bitmap = page_alloc(&mem_pool, PIO_BITMAP_PAGES);
 	if (!cell->arch.vmx.io_bitmap)
-		return err;
+		return -ENOMEM;
 
 	/* build root EPT of cell */
 	cell->arch.vmx.ept_structs.root_paging = ept_paging;
