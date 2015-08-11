@@ -190,7 +190,7 @@ static int vmx_check_features(void)
 	unsigned long vmx_pin_ctrl, vmx_basic, maybe1, required1;
 	unsigned long vmx_entry_ctrl, vmx_exit_ctrl;
 
-	if (!(cpuid_ecx(1) & X86_FEATURE_VMX))
+	if (!(cpuid_ecx(1, 0) & X86_FEATURE_VMX))
 		return trace_error(-ENODEV);
 
 	vmx_basic = read_msr(MSR_IA32_VMX_BASIC);
@@ -233,7 +233,7 @@ static int vmx_check_features(void)
 		return trace_error(-EIO);
 
 	/* require RDTSCP if present in CPUID */
-	if (cpuid_edx(0x80000001) & X86_FEATURE_RDTSCP) {
+	if (cpuid_edx(0x80000001, 0) & X86_FEATURE_RDTSCP) {
 		enable_rdtscp = SECONDARY_EXEC_RDTSCP;
 		if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_RDTSCP))
 			return trace_error(-EIO);
@@ -605,7 +605,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 	int err;
 
 	/* make sure all perf counters are off */
-	if ((cpuid_eax(0x0a) & 0xff) > 0)
+	if ((cpuid_eax(0x0a, 0) & 0xff) > 0)
 		write_msr(MSR_IA32_PERF_GLOBAL_CTRL, 0);
 
 	if (cpu_data->linux_cr4 & X86_CR4_VMXE)
@@ -652,7 +652,8 @@ int vcpu_init(struct per_cpu *cpu_data)
 	 */
 	write_cr0(X86_CR0_HOST_STATE);
 	write_cr4(X86_CR4_HOST_STATE | X86_CR4_VMXE |
-		  ((cpuid_ecx(1) & X86_FEATURE_XSAVE) ? X86_CR4_OSXSAVE : 0));
+		  ((cpuid_ecx(1, 0) & X86_FEATURE_XSAVE) ?
+		   X86_CR4_OSXSAVE : 0));
 
 	if (!vmxon(cpu_data))  {
 		write_cr4(cpu_data->linux_cr4);

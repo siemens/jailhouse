@@ -207,15 +207,15 @@ static inline void cpuid(unsigned int *eax, unsigned int *ebx,
 	    : "memory");
 }
 
-#define CPUID_REG(reg)						\
-static inline unsigned int cpuid_##reg(unsigned int op)		\
-{								\
-	unsigned int eax, ebx, ecx, edx;			\
-								\
-	eax = op;						\
-	ecx = 0;						\
-	cpuid(&eax, &ebx, &ecx, &edx);				\
-	return reg;						\
+#define CPUID_REG(reg)							\
+static inline unsigned int cpuid_##reg(unsigned int op, unsigned int sub) \
+{									\
+	unsigned int eax, ebx, ecx, edx;				\
+									\
+	eax = op;							\
+	ecx = sub;							\
+	cpuid(&eax, &ebx, &ecx, &edx);					\
+	return reg;							\
 }
 
 CPUID_REG(eax)

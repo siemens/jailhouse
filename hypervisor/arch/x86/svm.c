@@ -107,24 +107,24 @@ static void *avic_page;
 static int svm_check_features(void)
 {
 	/* SVM is available */
-	if (!(cpuid_ecx(0x80000001) & X86_FEATURE_SVM))
+	if (!(cpuid_ecx(0x80000001, 0) & X86_FEATURE_SVM))
 		return trace_error(-ENODEV);
 
 	/* Nested paging */
-	if (!(cpuid_edx(0x8000000A) & X86_FEATURE_NP))
+	if (!(cpuid_edx(0x8000000A, 0) & X86_FEATURE_NP))
 		return trace_error(-EIO);
 
 	/* Decode assists */
-	if ((cpuid_edx(0x8000000A) & X86_FEATURE_DECODE_ASSISTS))
+	if ((cpuid_edx(0x8000000A, 0) & X86_FEATURE_DECODE_ASSISTS))
 		has_assists = true;
 
 	/* AVIC support */
 	/* FIXME: Jailhouse support is incomplete so far
-	if (cpuid_edx(0x8000000A) & X86_FEATURE_AVIC)
+	if (cpuid_edx(0x8000000A, 0) & X86_FEATURE_AVIC)
 		has_avic = true; */
 
 	/* TLB Flush by ASID support */
-	if (cpuid_edx(0x8000000A) & X86_FEATURE_FLUSH_BY_ASID)
+	if (cpuid_edx(0x8000000A, 0) & X86_FEATURE_FLUSH_BY_ASID)
 		has_flush_by_asid = true;
 
 	return 0;

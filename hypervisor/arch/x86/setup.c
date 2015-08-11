@@ -55,7 +55,7 @@ int arch_init_early(void)
 	unsigned int vector;
 	int err;
 
-	cache_line_size = (cpuid_ebx(1) & 0xff00) >> 5;
+	cache_line_size = (cpuid_ebx(1, 0) & 0xff00) >> 5;
 
 	err = apic_init();
 	if (err)

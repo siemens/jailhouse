@@ -166,7 +166,7 @@ const struct paging x86_64_paging[] = {
 void arch_paging_init(void)
 {
 	memcpy(hv_paging, x86_64_paging, sizeof(x86_64_paging));
-	if (!(cpuid_edx(0x80000001) & X86_FEATURE_GBPAGES))
+	if (!(cpuid_edx(0x80000001, 0) & X86_FEATURE_GBPAGES))
 		hv_paging[1].page_size = 0;
 }
 
