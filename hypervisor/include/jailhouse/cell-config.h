@@ -52,6 +52,7 @@ struct jailhouse_cell_desc {
 
 	__u32 cpu_set_size;
 	__u32 num_memory_regions;
+	__u32 num_cache_regions;
 	__u32 num_irqchips;
 	__u32 pio_bitmap_size;
 	__u32 num_pci_devices;
@@ -81,6 +82,21 @@ struct jailhouse_memory {
 	__u64 virt_start;
 	__u64 size;
 	__u64 flags;
+} __attribute__((packed));
+
+#define JAILHOUSE_CACHE_L3_CODE		0x01
+#define JAILHOUSE_CACHE_L3_DATA		0x02
+#define JAILHOUSE_CACHE_L3		(JAILHOUSE_CACHE_L3_CODE | \
+					 JAILHOUSE_CACHE_L3_DATA)
+
+#define JAILHOUSE_CACHE_ROOTSHARED	0x0001
+
+struct jailhouse_cache {
+	__u32 start;
+	__u32 size;
+	__u8 type;
+	__u8 padding;
+	__u16 flags;
 } __attribute__((packed));
 
 struct jailhouse_irqchip {
@@ -149,6 +165,7 @@ jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)
 	return sizeof(struct jailhouse_cell_desc) +
 		cell->cpu_set_size +
 		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
+		cell->num_cache_regions * sizeof(struct jailhouse_cache) +
 		cell->num_irqchips * sizeof(struct jailhouse_irqchip) +
 		cell->pio_bitmap_size +
 		cell->num_pci_devices * sizeof(struct jailhouse_pci_device) +
@@ -176,12 +193,20 @@ jailhouse_cell_mem_regions(const struct jailhouse_cell_desc *cell)
 		((void *)jailhouse_cell_cpu_set(cell) + cell->cpu_set_size);
 }
 
+static inline const struct jailhouse_cache *
+jailhouse_cell_cache_regions(const struct jailhouse_cell_desc *cell)
+{
+	return (const struct jailhouse_cache *)
+		((void *)jailhouse_cell_mem_regions(cell) +
+		 cell->num_memory_regions * sizeof(struct jailhouse_memory));
+}
+
 static inline const struct jailhouse_irqchip *
 jailhouse_cell_irqchips(const struct jailhouse_cell_desc *cell)
 {
 	return (const struct jailhouse_irqchip *)
-		((void *)jailhouse_cell_mem_regions(cell) +
-		 cell->num_memory_regions * sizeof(struct jailhouse_memory));
+		((void *)jailhouse_cell_cache_regions(cell) +
+		 cell->num_cache_regions * sizeof(struct jailhouse_cache));
 }
 
 static inline const __u8 *

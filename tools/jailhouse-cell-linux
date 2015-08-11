@@ -69,7 +69,7 @@ class MemoryRegion:
 
 
 class Config:
-    _HEADER_FORMAT = '8x32sIIIIIII'
+    _HEADER_FORMAT = '8x32sIIIIIIII'
 
     def __init__(self, config_file):
         self.data = config_file.read()
@@ -78,6 +78,7 @@ class Config:
          self.flags,
          self.cpu_set_size,
          self.num_memory_regions,
+         self.num_cache_regions,
          self.num_irqchips,
          self.pio_bitmap_size,
          self.num_pci_devices,
