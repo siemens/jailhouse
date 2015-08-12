@@ -12,6 +12,7 @@
 
 #include <asm/bitops.h>
 #include <asm/percpu.h>
+#include <jailhouse/cell.h>
 #include <jailhouse/cell-config.h>
 
 #define SHUTDOWN_NONE			0
