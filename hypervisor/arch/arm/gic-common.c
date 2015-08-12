@@ -13,6 +13,7 @@
 #include <jailhouse/cell.h>
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
+#include <jailhouse/printk.h>
 #include <asm/control.h>
 #include <asm/gic_common.h>
 #include <asm/irqchip.h>
