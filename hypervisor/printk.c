@@ -14,6 +14,7 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
+#include <asm/bitops.h>
 #include <asm/spinlock.h>
 
 volatile unsigned long panic_in_progress;
