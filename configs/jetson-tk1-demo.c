@@ -24,6 +24,7 @@ struct {
 	struct jailhouse_memory mem_regions[2];
 } __attribute__((packed)) config = {
 	.cell = {
+		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.name = "jetson-tk1-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

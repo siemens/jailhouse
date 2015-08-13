@@ -43,7 +43,10 @@
 
 #define JAILHOUSE_CELL_PASSIVE_COMMREG	0x00000001
 
+#define JAILHOUSE_CELL_DESC_SIGNATURE	"JAILCELL"
+
 struct jailhouse_cell_desc {
+	char signature[8];
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
 	__u32 flags;
 
@@ -118,7 +121,10 @@ struct jailhouse_pci_capability {
 
 #define JAILHOUSE_MAX_IOMMU_UNITS	8
 
+#define JAILHOUSE_SYSTEM_SIGNATURE	"JAILSYST"
+
 struct jailhouse_system {
+	char signature[8];
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory debug_uart;
 	union {

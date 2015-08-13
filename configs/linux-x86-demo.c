@@ -25,6 +25,7 @@ struct {
 	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
 	.cell = {
+		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.name = "linux-x86-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

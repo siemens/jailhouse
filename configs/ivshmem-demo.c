@@ -24,6 +24,7 @@ struct {
 	struct jailhouse_pci_capability pci_caps[0];
 } __attribute__((packed)) config = {
 	.cell = {
+		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.name = "ivshmem-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

@@ -26,6 +26,7 @@ struct {
 	__u8 pio_bitmap[0x2000];
 } __attribute__((packed)) config = {
 	.cell = {
+		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.name = "ioapic-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

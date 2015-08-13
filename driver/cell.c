@@ -175,6 +175,14 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		err = -EFAULT;
 		goto kfree_config_out;
 	}
+
+	if (memcmp(config->signature, JAILHOUSE_CELL_DESC_SIGNATURE,
+		   sizeof(config->signature)) != 0) {
+		pr_err("jailhouse: Not a cell configuration\n");
+		err = -EINVAL;
+		goto kfree_config_out;
+	}
+
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
 	if (mutex_lock_interruptible(&jailhouse_lock) != 0) {

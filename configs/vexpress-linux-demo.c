@@ -22,6 +22,7 @@ struct {
 	struct jailhouse_irqchip irqchips[1];
 } __attribute__((packed)) config = {
 	.cell = {
+		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.name = "linux-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

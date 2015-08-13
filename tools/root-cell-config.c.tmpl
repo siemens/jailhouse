@@ -54,6 +54,7 @@ struct {
 	struct jailhouse_pci_capability pci_caps[${len(pcicaps)}];
 } __attribute__((packed)) config = {
 	.header = {
+		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
 		.hypervisor_memory = {
 			.phys_start = ${hex(hvmem[0])},
 			.size = ${hex(hvmem[1])},

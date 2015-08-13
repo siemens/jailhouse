@@ -192,6 +192,13 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	if (copy_from_user(&config_header, arg, sizeof(config_header)))
 		return -EFAULT;
+
+	if (memcmp(config_header.signature, JAILHOUSE_SYSTEM_SIGNATURE,
+		   sizeof(config_header.signature)) != 0) {
+		pr_err("jailhouse: Not a system configuration\n");
+		return -EINVAL;
+	}
+
 	config_header.root_cell.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
 	max_cpus = get_max_cpus(config_header.root_cell.cpu_set_size, arg);

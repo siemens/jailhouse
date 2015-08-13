@@ -24,6 +24,7 @@ struct {
 	__u8 pio_bitmap[0x2000];
 } __attribute__((packed)) config = {
 	.cell = {
+		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.name = "apic-demo",
 
 		.cpu_set_size = sizeof(config.cpus),
