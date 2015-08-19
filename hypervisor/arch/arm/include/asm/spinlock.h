@@ -14,7 +14,6 @@
 #ifndef _JAILHOUSE_ASM_SPINLOCK_H
 #define _JAILHOUSE_ASM_SPINLOCK_H
 
-#include <asm/bitops.h>
 #include <asm/processor.h>
 
 #ifndef __ASSEMBLY__

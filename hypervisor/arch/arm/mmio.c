@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/mmio.h>
+#include <asm/bitops.h>
 #include <asm/irqchip.h>
 #include <asm/processor.h>
 #include <asm/smp.h>
