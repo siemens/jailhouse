@@ -51,7 +51,7 @@ extern struct jailhouse_header hypervisor_header;
  *
  * The functions always returns the same value on each CPU it is invoked on.
  *
- * @note This function has to be called for every configures CPU or the setup
+ * @note This function has to be called for every configured CPU or the setup
  * will fail.
  *
  * @see entry
@@ -69,7 +69,7 @@ int arch_entry(unsigned int cpu_id);
  * The functions is called by arch_entry(). It always returns the same value on
  * each CPU it is invoked on.
  *
- * @note This function has to be called for every configures CPU or the setup
+ * @note This function has to be called for every configured CPU or the setup
  * will fail.
  *
  * @see arch_entry

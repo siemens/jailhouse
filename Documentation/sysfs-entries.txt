@@ -13,7 +13,7 @@ can be used for monitoring the state of the hypervisor and its cells.
 `- cells
    |- <name of cell>
    |  |- id                     - unique numerical ID
-   |  |- state                  - "running", "shut down", or "failed"
+   |  |- state                  - "running", "running/locked", "shut down", or "failed"
    |  |- cpus_assigned          - bitmask of assigned logical CPUs
    |  |- cpus_failed            - bitmask of logical CPUs that caused a failure
    |  `- statistics
