@@ -230,7 +230,12 @@ void inmate_main(void);
 void hypercall_init(void);
 
 unsigned long pm_timer_read(void);
+
+unsigned long tsc_read(void);
+unsigned long tsc_init(void);
+
 void delay_us(unsigned long microsecs);
+
 unsigned long apic_timer_init(unsigned int vector);
 void apic_timer_set(unsigned long timeout_ns);
 
