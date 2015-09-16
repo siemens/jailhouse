@@ -31,7 +31,7 @@ static void irq_handler(void)
 {
 	unsigned long delta;
 
-	delta = pm_timer_read() - expected_time;
+	delta = tsc_read() - expected_time;
 	if (delta < min)
 		min = delta;
 	if (delta > max)
@@ -40,7 +40,7 @@ static void irq_handler(void)
 	       delta, min, max);
 
 	expected_time += 100 * NS_PER_MSEC;
-	apic_timer_set(expected_time - pm_timer_read());
+	apic_timer_set(expected_time - tsc_read());
 }
 
 static void init_apic(void)
@@ -53,7 +53,7 @@ static void init_apic(void)
 	apic_freq_khz = apic_timer_init(APIC_TIMER_VECTOR);
 	printk("Calibrated APIC frequency: %lu kHz\n", apic_freq_khz);
 
-	expected_time = pm_timer_read() + NS_PER_MSEC;
+	expected_time = tsc_read() + NS_PER_MSEC;
 	apic_timer_set(NS_PER_MSEC);
 
 	asm volatile("sti");
@@ -63,6 +63,7 @@ void inmate_main(void)
 {
 	bool allow_terminate = false;
 	bool terminate = false;
+	unsigned long tsc_freq;
 	unsigned int n;
 
 	printk_uart_base = UART_BASE;
@@ -73,6 +74,10 @@ void inmate_main(void)
 	} while (n < UART_IDLE_LOOPS);
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
+
+	tsc_freq = tsc_init();
+	printk("Calibrated TSC frequency: %lu.%03u kHz\n", tsc_freq / 1000,
+	       tsc_freq % 1000);
 
 	init_apic();
 
