@@ -21,18 +21,20 @@
 #define X2APIC_TDCR		0x83e
 
 static unsigned long divided_apic_freq;
+static unsigned long pm_timer_last[SMP_MAX_CPUS];
+static unsigned long pm_timer_overflows[SMP_MAX_CPUS];
 
 unsigned long pm_timer_read(void)
 {
-	static unsigned long last, overflows;
+	unsigned int cpu = cpu_id();
 	unsigned long tmr;
 
 	tmr = ((inl(comm_region->pm_timer_address) & 0x00ffffff) * NS_PER_SEC)
 		/ PM_TIMER_HZ;
-	if (tmr < last)
-		overflows += PM_TIMER_OVERFLOW;
-	last = tmr;
-	return tmr + overflows;
+	if (tmr < pm_timer_last[cpu])
+		pm_timer_overflows[cpu] += PM_TIMER_OVERFLOW;
+	pm_timer_last[cpu] = tmr;
+	return tmr + pm_timer_overflows[cpu];
 }
 
 void delay_us(unsigned long microsecs)
