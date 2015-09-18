@@ -360,25 +360,24 @@ int pci_init(void)
 {
 	int err;
 
-	err = pci_cell_init(&root_cell);
-	if (err)
-		return err;
-
 	mmcfg_start = system_config->platform_info.x86.mmconfig_base;
-	if (mmcfg_start == 0)
-		return 0;
+	if (mmcfg_start != 0) {
+		end_bus = system_config->platform_info.x86.mmconfig_end_bus;
+		mmcfg_size = (end_bus + 1) * 256 * 4096;
 
-	end_bus = system_config->platform_info.x86.mmconfig_end_bus;
-	mmcfg_size = (end_bus + 1) * 256 * 4096;
+		pci_space = page_alloc(&remap_pool, mmcfg_size / PAGE_SIZE);
+		if (!pci_space)
+			return trace_error(-ENOMEM);
 
-	pci_space = page_alloc(&remap_pool, mmcfg_size / PAGE_SIZE);
-	if (!pci_space)
-		return trace_error(-ENOMEM);
+		err = paging_create(&hv_paging_structs, mmcfg_start,
+				    mmcfg_size, (unsigned long)pci_space,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
+				    PAGING_NON_COHERENT);
+		if (err)
+			return err;
+	}
 
-	return paging_create(&hv_paging_structs, mmcfg_start, mmcfg_size,
-			     (unsigned long)pci_space,
-			     PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			     PAGING_NON_COHERENT);
+	return pci_cell_init(&root_cell);
 }
 
 static enum mmio_result pci_msix_access_handler(void *arg,
