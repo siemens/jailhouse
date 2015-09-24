@@ -116,8 +116,9 @@ static int svm_check_features(void)
 		has_assists = true;
 
 	/* AVIC support */
+	/* FIXME: Jailhouse support is incomplete so far
 	if (cpuid_edx(0x8000000A) & X86_FEATURE_AVIC)
-		has_avic = true;
+		has_avic = true; */
 
 	/* TLB Flush by ASID support */
 	if (cpuid_edx(0x8000000A) & X86_FEATURE_FLUSH_BY_ASID)
