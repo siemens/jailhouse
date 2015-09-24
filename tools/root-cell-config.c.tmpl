@@ -165,7 +165,11 @@ struct {
 		/* ${comment} */
 		% endfor
 		{
+			% if (c.id & 0x8000) != 0:
+			.id = ${hex(c.id & 0x7fff)} | JAILHOUSE_PCI_EXT_CAP,
+			% else:
 			.id = ${hex(c.id)},
+			% endif
 			.start = ${hex(c.start)},
 			.len = ${c.len},
 			.flags = ${c.flags},

@@ -196,9 +196,12 @@ class PCICapability:
     RD = '0'
     RW = 'JAILHOUSE_PCICAPS_WRITE'
 
+    JAILHOUSE_PCI_EXT_CAP = 0x8000
+
     @staticmethod
     def parse_pcicaps(dir):
         caps = []
+        has_extended_caps = False
         f = input_open(os.path.join(dir, 'config'), 'rb')
         f.seek(0x06)
         (status,) = struct.unpack('<H', f.read(2))
@@ -227,6 +230,14 @@ class PCICapability:
                 if (msgctl & (1 << 8)) != 0:  # per-vector masking support
                     len += 10
                 flags = PCICapability.RW
+            elif id == 0x10:  # Express
+                len = 20
+                (cap_reg,) = struct.unpack('<H', f.read(2))
+                if (cap_reg & 0xf) >= 2:  # v2 capability
+                    len = 44
+                # access side effects still need to be analyzed
+                flags = PCICapability.RD
+                has_extended_caps = True
             elif id == 0x11:  # MSI-X
                 # access will be moderated by hypervisor
                 len = 12
@@ -247,6 +258,34 @@ class PCICapability:
             content = f.read(len - 2)
             caps.append(PCICapability(id, cap, len, flags, content,
                                       msix_address))
+
+        if has_extended_caps:
+            # walk extended capability list
+            next = 0x100
+            while next != 0:
+                cap = next
+                f.seek(cap)
+                (id, version_next) = struct.unpack('<HH', f.read(4))
+                next = version_next >> 4
+                if id == 0xffff:
+                    break
+                elif id == 0x0010:  # SR-IOV
+                    len = 64
+                    # access side effects still need to be analyzed
+                    flags = PCICapability.RD
+                else:
+                    if (id & PCICapability.JAILHOUSE_PCI_EXT_CAP) != 0:
+                        print('WARNING: Ignoring unsupported PCI Express '
+                              'Extended Capability ID %x' % id)
+                        continue
+                    # unknown/unhandled cap, mark its existence
+                    len = 4
+                    flags = PCICapability.RD
+                f.seek(cap + 4)
+                content = f.read(len - 4)
+                id |= PCICapability.JAILHOUSE_PCI_EXT_CAP
+                caps.append(PCICapability(id, cap, len, flags, content, 0))
+
         f.close()
         return caps
 
