@@ -913,10 +913,6 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			if (vcpu_handle_mmio_access())
 				goto vmentry;
 		}
-
-		panic_printk("FATAL: Unhandled Nested Page Fault for (%p), "
-			     "error code is %x\n", vmcb->exitinfo2,
-			     vmcb->exitinfo1 & 0xf);
 		break;
 	case VMEXIT_XSETBV:
 		if (vcpu_handle_xsetbv())
