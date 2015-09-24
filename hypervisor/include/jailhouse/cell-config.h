@@ -110,6 +110,8 @@ struct jailhouse_pci_device {
 	__u32 shmem_region;
 } __attribute__((packed));
 
+#define JAILHOUSE_PCI_EXT_CAP		0x8000
+
 #define JAILHOUSE_PCICAPS_WRITE		0x0001
 
 struct jailhouse_pci_capability {
