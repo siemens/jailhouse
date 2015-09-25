@@ -467,7 +467,7 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	asm volatile("str %0" : "=m" (cpu_data->linux_tss.selector));
 
 	cpu_data->linux_efer = vmcb->efer & (~EFER_SVME);
-	cpu_data->linux_fs.base = vmcb->fs.base;
+	cpu_data->linux_fs.base = read_msr(MSR_FS_BASE);
 	cpu_data->linux_gs.base = vmcb->gs.base;
 
 	cpu_data->linux_ds.selector = vmcb->ds.selector;
