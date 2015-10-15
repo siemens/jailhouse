@@ -291,7 +291,7 @@ sudo tools/jailhouse cell list
 
 For more detailed statistics, run:
 
-sudo tools/jailhouse cell stat apic-demo
+sudo tools/jailhouse cell stats apic-demo
 
 The data you see is updated periodically (as in top utility) and contains
 various low-level counters like the number of hypercalls issued, or the
