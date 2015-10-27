@@ -74,15 +74,14 @@ int vcpu_cell_init(struct cell *cell)
 		return err;
 
 	vcpu_vendor_get_cell_io_bitmap(cell, &cell_iobm);
+
+	/* initialize io bitmap to trap all accesses */
 	memset(cell_iobm.data, -1, cell_iobm.size);
 
-	for (n = 0; n < 2; n++) {
-		size = pio_bitmap_size <= PAGE_SIZE ?
-			pio_bitmap_size : PAGE_SIZE;
-		memcpy(cell_iobm.data + n * PAGE_SIZE, pio_bitmap, size);
-		pio_bitmap += size;
-		pio_bitmap_size -= size;
-	}
+	/* copy io bitmap from cell config */
+	size = pio_bitmap_size > cell_iobm.size ?
+			cell_iobm.size : pio_bitmap_size;
+	memcpy(cell_iobm.data, pio_bitmap, size);
 
 	/* moderate access to i8042 command register */
 	cell_iobm.data[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
@@ -94,7 +93,6 @@ int vcpu_cell_init(struct cell *cell)
 		 */
 		vcpu_vendor_get_cell_io_bitmap(&root_cell, &root_cell_iobm);
 		pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
-		pio_bitmap_size = cell->config->pio_bitmap_size;
 		for (b = root_cell_iobm.data; pio_bitmap_size > 0;
 		     b++, pio_bitmap++, pio_bitmap_size--)
 			*b |= ~*pio_bitmap;
