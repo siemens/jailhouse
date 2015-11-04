@@ -25,8 +25,10 @@
 #include <asm/vcpu.h>
 #include <asm/vmx.h>
 
-#define CR0_IDX		0
-#define CR4_IDX		1
+#define CR0_IDX			0
+#define CR4_IDX			1
+
+#define PIO_BITMAP_PAGES	2
 
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
@@ -326,7 +328,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	int err = -ENOMEM;
 
 	/* allocate io_bitmap */
-	cell->arch.vmx.io_bitmap = page_alloc(&mem_pool, 2);
+	cell->arch.vmx.io_bitmap = page_alloc(&mem_pool, PIO_BITMAP_PAGES);
 	if (!cell->arch.vmx.io_bitmap)
 		return err;
 
@@ -1133,7 +1135,7 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *iobm)
 {
 	iobm->data = cell->arch.vmx.io_bitmap;
-	iobm->size = sizeof(cell->arch.vmx.io_bitmap);
+	iobm->size = PIO_BITMAP_PAGES * PAGE_SIZE;
 }
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)

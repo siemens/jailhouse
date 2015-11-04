@@ -39,6 +39,9 @@
  */
 #define SVM_CR0_ALLOWED_BITS	(~X86_CR0_NW)
 
+/* IOPM size: two 4-K pages + 3 bits */
+#define IOPM_PAGES		3
+
 static bool has_avic, has_assists, has_flush_by_asid;
 
 static const struct segment invalid_seg;
@@ -292,8 +295,8 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	int err = -ENOMEM;
 	u64 flags;
 
-	/* allocate iopm (two 4-K pages + 3 bits) */
-	cell->arch.svm.iopm = page_alloc(&mem_pool, 3);
+	/* allocate iopm  */
+	cell->arch.svm.iopm = page_alloc(&mem_pool, IOPM_PAGES);
 	if (!cell->arch.svm.iopm)
 		return err;
 
@@ -984,7 +987,7 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *iobm)
 {
 	iobm->data = cell->arch.svm.iopm;
-	iobm->size = sizeof(cell->arch.svm.iopm);
+	iobm->size = IOPM_PAGES * PAGE_SIZE;
 }
 
 void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
