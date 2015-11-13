@@ -859,6 +859,14 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	}
 }
 
+static void vmx_disable_preemption_timer(void)
+{
+	u32 pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
+
+	pin_based_ctrl &= ~PIN_BASED_VMX_PREEMPTION_TIMER;
+	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
+}
+
 void vcpu_nmi_handler(void)
 {
 	u32 pin_based_ctrl;
@@ -875,14 +883,6 @@ void vcpu_park(void)
 {
 	vmx_vcpu_reset(0);
 	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
-}
-
-static void vmx_disable_preemption_timer(void)
-{
-	u32 pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
-
-	pin_based_ctrl &= ~PIN_BASED_VMX_PREEMPTION_TIMER;
-	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
 }
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
