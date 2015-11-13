@@ -859,24 +859,21 @@ static void vmx_vcpu_reset(unsigned int sipi_vector)
 	}
 }
 
-static void vmx_disable_preemption_timer(void)
+static void vmx_preemption_timer_set_enable(bool enable)
 {
 	u32 pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
 
-	pin_based_ctrl &= ~PIN_BASED_VMX_PREEMPTION_TIMER;
+	if (enable)
+		pin_based_ctrl |= PIN_BASED_VMX_PREEMPTION_TIMER;
+	else
+		pin_based_ctrl &= ~PIN_BASED_VMX_PREEMPTION_TIMER;
 	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
 }
 
 void vcpu_nmi_handler(void)
 {
-	u32 pin_based_ctrl;
-
-	if (this_cpu_data()->vmx_state != VMCS_READY)
-		return;
-
-	pin_based_ctrl = vmcs_read32(PIN_BASED_VM_EXEC_CONTROL);
-	pin_based_ctrl |= PIN_BASED_VMX_PREEMPTION_TIMER;
-	vmcs_write32(PIN_BASED_VM_EXEC_CONTROL, pin_based_ctrl);
+	if (this_cpu_data()->vmx_state == VMCS_READY)
+		vmx_preemption_timer_set_enable(true);
 }
 
 void vcpu_park(void)
@@ -1058,7 +1055,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		/* fall through */
 	case EXIT_REASON_PREEMPTION_TIMER:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
-		vmx_disable_preemption_timer();
+		vmx_preemption_timer_set_enable(false);
 		sipi_vector = x86_handle_events(cpu_data);
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
