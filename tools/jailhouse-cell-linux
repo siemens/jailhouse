@@ -172,7 +172,7 @@ class JailhouseCell:
     JAILHOUSE_CELL_ID_UNUSED = -1
 
     def __init__(self, config):
-        self.name = config.name
+        self.name = config.name.encode('utf-8')
 
         self.dev = open('/dev/jailhouse')
 
