@@ -239,7 +239,12 @@ enum vmx_state { VMXOFF = 0, VMXON, VMCS_READY };
 
 #define VMX_MISC_ACTIVITY_HLT			(1UL << 6)
 
+#define INTR_INFO_INTR_TYPE_MASK		BIT_MASK(10, 8)
 #define INTR_INFO_UNBLOCK_NMI			(1UL << 12)
+
+#define INTR_TYPE_NMI_INTR			(2UL << 8)
+
+#define INTR_TO_VECTORING_INFO_MASK		((1UL << 31) | BIT_MASK(11, 0))
 
 #define EXIT_REASONS_FAILED_VMENTRY		(1UL << 31)
 

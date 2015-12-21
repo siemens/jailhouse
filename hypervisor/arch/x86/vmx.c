@@ -572,7 +572,9 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmx_set_cell_config();
 
-	ok &= vmcs_write32(EXCEPTION_BITMAP, 0);
+	/* see vmx_handle_exception_nmi for the interception reason */
+	ok &= vmcs_write32(EXCEPTION_BITMAP,
+			   (1 << DB_VECTOR) | (1 << AC_VECTOR));
 
 	val = read_msr(MSR_IA32_VMX_EXIT_CTLS);
 	val |= VM_EXIT_HOST_ADDR_SPACE_SIZE |
@@ -846,6 +848,7 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	ok &= vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_ACTIVE);
 	ok &= vmcs_write32(GUEST_INTERRUPTIBILITY_INFO, 0);
 	ok &= vmcs_write64(GUEST_PENDING_DBG_EXCEPTIONS, 0);
+	ok &= vmcs_write32(VM_ENTRY_INTR_INFO_FIELD, 0);
 
 	val = vmcs_read32(VM_ENTRY_CONTROLS);
 	val &= ~VM_ENTRY_IA32E_MODE;
@@ -891,6 +894,34 @@ static void vmx_check_events(void)
 {
 	vmx_preemption_timer_set_enable(false);
 	x86_check_events();
+}
+
+static void vmx_handle_exception_nmi(void)
+{
+	u32 intr_info = vmcs_read32(VM_EXIT_INTR_INFO);
+
+	if ((intr_info & INTR_INFO_INTR_TYPE_MASK) == INTR_TYPE_NMI_INTR) {
+		this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
+		asm volatile("int %0" : : "i" (NMI_VECTOR));
+	} else {
+		this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_EXCEPTION]++;
+		/*
+		 * Reinject the event straight away. We only intercept #DB and
+		 * #AC to prevent that malicious guests can trigger infinite
+		 * loops in microcode (see e.g. CVE-2015-5307 and
+		 * CVE-2015-8104).
+		 */
+		vmcs_write32(VM_ENTRY_INTR_INFO_FIELD,
+			     intr_info & INTR_TO_VECTORING_INFO_MASK);
+		vmcs_write32(VM_ENTRY_EXCEPTION_ERROR_CODE,
+			     vmcs_read32(VM_EXIT_INTR_ERROR_CODE));
+	}
+
+	/*
+	 * Check for events even in the exception case in order to maintain
+	 * control over the guest if it triggered #DB or #AC loops.
+	 */
+	vmx_check_events();
 }
 
 static void update_efer(void)
@@ -1056,8 +1087,8 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 
 	switch (reason) {
 	case EXIT_REASON_EXCEPTION_NMI:
-		asm volatile("int %0" : : "i" (NMI_VECTOR));
-		/* fall through */
+		vmx_handle_exception_nmi();
+		return;
 	case EXIT_REASON_PREEMPTION_TIMER:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
 		vmx_check_events();

@@ -125,8 +125,10 @@
 #define X86_OP_MOV_TO_MEM				0x89
 #define X86_OP_MOV_FROM_MEM				0x8b
 
+#define DB_VECTOR					1
 #define NMI_VECTOR					2
 #define PF_VECTOR					14
+#define AC_VECTOR					17
 
 #define DESC_TSS_BUSY					(1UL << (9 + 32))
 #define DESC_PRESENT					(1UL << (15 + 32))

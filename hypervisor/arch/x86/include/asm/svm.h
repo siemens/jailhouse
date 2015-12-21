@@ -40,6 +40,10 @@
 
 #define NPT_PAGE_DIR_LEVELS	4
 
+#define SVM_EVENTINJ_EXCEPTION	(3UL << 8)
+#define SVM_EVENTINJ_ERR_VALID	(1UL << 11)
+#define SVM_EVENTINJ_VALID	(1UL << 31)
+
 struct svm_segment {
 	u16 selector;
 	u16 access_rights;
@@ -264,7 +268,6 @@ enum clean_bits {
 };
 
 typedef u64 vintr_t;
-typedef u64 eventinj_t;
 typedef u64 lbrctrl_t;
 
 struct vmcb {
@@ -292,10 +295,11 @@ struct vmcb {
 	u64 exitcode;			/* offset 0x70 */
 	u64 exitinfo1;			/* offset 0x78 */
 	u64 exitinfo2;			/* offset 0x80 */
-	eventinj_t	exitintinfo;	/* offset 0x88 */
+	u64 exitintinfo;		/* offset 0x88 */
 	u64 np_enable;			/* offset 0x90 */
 	u64 res08[2];
-	eventinj_t	eventinj;	/* offset 0xA8 */
+	u32 eventinj;			/* offset 0xA8 */
+	u32 eventinj_err;		/* offset 0xAC */
 	u64 n_cr3;			/* offset 0xB0 */
 	lbrctrl_t lbr_control;		/* offset 0xB8 */
 	u64 clean_bits;			/* offset 0xC0 */

@@ -211,6 +211,13 @@ static void vmcb_setup(struct per_cpu *cpu_data)
 	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMRUN; /* Required */
 	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMMCALL;
 
+	/*
+	 * We only intercept #DB and #AC to prevent that malicious guests can
+	 * trigger infinite loops in microcode (see e.g. CVE-2015-5307 and
+	 * CVE-2015-8104).
+	 */
+	vmcb->exception_intercepts |= (1 << DB_VECTOR) | (1 << AC_VECTOR);
+
 	vmcb->msrpm_base_pa = paging_hvirt2phys(msrpm);
 
 	vmcb->np_enable = 1;
@@ -579,6 +586,8 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 
 	vmcb->dr7 = 0x00000400;
 
+	vmcb->eventinj = 0;
+
 	/* Almost all of the guest state changed */
 	vmcb->clean_bits = 0;
 
@@ -919,6 +928,18 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		if (vcpu_handle_io_access())
 			goto vmentry;
 		break;
+	case VMEXIT_EXCEPTION_DB:
+	case VMEXIT_EXCEPTION_AC:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_EXCEPTION]++;
+		/* Reinject exception, including error code if needed. */
+		vmcb->eventinj = (vmcb->exitcode - VMEXIT_EXCEPTION_DE) |
+			SVM_EVENTINJ_EXCEPTION | SVM_EVENTINJ_VALID;
+		if (vmcb->exitcode == VMEXIT_EXCEPTION_AC) {
+			vmcb->eventinj |= SVM_EVENTINJ_ERR_VALID;
+			vmcb->eventinj_err = vmcb->exitinfo1;
+		}
+		x86_check_events();
+		goto vmentry;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:
 		panic_printk("FATAL: Unexpected #VMEXIT, exitcode %x, "
