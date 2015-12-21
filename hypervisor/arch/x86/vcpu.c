@@ -182,8 +182,10 @@ bool vcpu_handle_io_access(void)
 	}
 
 invalid_access:
-	panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
-		     io.in ? "read" : "write", io.port, io.size);
+	/* report only unhandled access failures */
+	if (result == 0)
+		panic_printk("FATAL: Invalid PIO %s, port: %x size: %d\n",
+			     io.in ? "read" : "write", io.port, io.size);
 	return false;
 }
 
