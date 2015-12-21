@@ -851,7 +851,6 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	bool res = false;
-	int sipi_vector;
 
 	vmcb->gs.base = read_msr(MSR_GS_BASE);
 
@@ -874,13 +873,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
 		/* Temporarily enable GIF to consume pending NMI */
 		asm volatile("stgi; clgi" : : : "memory");
-		sipi_vector = x86_handle_events(cpu_data);
-		if (sipi_vector >= 0) {
-			printk("CPU %d received SIPI, vector %x\n",
-			       cpu_data->cpu_id, sipi_vector);
-			vcpu_reset(sipi_vector);
-		}
-		iommu_check_pending_faults();
+		x86_check_events();
 		goto vmentry;
 	case VMEXIT_VMMCALL:
 		vcpu_handle_hypercall();

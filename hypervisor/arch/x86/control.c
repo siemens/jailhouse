@@ -220,8 +220,9 @@ static void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
 	cpu_data->wait_for_sipi = true;
 }
 
-int x86_handle_events(struct per_cpu *cpu_data)
+void x86_check_events(void)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
 	int sipi_vector = -1;
 
 	spin_lock(&cpu_data->control_lock);
@@ -229,7 +230,6 @@ int x86_handle_events(struct per_cpu *cpu_data)
 	do {
 		if (cpu_data->init_signaled && !cpu_data->suspend_cpu) {
 			x86_enter_wait_for_sipi(cpu_data);
-			sipi_vector = -1;
 			break;
 		}
 
@@ -268,12 +268,16 @@ int x86_handle_events(struct per_cpu *cpu_data)
 
 	/* wait_for_sipi is only modified on this CPU, so checking outside of
 	 * control_lock is fine */
-	if (cpu_data->wait_for_sipi)
+	if (cpu_data->wait_for_sipi) {
 		vcpu_park();
-	else if (sipi_vector >= 0)
+	} else if (sipi_vector >= 0) {
+		printk("CPU %d received SIPI, vector %x\n", this_cpu_id(),
+		       sipi_vector);
 		apic_clear();
+		vcpu_reset(sipi_vector);
+	}
 
-	return sipi_vector;
+	iommu_check_pending_faults();
 }
 
 void __attribute__((noreturn))

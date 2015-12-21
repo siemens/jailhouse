@@ -887,6 +887,12 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 	vmcs_write64(GUEST_RIP, vmcs_read64(GUEST_RIP) + inst_len);
 }
 
+static void vmx_check_events(void)
+{
+	vmx_preemption_timer_set_enable(false);
+	x86_check_events();
+}
+
 static void update_efer(void)
 {
 	unsigned long efer = vmcs_read64(GUEST_IA32_EFER);
@@ -1045,7 +1051,6 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
-	int sipi_vector;
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
@@ -1055,14 +1060,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		/* fall through */
 	case EXIT_REASON_PREEMPTION_TIMER:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
-		vmx_preemption_timer_set_enable(false);
-		sipi_vector = x86_handle_events(cpu_data);
-		if (sipi_vector >= 0) {
-			printk("CPU %d received SIPI, vector %x\n",
-			       cpu_data->cpu_id, sipi_vector);
-			vcpu_reset(sipi_vector);
-		}
-		iommu_check_pending_faults();
+		vmx_check_events();
 		return;
 	case EXIT_REASON_CPUID:
 		vcpu_handle_cpuid();

@@ -19,7 +19,7 @@ enum x86_init_sipi { X86_INIT, X86_SIPI };
 void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 			int sipi_vector);
 
-int x86_handle_events(struct per_cpu *cpu_data);
+void x86_check_events(void);
 
 void __attribute__((noreturn))
 x86_exception_handler(struct exception_frame *frame);
