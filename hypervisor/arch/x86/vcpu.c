@@ -19,9 +19,9 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
 #include <jailhouse/types.h>
+#include <asm/apic.h>
 #include <asm/i8042.h>
 #include <asm/ioapic.h>
-#include <asm/iommu.h>
 #include <asm/pci.h>
 #include <asm/percpu.h>
 #include <asm/vcpu.h>
