@@ -361,13 +361,15 @@ bool vcpu_handle_xsetbv(void)
 	return false;
 }
 
-void vcpu_reset(bool hard_reset)
+void vcpu_reset(unsigned int sipi_vector)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
+	vcpu_vendor_reset(sipi_vector);
+
 	memset(&cpu_data->guest_regs, 0, sizeof(cpu_data->guest_regs));
 
-	if (hard_reset) {
+	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
 		cpu_data->pat = PAT_RESET_VALUE;
 		cpu_data->mtrr_def_type = 0;
 		vcpu_vendor_set_guest_pat(0);

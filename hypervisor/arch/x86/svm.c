@@ -509,7 +509,7 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	__builtin_unreachable();
 }
 
-static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
+void vcpu_vendor_reset(unsigned int sipi_vector)
 {
 	static const struct svm_segment dataseg_reset_state = {
 		.selector = 0,
@@ -523,6 +523,7 @@ static void svm_vcpu_reset(struct per_cpu *cpu_data, unsigned int sipi_vector)
 		.limit = 0xffff,
 		.access_rights = 0,
 	};
+	struct per_cpu *cpu_data = this_cpu_data();
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long val;
 
@@ -877,8 +878,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
-			svm_vcpu_reset(cpu_data, sipi_vector);
-			vcpu_reset(sipi_vector == APIC_BSP_PSEUDO_SIPI);
+			vcpu_reset(sipi_vector);
 		}
 		iommu_check_pending_faults();
 		goto vmentry;
@@ -941,8 +941,9 @@ vmentry:
 
 void vcpu_park(void)
 {
-	svm_vcpu_reset(this_cpu_data(), APIC_BSP_PSEUDO_SIPI);
-	/* No need to clear VMCB Clean bit: vcpu_reset() already does this */
+	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
+	/* No need to clear VMCB Clean bit: vcpu_vendor_reset() already does
+	 * this. */
 	this_cpu_data()->vmcb.n_cr3 = paging_hvirt2phys(parked_mode_npt);
 
 	vcpu_tlb_flush();

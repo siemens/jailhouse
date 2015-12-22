@@ -767,7 +767,7 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	__builtin_unreachable();
 }
 
-static void vmx_vcpu_reset(unsigned int sipi_vector)
+void vcpu_vendor_reset(unsigned int sipi_vector)
 {
 	unsigned long val;
 	bool ok = true;
@@ -878,7 +878,7 @@ void vcpu_nmi_handler(void)
 
 void vcpu_park(void)
 {
-	vmx_vcpu_reset(0);
+	vcpu_vendor_reset(0);
 	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
 }
 
@@ -1060,8 +1060,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		if (sipi_vector >= 0) {
 			printk("CPU %d received SIPI, vector %x\n",
 			       cpu_data->cpu_id, sipi_vector);
-			vmx_vcpu_reset(sipi_vector);
-			vcpu_reset(sipi_vector == APIC_BSP_PSEUDO_SIPI);
+			vcpu_reset(sipi_vector);
 		}
 		iommu_check_pending_faults();
 		return;

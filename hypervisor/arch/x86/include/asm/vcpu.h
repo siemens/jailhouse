@@ -116,6 +116,7 @@ void vcpu_handle_cpuid(void);
 
 bool vcpu_handle_xsetbv(void);
 
-void vcpu_reset(bool hard_reset);
+void vcpu_reset(unsigned int sipi_vector);
+void vcpu_vendor_reset(unsigned int sipi_vector);
 
 #endif
