@@ -285,7 +285,7 @@ static int vtd_emulate_qi_request(unsigned int unit_no,
 {
 	unsigned int start, count, n;
 	void *status_page;
-	int err;
+	int result;
 
 	switch (inv_desc.lo_word & VTD_REQ_INV_MASK) {
 	case VTD_REQ_INV_INT:
@@ -300,9 +300,9 @@ static int vtd_emulate_qi_request(unsigned int unit_no,
 			count = root_cell_units[unit_no].irt_entries;
 		}
 		for (n = start; n < start + count; n++) {
-			err = vtd_emulate_inv_int(unit_no, n);
-			if (err < 0)
-				return err;
+			result = vtd_emulate_inv_int(unit_no, n);
+			if (result < 0)
+				return result;
 		}
 		return 0;
 	case VTD_REQ_INV_WAIT:
