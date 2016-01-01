@@ -40,7 +40,8 @@ static const struct extension extensions[] = {
 	{ "cell", "list", "" },
 	{ "cell", "stats", "{ ID | [--name] NAME }" },
 	{ "config", "create", "[-h] [-g] [-r ROOT] "
-	  "[--mem-inmates MEM_INMATES] [--mem-hv MEM_HV] FILE" },
+	  "[--mem-inmates MEM_INMATES]\n"
+	  "                 [--mem-hv MEM_HV] FILE" },
 	{ "config", "collect", "FILE.TAR" },
 	{ NULL }
 };
