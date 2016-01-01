@@ -50,7 +50,7 @@ start32:
 	or $X86_CR4_PAE,%eax
 	mov %eax,%cr4
 
-	mov $pml4 + FSEGMENT_BASE,%eax
+	mov $pml4,%eax
 	mov %eax,%cr3
 
 	movl $MSR_MTRR_DEF_TYPE,%ecx
@@ -136,13 +136,16 @@ gdt_ptr:
 	.short	gdt_ptr - gdt - 1
 	.long	gdt + FSEGMENT_BASE
 
+
+	.section ".rodata"
+
 	.align(4096)
 pml4:
-	.quad	pdpt + FSEGMENT_BASE + 0x003
+	.quad	pdpt + 0x003
 
 	.align(4096)
 pdpt:
-	.quad	pd + FSEGMENT_BASE + 0x003
+	.quad	pd + 0x003
 
 	.align(4096)
 pd:

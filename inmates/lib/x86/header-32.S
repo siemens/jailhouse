@@ -47,7 +47,7 @@ start32:
 	or $X86_CR4_PSE,%eax
 	mov %eax,%cr4
 
-	mov $loader_pdpt + FSEGMENT_BASE,%eax
+	mov $loader_pdpt,%eax
 	mov %eax,%cr3
 
 	mov $(X86_CR0_PG | X86_CR0_WP | X86_CR0_PE),%eax
@@ -130,6 +130,9 @@ loader_gdt:
 gdt_ptr:
 	.short	gdt_ptr - loader_gdt - 1
 	.long	loader_gdt + FSEGMENT_BASE
+
+
+	.section ".rodata"
 
 	.align(4096)
 	.global loader_pdpt
