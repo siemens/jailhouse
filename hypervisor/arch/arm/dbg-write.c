@@ -21,8 +21,6 @@ static struct uart_chip uart;
 void arch_dbg_write_init(void)
 {
 	/* FIXME: parse a device tree */
-	uart.baudrate = 115200;
-	uart.fifo_enabled = true;
 	uart.virt_base = hypervisor_header.debug_uart_base;
 
 	uart_chip_init(&uart);

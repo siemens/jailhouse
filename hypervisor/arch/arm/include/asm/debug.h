@@ -13,15 +13,11 @@
 #ifndef JAILHOUSE_ASM_DEBUG_H_
 #define JAILHOUSE_ASM_DEBUG_H_
 
-#include <jailhouse/types.h>
-
 #ifndef __ASSEMBLY__
 
 /* Defines the bare minimum for debug writes */
 struct uart_chip {
 	void		*virt_base;
-	unsigned int	baudrate;
-	bool		fifo_enabled;
 
 	void (*wait)(struct uart_chip *);
 	void (*busy)(struct uart_chip *);
