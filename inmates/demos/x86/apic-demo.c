@@ -11,7 +11,6 @@
  */
 
 #include <inmate.h>
-#include <jailhouse/hypercall.h>
 
 #ifdef CONFIG_UART_OXPCIE952
 #define UART_BASE		0xe010
