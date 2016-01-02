@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2015
+# Copyright (c) Siemens AG, 2015, 2016
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -17,6 +17,7 @@ always := lib.a
 ccflags-y := -ffunction-sections
 
 lib-y				:= header.o gic.o printk.o timer.o
+lib-y				+= ../string.o
 lib-$(CONFIG_ARM_GIC)		+= gic-v2.o
 lib-$(CONFIG_ARM_GIC_V3)	+= gic-v3.o
 lib-$(CONFIG_SERIAL_AMBA_PL011)	+= uart-pl011.o

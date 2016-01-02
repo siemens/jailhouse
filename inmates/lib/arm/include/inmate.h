@@ -36,15 +36,7 @@ static inline void mmio_write32(void *address, u32 value)
 	*(volatile u32 *)address = value;
 }
 
-static inline void *memset(void *addr, int val, unsigned int size)
-{
-	char *s = addr;
-	unsigned int i;
-	for (i = 0; i < size; i++)
-		*s++ = val;
-
-	return addr;
-}
+void *memset(void *s, int c, unsigned long n);
 
 extern unsigned long printk_uart_base;
 void printk(const char *fmt, ...);
