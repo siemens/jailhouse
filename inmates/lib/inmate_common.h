@@ -29,6 +29,8 @@ typedef u32 __u32;
 typedef s64 __s64;
 typedef u64 __u64;
 
+typedef enum { true = 1, false = 0 } bool;
+
 #include <jailhouse/hypercall.h>
 
 #define comm_region	((struct jailhouse_comm_region *)COMM_REGION_BASE)

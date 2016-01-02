@@ -10,10 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/types.h>
+#include <inmate.h>
 #include <asm/debug.h>
 #include <stdarg.h>
-#include <inmate.h>
 
 static struct uart_chip chip;
 
