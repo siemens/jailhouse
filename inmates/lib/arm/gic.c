@@ -10,8 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <inmates/inmate.h>
-#include <inmates/gic.h>
+#include <inmate.h>
+#include <gic.h>
 
 static irq_handler_t irq_handler = (irq_handler_t)NULL;
 static __attribute__((aligned(0x1000))) u32 irq_stack[1024];

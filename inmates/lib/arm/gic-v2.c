@@ -11,9 +11,8 @@
  */
 #include <asm/gic_common.h>
 #include <asm/gic_v2.h>
-#include <inmates/gic.h>
-#include <inmates/inmate.h>
 #include <mach/gic_v2.h>
+#include <gic.h>
 
 void gic_enable(unsigned int irqn)
 {

@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <inmates/inmate.h>
+#include <inmate.h>
 
 /*
  * To ease the debugging, we can send a spurious hypercall, which should return

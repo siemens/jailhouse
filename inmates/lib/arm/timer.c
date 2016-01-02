@@ -13,7 +13,7 @@
  */
 
 #include <asm/sysregs.h>
-#include <inmates/inmate.h>
+#include <inmate.h>
 
 unsigned long timer_get_frequency(void)
 {

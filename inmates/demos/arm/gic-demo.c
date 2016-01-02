@@ -11,8 +11,8 @@
  */
 
 #include <asm/gic_common.h>
-#include <inmates/inmate.h>
 #include <mach/timer.h>
+#include <inmate.h>
 
 #define BEATS_PER_SEC		10
 

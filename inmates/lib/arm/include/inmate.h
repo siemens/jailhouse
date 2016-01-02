@@ -9,8 +9,9 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
-#ifndef _JAILHOUSE_INMATES_INMATE_H
-#define _JAILHOUSE_INMATES_INMATE_H
+
+#ifndef _JAILHOUSE_INMATE_H
+#define _JAILHOUSE_INMATE_H
 
 #ifndef __ASSEMBLY__
 typedef signed char s8;
@@ -51,4 +52,4 @@ u64 timer_ticks_to_ns(u64 ticks);
 void timer_start(u64 timeout);
 
 #endif /* !__ASSEMBLY__ */
-#endif
+#endif /* !_JAILHOUSE_INMATE_H */

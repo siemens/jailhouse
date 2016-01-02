@@ -13,7 +13,7 @@
 #include <jailhouse/types.h>
 #include <asm/debug.h>
 #include <stdarg.h>
-#include <inmates/inmate.h>
+#include <inmate.h>
 
 static struct uart_chip chip;
 
