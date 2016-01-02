@@ -10,7 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/gic_common.h>
 #include <mach/timer.h>
 #include <inmate.h>
 
