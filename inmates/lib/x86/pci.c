@@ -12,8 +12,6 @@
 
 #include <inmate.h>
 
-#include "../pci.c"
-
 #define PCI_REG_ADDR_PORT	0xcf8
 #define PCI_REG_DATA_PORT	0xcfc
 

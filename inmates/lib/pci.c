@@ -10,6 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <inmate.h>
+
 int pci_find_device(u16 vendor, u16 device, u16 start_bdf)
 {
 	unsigned int bdf;

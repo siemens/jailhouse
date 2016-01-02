@@ -13,6 +13,7 @@
 always := lib.a lib32.a
 
 TARGETS := header.o hypercall.o ioapic.o printk.o smp.o
+TARGETS += ../pci.o
 TARGETS_64_ONLY := int.o mem.o pci.o timing.o
 
 lib-y := $(TARGETS) $(TARGETS_64_ONLY)
