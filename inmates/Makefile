@@ -28,7 +28,7 @@ KBUILD_CFLAGS += -include $(src)/../hypervisor/include/jailhouse/config.h
 endif
 
 OBJCOPYFLAGS := -O binary
-LDFLAGS += -T
+LDFLAGS += --gc-sections -T
 
 subdir-y := lib/$(SRCARCH) demos/$(SRCARCH) tools/$(SRCARCH)
 

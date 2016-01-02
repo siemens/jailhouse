@@ -14,6 +14,8 @@ include $(INMATES_LIB)/Makefile.lib
 
 always := lib.a
 
+ccflags-y := -ffunction-sections
+
 lib-y				:= header.o gic.o printk.o timer.o
 lib-$(CONFIG_ARM_GIC)		+= gic-v2.o
 lib-$(CONFIG_ARM_GIC_V3)	+= gic-v3.o
