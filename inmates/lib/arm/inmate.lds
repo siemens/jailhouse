@@ -17,7 +17,6 @@ SECTIONS {
 	bss_start = .;
 	.bss		: {
 		*(.bss)
-		*(COMMON)
 	}
 
 	. = ALIGN(4);
