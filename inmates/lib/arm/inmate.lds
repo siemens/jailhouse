@@ -14,9 +14,6 @@ SECTIONS {
 	. = 0;
 	.boot		: { *(.boot) }
 
-	. = ALIGN(4096);
-	. = . + 0x1000;
-	stack_top = .;
 	bss_start = .;
 	.bss		: {
 		*(.bss)
@@ -35,6 +32,10 @@ SECTIONS {
 	.data		: {
 		*(.data)
 	}
+
+	. = ALIGN(4096);
+	. += 0x1000;
+	stack_top = .;
 }
 
 ENTRY(__reset_entry)
