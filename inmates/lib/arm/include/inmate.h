@@ -36,12 +36,6 @@ static inline void mmio_write32(void *address, u32 value)
 	*(volatile u32 *)address = value;
 }
 
-void *memset(void *s, int c, unsigned long n);
-
-extern unsigned long printk_uart_base;
-void printk(const char *fmt, ...);
-void inmate_main(void);
-
 void __attribute__((interrupt("IRQ"))) __attribute__((used)) vector_irq(void);
 
 typedef void (*irq_handler_t)(unsigned int);
@@ -54,4 +48,7 @@ u64 timer_ticks_to_ns(u64 ticks);
 void timer_start(u64 timeout);
 
 #endif /* !__ASSEMBLY__ */
+
+#include "../inmate_common.h"
+
 #endif /* !_JAILHOUSE_INMATE_H */

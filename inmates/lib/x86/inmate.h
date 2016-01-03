@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,7 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
-#define NULL			((void *)0)
+#ifndef _JAILHOUSE_INMATE_H
+#define _JAILHOUSE_INMATE_H
 
 #define HEAP_BASE		0x000000
 #define FSEGMENT_BASE		0x0f0000
@@ -19,10 +20,6 @@
 #define INMATE_CS32		0x8
 #define INMATE_CS64		0x10
 #define INMATE_DS32		0x18
-
-#define NS_PER_USEC		1000UL
-#define NS_PER_MSEC		1000000UL
-#define NS_PER_SEC		1000000000UL
 
 #define PAGE_SIZE		(4 * 1024ULL)
 #ifdef __x86_64__
@@ -76,18 +73,6 @@ typedef unsigned int u32;
 
 typedef signed long long s64;
 typedef unsigned long long u64;
-
-typedef s8 __s8;
-typedef u8 __u8;
-
-typedef s16 __s16;
-typedef u16 __u16;
-
-typedef s32 __s32;
-typedef u32 __u32;
-
-typedef s64 __s64;
-typedef u64 __u64;
 
 typedef enum { true=1, false=0 } bool;
 
@@ -198,16 +183,6 @@ static inline unsigned int cpu_id(void)
 	return read_msr(X2APIC_ID);
 }
 
-#include <jailhouse/hypercall.h>
-
-#define comm_region	((struct jailhouse_comm_region *)COMM_REGION_BASE)
-
-extern unsigned int printk_uart_base;
-void printk(const char *fmt, ...);
-
-void *memset(void *s, int c, unsigned long n);
-void *memcpy(void *d, const void *s, unsigned long n);
-
 typedef void(*int_handler_t)(void);
 
 void int_init(void);
@@ -224,8 +199,6 @@ void ioapic_init(void);
 void ioapic_pin_set_vector(unsigned int pin,
 			   enum ioapic_trigger_mode trigger_mode,
 			   unsigned int vector);
-
-void inmate_main(void);
 
 void hypercall_init(void);
 
@@ -257,3 +230,7 @@ extern u8 smp_cpu_ids[SMP_MAX_CPUS];
 void smp_wait_for_all_cpus(void);
 void smp_start_cpu(unsigned int cpu_id, void (*entry)(void));
 #endif
+
+#include "../inmate_common.h"
+
+#endif /* !_JAILHOUSE_INMATE_H */
