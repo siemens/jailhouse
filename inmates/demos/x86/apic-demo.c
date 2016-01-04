@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -11,6 +11,11 @@
  */
 
 #include <inmate.h>
+
+#define CMDLINE_BUFFER_SIZE	256
+CMDLINE_BUFFER(CMDLINE_BUFFER_SIZE);
+
+#define POLLUTE_CACHE_SIZE	(512 * 1024)
 
 #ifdef CONFIG_UART_OXPCIE952
 #define UART_BASE		0xe010
@@ -58,11 +63,26 @@ static void init_apic(void)
 	asm volatile("sti");
 }
 
+static void pollute_cache(void)
+{
+	char *mem = (char *)HEAP_BASE;
+	unsigned long cpu_cache_line_size, ebx;
+	unsigned long n;
+
+	asm volatile("cpuid" : "=b" (ebx) : "a" (1)
+		: "rcx", "rdx", "memory");
+	cpu_cache_line_size = (ebx & 0xff00) >> 5;
+
+	for (n = 0; n < POLLUTE_CACHE_SIZE; n += cpu_cache_line_size)
+		mem[n] ^= 0xAA;
+}
+
 void inmate_main(void)
 {
 	bool allow_terminate = false;
 	bool terminate = false;
 	unsigned long tsc_freq;
+	bool cache_pollution;
 	unsigned int n;
 
 	printk_uart_base = UART_BASE;
@@ -74,6 +94,10 @@ void inmate_main(void)
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
+	cache_pollution = cmdline_parse_bool("pollute_cache");
+	if (cache_pollution)
+		printk("Cache pollution enabled\n");
+
 	tsc_freq = tsc_init();
 	printk("Calibrated TSC frequency: %lu.%03u kHz\n", tsc_freq / 1000,
 	       tsc_freq % 1000);
@@ -82,6 +106,9 @@ void inmate_main(void)
 
 	while (!terminate) {
 		asm volatile("hlt");
+
+		if (cache_pollution)
+			pollute_cache();
 
 		switch (comm_region->msg_to_cell) {
 		case JAILHOUSE_MSG_SHUTDOWN_REQUEST:
