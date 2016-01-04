@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -59,18 +59,23 @@ unsigned long tsc_init(void)
 	unsigned long start_pm, end_pm;
 	u64 start_tsc, end_tsc;
 
-	start_pm = pm_timer_read();
-	start_tsc = rdtsc();
-	asm volatile("mfence" : : : "memory");
+	tsc_freq = cmdline_parse_int("tsc_freq", 0);
 
-	while (pm_timer_read() - start_pm < 100 * NS_PER_MSEC)
-		cpu_relax();
+	if (tsc_freq == 0) {
+		start_pm = pm_timer_read();
+		start_tsc = rdtsc();
+		asm volatile("mfence" : : : "memory");
 
-	end_pm = pm_timer_read();
-	end_tsc = rdtsc();
-	asm volatile("mfence" : : : "memory");
+		while (pm_timer_read() - start_pm < 100 * NS_PER_MSEC)
+			cpu_relax();
 
-	tsc_freq = (end_tsc - start_tsc) * NS_PER_SEC / (end_pm - start_pm);
+		end_pm = pm_timer_read();
+		end_tsc = rdtsc();
+		asm volatile("mfence" : : : "memory");
+
+		tsc_freq = (end_tsc - start_tsc) * NS_PER_SEC / (end_pm - start_pm);
+	}
+
 	tsc_overflow = (0x100000000L * NS_PER_SEC) / tsc_freq;
 
 	return tsc_freq;
@@ -99,26 +104,36 @@ void delay_us(unsigned long microsecs)
 
 unsigned long apic_timer_init(unsigned int vector)
 {
+	unsigned long long apic_freq;
 	unsigned long start, end;
 	unsigned long tmr;
 
-	write_msr(X2APIC_TDCR, 3);
+	apic_freq = cmdline_parse_int("apic_freq", 0);
 
-	start = pm_timer_read();
-	write_msr(X2APIC_TMICT, 0xffffffff);
+	if (apic_freq == 0) {
+		write_msr(X2APIC_TDCR, 3);
 
-	while (pm_timer_read() - start < 100 * NS_PER_MSEC)
-		cpu_relax();
+		start = pm_timer_read();
+		write_msr(X2APIC_TMICT, 0xffffffff);
 
-	end = pm_timer_read();
-	tmr = read_msr(X2APIC_TMCCT);
+		while (pm_timer_read() - start < 100 * NS_PER_MSEC)
+			cpu_relax();
 
-	divided_apic_freq = (0xffffffffULL - tmr) * NS_PER_SEC / (end - start);
+		end = pm_timer_read();
+		tmr = read_msr(X2APIC_TMCCT);
 
-	write_msr(X2APIC_TMICT, 0);
+		write_msr(X2APIC_TMICT, 0);
+
+		divided_apic_freq = (0xffffffffULL - tmr) * NS_PER_SEC / (end - start);
+		apic_freq = (divided_apic_freq * 16 + 500) / 1000;
+	} else {
+		divided_apic_freq = apic_freq / 16;
+		apic_freq /= 1000;
+	}
+
 	write_msr(X2APIC_LVTT, vector);
 
-	return (divided_apic_freq * 16 + 500) / 1000;
+	return apic_freq;
 }
 
 void apic_timer_set(unsigned long timeout_ns)
