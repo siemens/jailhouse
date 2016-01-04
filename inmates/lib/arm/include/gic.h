@@ -12,7 +12,11 @@
 #ifndef _JAILHOUSE_INMATES_GIC_H
 #define _JAILHOUSE_INMATES_GIC_H
 
-#include <jailhouse/types.h>
+#include <inmate.h>
+
+#define GICD_ISENABLER			0x0100
+
+#define is_spi(irqn)			((irqn) > 31 && (irqn) < 1020)
 
 #ifndef __ASSEMBLY__
 

@@ -9,10 +9,18 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
-#include <asm/gic_common.h>
-#include <asm/gic_v2.h>
+
 #include <mach/gic_v2.h>
 #include <gic.h>
+
+#define GICC_CTLR		0x0000
+#define GICC_PMR		0x0004
+#define GICC_IAR		0x000c
+#define GICC_EOIR		0x0010
+
+#define GICC_CTLR_GRPEN1	(1 << 0)
+
+#define GICC_PMR_DEFAULT	0xf0
 
 void gic_enable(unsigned int irqn)
 {
