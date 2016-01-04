@@ -16,6 +16,12 @@ SECTIONS {
 	. = 0;
 	.boot		: { *(.boot) }
 
+	. = 0x100;
+	.cmdline	: {
+		*(.cmdline)
+		BYTE(0); /* empty string in case no buffer is provided */
+	}
+
 	. = ALIGN(4);
 	.text		: {
 		*(.text)

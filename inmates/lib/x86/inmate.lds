@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -15,14 +15,20 @@
  *  0x000000..        : heap (not configured here)
  *          ..0x0e0000: stack
  *  0x0e0000..0x0effff: bss
- *  0x0f0000..0x0fffef: startup code, text, rodata, data
+ *  0x0f0000..0x0fffef: command line, startup code, text, rodata, data
  *  0x0ffff0..0x0fffff: startup code (boot address)
  *  0x100000..0x100fff: communication region (not configured here)
  */
 SECTIONS
 {
-	/* 16-bit sections */
 	. = 0;
+	.cmdline	: {
+		cmdline = 0xf0000; /* adjust relocation address of variable */
+		*(.cmdline)
+		BYTE(0); /* empty string in case no buffer is provided */
+	}
+
+	/* 16-bit sections */
 	.startup	: { *(.startup) }
 
 	. = 0xfff0;
@@ -42,7 +48,7 @@ SECTIONS
 	bss_dwords = SIZEOF(.bss) / 4;
 	bss_qwords = SIZEOF(.bss) / 8;
 
-	. = 0xf0000 + SIZEOF(.startup);
+	. = 0xf0000 + ADDR(.startup) + SIZEOF(.startup);
 	.text		: AT (ADDR(.text) & 0xffff) {
 		*(.text)
 	}

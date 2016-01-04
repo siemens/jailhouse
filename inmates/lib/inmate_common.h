@@ -43,6 +43,15 @@ void *memcpy(void *d, const void *s, unsigned long n);
 unsigned long strlen(const char *s);
 int strncmp(const char *s1, const char *s2, unsigned long n);
 
+const char *cmdline_parse_str(const char *param, char *value_buffer,
+			      unsigned long buffer_size,
+			      const char *default_value);
+long long cmdline_parse_int(const char *param, long long default_value);
+bool cmdline_parse_bool(const char *param);
+
+#define CMDLINE_BUFFER(size) \
+	const char cmdline[size] __attribute__((section(".cmdline")));
+
 void inmate_main(void);
 
 #endif /* !__ASSEMBLY__ */

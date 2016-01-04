@@ -13,7 +13,7 @@
 always := lib.a lib32.a
 
 TARGETS := header.o hypercall.o ioapic.o printk.o smp.o
-TARGETS += ../pci.o ../string.o
+TARGETS += ../pci.o ../string.o ../cmdline.o
 TARGETS_64_ONLY := int.o mem.o pci.o timing.o
 
 ccflags-y := -ffunction-sections

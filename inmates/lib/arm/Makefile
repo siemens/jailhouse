@@ -17,7 +17,7 @@ always := lib.a
 ccflags-y := -ffunction-sections
 
 lib-y				:= header.o gic.o printk.o timer.o
-lib-y				+= ../string.o
+lib-y				+= ../string.o ../cmdline.o
 lib-$(CONFIG_ARM_GIC)		+= gic-v2.o
 lib-$(CONFIG_ARM_GIC_V3)	+= gic-v3.o
 lib-$(CONFIG_SERIAL_AMBA_PL011)	+= uart-pl011.o
