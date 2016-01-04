@@ -40,6 +40,8 @@ void printk(const char *fmt, ...);
 
 void *memset(void *s, int c, unsigned long n);
 void *memcpy(void *d, const void *s, unsigned long n);
+unsigned long strlen(const char *s);
+int strncmp(const char *s1, const char *s2, unsigned long n);
 
 void inmate_main(void);
 

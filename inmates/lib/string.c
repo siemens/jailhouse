@@ -20,3 +20,27 @@ void *memset(void *s, int c, unsigned long n)
 		*p++ = c;
 	return s;
 }
+
+unsigned long strlen(const char *s1)
+{
+	unsigned long len = 0;
+
+	while (*s1++)
+		len++;
+
+	return len;
+}
+
+int strncmp(const char *s1, const char *s2, unsigned long n)
+{
+	int diff;
+
+	while (n-- > 0) {
+		diff = *s1 - *s2;
+		if (diff)
+			return diff;
+		if (*s1 == 0)
+			break;
+	}
+	return 0;
+}
