@@ -168,29 +168,38 @@ function _jailhouse_cell() {
 
 		# [image & address] can be repeated
 
-		# after id/name insert image-file (always true)
+		# after id/name insert image-file or string switch (always true)
 		if [ "${COMP_CWORD}" -eq 4 ] || ( [ "${COMP_CWORD}" -eq 5 ] && \
 			[ "${COMP_WORDS[3]}" = "--name" ] ); then
+
+			# did we already start to type string switch?
+			if [[ "${COMP_CWORD}" -eq 4 && "$cur" == -* ]]; then
+				COMPREPLY=( $( compgen \
+					-W "-s --string" -- \
+					"${cur}") )
+			fi
 
 			_filedir
 			return 0
 		fi
 
-		# the first image has to be placed, after that it is:
+		# the first image or string have to be given, after that it is:
 		#
-		# [image [<-a|--address> <address>]
-		#        [image [<-a|--address> <address>] ... ]]
+		# [{image | <-s|--string> string} [<-a|--address> <address>]
+		#  [{image | <-s|--string> string} [...] ... ]]
 
-		# prev was an addresse, no image here
-		if [[ "${prev}" = "-a" || "${prev}" = "--address" ]]; then
+		# prev was an address or a string switch, no image here
+		if [[ "${prev}" = "-a" || "${prev}" = "--address" ||
+		      "${prev}" = "-s" || "${prev}" = "--string" ]]; then
 			return 0
 
-		# prev was either an image or a address-number
+		# prev was an image, a string or an address-number
 		else
-			# did we already start to type an other switch
+			# did we already start to type another switch
 			if [[ "$cur" == -* ]]; then
-				COMPREPLY=( $( compgen -W "-a --address" -- \
-						"${cur}") )
+				COMPREPLY=( $( compgen \
+					-W "-a --address -s --string" -- \
+					"${cur}") )
 			fi
 
 			# default to image-file

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -55,8 +55,9 @@ static void __attribute__((noreturn)) help(char *prog, int exit_status)
 	       "   enable SYSCONFIG\n"
 	       "   disable\n"
 	       "   cell create CELLCONFIG\n"
-	       "   cell load { ID | [--name] NAME } IMAGE "
-			"[ -a | --address ADDRESS] ...\n"
+	       "   cell load { ID | [--name] NAME } "
+				"{ IMAGE | { -s | --string } \"STRING\" }\n"
+	       "             [-a | --address ADDRESS] ...\n"
 	       "   cell start { ID | [--name] NAME }\n"
 	       "   cell shutdown { ID | [--name] NAME }\n"
 	       "   cell destroy { ID | [--name] NAME }\n",
@@ -105,6 +106,21 @@ static int open_dev()
 		exit(1);
 	}
 	return fd;
+}
+
+static void *read_string(const char *string, size_t *size)
+{
+	void *buffer;
+
+	*size = strlen(string) + 1;
+
+	buffer = strdup(string);
+	if (!buffer) {
+		fprintf(stderr, "insufficient memory\n");
+		exit(1);
+	}
+
+	return buffer;
 }
 
 static void *read_file(const char *name, size_t *size)
@@ -250,6 +266,12 @@ static int cell_shutdown_load(int argc, char *argv[],
 
 	images = 0;
 	while (arg_num < argc) {
+		if (match_opt(argv[arg_num], "-s", "--string")) {
+			if (arg_num + 1 >= argc)
+				help(argv[0], 1);
+			arg_num++;
+		}
+
 		images++;
 		arg_num++;
 
@@ -272,8 +294,16 @@ static int cell_shutdown_load(int argc, char *argv[],
 	arg_num = 3 + id_args;
 
 	for (n = 0, image = cell_load->image; n < images; n++, image++) {
-		image->source_address =
-			(unsigned long)read_file(argv[arg_num++], &size);
+		if (match_opt(argv[arg_num], "-s", "--string")) {
+			arg_num++;
+			image->source_address =
+				(unsigned long)read_string(argv[arg_num++],
+							   &size);
+		} else {
+			image->source_address =
+				(unsigned long)read_file(argv[arg_num++],
+							 &size);
+		}
 		image->size = size;
 		image->target_address = 0;
 
