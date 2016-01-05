@@ -221,11 +221,10 @@ static void cell_exit(struct cell *cell)
  */
 int check_mem_regions(const struct jailhouse_cell_desc *config)
 {
-	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(config);
+	const struct jailhouse_memory *mem;
 	unsigned int n;
 
-	for (n = 0; n < config->num_memory_regions; n++, mem++) {
+	for_each_mem_region(mem, config, n) {
 		if (mem->phys_start & ~PAGE_MASK ||
 		    mem->virt_start & ~PAGE_MASK ||
 		    mem->size & ~PAGE_MASK ||
@@ -275,14 +274,12 @@ static int unmap_from_root_cell(const struct jailhouse_memory *mem)
 static int remap_to_root_cell(const struct jailhouse_memory *mem,
 			      enum failure_mode mode)
 {
-	const struct jailhouse_memory *root_mem =
-		jailhouse_cell_mem_regions(root_cell.config);
+	const struct jailhouse_memory *root_mem;
 	struct jailhouse_memory overlap;
 	unsigned int n;
 	int err = 0;
 
-	for (n = 0; n < root_cell.config->num_memory_regions;
-	     n++, root_mem++) {
+	for_each_mem_region(root_mem, root_cell.config, n) {
 		if (address_in_region(mem->phys_start, root_mem)) {
 			overlap.phys_start = mem->phys_start;
 			overlap.size = root_mem->size -
@@ -315,8 +312,7 @@ static int remap_to_root_cell(const struct jailhouse_memory *mem,
 
 static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 {
-	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(cell->config);
+	const struct jailhouse_memory *mem;
 	unsigned int cpu, n;
 
 	for_each_cpu(cpu, cell->cpu_set) {
@@ -328,7 +324,7 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
 	}
 
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
+	for_each_mem_region(mem, cell->config, n) {
 		/*
 		 * This cannot fail. The region was mapped as a whole before,
 		 * thus no hugepages need to be broken up to unmap it.
@@ -450,8 +446,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	 * Unmap the cell's memory regions from the root cell and map them to
 	 * the new cell instead.
 	 */
-	mem = jailhouse_cell_mem_regions(cell->config);
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++) {
+	for_each_mem_region(mem, cell->config, n) {
 		/*
 		 * Unmap exceptions:
 		 *  - the communication region is not backed by root memory
@@ -558,8 +553,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 
 	if (cell->loadable) {
 		/* unmap all loadable memory regions from the root cell */
-		mem = jailhouse_cell_mem_regions(cell->config);
-		for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+		for_each_mem_region(mem, cell->config, n)
 			if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
 				err = unmap_from_root_cell(mem);
 				if (err)
@@ -611,8 +605,7 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	cell->loadable = true;
 
 	/* map all loadable memory regions into the root cell */
-	mem = jailhouse_cell_mem_regions(cell->config);
-	for (n = 0; n < cell->config->num_memory_regions; n++, mem++)
+	for_each_mem_region(mem, cell->config, n)
 		if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
 			err = remap_to_root_cell(mem, ABORT_ON_ERROR);
 			if (err)

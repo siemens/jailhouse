@@ -115,12 +115,11 @@ failed:
 
 int map_root_memory_regions(void)
 {
-	const struct jailhouse_memory *mem =
-		jailhouse_cell_mem_regions(root_cell.config);
+	const struct jailhouse_memory *mem;
 	unsigned int n;
 	int err;
 
-	for (n = 0; n < root_cell.config->num_memory_regions; n++, mem++) {
+	for_each_mem_region(mem, root_cell.config, n) {
 		err = arch_map_memory_region(&root_cell, mem);
 		if (err)
 			return err;

@@ -85,6 +85,19 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 	for ((cell) = root_cell.next; (cell); (cell) = (cell)->next)
 
 /**
+ * Loop-generating macro for iterating over all memory regions of a
+ * configuration.
+ * @param mem		Iteration variable holding the reference to the current
+ * 			memory region (const struct jailhouse_memory *).
+ * @param config	Cell or system configuration containing the regions.
+ * @param counter	Helper variable (unsigned int).
+ */
+#define for_each_mem_region(mem, config, counter)			\
+	for ((mem) = jailhouse_cell_mem_regions(config), (counter) = 0;	\
+	     (counter) < (config)->num_memory_regions;			\
+	     (mem)++, (counter)++)
+
+/**
  * Check if the CPU is assigned to the specified cell.
  * @param cell		Cell the CPU may belong to.
  * @param cpu_id	ID of the CPU.
