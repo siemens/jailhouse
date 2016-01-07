@@ -349,8 +349,10 @@ int ioapic_cell_init(struct cell *cell)
 
 	for (n = 0; n < cell->config->num_irqchips; n++, irqchip++) {
 		phys_ioapic = ioapic_get_or_add_phys(irqchip);
-		if (!phys_ioapic)
+		if (!phys_ioapic) {
+			ioapic_cell_exit(cell);
 			return -ENOMEM;
+		}
 
 		ioapic = &cell->arch.ioapics[n];
 		ioapic->info = irqchip;
