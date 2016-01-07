@@ -89,9 +89,6 @@ void arm_mmio_perform_access(unsigned long base, struct mmio_access *mmio)
 			mmio->value = mmio_read32(addr);
 			return;
 		}
-
-	printk("WARNING: Ignoring unsupported MMIO access size %d\n",
-	       mmio->size);
 }
 
 int arch_handle_dabt(struct trap_context *ctx)
