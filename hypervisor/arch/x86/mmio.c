@@ -122,10 +122,13 @@ restart:
 	op[1].raw = *(ctx.inst);
 	switch (op[1].modrm.mod) {
 	case 0:
-		if (op[1].modrm.rm == 5) /* 32-bit displacement */
-			goto error_unsupported;
-		else if (op[1].modrm.rm != 4) /* no SIB */
+		if (op[1].modrm.rm == 5) { /* 32-bit displacement */
+			inst.inst_len += 4;
 			break;
+		} else if (op[1].modrm.rm != 4) { /* no SIB */
+			break;
+		}
+
 		inst.inst_len++;
 
 		if (!ctx_advance(&ctx, &pc, pg_structs))
