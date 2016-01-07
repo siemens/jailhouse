@@ -59,7 +59,7 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 
 	/* For SGIs or PPIs, let the caller do the mmio access */
 	if (!is_spi(first_irq)) {
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 		return MMIO_HANDLED;
 	}
 
@@ -73,7 +73,7 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 
 	if (!mmio->is_write) {
 		/* Restrict the read value */
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 		mmio->value &= access_mask;
 		return MMIO_HANDLED;
 	}
@@ -89,18 +89,18 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 		spin_lock(&dist_lock);
 
 		mmio->is_write = false;
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 		mmio->is_write = true;
 
 		/* Clear 0 bits */
 		mmio->value &= ~(access_mask & ~access_val);
 		mmio->value |= access_val;
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 
 		spin_unlock(&dist_lock);
 	} else {
 		mmio->value &= access_mask;
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 	}
 	return MMIO_HANDLED;
 }
@@ -137,7 +137,7 @@ static enum mmio_result handle_irq_route(struct mmio_access *mmio,
 			printk("Attempt to route IRQ%d outside of cell\n", irq);
 			return MMIO_ERROR;
 		}
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 	} else {
 		cpu = mmio_read32(gicd_base + GICD_IROUTER + 8 * irq);
 		mmio->value = arm_cpu_phys2virt(cpu);
@@ -167,7 +167,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	 * fill its CPU interface map.
 	 */
 	if (!is_spi(reg)) {
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 		return MMIO_HANDLED;
 	}
 
@@ -212,10 +212,10 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 		/* Combine with external SPIs */
 		mmio->value |= (itargetsr & ~access_mask);
 		/* And do the access */
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 		spin_unlock(&dist_lock);
 	} else {
-		arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+		mmio_perform_access(gicd_base, mmio);
 		mmio->value &= access_mask;
 	}
 
@@ -350,7 +350,7 @@ enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio)
 	case REG_RANGE(GICD_CIDR0, 4, 4):
 		/* Allow read access, ignore write */
 		if (!mmio->is_write)
-			arm_mmio_perform_access((unsigned long)gicd_base, mmio);
+			mmio_perform_access(gicd_base, mmio);
 		/* fall through */
 	default:
 		/* Ignore access. */

@@ -169,6 +169,8 @@ enum mmio_result mmio_handle_access(struct mmio_access *mmio);
 
 void mmio_cell_exit(struct cell *cell);
 
+void mmio_perform_access(void *base, struct mmio_access *mmio);
+
 unsigned int arch_mmio_count_regions(struct cell *cell);
 
 /** @} */

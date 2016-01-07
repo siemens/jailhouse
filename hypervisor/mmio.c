@@ -219,3 +219,43 @@ void mmio_cell_exit(struct cell *cell)
 			(sizeof(struct mmio_region_location) +
 			 sizeof(struct mmio_region_handler))));
 }
+
+void mmio_perform_access(void *base, struct mmio_access *mmio)
+{
+	void *addr = base + mmio->address;
+
+	if (mmio->is_write)
+		switch (mmio->size) {
+		case 1:
+			mmio_write8(addr, mmio->value);
+			break;
+		case 2:
+			mmio_write16(addr, mmio->value);
+			break;
+		case 4:
+			mmio_write32(addr, mmio->value);
+			break;
+#if BITS_PER_LONG == 64
+		case 8:
+			mmio_write64(addr, mmio->value);
+			break;
+#endif
+		}
+	else
+		switch (mmio->size) {
+		case 1:
+			mmio->value = mmio_read8(addr);
+			break;
+		case 2:
+			mmio->value = mmio_read16(addr);
+			break;
+		case 4:
+			mmio->value = mmio_read32(addr);
+			break;
+#if BITS_PER_LONG == 64
+		case 8:
+			mmio->value = mmio_read64(addr);
+			break;
+#endif
+		}
+}

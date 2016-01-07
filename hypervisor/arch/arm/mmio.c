@@ -61,36 +61,6 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	arm_write_sysreg(DFAR, addr);
 }
 
-void arm_mmio_perform_access(unsigned long base, struct mmio_access *mmio)
-{
-	void *addr = (void *)(base + mmio->address);
-
-	if (mmio->is_write)
-		switch (mmio->size) {
-		case 1:
-			mmio_write8(addr, mmio->value);
-			return;
-		case 2:
-			mmio_write16(addr, mmio->value);
-			return;
-		case 4:
-			mmio_write32(addr, mmio->value);
-			return;
-		}
-	else
-		switch (mmio->size) {
-		case 1:
-			mmio->value = mmio_read8(addr);
-			return;
-		case 2:
-			mmio->value = mmio_read16(addr);
-			return;
-		case 4:
-			mmio->value = mmio_read32(addr);
-			return;
-		}
-}
-
 int arch_handle_dabt(struct trap_context *ctx)
 {
 	enum mmio_result mmio_result;
