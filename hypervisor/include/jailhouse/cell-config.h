@@ -68,15 +68,6 @@ struct jailhouse_cell_desc {
 #define JAILHOUSE_MEM_LOADABLE		0x0040
 #define JAILHOUSE_MEM_ROOTSHARED	0x0080
 
-#define JAILHOUSE_MEM_VALID_FLAGS	(JAILHOUSE_MEM_READ | \
-					 JAILHOUSE_MEM_WRITE | \
-					 JAILHOUSE_MEM_EXECUTE | \
-					 JAILHOUSE_MEM_DMA | \
-					 JAILHOUSE_MEM_IO | \
-					 JAILHOUSE_MEM_COMM_REGION | \
-					 JAILHOUSE_MEM_LOADABLE | \
-					 JAILHOUSE_MEM_ROOTSHARED)
-
 struct jailhouse_memory {
 	__u64 phys_start;
 	__u64 virt_start;

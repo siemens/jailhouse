@@ -210,31 +210,6 @@ static void cell_exit(struct cell *cell)
 }
 
 /**
- * Perform basic validation of cell memory regions.
- * @param config	Cell configuration description.
- *
- * @return 0 if the regions are valid, @c -EINVAL if the validation failed.
- *
- * Checks performed on the memory regions are:
- * \li Page alignment of physical and virtual address and the size.
- * \li Use of supported flags only.
- */
-int check_mem_regions(const struct jailhouse_cell_desc *config)
-{
-	const struct jailhouse_memory *mem;
-	unsigned int n;
-
-	for_each_mem_region(mem, config, n) {
-		if (mem->phys_start & ~PAGE_MASK ||
-		    mem->virt_start & ~PAGE_MASK ||
-		    mem->size & ~PAGE_MASK ||
-		    mem->flags & ~JAILHOUSE_MEM_VALID_FLAGS)
-			return trace_error(-EINVAL);
-	}
-	return 0;
-}
-
-/**
  * Apply system configuration changes.
  * @param cell_added_removed	Cell that was added or removed to/from the
  * 				system or NULL.
@@ -397,10 +372,6 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		err = -ENOMEM;
 		goto err_resume;
 	}
-
-	err = check_mem_regions(cfg);
-	if (err)
-		goto err_resume;
 
 	cell_pages = PAGES(sizeof(*cell) + cfg_total_size);
 	cell = page_alloc(&mem_pool, cell_pages);

@@ -47,10 +47,6 @@ static void init_early(unsigned int cpu_id)
 
 	root_cell.config = &system_config->root_cell;
 
-	error = check_mem_regions(&system_config->root_cell);
-	if (error)
-		return;
-
 	root_cell.id = -1;
 	error = cell_init(&root_cell);
 	if (error)

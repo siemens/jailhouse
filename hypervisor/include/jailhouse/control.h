@@ -112,7 +112,6 @@ static inline bool cell_owns_cpu(struct cell *cell, unsigned int cpu_id)
 
 bool cpu_id_valid(unsigned long cpu_id);
 
-int check_mem_regions(const struct jailhouse_cell_desc *config);
 int cell_init(struct cell *cell);
 
 void config_commit(struct cell *cell_added_removed);
