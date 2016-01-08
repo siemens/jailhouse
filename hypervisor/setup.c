@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -13,6 +13,7 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/entry.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
@@ -116,7 +117,10 @@ int map_root_memory_regions(void)
 	int err;
 
 	for_each_mem_region(mem, root_cell.config, n) {
-		err = arch_map_memory_region(&root_cell, mem);
+		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
+			err = mmio_subpage_register(&root_cell, mem);
+		else
+			err = arch_map_memory_region(&root_cell, mem);
 		if (err)
 			return err;
 	}

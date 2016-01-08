@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -15,6 +15,7 @@
 
 #include <jailhouse/types.h>
 #include <asm/mmio.h>
+#include <jailhouse/cell-config.h>
 
 struct cell;
 
@@ -170,6 +171,11 @@ enum mmio_result mmio_handle_access(struct mmio_access *mmio);
 void mmio_cell_exit(struct cell *cell);
 
 void mmio_perform_access(void *base, struct mmio_access *mmio);
+
+int mmio_subpage_register(struct cell *cell,
+			  const struct jailhouse_memory *mem);
+void mmio_subpage_unregister(struct cell *cell,
+			     const struct jailhouse_memory *mem);
 
 unsigned int arch_mmio_count_regions(struct cell *cell);
 

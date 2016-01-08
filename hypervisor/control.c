@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -236,13 +236,19 @@ static bool address_in_region(unsigned long addr,
 static int unmap_from_root_cell(const struct jailhouse_memory *mem)
 {
 	/*
-	 * arch_unmap_memory_region uses the virtual address of the memory
-	 * region. As only the root cell has a guaranteed 1:1 mapping, make a
-	 * copy where we ensure this.
+	 * arch_unmap_memory_region and mmio_subpage_unregister use the
+	 * virtual address of the memory region for their job. As only the root
+	 * cell has a guaranteed 1:1 mapping, make a copy where we ensure this.
 	 */
 	struct jailhouse_memory tmp = *mem;
 
 	tmp.virt_start = tmp.phys_start;
+
+	if (JAILHOUSE_MEMORY_IS_SUBPAGE(&tmp)) {
+		mmio_subpage_unregister(&root_cell, &tmp);
+		return 0;
+	}
+
 	return arch_unmap_memory_region(&root_cell, &tmp);
 }
 
@@ -274,7 +280,10 @@ static int remap_to_root_cell(const struct jailhouse_memory *mem,
 			overlap.phys_start - root_mem->phys_start;
 		overlap.flags = root_mem->flags;
 
-		err = arch_map_memory_region(&root_cell, &overlap);
+		if (JAILHOUSE_MEMORY_IS_SUBPAGE(&overlap))
+			err = mmio_subpage_register(&root_cell, &overlap);
+		else
+			err = arch_map_memory_region(&root_cell, &overlap);
 		if (err) {
 			if (mode == ABORT_ON_ERROR)
 				break;
@@ -300,11 +309,14 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 	}
 
 	for_each_mem_region(mem, cell->config, n) {
-		/*
-		 * This cannot fail. The region was mapped as a whole before,
-		 * thus no hugepages need to be broken up to unmap it.
-		 */
-		arch_unmap_memory_region(cell, mem);
+		if (!JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
+			/*
+			 * This cannot fail. The region was mapped as a whole
+			 * before, thus no hugepages need to be broken up to
+			 * unmap it.
+			 */
+			arch_unmap_memory_region(cell, mem);
+
 		if (!(mem->flags & (JAILHOUSE_MEM_COMM_REGION |
 				    JAILHOUSE_MEM_ROOTSHARED)))
 			remap_to_root_cell(mem, WARN_ON_ERROR);
@@ -430,7 +442,10 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 				goto err_destroy_cell;
 		}
 
-		err = arch_map_memory_region(cell, mem);
+		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
+			err = mmio_subpage_register(cell, mem);
+		else
+			err = arch_map_memory_region(cell, mem);
 		if (err)
 			goto err_destroy_cell;
 	}
