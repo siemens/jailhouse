@@ -26,7 +26,7 @@
 #include <asm/percpu.h>
 #include <asm/vcpu.h>
 
-/* Can be overriden in vendor-specific code if needed */
+/* Can be overridden in vendor-specific code if needed */
 const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size)
 	__attribute__((weak, alias("vcpu_map_inst")));
