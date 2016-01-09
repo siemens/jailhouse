@@ -20,7 +20,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[10];
+	struct jailhouse_memory mem_regions[16];
 	struct jailhouse_irqchip irqchips[1];
 } __attribute__((packed)) config = {
 	.header = {
@@ -83,12 +83,54 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* CCU, Ints, GPIO, Timer */ {
+		/* CCU */ {
 			.phys_start = 0x01c20000,
 			.virt_start = 0x01c20000,
-			.size = 0x1000,
+			.size = 0x400,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* Ints */ {
+			.phys_start = 0x01c20400,
+			.virt_start = 0x01c20400,
+			.size = 0x400,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* GPIO: ports A-G */ {
+			.phys_start = 0x01c20800,
+			.virt_start = 0x01c20800,
+			.size = 0xfc,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* GPIO: port H */ {
+			.phys_start = 0x01c208fc,
+			.virt_start = 0x01c208fc,
+			.size = 0x24,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* GPIO: port I */ {
+			.phys_start = 0x01c20920,
+			.virt_start = 0x01c20920,
+			.size = 0x24,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* GPIO: intr config */ {
+			.phys_start = 0x01c20a00,
+			.virt_start = 0x01c20a00,
+			.size = 0x1c,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* Timer */ {
+			.phys_start = 0x01c20c00,
+			.virt_start = 0x01c20c00,
+			.size = 0x400,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
 		},
 		/* UART0-3 */ {
 			.phys_start = 0x01c28000,

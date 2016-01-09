@@ -21,7 +21,7 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[3];
+	struct jailhouse_memory mem_regions[4];
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
@@ -37,12 +37,19 @@ struct {
 	},
 
 	.mem_regions = {
-		/* CCU, Ints, GPIO, Timer */ {
+		/* CCU */ {
 			.phys_start = 0x01c20000,
 			.virt_start = 0x01c20000,
-			.size = 0x1000,
+			.size = 0x400,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* GPIO: port H */ {
+			.phys_start = 0x01c208fc,
+			.virt_start = 0x01c208fc,
+			.size = 0x24,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
 		},
 		/* UART 4-7 */ {
 			.phys_start = 0x01c29000,

@@ -37,12 +37,12 @@ struct {
 	},
 
 	.mem_regions = {
-		/* CCU, Ints, GPIO, Timer */ {
+		/* CCU */ {
 			.phys_start = 0x01c20000,
 			.virt_start = 0x01c20000,
-			.size = 0x1000,
+			.size = 0x400,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
 		},
 		/* UART 4-7 */ {
 			.phys_start = 0x01c29000,
