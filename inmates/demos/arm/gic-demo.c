@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2014-2016
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -13,10 +15,14 @@
 #include <mach/timer.h>
 #include <inmate.h>
 
+#define CMDLINE_BUFFER_SIZE	256
+CMDLINE_BUFFER(CMDLINE_BUFFER_SIZE);
+
 #define BEATS_PER_SEC		10
 
 static u64 ticks_per_beat;
 static volatile u64 expected_ticks;
+static bool blinking_led;
 
 static void handle_IRQ(unsigned int irqn)
 {
@@ -37,11 +43,13 @@ static void handle_IRQ(unsigned int irqn)
 	       (long)timer_ticks_to_ns(min_delta),
 	       (long)timer_ticks_to_ns(max_delta));
 
+	if (blinking_led) {
 #ifdef CONFIG_MACH_SUN7I
-	/* let green LED on Banana Pi blink */
-	#define LED_REG (void *)(0x1c20800 + 7*0x24 + 0x10)
-	mmio_write32(LED_REG, mmio_read32(LED_REG) ^ (1<<24));
+		/* let green LED on Banana Pi blink */
+		#define LED_REG (void *)(0x1c20800 + 7*0x24 + 0x10)
+		mmio_write32(LED_REG, mmio_read32(LED_REG) ^ (1<<24));
 #endif
+	}
 
 	expected_ticks = timer_get_ticks() + ticks_per_beat;
 	timer_start(ticks_per_beat);
@@ -57,6 +65,8 @@ void inmate_main(void)
 	ticks_per_beat = timer_get_frequency() / BEATS_PER_SEC;
 	expected_ticks = timer_get_ticks() + ticks_per_beat;
 	timer_start(ticks_per_beat);
+
+	blinking_led = cmdline_parse_bool("blinking_led");
 
 	while (1)
 		asm volatile("wfi" : : : "memory");
