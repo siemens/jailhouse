@@ -2,7 +2,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014
+# Copyright (c) Siemens AG, 2014-2016
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -14,7 +14,7 @@
 BASEDIR=`cd \`dirname $0\`; pwd`
 
 if test -z $KERNEL; then
-	KERNEL=https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.19-rc2.tar.xz
+	KERNEL=https://www.kernel.org/pub/linux/kernel/v4.x/linux-4.4.tar.xz
 fi
 if test -z $PARALLEL_BUILD; then
 	PARALLEL_BUILD=-j16
