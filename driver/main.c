@@ -178,7 +178,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	struct jailhouse_system *config;
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
-	void __iomem *uart = NULL;
+	void __iomem *console = NULL;
 	unsigned long config_size;
 	const char *fw_name;
 	long max_cpus;
@@ -257,19 +257,19 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_unmap;
 	}
 
-	if (config->debug_uart.flags & JAILHOUSE_MEM_IO) {
-		uart = ioremap(config->debug_uart.phys_start,
-			       config->debug_uart.size);
-		if (!uart) {
+	if (config->debug_console.flags & JAILHOUSE_MEM_IO) {
+		console = ioremap(config->debug_console.phys_start,
+				  config->debug_console.size);
+		if (!console) {
 			err = -EINVAL;
-			pr_err("jailhouse: Unable to map hypervisor UART at "
-			       "%08lx\n",
-			       (unsigned long)config->debug_uart.phys_start);
+			pr_err("jailhouse: Unable to map hypervisor debug "
+			       "console at %08lx\n",
+			       (unsigned long)config->debug_console.phys_start);
 			goto error_unmap;
 		}
 		/* The hypervisor has no notion of address spaces, so we need
 		 * to enforce conversion. */
-		header->debug_uart_base = (void * __force)uart;
+		header->debug_console_base = (void * __force)console;
 	}
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
@@ -294,8 +294,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_free_cell;
 	}
 
-	if (uart)
-		iounmap(uart);
+	if (console)
+		iounmap(console);
 
 	release_firmware(hypervisor);
 
@@ -314,8 +314,8 @@ error_free_cell:
 
 error_unmap:
 	vunmap(hypervisor_mem);
-	if (uart)
-		iounmap(uart);
+	if (console)
+		iounmap(console);
 
 error_release_fw:
 	release_firmware(hypervisor);

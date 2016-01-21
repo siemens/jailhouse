@@ -144,7 +144,7 @@ struct jailhouse_pci_capability {
 struct jailhouse_system {
 	char signature[8];
 	struct jailhouse_memory hypervisor_memory;
-	struct jailhouse_memory debug_uart;
+	struct jailhouse_memory debug_console;
 	union {
 		struct {
 			__u64 mmconfig_base;

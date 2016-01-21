@@ -27,7 +27,7 @@ struct {
 			.phys_start = 0xfc000000,
 			.size = 0x4000000,
 		},
-		.debug_uart = {
+		.debug_console = {
 			.phys_start = 0x1c090000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_IO,
