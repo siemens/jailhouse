@@ -18,10 +18,6 @@ compiler:
 sudo: required
 dist: trusty
 
-env:
-  global:
-    - secure: "HeNK8vFhW6656FoEc05SWwjorvMZWkUTIioHBJoX+s59uQ6MlgyPNnro8FrrcX/fNWLDNRrzl9U05423JVMWwjOuov6MgShDJkG/imadVO8Y+ZIsKdefAp/DsUhIhsnRNh8+bxUStdFAVatMvPf/ZWuEk0K3BC95yWK1VXE73ZQ="
-
 install:
   # Install additional packages
   - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu vivid main'
