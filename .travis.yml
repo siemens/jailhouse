@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014, 2015
+# Copyright (c) Siemens AG, 2014-2016
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -17,6 +17,11 @@ compiler:
 
 sudo: required
 dist: trusty
+
+# Remove bogus python installations from PATH,
+# see https://github.com/travis-ci/travis-ci/issues/5326
+before_install:
+  - export PATH=$(echo $PATH | sed 's/\/opt\/python[^:]*//g')
 
 install:
   # Install additional packages
