@@ -74,7 +74,7 @@ static u16 *vga_mem;
 
 static void vga_init(void)
 {
-	vga_mem = (u16 *)hypervisor_header.debug_console_base;
+	vga_mem = hypervisor_header.debug_console_base;
 }
 
 static void vga_scroll(void)
