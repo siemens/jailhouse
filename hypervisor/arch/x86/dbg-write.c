@@ -1,10 +1,12 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2016
+ * Copyright (c) Toshiba, 2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Daniel Sangorrin <daniel.sangorrin@toshiba.co.jp>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -94,9 +96,6 @@ static void vga_write(const char *msg)
 	unsigned int pos;
 	u16 row, line;
 
-	if (!vga_mem)
-		return;
-
 	/* panic_printk avoids locking 'printk_lock' due to a potential
 	   deadlock in case a crash occurs while holding it. For avoiding
 	   a data race between printk and panic_printk we take a local
@@ -141,7 +140,8 @@ void arch_dbg_write_init(void)
 
 void arch_dbg_write(const char *msg)
 {
-	vga_write(msg);
-	if (!vga_mem)
+	if (vga_mem)
+		vga_write(msg);
+	else
 		uart_write(msg);
 }
