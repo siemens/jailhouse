@@ -228,7 +228,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	    hypervisor->size >= hv_mem->size)
 		goto error_release_fw;
 
-	hv_core_and_percpu_size = PAGE_ALIGN(header->core_size) +
+	hv_core_and_percpu_size = header->core_size +
 		max_cpus * header->percpu_size;
 	config_size = jailhouse_system_config_size(&config_header);
 	if (hv_core_and_percpu_size >= hv_mem->size ||

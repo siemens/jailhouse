@@ -29,7 +29,7 @@ struct jailhouse_header {
 	/** Signature "JAILHOUS".
 	 * @note Filled at build time. */
 	char signature[8];
-	/** Size of hypervisor core.
+	/** Size of hypervisor core, rounded up to page boundary.
 	 * @note Filled at build time. */
 	unsigned long core_size;
 	/** Size of per-CPU data structure.

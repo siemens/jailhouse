@@ -34,7 +34,6 @@ SECTIONS
 
 	. = ALIGN(16);
 	.bss		: { *(.bss) }
-	__hv_core_end = .;
 
 	. = ALIGN(PAGE_SIZE);
 	__page_pool = .;

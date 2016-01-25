@@ -20,7 +20,7 @@
 #include <generated/version.h>
 #include <asm/spinlock.h>
 
-extern u8 __text_start[], __hv_core_end[];
+extern u8 __text_start[], __page_pool[];
 
 static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
 
@@ -202,7 +202,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 struct jailhouse_header __attribute__((section(".header")))
 hypervisor_header = {
 	.signature = JAILHOUSE_SIGNATURE,
-	.core_size = (unsigned long)__hv_core_end - JAILHOUSE_BASE,
+	.core_size = (unsigned long)__page_pool - JAILHOUSE_BASE,
 	.percpu_size = sizeof(struct per_cpu),
 	.entry = arch_entry,
 };
