@@ -12,7 +12,7 @@
 
 include $(CONFIG_MK)
 
-KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
+KBUILD_AFLAGS := $(subst -include asm/unified.h,,$(KBUILD_AFLAGS))
 
 always := built-in.o
 
