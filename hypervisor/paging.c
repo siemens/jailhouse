@@ -468,8 +468,6 @@ int paging_init(void)
 	per_cpu_pages = hypervisor_header.max_cpus *
 		sizeof(struct per_cpu) / PAGE_SIZE;
 
-	system_config = (struct jailhouse_system *)
-		(__page_pool + per_cpu_pages * PAGE_SIZE);
 	config_pages = PAGES(jailhouse_system_config_size(system_config));
 
 	page_offset = JAILHOUSE_BASE -
