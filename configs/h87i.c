@@ -32,6 +32,9 @@ struct {
 			.phys_start = 0x3b000000,
 			.size = 0x4000000,
 		},
+		.debug_console = {
+			.phys_start = 0xe010,
+		},
 		.platform_info.x86 = {
 			.mmconfig_base = 0xf8000000,
 			.mmconfig_end_bus = 0x3f,

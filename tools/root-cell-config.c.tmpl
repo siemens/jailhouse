@@ -59,6 +59,9 @@ struct {
 			.phys_start = ${hex(hvmem[0])},
 			.size = ${hex(hvmem[1])},
 		},
+		.debug_console = {
+			.phys_start = 0x3f8,
+		},
 		.platform_info.x86 = {
 			.mmconfig_base = ${hex(mmconfig.base)},
 			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},
