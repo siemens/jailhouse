@@ -283,12 +283,14 @@ void inmate_main(void)
 	mmio_write32(mmiobar + E1000_REG_RDBAH, 0);
 	mmio_write32(mmiobar + E1000_REG_RDLEN, sizeof(rx_ring));
 	mmio_write32(mmiobar + E1000_REG_RDH, 0);
-	mmio_write32(mmiobar + E1000_REG_RDT, RX_DESCRIPTORS - 1);
+	mmio_write32(mmiobar + E1000_REG_RDT, 0);
 
 	val = mmio_read32(mmiobar + E1000_REG_RCTL);
 	val |= E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_BSIZE_2048 |
 		E1000_RCTL_SECRC;
 	mmio_write32(mmiobar + E1000_REG_RCTL, val);
+
+	mmio_write32(mmiobar + E1000_REG_RDT, RX_DESCRIPTORS - 1);
 
 	mmio_write32(mmiobar + E1000_REG_TDBAL, (unsigned long)&tx_ring);
 	mmio_write32(mmiobar + E1000_REG_TDBAH, 0);
