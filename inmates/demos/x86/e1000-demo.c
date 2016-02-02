@@ -136,8 +136,8 @@ static const char *speed_info[] = { "10", "100", "1000", "1000" };
 
 static void *mmiobar;
 static u8 buffer[RX_DESCRIPTORS * RX_BUFFER_SIZE];
-static struct e1000_rxd rx_ring[RX_DESCRIPTORS];
-static struct e1000_txd tx_ring[TX_DESCRIPTORS];
+static struct e1000_rxd rx_ring[RX_DESCRIPTORS] __attribute__((aligned(128)));
+static struct e1000_txd tx_ring[TX_DESCRIPTORS] __attribute__((aligned(128)));
 static unsigned int rx_idx, tx_idx;
 static struct eth_header tx_packet;
 static unsigned int phyadd;
