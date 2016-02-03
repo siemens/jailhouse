@@ -25,7 +25,6 @@
 
 #define E1000_REG_CTRL		0x0000
 # define E1000_CTRL_LRST	(1 << 3)
-# define E1000_CTRL_ASDE	(1 << 5)
 # define E1000_CTRL_SLU		(1 << 6)
 # define E1000_CTRL_FRCSPD	(1 << 11)
 # define E1000_CTRL_RST		(1 << 26)
@@ -237,7 +236,7 @@ void inmate_main(void)
 
 	val = mmio_read32(mmiobar + E1000_REG_CTRL);
 	val &= ~(E1000_CTRL_LRST | E1000_CTRL_FRCSPD);
-	val |= E1000_CTRL_ASDE | E1000_CTRL_SLU;
+	val |= E1000_CTRL_SLU;
 	mmio_write32(mmiobar + E1000_REG_CTRL, val);
 
 	/* power up again in case the previous user turned it off */
