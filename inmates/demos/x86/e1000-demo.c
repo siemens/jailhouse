@@ -62,11 +62,15 @@
 #define E1000_REG_RDLEN		0x2808
 #define E1000_REG_RDH		0x2810
 #define E1000_REG_RDT		0x2818
+#define E1000_REG_RXDCTL	0x2828
+# define E1000_RXDCTL_ENABLE	(1 << 25)
 #define E1000_REG_TDBAL		0x3800
 #define E1000_REG_TDBAH		0x3804
 #define E1000_REG_TDLEN		0x3808
 #define E1000_REG_TDH		0x3810
 #define E1000_REG_TDT		0x3818
+#define E1000_REG_TXDCTL	0x3828
+# define E1000_TXDCTL_ENABLE	(1 << 25)
 #define E1000_REG_RAL		0x5400
 #define E1000_REG_RAH		0x5404
 # define E1000_RAH_AV		(1 << 31)
@@ -283,6 +287,8 @@ void inmate_main(void)
 	mmio_write32(mmiobar + E1000_REG_RDLEN, sizeof(rx_ring));
 	mmio_write32(mmiobar + E1000_REG_RDH, 0);
 	mmio_write32(mmiobar + E1000_REG_RDT, 0);
+	mmio_write32(mmiobar + E1000_REG_RXDCTL,
+		mmio_read32(mmiobar + E1000_REG_RXDCTL) | E1000_RXDCTL_ENABLE);
 
 	val = mmio_read32(mmiobar + E1000_REG_RCTL);
 	val |= E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_BSIZE_2048 |
@@ -296,6 +302,8 @@ void inmate_main(void)
 	mmio_write32(mmiobar + E1000_REG_TDLEN, sizeof(tx_ring));
 	mmio_write32(mmiobar + E1000_REG_TDH, 0);
 	mmio_write32(mmiobar + E1000_REG_TDT, 0);
+	mmio_write32(mmiobar + E1000_REG_TXDCTL,
+		mmio_read32(mmiobar + E1000_REG_TXDCTL) | E1000_TXDCTL_ENABLE);
 
 	val = mmio_read32(mmiobar + E1000_REG_TCTL);
 	val |= E1000_TCTL_EN | E1000_TCTL_PSP | E1000_TCTL_CT_DEF |
