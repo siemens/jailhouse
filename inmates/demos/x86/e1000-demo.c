@@ -27,7 +27,7 @@
 # define E1000_CTRL_LRST	(1 << 3)
 # define E1000_CTRL_ASDE	(1 << 5)
 # define E1000_CTRL_SLU		(1 << 6)
-# define E1000_CTRL_FRCSPD	(1 << 12)
+# define E1000_CTRL_FRCSPD	(1 << 11)
 # define E1000_CTRL_RST		(1 << 26)
 #define E1000_REG_STATUS	0x0008
 # define E1000_STATUS_LU	(1 << 1)
