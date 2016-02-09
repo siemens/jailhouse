@@ -10,10 +10,10 @@ x86 support
   - add support for CDP (code/data L3 partitioning)
 
 ARM support
-  - v7 (32-bit) [WIP]
+  - v7 (32-bit)
     - System MMU support
     - improve support for platform variations (device tree?)
-  - v8 (64-bit)
+  - v8 (64-bit) [WIP]
   - support for big endian
     - infrastructure to support BE architectures (byte-swapping services)
     - usage of that infrastructure in generic subsystems
@@ -74,13 +74,3 @@ Monitoring
   - cell software watchdog via comm region messages  
     -> time out pending comm region messages and kill failing cells
        (includes timeouts of unanswered shutdown requests)
-
-Misc
-  - generic sub-page access filtering
-    - use bitmap, likely with byte granularity, to filter access on specific
-      registers in a MMIO page
-  - generic and faster MMIO dispatching
-    - use binary search on an per-cell array of (start, size, handler, opaque)
-      entries
-    - should be able to deal with both existing devices as well as sub-page
-      filtering
