@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014, 2015
+ * Copyright (c) Siemens AG, 2014-2016
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -67,9 +67,11 @@ struct {
 			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},
 			.pm_timer_address = ${hex(pm_timer_base)},
 			% if iommu_units:
-			.iommu_base = {
+			.iommu_units = {
 				% for d in iommu_units:
-				${hex(d)},
+				{
+					.base = ${hex(d)},
+				},
 				% endfor
 			},
 			% endif

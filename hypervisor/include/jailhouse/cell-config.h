@@ -139,6 +139,10 @@ struct jailhouse_pci_capability {
 
 #define JAILHOUSE_MAX_IOMMU_UNITS	8
 
+struct jailhouse_iommu {
+	__u64 base;
+} __attribute__((packed));
+
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JAILSYST"
 
 struct jailhouse_system {
@@ -151,7 +155,8 @@ struct jailhouse_system {
 			__u8 mmconfig_end_bus;
 			__u8 padding[5];
 			__u16 pm_timer_address;
-			__u64 iommu_base[JAILHOUSE_MAX_IOMMU_UNITS];
+			struct jailhouse_iommu
+				iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 		} __attribute__((packed)) x86;
 	} __attribute__((packed)) platform_info;
 	__u32 device_limit;

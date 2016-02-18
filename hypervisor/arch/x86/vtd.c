@@ -421,7 +421,7 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 
 	root_cell.arch.vtd.ir_emulation = true;
 
-	base = system_config->platform_info.x86.iommu_base[unit_no];
+	base = system_config->platform_info.x86.iommu_units[unit_no].base;
 	mmio_region_register(&root_cell, base, PAGE_SIZE,
 			     vtd_unit_access_handler, unit);
 
@@ -454,8 +454,8 @@ int iommu_init(void)
 {
 	unsigned long version, caps, ecaps, ctrls, sllps_caps = ~0UL;
 	unsigned int units, pt_levels, num_did, n;
+	struct jailhouse_iommu *unit;
 	void *reg_base;
-	u64 base_addr;
 	int err;
 
 	/* n = roundup(log2(system_config->interrupt_limit)) */
@@ -484,11 +484,11 @@ int iommu_init(void)
 		return -ENOMEM;
 
 	for (n = 0; n < units; n++) {
-		base_addr = system_config->platform_info.x86.iommu_base[n];
+		unit = &system_config->platform_info.x86.iommu_units[n];
 
 		reg_base = dmar_reg_base + n * PAGE_SIZE;
 
-		err = paging_create(&hv_paging_structs, base_addr, PAGE_SIZE,
+		err = paging_create(&hv_paging_structs, unit->base, PAGE_SIZE,
 				    (unsigned long)reg_base,
 				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);
@@ -503,7 +503,7 @@ int iommu_init(void)
 			return 0;
 		}
 
-		printk("Found DMAR @%p\n", base_addr);
+		printk("Found DMAR @%p\n", unit->base);
 
 		caps = mmio_read64(reg_base + VTD_CAP_REG);
 		if (caps & VTD_CAP_SAGAW39)
