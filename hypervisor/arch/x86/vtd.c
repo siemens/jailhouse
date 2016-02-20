@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2016
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -25,6 +25,9 @@
 #include <asm/ioapic.h>
 #include <asm/spinlock.h>
 #include <asm/vtd.h>
+
+/* A unit can occupy up to 3 pages for registers, we reserve 4. */
+#define DMAR_MMIO_SIZE			(PAGE_SIZE * 4)
 
 struct vtd_irte_usage {
 	u16 device_id;
@@ -133,7 +136,7 @@ static void vtd_flush_domain_caches(unsigned int did)
 	for (n = 0; n < dmar_units; n++) {
 		vtd_submit_iq_request(reg_base, inv_queue, &inv_context);
 		vtd_submit_iq_request(reg_base, inv_queue, &inv_iotlb);
-		reg_base += PAGE_SIZE;
+		reg_base += DMAR_MMIO_SIZE;
 		inv_queue += PAGE_SIZE;
 	}
 }
@@ -180,7 +183,7 @@ static void vtd_init_fault_nmi(void)
 	 * case from different CPUs */
 	fault_reporting_cpu_id = cpu_data->cpu_id;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+	for (n = 0; n < dmar_units; n++, reg_base += DMAR_MMIO_SIZE) {
 		/* Mask events */
 		mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
 
@@ -244,7 +247,7 @@ void iommu_check_pending_faults(void)
 	if (this_cpu_id() != fault_reporting_cpu_id)
 		return;
 
-	for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE)
+	for (n = 0; n < dmar_units; n++, reg_base += DMAR_MMIO_SIZE)
 		if (mmio_read32_field(reg_base + VTD_FSTS_REG, VTD_FSTS_PPF)) {
 			fr_index = mmio_read32_field(reg_base + VTD_FSTS_REG,
 						     VTD_FSTS_FRI_MASK);
@@ -475,7 +478,7 @@ int iommu_init(void)
 	if (units == 0)
 		return trace_error(-EINVAL);
 
-	dmar_reg_base = page_alloc(&remap_pool, units);
+	dmar_reg_base = page_alloc(&remap_pool, units * PAGES(DMAR_MMIO_SIZE));
 	if (!dmar_reg_base)
 		return trace_error(-ENOMEM);
 
@@ -486,9 +489,9 @@ int iommu_init(void)
 	for (n = 0; n < units; n++) {
 		unit = &system_config->platform_info.x86.iommu_units[n];
 
-		reg_base = dmar_reg_base + n * PAGE_SIZE;
+		reg_base = dmar_reg_base + n * DMAR_MMIO_SIZE;
 
-		err = paging_create(&hv_paging_structs, unit->base, PAGE_SIZE,
+		err = paging_create(&hv_paging_structs, unit->base, unit->size,
 				    (unsigned long)reg_base,
 				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);
@@ -503,7 +506,7 @@ int iommu_init(void)
 			return 0;
 		}
 
-		printk("Found DMAR @%p\n", unit->base);
+		printk("DMAR unit @0x%lx/0x%x\n", unit->base, unit->size);
 
 		caps = mmio_read64(reg_base + VTD_CAP_REG);
 		if (caps & VTD_CAP_SAGAW39)
@@ -594,7 +597,7 @@ static void vtd_update_irte(unsigned int index, union vtd_irte content)
 
 	for (n = 0; n < dmar_units; n++) {
 		vtd_submit_iq_request(reg_base, inv_queue, &inv_int);
-		reg_base += PAGE_SIZE;
+		reg_base += DMAR_MMIO_SIZE;
 		inv_queue += PAGE_SIZE;
 	}
 }
@@ -926,7 +929,7 @@ void iommu_config_commit(struct cell *cell_added_removed)
 	if (cell_added_removed == &root_cell) {
 		for (n = 0; n < dmar_units; n++) {
 			vtd_init_unit(reg_base, inv_queue);
-			reg_base += PAGE_SIZE;
+			reg_base += DMAR_MMIO_SIZE;
 			inv_queue += PAGE_SIZE;
 		}
 		dmar_units_initialized = true;
@@ -980,7 +983,7 @@ void iommu_shutdown(void)
 	unsigned int n;
 
 	if (dmar_units_initialized)
-		for (n = 0; n < dmar_units; n++, reg_base += PAGE_SIZE) {
+		for (n = 0; n < dmar_units; n++, reg_base += DMAR_MMIO_SIZE) {
 			vtd_update_gcmd_reg(reg_base, VTD_GCMD_TE, 0);
 			vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 0);
 			if (root_cell.arch.vtd.ir_emulation)
