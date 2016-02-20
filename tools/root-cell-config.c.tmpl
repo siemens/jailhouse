@@ -68,9 +68,10 @@ struct {
 			.pm_timer_address = ${hex(pm_timer_base)},
 			% if iommu_units:
 			.iommu_units = {
-				% for d in iommu_units:
+				% for unit in iommu_units:
 				{
-					.base = ${hex(d)},
+					.base = ${hex(unit.base_addr)},
+					.size = ${hex(unit.mmio_size)},
 				},
 				% endfor
 			},

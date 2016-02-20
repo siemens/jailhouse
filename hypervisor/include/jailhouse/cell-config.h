@@ -141,6 +141,7 @@ struct jailhouse_pci_capability {
 
 struct jailhouse_iommu {
 	__u64 base;
+	__u32 size;
 } __attribute__((packed));
 
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JAILSYST"

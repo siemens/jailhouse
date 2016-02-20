@@ -2,7 +2,13 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014
+# Copyright (c) Siemens AG, 2014-2016
+# Copyright (c) Valentine Sinitsyn, 2014-2015
+#
+# Authors:
+#  Henning Schild <henning.schild@siemens.com>
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
 #
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
@@ -532,8 +538,7 @@ class IOMemRegionTree:
             # blacklisted on all levels
             if (
                 (s.find('PCI MMCONFIG') >= 0) or
-                (s.find('APIC') >= 0) or  # covers both APIC and IOAPIC
-                (s.find('dmar') >= 0)
+                (s.find('APIC') >= 0)  # covers both APIC and IOAPIC
             ):
                 continue
 
@@ -553,6 +558,12 @@ class IOMemRegionTree:
         return regions
 
 
+class IOMMUConfig(object):
+    def __init__(self, props):
+        self.base_addr = props['base_addr']
+        self.mmio_size = props['mmio_size']
+
+
 def parse_iomem(pcidevices):
     regions = IOMemRegionTree.parse_iomem_tree(
         IOMemRegionTree.parse_iomem_file())
@@ -561,6 +572,7 @@ def parse_iomem(pcidevices):
     add_rom_region = False
 
     ret = []
+    dmar_regions = []
     for r in regions:
         append_r = True
         # filter the list for MSI-X pages
@@ -580,6 +592,10 @@ def parse_iomem(pcidevices):
         if (r.start >= rom_region.start and r.stop <= rom_region.stop):
             add_rom_region = True
             append_r = False
+        # filter out and save DMAR regions
+        if r.typestr.find('dmar') >= 0:
+            dmar_regions.append(r)
+            append_r = False
         if append_r:
             ret.append(r)
 
@@ -592,7 +608,7 @@ def parse_iomem(pcidevices):
     if (ret[0].typestr == 'System RAM' and ret[0].start == 0x1000):
         ret[0].start = 0
 
-    return ret
+    return ret, dmar_regions
 
 
 def parse_pcidevices():
@@ -704,7 +720,7 @@ def parse_dmar_devscope(f):
 
 # parsing of DMAR ACPI Table
 # see Intel VT-d Spec chapter 8
-def parse_dmar(pcidevices, ioapics):
+def parse_dmar(pcidevices, ioapics, dmar_regions):
     f = input_open('/sys/firmware/acpi/tables/DMAR', 'rb')
     signature = f.read(4)
     if signature != b'DMAR':
@@ -729,7 +745,20 @@ def parse_dmar(pcidevices, ioapics):
             if len(units) >= 8:
                 raise RuntimeError('Too many DMAR units. '
                                    'Raise JAILHOUSE_MAX_IOMMU_UNITS.')
-            units.append(base)
+            size = 0
+            for r in dmar_regions:
+                if base == r.start:
+                    size = r.size()
+            if size == 0:
+                raise RuntimeError('DMAR region size cannot be identified.\n'
+                                   'Target Linux must run with Intel IOMMU '
+                                   'enabled.')
+            if size > 0x3000:
+                raise RuntimeError('Unexpectedly large DMAR region.')
+            units.append(IOMMUConfig({
+                'base_addr': base,
+                'mmio_size': size
+            }))
             if flags & 1:
                 for d in pcidevices:
                     if d.iommu is None:
@@ -825,19 +854,21 @@ def parse_ivrs(pcidevices, ioapics):
     regions = []
     # BDF of devices that are permitted outside IOMMU: root complex
     iommu_skiplist = set([0x0])
+    ivhd_blocks = 0
     while length > 0:
         (block_type, block_length) = struct.unpack('<BxH', f.read(4))
         if block_type in [0x10, 0x11]:
+            ivhd_blocks += 1
+            if ivhd_blocks > 1:
+                raise RuntimeError('Jailhouse doesn\'t support more than one '
+                                   'AMD IOMMU per PCI function.')
             # IVHD block
-            (iommu_id, base_addr, pci_seg) = \
-                struct.unpack('<HxxQH', f.read(14))
-            length -= block_length
-            block_length -= 18
+            ivhd_fields = struct.unpack('<HHQHxxL', f.read(20))
+            (iommu_bdf, base_cap_ofs,
+             base_addr, pci_seg, iommu_feat) = ivhd_fields
 
-            # IOMMU EFR image and reserved area
-            skip_bytes = 6 if block_type == 0x10 else 22
-            f.seek(skip_bytes, os.SEEK_CUR)
-            block_length -= skip_bytes
+            length -= block_length
+            block_length -= 24
 
             if pci_seg != 0:
                 raise RuntimeError('We do not support multiple PCI segments')
@@ -846,12 +877,22 @@ def parse_ivrs(pcidevices, ioapics):
                 raise RuntimeError('Too many IOMMU units. '
                                    'Raise JAILHOUSE_MAX_IOMMU_UNITS.')
 
-            # We shouldn't map IOMMU to the cells
             for i, d in enumerate(pcidevices):
-                if d.bdf() == iommu_id:
+                if d.bdf() == iommu_bdf:
+                    # We must not map IOMMU to the cells
                     del pcidevices[i]
 
-            units.append(base_addr)
+            if (iommu_feat & (0xF << 13)) and (iommu_feat & (0x3F << 17)):
+                # Performance Counters are supported, allocate 512K
+                mmio_size = 524288
+            else:
+                # Allocate 16K
+                mmio_size = 16384
+
+            units.append(IOMMUConfig({
+                'base_addr': base_addr,
+                'mmio_size': mmio_size,
+            }))
 
             bdf_start_range = None
             while block_length > 0:
@@ -908,9 +949,9 @@ def parse_ivrs(pcidevices, ioapics):
 
         elif type in [0x20, 0x21, 0x22]:
             # IVMD block
+            ivmd_fields = struct.unpack('<BBHHHxxxxxxxxQQ', f.read(32))
             (block_type, block_flags, block_length,
-             device_id, aux_data, mem_addr, mem_len) = struct.unpack(
-                 '<BBHHHxxxxxxxxQQ')
+             device_id, aux_data, mem_addr, mem_len) = ivmd_fields
             length -= block_length
 
             if int(block_flags):
@@ -1042,7 +1083,7 @@ product = [input_readline('/sys/class/dmi/id/sys_vendor',
 inmatemem = kmg_multiply_str(options.mem_inmates)
 hvmem = [0, kmg_multiply_str(options.mem_hv)]
 
-regions = parse_iomem(pcidevices)
+(regions, dmar_regions) = parse_iomem(pcidevices)
 ourmem = parse_kernel_cmdline()
 total = hvmem[1] + inmatemem
 
@@ -1052,7 +1093,8 @@ ioapics = parse_madt()
 
 vendor = get_cpu_vendor()
 if vendor == 'GenuineIntel':
-    (iommu_units, extra_memregs) = parse_dmar(pcidevices, ioapics)
+    (iommu_units, extra_memregs) = parse_dmar(pcidevices, ioapics,
+                                              dmar_regions)
 else:
     (iommu_units, extra_memregs) = parse_ivrs(pcidevices, ioapics)
 regions += extra_memregs

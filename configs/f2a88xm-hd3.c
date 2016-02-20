@@ -47,6 +47,7 @@ struct {
 			.iommu_units = {
 				{
 					.base = 0xfeb80000,
+					.size = 0x80000,
 				},
 			},
 		},
