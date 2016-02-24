@@ -85,9 +85,9 @@ long long cmdline_parse_int(const char *param, long long default_value)
 			if (*p >= '0' && *p <= '9')
 				value = (value << 4) + *p - '0';
 			else if (*p >= 'A' && *p <= 'F')
-				value = (value << 4) + *p - 'A';
+				value = (value << 4) + *p - 'A' + 10;
 			else if (*p >= 'a' && *p <= 'f')
-				value = (value << 4) + *p - 'a';
+				value = (value << 4) + *p - 'a' + 10;
 			else
 				return default_value;
 			p++;
