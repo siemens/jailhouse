@@ -773,6 +773,9 @@ int iommu_map_memory_region(struct cell *cell,
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
 
+	if (mem->virt_start & BIT_MASK(63, 12 + 9 * dmar_pt_levels))
+		return trace_error(-E2BIG);
+
 	if (mem->flags & JAILHOUSE_MEM_READ)
 		flags |= VTD_PAGE_READ;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
