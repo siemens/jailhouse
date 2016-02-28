@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2016
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -283,8 +283,8 @@ static int vmx_check_features(void)
 
 static void ept_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
-	*pte = (next_pt & 0x000ffffffffff000UL) | EPT_FLAG_READ |
-		EPT_FLAG_WRITE | EPT_FLAG_EXECUTE;
+	*pte = (next_pt & BIT_MASK(51, 12)) | EPT_FLAG_READ | EPT_FLAG_WRITE |
+		EPT_FLAG_EXECUTE;
 }
 
 int vcpu_vendor_init(void)
@@ -976,12 +976,12 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 	if (vmcs_read32(VM_ENTRY_CONTROLS) & VM_ENTRY_IA32E_MODE) {
 		pg_structs->root_paging = x86_64_paging;
 		pg_structs->root_table_gphys =
-			vmcs_read64(GUEST_CR3) & 0x000ffffffffff000UL;
+			vmcs_read64(GUEST_CR3) & BIT_MASK(51, 12);
 	} else if (vmcs_read64(GUEST_CR0) & X86_CR0_PG &&
 		 !(vmcs_read64(GUEST_CR4) & X86_CR4_PAE)) {
 		pg_structs->root_paging = i386_paging;
 		pg_structs->root_table_gphys =
-			vmcs_read64(GUEST_CR3) & 0xfffff000UL;
+			vmcs_read64(GUEST_CR3) & BIT_MASK(31, 12);
 	} else {
 		printk("FATAL: Unsupported paging mode\n");
 		return false;

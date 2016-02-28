@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -12,6 +12,7 @@
 
 #include <jailhouse/paging.h>
 #include <jailhouse/string.h>
+#include <jailhouse/utils.h>
 
 #define X86_FLAG_HUGEPAGE	0x80
 
@@ -24,12 +25,12 @@ static bool x86_64_entry_valid(pt_entry_t pte, unsigned long flags)
 
 static unsigned long x86_64_get_flags(pt_entry_t pte)
 {
-	return *pte & 0x7f;
+	return *pte & BIT_MASK(6, 0);
 }
 
 static void x86_64_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
-	*pte = (next_pt & 0x000ffffffffff000UL) | PAGE_DEFAULT_FLAGS;
+	*pte = (next_pt & BIT_MASK(51, 12)) | PAGE_DEFAULT_FLAGS;
 }
 
 static void x86_64_clear_entry(pt_entry_t pte)
@@ -75,46 +76,43 @@ static pt_entry_t x86_64_get_entry_l1(page_table_t page_table,
 static void x86_64_set_terminal_l3(pt_entry_t pte, unsigned long phys,
 				   unsigned long flags)
 {
-	*pte = (phys & 0x000fffffc0000000UL) | X86_FLAG_HUGEPAGE | flags;
+	*pte = (phys & BIT_MASK(51, 30)) | X86_FLAG_HUGEPAGE | flags;
 }
 
 static void x86_64_set_terminal_l2(pt_entry_t pte, unsigned long phys,
 				   unsigned long flags)
 {
-	*pte = (phys & 0x000fffffffe00000UL) | X86_FLAG_HUGEPAGE | flags;
+	*pte = (phys & BIT_MASK(51, 21)) | X86_FLAG_HUGEPAGE | flags;
 }
 
 static void x86_64_set_terminal_l1(pt_entry_t pte, unsigned long phys,
 				   unsigned long flags)
 {
-	*pte = (phys & 0x000ffffffffff000UL) | flags;
+	*pte = (phys & BIT_MASK(51, 12)) | flags;
 }
 
 static unsigned long x86_64_get_phys_l3(pt_entry_t pte, unsigned long virt)
 {
 	if (!(*pte & X86_FLAG_HUGEPAGE))
 		return INVALID_PHYS_ADDR;
-	return (*pte & 0x000fffffc0000000UL) |
-	       (virt & 0x000000003fffffffUL);
+	return (*pte & BIT_MASK(51, 30)) | (virt & BIT_MASK(29, 0));
 }
 
 static unsigned long x86_64_get_phys_l2(pt_entry_t pte, unsigned long virt)
 {
 	if (!(*pte & X86_FLAG_HUGEPAGE))
 		return INVALID_PHYS_ADDR;
-	return (*pte & 0x000fffffffe00000UL) |
-	       (virt & 0x00000000001fffffUL);
+	return (*pte & BIT_MASK(51, 21)) | (virt & BIT_MASK(20, 0));
 }
 
 static unsigned long x86_64_get_phys_l1(pt_entry_t pte, unsigned long virt)
 {
-	return (*pte & 0x000ffffffffff000UL) |
-	       (virt & 0x0000000000000fffUL);
+	return (*pte & BIT_MASK(51, 12)) | (virt & BIT_MASK(11, 0));
 }
 
 static unsigned long x86_64_get_next_pt(pt_entry_t pte)
 {
-	return *pte & 0x000ffffffffff000UL;
+	return *pte & BIT_MASK(51, 12);
 }
 
 #define X86_64_PAGING_COMMON					\
@@ -192,20 +190,18 @@ static unsigned long i386_get_phys_l2(pt_entry_t pte, unsigned long virt)
 
 	if (!(pte32 & X86_FLAG_HUGEPAGE))
 		return INVALID_PHYS_ADDR;
-	return ((unsigned long)(pte32 & 0x0001e000) << (32 - 13)) |
-		(pte32 & 0xffc00000) |
-		 (virt & 0x003fffff);
+	return ((unsigned long)(pte32 & BIT_MASK(16, 13)) << (32 - 13)) |
+		(pte32 & BIT_MASK(31, 22)) | (virt & BIT_MASK(21, 0));
 }
 
 static unsigned long i386_get_phys_l1(pt_entry_t pte, unsigned long virt)
 {
-	return (*(u32 *)pte & 0xfffff000) |
-		      (virt & 0x00000fff);
+	return (*(u32 *)pte & BIT_MASK(31, 12)) | (virt & BIT_MASK(11, 0));
 }
 
 static unsigned long i386_get_next_pt(pt_entry_t pte)
 {
-	return *(u32 *)pte & 0xfffff000UL;
+	return *(u32 *)pte & BIT_MASK(31, 12);
 }
 
 /* read-only, no page table construction supported */

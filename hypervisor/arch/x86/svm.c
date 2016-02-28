@@ -243,8 +243,7 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 static void npt_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
 	/* See APMv2, Section 15.25.5 */
-	*pte = (next_pt & 0x000ffffffffff000UL) |
-		(PAGE_DEFAULT_FLAGS | PAGE_FLAG_US);
+	*pte = (next_pt & BIT_MASK(51, 12)) | PAGE_DEFAULT_FLAGS | PAGE_FLAG_US;
 }
 
 int vcpu_vendor_init(void)
@@ -628,13 +627,11 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 
 	if (vmcb->efer & EFER_LMA) {
 		pg_structs->root_paging = x86_64_paging;
-		pg_structs->root_table_gphys =
-			vmcb->cr3 & 0x000ffffffffff000UL;
+		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(51, 12);
 	} else if ((vmcb->cr0 & X86_CR0_PG) &&
 		   !(vmcb->cr4 & X86_CR4_PAE)) {
 		pg_structs->root_paging = i386_paging;
-		pg_structs->root_table_gphys =
-			vmcb->cr3 & 0xfffff000UL;
+		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(31, 12);
 	} else if (!(vmcb->cr0 & X86_CR0_PG)) {
 		/*
 		 * Can be in non-paged protected mode as well, but

@@ -159,8 +159,7 @@ static void vtd_update_gcmd_reg(void *reg_base, u32 mask, unsigned int set)
 
 static void vtd_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 {
-	*pte = (next_pt & 0x000ffffffffff000UL) | VTD_PAGE_READ |
-		VTD_PAGE_WRITE;
+	*pte = (next_pt & BIT_MASK(51, 12)) | VTD_PAGE_READ | VTD_PAGE_WRITE;
 }
 
 static void vtd_init_fault_nmi(void)
