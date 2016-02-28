@@ -112,12 +112,7 @@ static unsigned long x86_64_get_phys_l1(pt_entry_t pte, unsigned long virt)
 	       (virt & 0x0000000000000fffUL);
 }
 
-static unsigned long x86_64_get_next_pt_l4(pt_entry_t pte)
-{
-	return *pte & 0x000ffffffffff000UL;
-}
-
-static unsigned long x86_64_get_next_pt_l23(pt_entry_t pte)
+static unsigned long x86_64_get_next_pt(pt_entry_t pte)
 {
 	return *pte & 0x000ffffffffff000UL;
 }
@@ -135,7 +130,7 @@ const struct paging x86_64_paging[] = {
 		.get_entry	= x86_64_get_entry_l4,
 		/* set_terminal not valid */
 		.get_phys	= paging_get_phys_invalid,
-		.get_next_pt	= x86_64_get_next_pt_l4,
+		.get_next_pt	= x86_64_get_next_pt,
 	},
 	{
 		.page_size	= 1024 * 1024 * 1024,
@@ -143,7 +138,7 @@ const struct paging x86_64_paging[] = {
 		.get_entry	= x86_64_get_entry_l3,
 		.set_terminal	= x86_64_set_terminal_l3,
 		.get_phys	= x86_64_get_phys_l3,
-		.get_next_pt	= x86_64_get_next_pt_l23,
+		.get_next_pt	= x86_64_get_next_pt,
 	},
 	{
 		.page_size	= 2 * 1024 * 1024,
@@ -151,7 +146,7 @@ const struct paging x86_64_paging[] = {
 		.get_entry	= x86_64_get_entry_l2,
 		.set_terminal	= x86_64_set_terminal_l2,
 		.get_phys	= x86_64_get_phys_l2,
-		.get_next_pt	= x86_64_get_next_pt_l23,
+		.get_next_pt	= x86_64_get_next_pt,
 	},
 	{
 		.page_size	= PAGE_SIZE,
