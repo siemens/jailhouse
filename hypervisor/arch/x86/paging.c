@@ -203,7 +203,7 @@ static unsigned long i386_get_phys_l1(pt_entry_t pte, unsigned long virt)
 		      (virt & 0x00000fff);
 }
 
-static unsigned long i386_get_next_pt_l2(pt_entry_t pte)
+static unsigned long i386_get_next_pt(pt_entry_t pte)
 {
 	return *(u32 *)pte & 0xfffff000UL;
 }
@@ -215,7 +215,7 @@ const struct paging i386_paging[] = {
 		.entry_valid	= i386_entry_valid,
 		.get_entry	= i386_get_entry_l2,
 		.get_phys	= i386_get_phys_l2,
-		.get_next_pt	= i386_get_next_pt_l2,
+		.get_next_pt	= i386_get_next_pt,
 	},
 	{
 		.page_size	= PAGE_SIZE,
