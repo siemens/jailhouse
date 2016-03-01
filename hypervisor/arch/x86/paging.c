@@ -25,7 +25,7 @@ static bool x86_64_entry_valid(pt_entry_t pte, unsigned long flags)
 
 static unsigned long x86_64_get_flags(pt_entry_t pte)
 {
-	return *pte & BIT_MASK(6, 0);
+	return *pte & (BIT_MASK(63, 52) | BIT_MASK(11, 8) | BIT_MASK(6, 0));
 }
 
 static void x86_64_set_next_pt(pt_entry_t pte, unsigned long next_pt)
