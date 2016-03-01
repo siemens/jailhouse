@@ -148,7 +148,6 @@ static struct amd_iommu {
 				   iommu++)
 
 static unsigned int iommu_units_count;
-static struct paging amd_iommu_paging[AMD_IOMMU_MAX_PAGE_TABLE_LEVELS];
 
 /*
  * Interrupt remapping is not emulated on AMD,
@@ -313,38 +312,6 @@ static void amd_iommu_enable_command_processing(struct amd_iommu *iommu)
 	mmio_write64(iommu->mmio_base + AMD_CONTROL_REG, ctrl_reg);
 }
 
-static void amd_iommu_set_next_pt_l4(pt_entry_t pte, unsigned long next_pt)
-{
-	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(3) |
-		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P;
-}
-
-static void amd_iommu_set_next_pt_l3(pt_entry_t pte, unsigned long next_pt)
-{
-	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(2) |
-		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P;
-}
-
-static void amd_iommu_set_next_pt_l2(pt_entry_t pte, unsigned long next_pt)
-{
-	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(1) |
-		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P;
-}
-
-static unsigned long amd_iommu_get_phys_l3(pt_entry_t pte, unsigned long virt)
-{
-	if (*pte & AMD_IOMMU_PTE_PG_MODE_MASK)
-		return INVALID_PHYS_ADDR;
-	return (*pte & BIT_MASK(51, 30)) | (virt & BIT_MASK(29, 0));
-}
-
-static unsigned long amd_iommu_get_phys_l2(pt_entry_t pte, unsigned long virt)
-{
-	if (*pte & AMD_IOMMU_PTE_PG_MODE_MASK)
-		return INVALID_PHYS_ADDR;
-	return (*pte & BIT_MASK(51, 21)) | (virt & BIT_MASK(20, 0));
-}
-
 int iommu_init(void)
 {
 	struct jailhouse_iommu *iommu;
@@ -385,17 +352,6 @@ int iommu_init(void)
 		iommu_units_count++;
 	}
 
-	/*
-	 * Derive amd_iommu_paging from very similar x86_64_paging,
-	 * replicating all 4 levels.
-	 */
-	memcpy(amd_iommu_paging, x86_64_paging, sizeof(amd_iommu_paging));
-	amd_iommu_paging[0].set_next_pt = amd_iommu_set_next_pt_l4;
-	amd_iommu_paging[1].set_next_pt = amd_iommu_set_next_pt_l3;
-	amd_iommu_paging[2].set_next_pt = amd_iommu_set_next_pt_l2;
-	amd_iommu_paging[1].get_phys = amd_iommu_get_phys_l3;
-	amd_iommu_paging[2].get_phys = amd_iommu_get_phys_l2;
-
 	return iommu_cell_init(&root_cell);
 }
 
@@ -407,11 +363,6 @@ int iommu_cell_init(struct cell *cell)
 
 	if (cell->id > 0xffff)
 		return trace_error(-ERANGE);
-
-	cell->arch.amd_iommu.pg_structs.root_paging = amd_iommu_paging;
-	cell->arch.amd_iommu.pg_structs.root_table = page_alloc(&mem_pool, 1);
-	if (!cell->arch.amd_iommu.pg_structs.root_table)
-		return trace_error(-ENOMEM);
 
 	return 0;
 }
@@ -443,21 +394,9 @@ static void amd_iommu_submit_command(struct amd_iommu *iommu,
 		(iommu->cmd_tail_ptr + sizeof(*cmd)) % CMD_BUF_SIZE;
 }
 
-int iommu_map_memory_region(struct cell *cell,
-			    const struct jailhouse_memory *mem)
+u64 amd_iommu_get_memory_region_flags(const struct jailhouse_memory *mem)
 {
 	unsigned long flags = AMD_IOMMU_PTE_P;
-
-	// HACK for QEMU
-	if (iommu_units_count == 0)
-		return 0;
-
-	/*
-	 * Check that the address is not outside scope of current page
-	 * tables. With 4 levels, we only support 48 address bits.
-	 */
-	if (mem->virt_start & BIT_MASK(63, 48))
-		return trace_error(-E2BIG);
 
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
@@ -467,27 +406,28 @@ int iommu_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		flags |= AMD_IOMMU_PTE_IW;
 
-	return paging_create(&cell->arch.amd_iommu.pg_structs, mem->phys_start,
-			mem->size, mem->virt_start, flags, PAGING_COHERENT);
+	return flags;
+}
+
+int iommu_map_memory_region(struct cell *cell,
+			    const struct jailhouse_memory *mem)
+{
+	/*
+	 * Check that the address is not outside the scope of the page tables.
+	 * With 4 levels, we only support 48 address bits.
+	 */
+	if (mem->virt_start & BIT_MASK(63, 48))
+		return trace_error(-E2BIG);
+
+	/* vcpu_map_memory_region already did the actual work. */
+	return 0;
 }
 
 int iommu_unmap_memory_region(struct cell *cell,
 			      const struct jailhouse_memory *mem)
 {
-	/*
-         * TODO: This is almost a complete copy of vtd.c counterpart
-	 * (sans QEMU hack). Think of unification.
-	 */
-
-	// HACK for QEMU
-	if (iommu_units_count == 0)
-		return 0;
-
-	if (!(mem->flags & JAILHOUSE_MEM_DMA))
-		return 0;
-
-	return paging_destroy(&cell->arch.amd_iommu.pg_structs, mem->virt_start,
-			mem->size, PAGING_COHERENT);
+	/* vcpu_map_memory_region already did the actual work. */
+	return 0;
 }
 
 static void amd_iommu_inv_dte(struct amd_iommu *iommu, u16 device_id)
@@ -585,7 +525,7 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 
 	/* Translation information */
 	dte->raw64[0] = DTE_IR | DTE_IW |
-		paging_hvirt2phys(cell->arch.amd_iommu.pg_structs.root_table) |
+		paging_hvirt2phys(cell->arch.svm.npt_iommu_structs.root_table) |
 		DTE_PAGING_MODE_4_LEVEL | DTE_TRANSLATION_VALID | DTE_VALID;
 
 	/* TODO: Interrupt remapping. For now, just forward them unmapped. */
@@ -632,12 +572,6 @@ void iommu_remove_pci_device(struct pci_device *device)
 
 void iommu_cell_exit(struct cell *cell)
 {
-	/* TODO: Again, this a copy of vtd.c:iommu_cell_exit */
-	// HACK for QEMU
-	if (iommu_units_count == 0)
-		return;
-
-	page_free(&mem_pool, cell->arch.amd_iommu.pg_structs.root_table, 1);
 }
 
 static void wait_for_zero(volatile u64 *sem, unsigned long mask)

@@ -36,8 +36,8 @@ struct arch_cell {
 		struct {
 			/** I/O Permissions Map. */
 			u8 *iopm;
-			/** Paging structures used for cell CPUs. */
-			struct paging_structures npt_structs;
+			/** Paging structures used for cell CPUs and IOMMU. */
+			struct paging_structures npt_iommu_structs;
 		} svm; /**< AMD SVM-specific fields. */
 	};
 
@@ -49,10 +49,6 @@ struct arch_cell {
 			 * cell. */
 			bool ir_emulation;
 		} vtd; /**< Intel VT-d specific fields. */
-		struct {
-			/** Paging structures used for DMA requests. */
-			struct paging_structures pg_structs;
-		} amd_iommu; /**< AMD IOMMU specific fields. */
 	};
 
 	/** Shadow value of PCI config space address port register. */

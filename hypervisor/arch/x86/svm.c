@@ -23,6 +23,7 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <jailhouse/utils.h>
+#include <asm/amd_iommu.h>
 #include <asm/apic.h>
 #include <asm/control.h>
 #include <asm/iommu.h>
@@ -37,16 +38,18 @@
  * combinations of NW and CD bits are prohibited by SVM (see APMv2,
  * Sect. 15.5). To handle this, we always keep the NW bit off.
  */
-#define SVM_CR0_ALLOWED_BITS	(~X86_CR0_NW)
+#define SVM_CR0_ALLOWED_BITS		(~X86_CR0_NW)
 
 /* IOPM size: two 4-K pages + 3 bits */
-#define IOPM_PAGES		3
+#define IOPM_PAGES			3
+
+#define NPT_IOMMU_PAGE_DIR_LEVELS	4
 
 static bool has_avic, has_assists, has_flush_by_asid;
 
 static const struct segment invalid_seg;
 
-static struct paging npt_paging[NPT_PAGE_DIR_LEVELS];
+static struct paging npt_iommu_paging[NPT_IOMMU_PAGE_DIR_LEVELS];
 
 /* bit cleared: direct access allowed */
 // TODO: convert to whitelist
@@ -150,7 +153,8 @@ static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
 static void svm_set_cell_config(struct cell *cell, struct vmcb *vmcb)
 {
 	vmcb->iopm_base_pa = paging_hvirt2phys(cell->arch.svm.iopm);
-	vmcb->n_cr3 = paging_hvirt2phys(cell->arch.svm.npt_structs.root_table);
+	vmcb->n_cr3 =
+		paging_hvirt2phys(cell->arch.svm.npt_iommu_structs.root_table);
 }
 
 static void vmcb_setup(struct per_cpu *cpu_data)
@@ -236,21 +240,54 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys,
 				     unsigned long flags)
 {
-	return paging_virt2phys(&cpu_data->cell->arch.svm.npt_structs,
-			gphys, flags);
+	return paging_virt2phys(&cpu_data->cell->arch.svm.npt_iommu_structs,
+				gphys, flags);
 }
 
-static void npt_set_next_pt(pt_entry_t pte, unsigned long next_pt)
+static void npt_iommu_set_next_pt_l4(pt_entry_t pte, unsigned long next_pt)
 {
-	/* See APMv2, Section 15.25.5 */
-	*pte = (next_pt & BIT_MASK(51, 12)) | PAGE_DEFAULT_FLAGS | PAGE_FLAG_US;
+	/*
+	 * Merge IOMMU and NPT flags. We need to mark the NTP entries as user
+	 * accessible, see APMv2, Section 15.25.5.
+	 */
+	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(3) |
+		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P |
+		PAGE_DEFAULT_FLAGS | PAGE_FLAG_US;
+}
+
+static void npt_iommu_set_next_pt_l3(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(2) |
+		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P |
+		PAGE_DEFAULT_FLAGS | PAGE_FLAG_US;
+}
+
+static void npt_iommu_set_next_pt_l2(pt_entry_t pte, unsigned long next_pt)
+{
+	*pte = (next_pt & BIT_MASK(51, 12)) | AMD_IOMMU_PTE_PG_MODE(1) |
+		AMD_IOMMU_PTE_IR | AMD_IOMMU_PTE_IW | AMD_IOMMU_PTE_P |
+		PAGE_DEFAULT_FLAGS | PAGE_FLAG_US;
+}
+
+static unsigned long npt_iommu_get_phys_l3(pt_entry_t pte, unsigned long virt)
+{
+	if (*pte & AMD_IOMMU_PTE_PG_MODE_MASK)
+		return INVALID_PHYS_ADDR;
+	return (*pte & BIT_MASK(51, 30)) | (virt & BIT_MASK(29, 0));
+}
+
+static unsigned long npt_iommu_get_phys_l2(pt_entry_t pte, unsigned long virt)
+{
+	if (*pte & AMD_IOMMU_PTE_PG_MODE_MASK)
+		return INVALID_PHYS_ADDR;
+	return (*pte & BIT_MASK(51, 21)) | (virt & BIT_MASK(20, 0));
 }
 
 int vcpu_vendor_init(void)
 {
 	struct paging_structures parking_pt;
 	unsigned long vm_cr;
-	int err, n;
+	int err;
 
 	err = svm_check_features();
 	if (err)
@@ -261,13 +298,20 @@ int vcpu_vendor_init(void)
 		/* SVM disabled in BIOS */
 		return trace_error(-EPERM);
 
-	/* Nested paging is the same as the native one */
-	memcpy(npt_paging, x86_64_paging, sizeof(npt_paging));
-	for (n = 0; n < NPT_PAGE_DIR_LEVELS; n++)
-		npt_paging[n].set_next_pt = npt_set_next_pt;
+	/*
+	 * Nested paging is almost the same as the native one. However, we
+	 * need to override some handlers in order to reuse the page table for
+	 * the IOMMU as well.
+	 */
+	memcpy(npt_iommu_paging, x86_64_paging, sizeof(npt_iommu_paging));
+	npt_iommu_paging[0].set_next_pt = npt_iommu_set_next_pt_l4;
+	npt_iommu_paging[1].set_next_pt = npt_iommu_set_next_pt_l3;
+	npt_iommu_paging[2].set_next_pt = npt_iommu_set_next_pt_l2;
+	npt_iommu_paging[1].get_phys = npt_iommu_get_phys_l3;
+	npt_iommu_paging[2].get_phys = npt_iommu_get_phys_l2;
 
 	/* Map guest parking code (shared between cells and CPUs) */
-	parking_pt.root_paging = npt_paging;
+	parking_pt.root_paging = npt_iommu_paging;
 	parking_pt.root_table = parked_mode_npt = page_alloc(&mem_pool, 1);
 	if (!parked_mode_npt)
 		return -ENOMEM;
@@ -307,8 +351,8 @@ int vcpu_vendor_cell_init(struct cell *cell)
 		return err;
 
 	/* build root NPT of cell */
-	cell->arch.svm.npt_structs.root_paging = npt_paging;
-	cell->arch.svm.npt_structs.root_table =
+	cell->arch.svm.npt_iommu_structs.root_paging = npt_iommu_paging;
+	cell->arch.svm.npt_iommu_structs.root_table =
 		(page_table_t)cell->arch.root_table_page;
 
 	if (!has_avic) {
@@ -316,17 +360,15 @@ int vcpu_vendor_cell_init(struct cell *cell)
 		 * Map xAPIC as is; reads are passed, writes are trapped.
 		 */
 		flags = PAGE_READONLY_FLAGS | PAGE_FLAG_US | PAGE_FLAG_DEVICE;
-		err = paging_create(&cell->arch.svm.npt_structs, XAPIC_BASE,
-				    PAGE_SIZE, XAPIC_BASE,
-				    flags,
-				    PAGING_NON_COHERENT);
+		err = paging_create(&cell->arch.svm.npt_iommu_structs,
+				    XAPIC_BASE, PAGE_SIZE, XAPIC_BASE,
+				    flags, PAGING_NON_COHERENT);
 	} else {
 		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE;
-		err = paging_create(&cell->arch.svm.npt_structs,
+		err = paging_create(&cell->arch.svm.npt_iommu_structs,
 				    paging_hvirt2phys(avic_page),
 				    PAGE_SIZE, XAPIC_BASE,
-				    flags,
-				    PAGING_NON_COHERENT);
+				    flags, PAGING_NON_COHERENT);
 	}
 	if (err)
 		goto err_free_iopm;
@@ -354,21 +396,28 @@ int vcpu_map_memory_region(struct cell *cell,
 	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
 		phys_start = paging_hvirt2phys(&cell->comm_page);
 
-	return paging_create(&cell->arch.svm.npt_structs, phys_start, mem->size,
-			     mem->virt_start, flags, PAGING_NON_COHERENT);
+	flags |= amd_iommu_get_memory_region_flags(mem);
+
+	/*
+	 * As we also manipulate the IOMMU page table, changes need to be
+	 * coherent.
+	 */
+	return paging_create(&cell->arch.svm.npt_iommu_structs, phys_start,
+			     mem->size, mem->virt_start, flags,
+			     PAGING_COHERENT);
 }
 
 int vcpu_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 {
-	return paging_destroy(&cell->arch.svm.npt_structs, mem->virt_start,
-			      mem->size, PAGING_NON_COHERENT);
+	return paging_destroy(&cell->arch.svm.npt_iommu_structs,
+			      mem->virt_start, mem->size, PAGING_COHERENT);
 }
 
 void vcpu_vendor_cell_exit(struct cell *cell)
 {
-	paging_destroy(&cell->arch.svm.npt_structs, XAPIC_BASE, PAGE_SIZE,
-		       PAGING_NON_COHERENT);
+	paging_destroy(&cell->arch.svm.npt_iommu_structs, XAPIC_BASE,
+		       PAGE_SIZE, PAGING_NON_COHERENT);
 	page_free(&mem_pool, cell->arch.svm.iopm, 3);
 }
 
