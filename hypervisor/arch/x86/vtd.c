@@ -199,7 +199,6 @@ static void *unit_inv_queue;
 static unsigned int dmar_units;
 static unsigned int dmar_pt_levels;
 static unsigned int dmar_num_did = ~0U;
-static unsigned int fault_reporting_cpu_id;
 static DEFINE_SPINLOCK(inv_queue_lock);
 static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_IOMMU_UNITS];
 static bool dmar_units_initialized;
@@ -298,18 +297,11 @@ static void vtd_init_fault_nmi(void)
 	struct per_cpu *cpu_data;
 	unsigned int n;
 
-	/* This assumes that at least one bit is set somewhere because we
-	 * don't support configurations where Linux is left with no CPUs. */
-	for (n = 0; root_cell.cpu_set->bitmap[n] == 0; n++)
-		/* Empty loop */;
-	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[n]));
+	/* Pick a suitable root cell CPU to report faults. */
+	cpu_data = iommu_select_fault_reporting_cpu();
 
 	/* We only support 8-bit APIC IDs. */
 	msi.native.destination = (u8)cpu_data->apic_id;
-
-	/* Save this value globally to avoid multiple reports of the same
-	 * case from different CPUs */
-	fault_reporting_cpu_id = cpu_data->cpu_id;
 
 	for (n = 0; n < dmar_units; n++, reg_base += DMAR_MMIO_SIZE) {
 		/* Mask events */

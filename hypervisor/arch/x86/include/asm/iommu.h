@@ -21,6 +21,8 @@
 #include <asm/apic.h>
 #include <asm/percpu.h>
 
+extern unsigned int fault_reporting_cpu_id;
+
 unsigned int iommu_count_units(void);
 unsigned int iommu_mmio_count_regions(struct cell *cell);
 
@@ -49,6 +51,7 @@ void iommu_config_commit(struct cell *cell_added_removed);
 
 void iommu_shutdown(void);
 
+struct per_cpu *iommu_select_fault_reporting_cpu(void);
 void iommu_check_pending_faults(void);
 
 bool iommu_cell_emulates_ir(struct cell *cell);
