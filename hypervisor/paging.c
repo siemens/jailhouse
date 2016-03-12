@@ -102,7 +102,7 @@ void *page_alloc(struct page_pool *pool, unsigned int num)
 	unsigned int allocated;
 
 	start = find_next_free_page(pool, 0);
-	if (start == INVALID_PAGE_NR)
+	if (start == INVALID_PAGE_NR || num == 0)
 		return NULL;
 
 restart:
