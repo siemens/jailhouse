@@ -661,6 +661,9 @@ int pci_cell_init(struct cell *cell)
 		mmio_region_register(cell, mmcfg_start, mmcfg_size,
 				     pci_mmconfig_access_handler, NULL);
 
+	if (cell->config->num_pci_devices == 0)
+		return 0;
+
 	cell->pci_devices = page_alloc(&mem_pool, devlist_pages);
 	if (!cell->pci_devices)
 		return -ENOMEM;
