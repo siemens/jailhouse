@@ -172,9 +172,7 @@ struct vtd_emulation {
 	u64 iqa;
 	u16 iqh;
 
-	u32 fectl;
-	u32 fedata;
-	u32 feaddr, feuaddr;
+	u32 fault_event_regs[4];
 };
 
 static const struct vtd_entry inv_global_context = {
@@ -540,6 +538,7 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 {
 	struct vtd_emulation *unit = &root_cell_units[unit_no];
 	unsigned long base, size;
+	unsigned int n;
 	u64 iqt;
 
 	root_cell.arch.vtd.ir_emulation = true;
@@ -565,10 +564,9 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 	if (unit->iqa & ~VTD_IQA_ADDR_MASK)
 		return trace_error(-EIO);
 
-	unit->fectl = mmio_read32(reg_base + VTD_FECTL_REG);
-	unit->fedata = mmio_read32(reg_base + VTD_FEDATA_REG);
-	unit->feaddr = mmio_read32(reg_base + VTD_FEADDR_REG);
-	unit->feuaddr = mmio_read32(reg_base + VTD_FEUADDR_REG);
+	for (n = 0; n < ARRAY_SIZE(unit->fault_event_regs); n++)
+		unit->fault_event_regs[n] =
+			mmio_read32(reg_base + VTD_FECTL_REG + n * 4);
 
 	return 0;
 }
@@ -1069,6 +1067,7 @@ static void vtd_restore_ir(unsigned int unit_no, void *reg_base)
 	void *inv_queue = unit_inv_queue + unit_no * PAGE_SIZE;
 	void *root_inv_queue;
 	u64 iqh;
+	int n;
 
 	mmio_write64(reg_base + VTD_IRTA_REG, unit->irta);
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_SIRTP, 1);
@@ -1094,10 +1093,9 @@ static void vtd_restore_ir(unsigned int unit_no, void *reg_base)
 
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 1);
 
-	mmio_write32(reg_base + VTD_FEDATA_REG, unit->fedata);
-	mmio_write32(reg_base + VTD_FEADDR_REG, unit->feaddr);
-	mmio_write32(reg_base + VTD_FEUADDR_REG, unit->feuaddr);
-	mmio_write32(reg_base + VTD_FECTL_REG, unit->fectl);
+	for (n = ARRAY_SIZE(unit->fault_event_regs) - 1; n >= 0; n--)
+		mmio_write32(reg_base + VTD_FECTL_REG + n * 4,
+			     unit->fault_event_regs[n]);
 }
 
 void iommu_shutdown(void)
