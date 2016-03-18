@@ -1093,6 +1093,10 @@ static void vtd_restore_ir(unsigned int unit_no, void *reg_base)
 
 	vtd_update_gcmd_reg(reg_base, VTD_GCMD_IRE, 1);
 
+	/* Mask events */
+	mmio_write32_field(reg_base + VTD_FECTL_REG, VTD_FECTL_IM, 1);
+
+	/* Restore, unmasking with the last write. */
 	for (n = ARRAY_SIZE(unit->fault_event_regs) - 1; n >= 0; n--)
 		mmio_write32(reg_base + VTD_FECTL_REG + n * 4,
 			     unit->fault_event_regs[n]);
