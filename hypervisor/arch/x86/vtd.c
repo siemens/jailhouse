@@ -451,6 +451,7 @@ static enum mmio_result vtd_unit_access_handler(void *arg,
 	unsigned int unit_no = unit - root_cell_units;
 	struct vtd_entry inv_desc;
 	void *inv_desc_page;
+	unsigned int reg;
 
 	if (mmio->address == VTD_FSTS_REG && !mmio->is_write) {
 		/*
@@ -458,6 +459,19 @@ static enum mmio_result vtd_unit_access_handler(void *arg,
 		 * care for the whole system.
 		 */
 		mmio->value = 0;
+		return MMIO_HANDLED;
+	}
+	if (mmio->address >= VTD_FECTL_REG &&
+	    mmio->address <= VTD_FEUADDR_REG) {
+		/*
+		 * Direct the access to the shadow registers - we handle the
+		 * real fault events now.
+		 */
+		reg = (mmio->address - VTD_FECTL_REG) / 4;
+		if (mmio->is_write)
+			unit->fault_event_regs[reg] = mmio->value;
+		else
+			mmio->value = unit->fault_event_regs[reg];
 		return MMIO_HANDLED;
 	}
 	if (mmio->address == VTD_IQT_REG && mmio->is_write) {
