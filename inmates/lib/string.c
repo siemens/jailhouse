@@ -41,6 +41,8 @@ int strncmp(const char *s1, const char *s2, unsigned long n)
 			return diff;
 		if (*s1 == 0)
 			break;
+		s1++;
+		s2++;
 	}
 	return 0;
 }
