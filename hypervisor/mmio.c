@@ -99,7 +99,7 @@ void mmio_region_register(struct cell *cell, unsigned long start,
 			break;
 
 	/*
-	 * Set and commit a dummy region at the end if the list so that
+	 * Set and commit a dummy region at the end of the list so that
 	 * we can safely grow it.
 	 */
 	cell->mmio_locations[cell->num_mmio_regions].start = -1;
