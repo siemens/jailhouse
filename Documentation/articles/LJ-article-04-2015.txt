@@ -183,13 +183,15 @@ Note we enabled 9p (-virtfs) to access the host filesystem from QEMU
 guest side; /path/to/jailhouse is where you are going to compile
 Jailhouse now. Cd to this directory and run:
 
-git clone git@github.com:siemens/jailhouse.git jailhouse cd jailhouse
+git clone git@github.com:siemens/jailhouse.git jailhouse
+cd jailhouse
 make
 
 Now, switch to the guest and mount 9p filesystem (for example, with
 'mount -t 9p host /mnt'). Cd to /mnt/jailhouse and execute:
 
-sudo make firmware_install sudo insmod jailhouse.ko
+sudo make firmware_install
+sudo insmod jailhouse.ko
 
 This copies Jailhouse binary image you've built to /lib/firmware and
 inserts Jailhouse driver module. You can now enable Jailhouse with:
@@ -250,8 +252,8 @@ command.
 
 Now, the inmate image can be loaded into memory:
 
-sudo tools/jailhouse cell load apic-demo inmates/demos/x86/apic-demo.bin
--a 0xf0000
+sudo tools/jailhouse cell load apic-demo \
+     inmates/demos/x86/apic-demo.bin -a 0xf0000
 
 Jailhouse treats all inmates as opaque binaries, and although it
 provides a small framework to develop them faster, the only thing it
@@ -265,7 +267,7 @@ want.
 
 Finally, start the cell with:
 
-tools/jailhouse cell start apic-demo
+sudo tools/jailhouse cell start apic-demo
 
 Now, switch back to the terminal you run QEMU from. You'll see lines
 like this one are being sent to the serial port:
@@ -307,8 +309,8 @@ Tearing down
 Jailhouse comes with several demo inmates, not only apic-demo. Let's try
 something different. Stop the inmate with:
 
-sudo tools/jailhouse cell destroy apic-demo JAILHOUSE_CELL_DESTROY:
-Operation not permitted
+sudo tools/jailhouse cell destroy apic-demo
+JAILHOUSE_CELL_DESTROY: Operation not permitted
 
 What's the reason? Remember apic-demo cell had 'running/locked' state in
 the cell list. Jailhouse introduces locked state to prevent changes to
@@ -324,9 +326,10 @@ Now, create tiny-demo cell (which is originally for tiny-demo.bin, also
 from the Jailhouse demo inmates set) and load 32-bit-demo.bin into it
 the usual way:
 
-sudo tools/jailhouse cell create configs/tiny-demo.cell sudo
-tools/jailhouse cell load tiny-demo inmates/demos/x86/32-bit-demo.bin -a
-0xf0000 sudo tools/jailhouse cell start tiny-demo
+sudo tools/jailhouse cell create configs/tiny-demo.cell
+sudo tools/jailhouse cell load tiny-demo \
+     inmates/demos/x86/32-bit-demo.bin -a 0xf0000
+sudo tools/jailhouse cell start tiny-demo
 
 Look into com2.txt in the host (the same directory you started QEMU
 from). Not only this shows that cells can be reused by the inmates
