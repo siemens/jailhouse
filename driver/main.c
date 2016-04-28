@@ -330,15 +330,15 @@ error_unlock:
 
 static void leave_hypervisor(void *info)
 {
-	unsigned long size;
 	void *page;
 	int err;
 
 	/* Touch each hypervisor page we may need during the switch so that
 	 * the active mm definitely contains all mappings. At least x86 does
 	 * not support taking any faults while switching worlds. */
-	for (page = hypervisor_mem, size = hv_core_and_percpu_size; size > 0;
-	     size -= PAGE_SIZE, page += PAGE_SIZE)
+	for (page = hypervisor_mem;
+	     page < hypervisor_mem + hv_core_and_percpu_size;
+	     page += PAGE_SIZE)
 		readl((void __iomem *)page);
 
 	/* either returns 0 or the same error code across all CPUs */
