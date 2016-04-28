@@ -33,6 +33,7 @@ static void init_early(unsigned int cpu_id)
 {
 	unsigned long core_and_percpu_size = hypervisor_header.core_size +
 		sizeof(struct per_cpu) * hypervisor_header.max_cpus;
+	unsigned long hyp_phys_start, hyp_phys_end;
 	struct jailhouse_memory hv_page;
 
 	master_cpu_id = cpu_id;
@@ -66,15 +67,17 @@ static void init_early(unsigned int cpu_id)
 	 * pages for Linux. This allows to fault-in the hypervisor region into
 	 * Linux' page table before shutdown without triggering violations.
 	 */
+	hyp_phys_start = system_config->hypervisor_memory.phys_start;
+	hyp_phys_end = hyp_phys_start + system_config->hypervisor_memory.size;
+
 	hv_page.phys_start = paging_hvirt2phys(empty_page);
-	hv_page.virt_start = paging_hvirt2phys(&hypervisor_header);
+	hv_page.virt_start = hyp_phys_start;
 	hv_page.size = PAGE_SIZE;
 	hv_page.flags = JAILHOUSE_MEM_READ;
-	while (core_and_percpu_size > 0) {
+	while (hv_page.virt_start < hyp_phys_end) {
 		error = arch_map_memory_region(&root_cell, &hv_page);
 		if (error)
 			return;
-		core_and_percpu_size -= PAGE_SIZE;
 		hv_page.virt_start += PAGE_SIZE;
 	}
 
