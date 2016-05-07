@@ -446,6 +446,7 @@ static struct dev_table_entry *get_dev_table_entry(struct amd_iommu *iommu,
 	struct dev_table_entry *devtable_seg;
 	u8 seg_idx, seg_shift;
 	u64 reg_base, reg_val;
+	unsigned int n;
 	u16 seg_mask;
 	u32 seg_size;
 
@@ -480,6 +481,14 @@ static struct dev_table_entry *get_dev_table_entry(struct amd_iommu *iommu,
 		if (!devtable_seg)
 			return NULL;
 		iommu->devtable_segments[seg_idx] = devtable_seg;
+
+		/*
+		 * Initialize all entries to paging mode 0, IR & IW cleared so
+		 * that DMA requests are blocked.
+		 */
+		for (n = 0; n < seg_size / sizeof(struct dev_table_entry); n++)
+			devtable_seg[n].raw64[0] =
+				DTE_VALID | DTE_TRANSLATION_VALID;
 
 		if (!seg_idx)
 			reg_base = AMD_DEV_TABLE_BASE_REG;
