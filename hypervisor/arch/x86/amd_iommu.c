@@ -559,10 +559,10 @@ void iommu_remove_pci_device(struct pci_device *device)
 		return;
 
 	/*
-	 * Clear DTE_TRANSLATION_VALID, but keep the entry valid
-	 * to block any DMA requests.
+	 * Set Mode to 0 (translation disabled) and clear IR and IW to block
+	 * DMA requests until the entry is reprogrammed for its new owner.
 	 */
-	dte->raw64[0] = DTE_VALID;
+	dte->raw64[0] = DTE_VALID | DTE_TRANSLATION_VALID;
 
 	/* Flush caches, just to be sure. */
 	arch_paging_flush_cpu_caches(dte, sizeof(*dte));
