@@ -13,7 +13,7 @@
 CC = $(CROSS_COMPILE)gcc
 
 CFLAGS = -g -O3 -I../driver -DLIBEXECDIR=\"$(libexecdir)\" \
-	-Wall -Wmissing-declarations -Wmissing-prototypes \
+	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes \
 	-DJAILHOUSE_VERSION=\"$(shell cat ../VERSION)\"
 
 TARGETS := jailhouse
