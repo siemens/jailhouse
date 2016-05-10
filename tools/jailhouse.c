@@ -250,12 +250,12 @@ static bool match_opt(const char *argv, const char *short_opt,
 static int cell_shutdown_load(int argc, char *argv[],
 			      enum shutdown_load_mode mode)
 {
-	unsigned int images, id_args, arg_num, n;
 	struct jailhouse_preload_image *image;
 	struct jailhouse_cell_load *cell_load;
 	struct jailhouse_cell_id cell_id;
+	int err, fd, id_args, arg_num;
+	unsigned int images, n;
 	size_t size;
-	int err, fd;
 	char *endp;
 
 	id_args = parse_cell_id(&cell_id, argc - 3, &argv[3]);
