@@ -19,6 +19,7 @@ ci/out
 ci/*.tar.xz
 
 # Tools outputs
+*~
 *.sw[pon]
 cscope.*
 ncscope.*
