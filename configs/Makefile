@@ -10,7 +10,7 @@
 # the COPYING file in the top-level directory.
 #
 
-ccflags-y := -I$(src)/../hypervisor/include
+ccflags-y := -I$(src)/../hypervisor/include -Wextra
 
 OBJCOPYFLAGS := -O binary
 
