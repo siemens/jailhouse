@@ -12,19 +12,6 @@
 
 #include <inmate.h>
 
-/*
- * To ease the debugging, we can send a spurious hypercall, which should return
- * -ENOSYS, but appear in the hypervisor stats for this cell.
- */
-static void heartbeat(void)
-{
-	asm volatile (
-	".arch_extension virt\n"
-	"mov	r0, %0\n"
-	"hvc	#0\n"
-	: : "r" (0xbea7) : "r0");
-}
-
 void inmate_main(void)
 {
 	unsigned int i = 0, j;
