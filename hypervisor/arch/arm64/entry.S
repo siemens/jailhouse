@@ -118,6 +118,39 @@ el2_entry:
 	bl	entry
 	b	.
 
+	.globl arch_shutdown_mmu
+arch_shutdown_mmu:
+	/* x0: struct percpu* */
+	mov	x19, x0
+
+	/* Note: no memory accesses must be done after turning MMU off. There
+	 * is non-zero probability that cached data can be not syncronized with
+	 * system memory. CPU can access data bypassing D-cache when MMU is off.
+	 */
+
+	/* hand over control of EL2 back to Linux */
+	add	x1, x19, #PERCPU_SAVED_VECTORS
+	ldr	x2, [x1]
+	msr	vbar_el2, x2
+
+	/* disable the hypervisor MMU */
+	mrs	x1, sctlr_el2
+	ldr	x2, =(SCTLR_M_BIT | SCTLR_C_BIT | SCTLR_I_BIT)
+	bic	x1, x1, x2
+	msr	sctlr_el2, x1
+	isb
+
+	msr	mair_el2, xzr
+	msr	ttbr0_el2, xzr
+	msr	tcr_el2, xzr
+	isb
+
+	msr	tpidr_el2, xzr
+
+	/* Call vmreturn(guest_registers) */
+	add	x0, x19, #(PERCPU_STACK_END - 32 * 8)
+	b	vmreturn
+
 	.globl enable_mmu_el2
 enable_mmu_el2:
 	/*

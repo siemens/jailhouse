@@ -52,6 +52,9 @@ static int handle_hvc(struct trap_context *ctx)
 
 	regs[0] = hypercall(code, regs[1], regs[2]);
 
+	if (code == JAILHOUSE_HC_DISABLE && regs[0] == 0)
+		arch_shutdown_self(this_cpu_data());
+
 	return TRAP_HANDLED;
 }
 
