@@ -43,6 +43,38 @@ static void dump_regs(struct trap_context *ctx)
 	panic_printk("\n");
 }
 
+/* TODO: move this function to an arch-independent code if other architectures
+ * will need it.
+ */
+static void dump_mem(unsigned long start, unsigned long stop)
+{
+	unsigned long caddr = start & ~0x1f;
+
+	if (stop <= start)
+		return;
+	printk("(0x%016lx - 0x%016lx):", start, stop);
+	for (;;) {
+		printk("\n%04lx: ", caddr & 0xffe0);
+		do {
+			if (caddr >= start)
+				printk("%08x ", *(unsigned int *)caddr);
+			else
+				printk("         ", *(unsigned int *)caddr);
+			caddr += 4;
+		} while ((caddr & 0x1f) && caddr < stop);
+		if (caddr >= stop)
+			break;
+	}
+	printk("\n");
+}
+
+static void dump_hyp_stack(const struct trap_context *ctx)
+{
+	panic_printk("Hypervisor stack before exception ");
+	dump_mem(ctx->sp, (unsigned long)this_cpu_data()->stack +
+					sizeof(this_cpu_data()->stack));
+}
+
 static void fill_trap_context(struct trap_context *ctx, struct registers *regs)
 {
 	arm_read_sysreg(SPSR_EL2, ctx->spsr);
@@ -52,7 +84,10 @@ static void fill_trap_context(struct trap_context *ctx, struct registers *regs)
 	case 1:
 		arm_read_sysreg(SP_EL1, ctx->sp); break;
 	case 2:
-		arm_read_sysreg(SP_EL2, ctx->sp); break;
+		/* SP_EL2 is not accessible in EL2. To obtain SP value before
+		 * the excepton we can use the regs parameter. regs is located
+		 * on the stack (see handle_vmexit in exception.S) */
+		ctx->sp = (u64)(regs) + 16 * 16; break;
 	default:
 		ctx->sp = 0; break;	/* should never happen */
 	}
@@ -91,6 +126,7 @@ static void arch_dump_exit(struct registers *regs, const char *reason)
 	fill_trap_context(&ctx, regs);
 	panic_printk("\nFATAL: Unhandled HYP exception: %s\n", reason);
 	dump_regs(&ctx);
+	dump_hyp_stack(&ctx);
 }
 
 struct registers *arch_handle_exit(struct per_cpu *cpu_data,
