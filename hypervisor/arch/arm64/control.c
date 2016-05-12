@@ -15,6 +15,7 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
+#include <asm/psci.h>
 #include <asm/traps.h>
 
 void arm_cpu_reset(unsigned long pc)
@@ -82,13 +83,42 @@ void arm_cpu_reset(unsigned long pc)
 
 int arch_cell_create(struct cell *cell)
 {
-	return trace_error(-EINVAL);
+	unsigned int first = first_cpu(cell->cpu_set);
+	unsigned int cpu;
+	int err;
+
+	err = arm_paging_cell_init(cell);
+	if (err)
+		return err;
+
+	/*
+	 * All CPUs but the first are initially suspended.
+	 * The first CPU starts at address 0.
+	 */
+	per_cpu(first)->cpu_on_entry = 0;
+	for_each_cpu_except(cpu, cell->cpu_set, first)
+		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
+
+	err = irqchip_cell_init(cell);
+	if (err)
+		arm_paging_cell_destroy(cell);
+
+	return err;
 }
 
 void arch_cell_destroy(struct cell *cell)
 {
-	trace_error(-EINVAL);
-	while (1);
+	unsigned int cpu;
+
+	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
+
+	/* All CPUs are handed back to the root cell in suspended mode. */
+	for_each_cpu(cpu, cell->cpu_set)
+		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
+
+	irqchip_cell_exit(cell);
+
+	arm_paging_cell_destroy(cell);
 }
 
 /*
