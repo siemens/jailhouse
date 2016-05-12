@@ -19,7 +19,14 @@
 
 #include <jailhouse/cell.h>
 
+/* Round up sizeof(struct per_cpu) to the next power of two. */
+#define PERCPU_SIZE_SHIFT \
+        (BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
+
 struct per_cpu {
+	u8 stack[PAGE_SIZE];
+	unsigned long saved_vectors;
+
 	/* common fields */
 	unsigned int cpu_id;
 	struct cell *cell;
@@ -33,8 +40,10 @@ struct per_cpu {
 
 static inline struct per_cpu *this_cpu_data(void)
 {
-	while (1);
-	return NULL;
+	struct per_cpu *cpu_data;
+
+	arm_read_sysreg(TPIDR_EL2, cpu_data);
+	return cpu_data;
 }
 
 #define DEFINE_PER_CPU_ACCESSOR(field)					\
@@ -48,8 +57,16 @@ DEFINE_PER_CPU_ACCESSOR(cell)
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)
 {
-	while (1);
-	return NULL;
+	extern u8 __page_pool[];
+
+	return (struct per_cpu *)(__page_pool + (cpu << PERCPU_SIZE_SHIFT));
+}
+
+static inline struct registers *guest_regs(struct per_cpu *cpu_data)
+{
+	/* assumes that the cell registers are at the beginning of the stack */
+	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
+			- sizeof(struct registers));
 }
 #endif /* !__ASSEMBLY__ */
 

@@ -26,7 +26,12 @@ arch_entry:
 	 * We don't have access to our own address space yet, so we will
 	 * abuse some caller saved registers to preserve across calls:
 	 * x15: physical UART address
+	 * x16: saved hyp vectors
+	 * x17: cpuid
+	 * x18: caller lr
 	 */
+	mov	x17, x0
+	mov	x18, x30
 
 	/*
 	 * Access the just updated hypervisor_header prior to turning off the
@@ -48,6 +53,11 @@ arch_entry:
 	 * Invalidate is safe in guests.
 	 */
 
+	/* keep the linux stub EL2 vectors for later */
+	mov	x0, xzr
+	hvc	#0
+	mov	x16, x0
+
 	/* install bootstrap_vectors */
 	ldr	x0, =bootstrap_vectors
 	hvc	#0
@@ -68,6 +78,40 @@ el2_entry:
 	adr	x0, bootstrap_pt_l0
 	bl	enable_mmu_el2
 
+	mov	x0, x17		/* preserved cpuid, will be passed to entry */
+	adrp	x1, __page_pool
+	mov	x2, #(1 << PERCPU_SIZE_SHIFT_ASM)
+	/*
+	 * percpu data = pool + cpuid * shift
+	 */
+	madd	x1, x2, x0, x1
+	msr	tpidr_el2, x1
+
+	/* set up the stack and push the root cell's callee saved registers */
+	add	sp, x1, #PERCPU_STACK_END
+	stp	x29, x18, [sp, #-16]!	/* note: our caller lr is in x18 */
+	stp	x27, x28, [sp, #-16]!
+	stp	x25, x26, [sp, #-16]!
+	stp	x23, x24, [sp, #-16]!
+	stp	x21, x22, [sp, #-16]!
+	stp	x19, x20, [sp, #-16]!
+	/*
+	 * We pad the stack, so we can consistently access the guest
+	 * registers from either the initialization, or the exception
+	 * handling code paths. 19 caller saved registers plus the
+	 * exit_reason, which we don't use on entry.
+	 */
+	sub	sp, sp, 20 * 8
+
+	mov	x29, xzr	/* reset fp,lr */
+	mov	x30, xzr
+
+	/* save the Linux stub vectors we kept earlier */
+	add	x2, x1, #PERCPU_SAVED_VECTORS
+	str	x16, [x2]
+
+	/* Call entry(cpuid, struct per_cpu*). Should not return. */
+	bl	entry
 	b	.
 
 	.globl enable_mmu_el2
