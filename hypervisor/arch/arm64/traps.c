@@ -15,6 +15,7 @@
 #include <jailhouse/printk.h>
 #include <asm/control.h>
 #include <asm/gic.h>
+#include <asm/mmio.h>
 #include <asm/psci.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
@@ -22,8 +23,11 @@
 
 void arch_skip_instruction(struct trap_context *ctx)
 {
-	trace_error(-EINVAL);
-	while(1);
+	u64 pc;
+
+	arm_read_sysreg(ELR_EL2, pc);
+	pc += ESR_IL(ctx->esr) ? 4 : 2;
+	arm_write_sysreg(ELR_EL2, pc);
 }
 
 static void dump_regs(struct trap_context *ctx)
@@ -105,6 +109,10 @@ static void arch_handle_trap(struct per_cpu *cpu_data,
 
 	/* exception class */
 	switch (ESR_EC(ctx.esr)) {
+	case ESR_EC_DABT_LOW:
+		ret = arch_handle_dabt(&ctx);
+		break;
+
 	default:
 		ret = TRAP_UNHANDLED;
 	}
