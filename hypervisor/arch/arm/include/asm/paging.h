@@ -120,6 +120,12 @@
 #define TCR_SL0_SHIFT		6
 #define TCR_S_SHIFT		4
 
+#define VTCR_CELL		(T0SZ | SL0 << TCR_SL0_SHIFT		\
+				| (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)	\
+				| (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)	\
+				| (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)\
+				| VTCR_RES1)
+
 /*
  * Hypervisor memory attribute indexes:
  *   0: normal WB, RA, WA, non-transient

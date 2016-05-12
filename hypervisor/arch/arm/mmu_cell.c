@@ -77,12 +77,7 @@ int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data)
 	struct cell *cell = cpu_data->cell;
 	unsigned long cell_table = paging_hvirt2phys(cell->arch.mm.root_table);
 	u64 vttbr = 0;
-	u32 vtcr = T0SZ
-		| SL0 << TCR_SL0_SHIFT
-		| (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)
-		| (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)
-		| (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)
-		| VTCR_RES1;
+	u32 vtcr = VTCR_CELL;
 
 	if (cell->id > 0xff) {
 		panic_printk("No cell ID available\n");
