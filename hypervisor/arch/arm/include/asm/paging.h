@@ -31,11 +31,13 @@
  * by IPA[20:12].
  * This would allows to cover a 4GB memory map by using 4 concatenated level-2
  * page tables and thus provide better table walk performances.
- * For the moment, the core doesn't allow to use concatenated pages, so we will
- * use three levels instead, starting at level 1.
+ * For the moment, we will implement the first level for AArch32 using only
+ * one level.
  *
- * TODO: add a "u32 concatenated" field to the paging struct
+ * TODO: implement larger PARange support for AArch32
  */
+#define ARM_CELL_ROOT_PT_SZ	1
+
 #if MAX_PAGE_TABLE_LEVELS < 3
 #define T0SZ			0
 #define SL0			0
@@ -163,6 +165,17 @@
 #ifndef __ASSEMBLY__
 
 typedef u64 *pt_entry_t;
+
+extern unsigned int cpu_parange;
+
+/* return the bits supported for the physical address range for this
+ * machine; in arch_paging_init this value will be kept in
+ * cpu_parange for later reference */
+static inline unsigned int get_cpu_parange(void)
+{
+	/* TODO: implement proper PARange support on AArch32 */
+	return 39;
+}
 
 /* Only executed on hypervisor paging struct changes */
 static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)

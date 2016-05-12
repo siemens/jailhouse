@@ -57,8 +57,10 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 
 int arch_mmu_cell_init(struct cell *cell)
 {
-	cell->arch.mm.root_paging = hv_paging;
-	cell->arch.mm.root_table = page_alloc(&mem_pool, 1);
+	cell->arch.mm.root_paging = cell_paging;
+	cell->arch.mm.root_table =
+		page_alloc_aligned(&mem_pool, ARM_CELL_ROOT_PT_SZ);
+
 	if (!cell->arch.mm.root_table)
 		return -ENOMEM;
 
@@ -67,7 +69,7 @@ int arch_mmu_cell_init(struct cell *cell)
 
 void arch_mmu_cell_destroy(struct cell *cell)
 {
-	page_free(&mem_pool, cell->arch.mm.root_table, 1);
+	page_free(&mem_pool, cell->arch.mm.root_table, ARM_CELL_ROOT_PT_SZ);
 }
 
 int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data)
