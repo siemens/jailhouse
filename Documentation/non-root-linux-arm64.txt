@@ -1,0 +1,51 @@
+Booting Linux in non-root cells on ARM64
+========================================
+
+Booting a Linux kernel on an ARM target is significantly simpler than on x86,
+so in this case we do not need a specially modified Linux kernel for the
+non-root cell.
+
+What we will need is:
+
+(a) A non-root cell for the Linxu inmate.
+
+Under configs/ there are -linux-demo.c example cell configurations
+for this purpose. This will produce a cell configuration file
+(e.g. amd-seattle-linux-demo.cell).
+
+(b) An ARM64 Linux kernel.
+
+A good idea is to append a RAMdisk to the end of the kernel, to use as the
+root filesystem for the Linux inmate. Special patches are not needed.
+
+(c) A device tree blob.
+
+Sample dts files can be found under samples/, just compile to a dtb using
+the Linxu kernel dtc tool.
+
+(d) linux-loader inmate for Jailhouse ARM64 (provided).
+
+After building, copy the binary from inmates/tools/arm64/linux-loader.bin
+
+Starting the Linux inmate
+-------------------------
+
+Loading a Linux inmate can be as simple as:
+
+	$ LOAD_ADDR=0x82e0080000	# example values for the amd seattle
+	$ DTB_ADDR=0xfe00000
+	$
+	$ jailhouse cell create linux-demo.cell
+	$ jailhouse cell load --name linux-inmate-demo \
+			      linux-loader.bin -a 0x0 \
+			      Image -a $LOAD_ADDR \
+			      kernel-inmate.dtb -a $DTB_ADDR \
+			      -s "kernel=$LOAD_ADDR dtb=$DTB_ADDR" -a 0x1000
+
+Make sure LOAD_ADDR and DTB_ADDR are set to the (cell virtual) addresses,
+where you want to load the kernel and device tree. This needs to be available
+memory ranges in the non root cell configuration that is being used.
+
+Finally you can start the cell:
+
+	$ jailhouse cell start linux-inmate-demo
