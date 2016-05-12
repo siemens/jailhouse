@@ -14,6 +14,7 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/processor.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
@@ -52,6 +53,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 	/* switch to the permanent page tables */
 	enable_mmu_el2(hv_paging_structs.root_table);
+
+	cpu_data->mpidr = phys_processor_id();
 
 	arm_paging_vcpu_init(&root_cell.arch.mm);
 

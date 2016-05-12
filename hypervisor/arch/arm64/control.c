@@ -72,6 +72,9 @@ void arm_cpu_reset(unsigned long pc)
 
 	arm_write_sysreg(ELR_EL2, pc);
 
+	/* transfer the context that may have been passed to PSCI_CPU_ON */
+	regs->usr[1] = cpu_data->cpu_on_context;
+
 	arm_paging_vcpu_init(&cpu_data->cell->arch.mm);
 
 	irqchip_cpu_reset(cpu_data);

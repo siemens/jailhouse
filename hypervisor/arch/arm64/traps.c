@@ -31,6 +31,20 @@ void arch_skip_instruction(struct trap_context *ctx)
 	arm_write_sysreg(ELR_EL2, pc);
 }
 
+static int handle_smc(struct trap_context *ctx)
+{
+	unsigned long *regs = ctx->regs;
+
+	if (!IS_PSCI_32(regs[0]) && !IS_PSCI_64(regs[0]))
+		return TRAP_UNHANDLED;
+
+	regs[0] = psci_dispatch(ctx);
+
+	arch_skip_instruction(ctx);
+
+	return TRAP_HANDLED;
+}
+
 static void dump_regs(struct trap_context *ctx)
 {
 	unsigned char i;
@@ -112,6 +126,10 @@ static void arch_handle_trap(struct per_cpu *cpu_data,
 	switch (ESR_EC(ctx.esr)) {
 	case ESR_EC_DABT_LOW:
 		ret = arch_handle_dabt(&ctx);
+		break;
+
+	case ESR_EC_SMC64:
+		ret = handle_smc(&ctx);
 		break;
 
 	default:
