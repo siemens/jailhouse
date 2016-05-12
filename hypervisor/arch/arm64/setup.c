@@ -10,22 +10,30 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/cell.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/printk.h>
+#include <asm/control.h>
+#include <asm/setup.h>
 
 int arch_init_early(void)
 {
-	return trace_error(-EINVAL);
+	return arm_paging_cell_init(&root_cell);
 }
 
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
-	return trace_error(-EINVAL);
+	/* switch to the permanent page tables */
+	enable_mmu_el2(hv_paging_structs.root_table);
+
+	arm_paging_vcpu_init(&root_cell.arch.mm);
+
+	return 0;
 }
 
 int arch_init_late(void)
 {
-	return trace_error(-EINVAL);
+	return map_root_memory_regions();
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
