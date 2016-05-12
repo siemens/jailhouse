@@ -1,0 +1,46 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) ARM Limited, 2014
+# Copyright (c) Siemens AG, 2014
+#
+# Authors:
+#  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+-include $(obj)/../../../hypervisor/include/generated/config.mk
+
+KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
+
+KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include
+KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include
+
+define DECLARE_TARGETS =
+ _TARGETS = $(1)
+ always := $$(_TARGETS)
+ # $(NAME-y) NAME-linked.o NAME.bin
+ targets += $$(foreach t,$$(_TARGETS:.bin=-y),$$($$t)) \
+            $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)
+endef
+
+mach-$(CONFIG_MACH_FOUNDATION_V8)	:= foundation-v8
+mach-$(CONFIG_MACH_AMD_SEATTLE)         := amd-seattle
+
+MACHINE					:= mach-$(mach-y)
+KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
+KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
+
+# prevent deleting intermediate files which would cause rebuilds
+.SECONDARY: $(addprefix $(obj)/,$(targets))
+
+.SECONDEXPANSION:
+$(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y)) \
+		   $(INMATES_LIB)/lib.a
+	$(call if_changed,ld)
+
+$(obj)/%.bin: $(obj)/%-linked.o
+	$(call if_changed,objcopy)

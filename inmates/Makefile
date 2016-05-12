@@ -17,6 +17,10 @@ INCLUDES := -I$(INMATES_LIB) \
 	    -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
 	    -I$(src)/../hypervisor/include
 
+ifeq ($(SRCARCH),arm64)
+INCLUDES += -I$(src)/../hypervisor/arch/arm/include
+endif
+
 LINUXINCLUDE  :=
 KBUILD_AFLAGS += $(INCLUDES)
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
