@@ -49,12 +49,17 @@ int arch_init_early(void)
 
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
+	unsigned long hcr = HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT
+				| HCR_TSC_BIT | HCR_TAC_BIT | HCR_RW_BIT;
 	int err;
 
 	/* switch to the permanent page tables */
 	enable_mmu_el2(hv_paging_structs.root_table);
 
 	cpu_data->mpidr = phys_processor_id();
+
+	/* Setup guest traps */
+	arm_write_sysreg(HCR_EL2, hcr);
 
 	arm_paging_vcpu_init(&root_cell.arch.mm);
 
@@ -79,8 +84,12 @@ int arch_init_late(void)
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
-	trace_error(-EINVAL);
-	while (1);
+	struct registers *regs = guest_regs(cpu_data);
+
+	/* return to the caller in Linux */
+	arm_write_sysreg(ELR_EL2, regs->usr[30]);
+
+	vmreturn(regs);
 }
 
 void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
