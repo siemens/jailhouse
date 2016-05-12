@@ -209,7 +209,7 @@ static int arch_handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
-	if (IS_PSCI_FN(regs[0]))
+	if (IS_PSCI_32(regs[0]) || IS_PSCI_UBOOT(regs[0]))
 		regs[0] = psci_dispatch(ctx);
 	else
 		regs[0] = smc(regs[0], regs[1], regs[2], regs[3]);
@@ -223,7 +223,7 @@ static int arch_handle_hvc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
-	if (IS_PSCI_FN(regs[0]))
+	if (IS_PSCI_32(regs[0]) || IS_PSCI_UBOOT(regs[0]))
 		regs[0] = psci_dispatch(ctx);
 	else
 		regs[0] = hypercall(regs[0], regs[1], regs[2]);

@@ -46,7 +46,8 @@
 #define PSCI_CPU_IS_ON		0
 #define PSCI_CPU_IS_OFF		1
 
-#define IS_PSCI_FN(hvc)		((((hvc) >> 24) & 0x84) == 0x84)
+#define IS_PSCI_32(hvc)		(((hvc) >> 24) == 0x84)
+#define IS_PSCI_UBOOT(hvc)	(((hvc) >> 8) == 0x95c1ba)
 
 #define PSCI_INVALID_ADDRESS	0xffffffff
 
