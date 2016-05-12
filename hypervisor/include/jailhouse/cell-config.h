@@ -164,7 +164,6 @@ struct jailhouse_system {
 				iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 		} __attribute__((packed)) x86;
 	} __attribute__((packed)) platform_info;
-	__u32 device_limit;
 	__u32 interrupt_limit;
 	struct jailhouse_cell_desc root_cell;
 } __attribute__((packed));

@@ -55,7 +55,6 @@ struct {
 				},
 			},
 		},
-		.device_limit = 128,
 		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "F2A88XM-HD3",
