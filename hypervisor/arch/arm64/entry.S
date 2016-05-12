@@ -71,6 +71,10 @@ el2_entry:
 	cmp	x1, #0x16
 	b.ne	.		/* not hvc */
 
+	/* install jailhouse vectors */
+	adr	x1, hyp_vectors
+	msr	vbar_el2, x1
+
 	/* init bootstrap page tables */
 	bl	init_bootstrap_pt
 

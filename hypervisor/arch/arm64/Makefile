@@ -19,6 +19,7 @@ COMMON := ../arm-common
 always := built-in.o
 
 obj-y := entry.o setup.o control.o mmio.o caches.o
+obj-y += exception.o traps.o
 obj-y += $(COMMON)/dbg-write.o $(COMMON)/lib.o
 obj-y += $(COMMON)/mmu_cell.o $(COMMON)/paging.o
 
