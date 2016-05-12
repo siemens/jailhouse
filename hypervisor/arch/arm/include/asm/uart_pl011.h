@@ -70,6 +70,7 @@
 
 static void uart_init(struct uart_chip *chip)
 {
+#ifdef CONFIG_MACH_VEXPRESS
 	/* 115200 8N1 */
 	/* FIXME: Can be improved with an implementation of __aeabi_uidiv */
 	u32 bauddiv = UART_CLK / (16 * 115200);
@@ -83,6 +84,7 @@ static void uart_init(struct uart_chip *chip)
 	mmio_write16(base + UARTIBRD, bauddiv);
 	mmio_write16(base + UARTCR, (UARTCR_EN | UARTCR_TXE | UARTCR_RXE |
 				     UARTCR_Out1 | UARTCR_Out2));
+#endif
 }
 
 static void uart_wait(struct uart_chip *chip)
