@@ -45,6 +45,16 @@ static int handle_smc(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
+static int handle_hvc(struct trap_context *ctx)
+{
+	unsigned long *regs = ctx->regs;
+	unsigned long code = regs[0];
+
+	regs[0] = hypercall(code, regs[1], regs[2]);
+
+	return TRAP_HANDLED;
+}
+
 static void dump_regs(struct trap_context *ctx)
 {
 	unsigned char i;
@@ -130,6 +140,10 @@ static void arch_handle_trap(struct per_cpu *cpu_data,
 
 	case ESR_EC_SMC64:
 		ret = handle_smc(&ctx);
+		break;
+
+	case ESR_EC_HVC64:
+		ret = handle_hvc(&ctx);
 		break;
 
 	default:
