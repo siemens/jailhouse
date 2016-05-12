@@ -17,9 +17,9 @@
 
 unsigned long timer_get_frequency(void)
 {
-	u32 freq;
+	unsigned long freq;
 
-	arm_read_sysreg(CNTFRQ, freq);
+	arm_read_sysreg(CNTFRQ_EL0, freq);
 	return freq;
 }
 
@@ -27,7 +27,7 @@ u64 timer_get_ticks(void)
 {
 	u64 pct64;
 
-	arm_read_sysreg(CNTPCT, pct64);
+	arm_read_sysreg(CNTPCT_EL0, pct64);
 	return pct64;
 }
 

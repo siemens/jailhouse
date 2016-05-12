@@ -62,7 +62,7 @@
 #define CNTV_CTL_EL0	SYSREG_32(0, c14, c3, 1)
 #define CNTV_CVAL_EL0	SYSREG_64(3, c14)
 
-#define CNTPCT		SYSREG_64(0, c14)
+#define CNTPCT_EL0	SYSREG_64(0, c14)
 
 /*
  * AArch32-specific registers: they are 64bit on AArch64, and will need some
@@ -98,7 +98,7 @@
 #define TPIDRURO	SYSREG_32(0, c13, c0, 3)
 #define TPIDRPRW	SYSREG_32(0, c13, c0, 4)
 
-#define CNTFRQ		SYSREG_32(0, c14, c0, 0)
+#define CNTFRQ_EL0	SYSREG_32(0, c14, c0, 0)
 
 #define ATS1HR		SYSREG_32(4, c7, c8, 0)
 
