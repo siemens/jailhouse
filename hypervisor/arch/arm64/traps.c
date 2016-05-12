@@ -20,6 +20,7 @@
 #include <asm/sysregs.h>
 #include <asm/traps.h>
 #include <asm/processor.h>
+#include <asm/irqchip.h>
 
 void arch_skip_instruction(struct trap_context *ctx)
 {
@@ -143,6 +144,10 @@ struct registers *arch_handle_exit(struct per_cpu *cpu_data,
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
 	switch (regs->exit_reason) {
+	case EXIT_REASON_EL1_IRQ:
+		irqchip_handle_irq(cpu_data);
+		break;
+
 	case EXIT_REASON_EL1_ABORT:
 		arch_handle_trap(cpu_data, regs);
 		break;

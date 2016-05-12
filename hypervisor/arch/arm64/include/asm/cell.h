@@ -19,6 +19,8 @@
 
 struct arch_cell {
 	struct paging_structures mm;
+
+	u32 irq_bitmap[1024/32];
 };
 
 #endif /* !__ASSEMBLY__ */

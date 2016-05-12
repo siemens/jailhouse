@@ -22,5 +22,7 @@ obj-y := entry.o setup.o control.o mmio.o caches.o
 obj-y += exception.o traps.o
 obj-y += $(COMMON)/dbg-write.o $(COMMON)/lib.o
 obj-y += $(COMMON)/mmu_cell.o $(COMMON)/paging.o
+obj-y += $(COMMON)/irqchip.o $(COMMON)/gic-common.o
 
 obj-$(CONFIG_SERIAL_AMBA_PL011) += $(COMMON)/dbg-write-pl011.o
+obj-$(CONFIG_ARM_GIC_V2) += $(COMMON)/gic-v2.o

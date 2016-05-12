@@ -14,6 +14,7 @@
 #include <jailhouse/entry.h>
 #include <jailhouse/printk.h>
 #include <asm/control.h>
+#include <asm/irqchip.h>
 #include <asm/setup.h>
 
 int arch_init_early(void)
@@ -23,16 +24,29 @@ int arch_init_early(void)
 
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
+	int err;
+
 	/* switch to the permanent page tables */
 	enable_mmu_el2(hv_paging_structs.root_table);
 
 	arm_paging_vcpu_init(&root_cell.arch.mm);
 
-	return 0;
+	err = irqchip_init();
+	if (err)
+		return err;
+
+	return irqchip_cpu_init(cpu_data);
 }
 
 int arch_init_late(void)
 {
+	int err;
+
+	/* Setup the SPI bitmap */
+	err = irqchip_cell_init(&root_cell);
+	if (err)
+		return err;
+
 	return map_root_memory_regions();
 }
 
