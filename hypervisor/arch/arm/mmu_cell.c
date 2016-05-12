@@ -107,7 +107,7 @@ void arch_cpu_tlb_flush(struct per_cpu *cpu_data)
 	 * Invalidate all stage-1 and 2 TLB entries for the current VMID
 	 * ERET will ensure completion of these ops
 	 */
-	arm_write_sysreg(TLBIALL, 1);
+	tlb_flush_guest();
 	dsb(nsh);
 	cpu_data->flush_vcpu_caches = false;
 }

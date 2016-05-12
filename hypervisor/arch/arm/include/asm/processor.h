@@ -197,6 +197,8 @@ static inline bool is_el2(void)
 	return (psr & PSR_MODE_MASK) == PSR_HYP_MODE;
 }
 
+#define tlb_flush_guest()	arm_write_sysreg(TLBIALL, 1)
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PROCESSOR_H */
