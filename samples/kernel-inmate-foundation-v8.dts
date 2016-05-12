@@ -1,0 +1,103 @@
+/*
+ * Jailhouse AArch64 support
+ *
+ * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
+ *
+ * Authors:
+ *  Dmitry Voytik <dmitry.voytik@huawei.com>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ *
+ * ARMv8 Foundation model DTS
+ *
+ */
+
+/dts-v1/;
+
+/* 64 KiB */
+/memreserve/ 0x0 0x00010000;
+
+/ {
+	model = "Jailhouse-Foundation-v8A";
+	compatible = "arm,foundation-aarch64", "arm,vexpress";
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon";
+	};
+
+	aliases {
+		serial0 = &serial0;
+	};
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,armv8";
+			reg = <0x0 0x2>;
+			enable-method = "psci";
+			next-level-cache = <&L2_0>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,armv8";
+			reg = <0x0 0x3>;
+			enable-method = "psci";
+			next-level-cache = <&L2_0>;
+		};
+
+		L2_0: l2-cache0 {
+			compatible = "cache";
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x10000000>;	/* 256 MiB starts at 0x0 */
+	};
+
+	gic: interrupt-controller@2c001000 {
+		compatible = "arm,cortex-a15-gic", "arm,cortex-a9-gic";
+		#interrupt-cells = <3>;
+		#address-cells = <0>;
+		interrupt-controller;
+		reg = <0x0 0x2c001000 0 0x1000>,
+		      <0x0 0x2c002000 0 0x1000>;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <1 13 0xf08>,
+			     <1 14 0xf08>,
+			     <1 11 0xf08>;
+		clock-frequency = <100000000>;
+	};
+
+	v2m_clk24mhz: clk24mhz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "v2m:clk24mhz";
+	};
+
+	serial0: uart@1c090000 {
+		compatible = "arm,pl011", "arm,primecell";
+		reg = <0x0 0x1c090000 0x0 0x1000>;
+		interrupts = <0 8 1>;
+		clocks = <&v2m_clk24mhz>, <&v2m_clk24mhz>;
+		clock-names = "uartclk", "apb_pclk";
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+};
