@@ -13,7 +13,7 @@
 
 set -e
 
-CONFIGS="x86 banana-pi vexpress"
+CONFIGS="x86 banana-pi vexpress amd-seattle"
 
 # only build a specific config if the branch selects it
 if [ ${TRAVIS_BRANCH#coverity_scan-} != ${TRAVIS_BRANCH} ]; then
@@ -36,6 +36,10 @@ for CONFIG in $CONFIGS; do
 	x86)
 		ARCH=x86_64
 		CROSS_COMPILE=
+		;;
+	amd-seattle)
+		ARCH=arm64
+		CROSS_COMPILE=aarch64-linux-gnu-
 		;;
 	*)
 		ARCH=arm
