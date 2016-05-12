@@ -21,6 +21,15 @@
 
 #ifndef __ASSEMBLY__
 
+static inline void gic_setup_irq_stack(void)
+{
+	static __attribute__((aligned(0x1000))) u32 irq_stack[1024];
+
+	asm volatile (".arch_extension virt\n");
+	asm volatile ("msr	SP_irq, %0\n" : : "r" (irq_stack));
+	asm volatile ("cpsie	i\n");
+}
+
 int gic_init(void);
 void gic_enable(unsigned int irqn);
 void gic_write_eoi(u32 irqn);
