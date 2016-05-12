@@ -1,0 +1,149 @@
+/*
+ * Jailhouse AArch64 support
+ *
+ * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
+ *
+ * Authors:
+ *  Antonios Motakis <antonios.motakis@huawei.com>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ *
+ */
+
+/dts-v1/;
+
+/ {
+	model = "Jailhouse cell on AMD Seattle";
+	compatible = "amd,seattle-overdrive", "amd,seattle";
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon";
+	};
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,armv8";
+			reg = <0x0 0x300>;
+			enable-method = "psci";
+			next-level-cache = <&L2_0>;
+		};
+
+		cpu@301 {
+			device_type = "cpu";
+			compatible = "arm,armv8";
+			reg = <0x0 0x301>;
+			enable-method = "psci";
+			next-level-cache = <&L2_0>;
+		};
+
+		L2_0: l2-cache0 {
+			compatible = "cache";
+		};
+	};
+
+	aliases {
+		serial0 = &serial0;
+	};
+
+	memory@82e0000000 {
+		device_type = "memory";
+		reg = <0x82 0xe0000000 0x0 0x10000000>;	/* 256 MiB */
+	};
+
+	gic: interrupt-controller@e1110000 {
+		compatible = "arm,gic-400", "arm,cortex-a15-gic";
+		#interrupt-cells = <3>;
+		#address-cells = <0>;
+		interrupt-controller;
+		reg = <0x0 0xe1110000 0 0x1000>,
+		      <0x0 0xe112f000 0 0x2000>;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <1 13 0xff04>,
+			     <1 14 0xff04>,
+			     <1 11 0xff04>;
+	};
+
+	uartspiclk_100mhz: clk100mhz_1 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+		clock-output-names = "uartspiclk_100mhz";
+	};
+
+	serial0: uart@e1010000 {
+		compatible = "arm,pl011", "arm,primecell";
+		reg = <0x0 0xe1010000 0x0 0x1000>;
+		interrupts = <0 328 4>;
+		clocks = <&uartspiclk_100mhz>, <&uartspiclk_100mhz>;
+		clock-names = "uartclk", "apb_pclk";
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	smb0: smb {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		xgmacclk1_dma_250mhz: clk250mhz_2 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <250000000>;
+			clock-output-names = "xgmacclk1_dma_250mhz";
+		};
+
+		xgmacclk1_ptp_250mhz: clk250mhz_3 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <250000000>;
+			clock-output-names = "xgmacclk1_ptp_250mhz";
+		};
+
+		xgmac1_phy: phy@e1240c00 {
+			compatible = "amd,xgbe-phy-seattle-v1a";
+			reg = <0 0xe1240c00 0 0x00400>, /* SERDES RX/TX1 */
+			      <0 0xe1250080 0 0x00060>, /* SERDES IR 1/2 */
+			      <0 0xe12500fc 0 0x00004>; /* SERDES IR 2/2 */
+			interrupts = <0 322 4>;
+			amd,speed-set = <0>;
+			amd,serdes-blwc = <1>, <1>, <0>;
+			amd,serdes-cdr-rate = <2>, <2>, <7>;
+			amd,serdes-pq-skew = <10>, <10>, <18>;
+			amd,serdes-tx-amp = <15>, <15>, <10>;
+			amd,serdes-dfe-tap-config = <3>, <3>, <1>;
+			amd,serdes-dfe-tap-enable = <0>, <0>, <127>;
+		};
+
+		xgmac1: xgmac@e0900000 {
+			compatible = "amd,xgbe-seattle-v1a";
+			reg = <0 0xe0900000 0 0x80000>,
+			      <0 0xe0980000 0 0x80000>;
+			interrupts = <0 324 4>,
+				     <0 341 1>, <0 342 1>, <0 343 1>, <0 344 1>;
+			amd,per-channel-interrupt;
+			mac-address = [ 02 B1 B2 B3 B4 B5 ];
+			clocks = <&xgmacclk1_dma_250mhz>, <&xgmacclk1_ptp_250mhz>;
+			clock-names = "dma_clk", "ptp_clk";
+			phy-handle = <&xgmac1_phy>;
+			phy-mode = "xgmii";
+			#stream-id-cells = <24>;
+			dma-coherent;
+		};
+	};
+};
