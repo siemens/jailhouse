@@ -28,6 +28,7 @@ struct per_cpu {
 	bool failed;
 
 	bool flush_vcpu_caches;
+	unsigned long mpidr;
 } __attribute__((aligned(PAGE_SIZE)));
 
 static inline struct per_cpu *this_cpu_data(void)

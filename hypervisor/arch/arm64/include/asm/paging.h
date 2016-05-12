@@ -167,7 +167,16 @@
 
 #ifndef __ASSEMBLY__
 
+struct cell;
+struct paging_structures;
+
 typedef u64 *pt_entry_t;
+
+enum dcache_flush {
+	DCACHE_CLEAN,
+	DCACHE_INVALIDATE,
+	DCACHE_CLEAN_AND_INVALIDATE,
+};
 
 extern unsigned int cpu_parange;
 
@@ -230,6 +239,21 @@ static inline unsigned int get_cpu_parange(void)
 				| VTCR_RES1)
 
 void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
+void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush);
+
+int arm_paging_cell_init(struct cell *cell);
+void arm_paging_cell_destroy(struct cell *cell);
+
+void arm_paging_vcpu_init(struct paging_structures *pg_structs);
+
+static inline void arm_paging_vcpu_flush_tlbs(void)
+{
+	/*
+	 * Invalidate all stage-1 and 2 TLB entries for the current VMID
+	 * ERET will ensure completion of these ops
+	 */
+	asm volatile("tlbi vmalls12e1is");
+}
 
 /* Only executed on hypervisor paging struct changes */
 static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
