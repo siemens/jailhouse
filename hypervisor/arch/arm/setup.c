@@ -17,6 +17,7 @@
 #include <asm/sysregs.h>
 #include <jailhouse/control.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 
 unsigned int cache_line_size;
@@ -56,6 +57,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 	cpu_data->psci_mbox.entry = 0;
 	cpu_data->virt_id = cpu_data->cpu_id;
+	cpu_data->mpidr = phys_processor_id();
 
 	/*
 	 * Copy the registers to restore from the linux stack here, because we

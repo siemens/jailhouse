@@ -78,11 +78,10 @@ int psci_wait_cpu_stopped(unsigned int cpu_id)
 static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 				struct trap_context *ctx)
 {
-	unsigned int target = ctx->regs[1];
 	unsigned int cpu;
 	struct psci_mbox *mbox;
 
-	cpu = arm_cpu_virt2phys(cpu_data->cell, target);
+	cpu = arm_cpu_by_mpidr(cpu_data->cell, ctx->regs[1]);
 	if (cpu == -1)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
@@ -97,7 +96,7 @@ static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 static long psci_emulate_affinity_info(struct per_cpu *cpu_data,
 				       struct trap_context *ctx)
 {
-	unsigned int cpu = arm_cpu_virt2phys(cpu_data->cell, ctx->regs[1]);
+	unsigned int cpu = arm_cpu_by_mpidr(cpu_data->cell, ctx->regs[1]);
 
 	if (cpu == -1)
 		/* Virtual id not in set */

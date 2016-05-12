@@ -38,6 +38,7 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn);
 void arch_reset_self(struct per_cpu *cpu_data);
 void arch_shutdown_self(struct per_cpu *cpu_data);
+unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 
 void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
 void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data);
