@@ -22,15 +22,3 @@ unsigned long phys_processor_id(void)
 	arm_read_sysreg(MPIDR_EL1, mpidr);
 	return mpidr & MPIDR_CPUID_MASK;
 }
-
-void *memcpy(void *dest, const void *src, unsigned long n)
-{
-	unsigned long i;
-	const char *csrc = src;
-	char *cdest = dest;
-
-	for (i = 0; i < n; i++)
-		cdest[i] = csrc[i];
-
-	return dest;
-}
