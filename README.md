@@ -172,7 +172,7 @@ enable nested VMX support. Start the virtual machine as follows:
 
     qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
         -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic \
-        -drive file=LinuxInstallation.img,id=disk,if=none \
+        -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device ide-hd,drive=disk -serial stdio -serial vc \
         -device intel-hda,addr=1b.0 -device hda-duplex
 
@@ -181,7 +181,7 @@ nested SVM support. Start the virtual machine as follows:
 
     qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
         -cpu host,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+svm,+x2apic \
-        -drive file=LinuxInstallation.img,id=disk,if=none \
+        -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device ide-hd,drive=disk -serial stdio -serial vc \
         -device intel-hda,addr=1b.0 -device hda-duplex
 
