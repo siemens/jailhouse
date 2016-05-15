@@ -171,7 +171,7 @@ For Intel CPUs: Make sure the kvm-intel module was loaded with nested=1 to
 enable nested VMX support. Start the virtual machine as follows:
 
     qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
-        -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic \
+        -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx \
         -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device ide-hd,drive=disk -serial stdio -serial vc \
         -device intel-hda,addr=1b.0 -device hda-duplex
@@ -180,7 +180,7 @@ For AMD CPUs: Make sure the kvm-amd module was loaded with nested=1 to enable
 nested SVM support. Start the virtual machine as follows:
 
     qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
-        -cpu host,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+svm,+x2apic \
+        -cpu host,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock \
         -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device ide-hd,drive=disk -serial stdio -serial vc \
         -device intel-hda,addr=1b.0 -device hda-duplex
