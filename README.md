@@ -273,11 +273,13 @@ The Banana Pi is a cheap Raspberry-Pi-like ARM board with an Allwinner A20 SoC
 comparably well hackable. Further information can be found on
 http://linux-sunxi.org.
 
-For Jailhouse, a U-Boot (pre-)release more recent than v2015.04-rc1 is
-required. Tested and know to work is git revision bd2a4888b1.
+For Jailhouse, an U-Boot release more recent than v2015.04 is required. Tested
+and known to work is release v2016.03. Note that, since v2015.10, you need to
+disable CONFIG_VIDEO in the U-Boot config, or U-Boot will configure the
+framebuffer at the end of the physical RAM where Jailhouse is located.
 
-The Linux kernel version should be at least 3.19-rcX. The configuration used
-for continuous integration builds can serve as reference, see
+The Linux kernel version should be at least 3.19. The configuration used for
+continuous integration builds can serve as reference, see
 `ci/kernel-config-banana-pi`. The kernel has to be booted with the following
 additional parameters, e.g. by adjusting the U-Boot environment accordingly:
 
