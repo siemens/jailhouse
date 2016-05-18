@@ -290,7 +290,7 @@ function _jailhouse() {
 	local command command_cell command_config cur prev subcommand
 
 	# first level
-	command="enable disable cell config --help"
+	command="enable disable cell config hardware --help"
 
 	# second level
 	command_cell="create load start shutdown destroy linux list stats"
@@ -331,6 +331,9 @@ function _jailhouse() {
 			COMPREPLY=( $( compgen -W "${command_config}" -- \
 					"${cur}") )
 			;;
+		hardware)
+			COMPREPLY="check"
+			;;
 		--help|disable)
 			# these first level commands have no further subcommand
 			# or option OR we don't even know it
@@ -357,6 +360,18 @@ function _jailhouse() {
 			collect)
 				# config-collect writes to a new file
 
+				# this command takes only a argument at place 3
+				[ "${COMP_CWORD}" -gt 3 ] && return 1
+
+				_filedir
+				;;
+			*)
+				return 1;;
+			esac
+			;;
+		hardware)
+			case "${subcommand}" in
+			check)
 				# this command takes only a argument at place 3
 				[ "${COMP_CWORD}" -gt 3 ] && return 1
 

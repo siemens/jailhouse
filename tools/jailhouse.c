@@ -43,6 +43,7 @@ static const struct extension extensions[] = {
 	  "[--mem-inmates MEM_INMATES]\n"
 	  "                 [--mem-hv MEM_HV] FILE" },
 	{ "config", "collect", "FILE.TAR" },
+	{ "hardware", "check", "SYSCONFIG" },
 	{ NULL }
 };
 
@@ -399,7 +400,8 @@ int main(int argc, char *argv[])
 		close(fd);
 	} else if (strcmp(argv[1], "cell") == 0) {
 		err = cell_management(argc, argv);
-	} else if (strcmp(argv[1], "config") == 0) {
+	} else if (strcmp(argv[1], "config") == 0 ||
+		   strcmp(argv[1], "hardware") == 0) {
 		call_extension_script(argv[1], argc, argv);
 		help(argv[0], 1);
 	} else if (strcmp(argv[1], "--version") == 0) {

@@ -127,6 +127,13 @@ ARM architecture:
     - ARM Versatile Express with Cortex-A15 or A7 cores
       (includes ARM Fast Model)
 
+On x86, hardware capabilities can be validated by running
+
+    jailhouse hardware check sysconfig.cell
+
+using the binary system configuration created for the target (see
+[below](#configuration)).
+
 
 Build & Installation
 --------------------
