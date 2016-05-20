@@ -22,6 +22,9 @@ ARM support
 Configuration
  - review of format, rework of textual representation
  - platform device assignment
+ - refactor config generator
+    - better internal structure, also to prepare non-x86 support
+    - move into Python module, for reuse by multiple helper scripts
  - enhance config generator
     - confine the created root cell config to the essentially required
       resources (e.g. PCI BARs)
