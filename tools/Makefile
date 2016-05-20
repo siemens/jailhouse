@@ -23,7 +23,8 @@ HELPERS := \
 	jailhouse-cell-linux \
 	jailhouse-cell-list \
 	jailhouse-cell-stats \
-	jailhouse-config-create
+	jailhouse-config-create \
+	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
 HAS_PYTHON_MAKO := \
