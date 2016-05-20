@@ -50,8 +50,8 @@
 #define  AMD_CONTROL_SEG_EN_SHIFT	34
 #define AMD_EXT_FEATURES_REG		0x0030
 #define  AMD_EXT_FEAT_HE_SUP		(1UL << 7)
+#define  AMD_EXT_FEAT_SMI_FSUP		(1UL << 16)
 #define  AMD_EXT_FEAT_SMI_FSUP_MASK	BIT_MASK(17, 16)
-#define  AMD_EXT_FEAT_SMI_FSUP_SHIFT	16
 #define  AMD_EXT_FEAT_SMI_FRC_MASK	BIT_MASK(20, 18)
 #define  AMD_EXT_FEAT_SMI_FRC_SHIFT	18
 #define  AMD_EXT_FEAT_SEG_SUP_MASK	BIT_MASK(39, 38)
@@ -222,8 +222,8 @@ static int amd_iommu_init_features(struct amd_iommu *entry,
 	 * Require SMI Filter support. Enable and lock filter but
 	 * mark all entries as invalid to disable SMI delivery.
 	 */
-	if (!(efr & AMD_EXT_FEAT_SMI_FSUP_MASK))
-		return trace_error(-EINVAL);
+	if ((efr & AMD_EXT_FEAT_SMI_FSUP_MASK) != AMD_EXT_FEAT_SMI_FSUP)
+		return trace_error(-EIO);
 
 	/* Figure out if hardware events are supported. */
 	if (iommu->amd_features)
