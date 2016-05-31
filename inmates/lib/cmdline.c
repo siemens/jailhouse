@@ -22,11 +22,8 @@ static bool get_param(const char *param, char *value_buffer,
 
 	while (1) {
 		/* read over leading blanks */
-		while (*p == ' ') {
-			if (*p == 0)
-				return false;
+		while (*p == ' ')
 			p++;
-		}
 
 		if (strncmp(p, param, param_len) == 0) {
 			p += param_len;
