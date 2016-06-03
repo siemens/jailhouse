@@ -373,10 +373,7 @@ class MemRegion:
         self.start = start
         self.stop = stop
         self.typestr = typestr
-        if comments is None:
-            self.comments = []
-        else:
-            self.comments = comments
+        self.comments = comments or []
 
     def __str__(self):
         return 'MemRegion: %08x-%08x : %s' % \
