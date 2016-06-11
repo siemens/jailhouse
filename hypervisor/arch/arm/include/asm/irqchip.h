@@ -24,7 +24,6 @@
 #include <jailhouse/cell.h>
 #include <jailhouse/mmio.h>
 #include <asm/percpu.h>
-#include <asm/traps.h>
 
 #ifndef __ASSEMBLY__
 
