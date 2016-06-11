@@ -17,7 +17,6 @@
  */
 
 #include <jailhouse/cell.h>
-#include <jailhouse/cell-config.h>
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>

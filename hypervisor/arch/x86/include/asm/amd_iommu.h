@@ -18,6 +18,8 @@
 #include <jailhouse/types.h>
 #include <jailhouse/utils.h>
 
+#include <jailhouse/cell-config.h>
+
 #define AMD_IOMMU_PTE_P			(1ULL <<  0)
 #define AMD_IOMMU_PTE_PG_MODE(level)	((level) << 9)
 #define AMD_IOMMU_PTE_PG_MODE_MASK	BIT_MASK(11, 9)
