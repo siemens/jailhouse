@@ -387,7 +387,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	/* Only group 1 interrupts */
 	lr |= ICH_LR_GROUP_BIT;
 	lr |= ICH_LR_PENDING;
-	if (irq->hw) {
+	if (!is_sgi(irq->virt_id)) {
 		lr |= ICH_LR_HW_BIT;
 		lr |= (u64)irq->type.irq << ICH_LR_PHYS_ID_SHIFT;
 	}
