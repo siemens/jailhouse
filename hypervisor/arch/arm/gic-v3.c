@@ -390,8 +390,6 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	if (irq->hw) {
 		lr |= ICH_LR_HW_BIT;
 		lr |= (u64)irq->type.irq << ICH_LR_PHYS_ID_SHIFT;
-	} else if (irq->type.sgi.maintenance) {
-		lr |= ICH_LR_SGI_EOI;
 	}
 
 	gic_write_lr(free_lr, lr);

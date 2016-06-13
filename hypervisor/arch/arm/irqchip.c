@@ -137,7 +137,6 @@ int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
 
 	if (is_sgi(irq_id)) {
 		pending.hw = 0;
-		pending.type.sgi.maintenance = 0;
 		pending.type.sgi.cpuid = 0;
 	} else {
 		pending.hw = 1;

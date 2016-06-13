@@ -71,8 +71,6 @@ struct pending_irq {
 		struct {
 			/* GICv2 needs cpuid for SGIs */
 			u16 cpuid	: 15;
-			/* EOI generates a maintenance irq */
-			u16 maintenance	: 1;
 		} sgi __attribute__((packed));
 	} type;
 
