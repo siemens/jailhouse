@@ -64,11 +64,6 @@ struct irqchip_ops {
 struct pending_irq {
 	u32	virt_id;
 
-	union {
-		/* Physical id, when hw is 1 */
-		u16 irq;
-	} type;
-
 	struct pending_irq *next;
 	struct pending_irq *prev;
 } __attribute__((packed));

@@ -389,7 +389,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	lr |= ICH_LR_PENDING;
 	if (!is_sgi(irq->virt_id)) {
 		lr |= ICH_LR_HW_BIT;
-		lr |= (u64)irq->type.irq << ICH_LR_PHYS_ID_SHIFT;
+		lr |= (u64)irq->virt_id << ICH_LR_PHYS_ID_SHIFT;
 	}
 
 	gic_write_lr(free_lr, lr);
