@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <asm/asm-defines.h>
 #include <asm/head.h>
 #include <asm/percpu.h>
 
@@ -22,7 +23,7 @@ arch_entry:
 
 	ldr	r1, =__page_pool
 	mov	r4, #1
-	lsl	r4, #PERCPU_SIZE_SHIFT
+	lsl	r4, #PERCPU_SIZE_SHIFT_ASM
 	/*
 	 * percpu data = pool + cpuid * shift
 	 * TODO: handle aff1 and aff2

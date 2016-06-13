@@ -129,7 +129,7 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 		 */
 		"eret\n\t"
 		:
-		: "r" (cpu_data->stack + PERCPU_STACK_END),
+		: "r" (cpu_data->stack + sizeof(cpu_data->stack)),
 		  "r" (cpu_data->linux_reg));
 
 	__builtin_unreachable();

@@ -18,11 +18,6 @@
 
 #define NUM_ENTRY_REGS			13
 
-/* Keep in sync with struct per_cpu! */
-#define PERCPU_SIZE_SHIFT		13
-#define PERCPU_STACK_END		PAGE_SIZE
-#define PERCPU_LINUX_SP			PERCPU_STACK_END
-
 #ifndef __ASSEMBLY__
 
 #include <jailhouse/cell.h>
@@ -30,10 +25,13 @@
 #include <asm/spinlock.h>
 #include <asm/sysregs.h>
 
+/* Round up sizeof(struct per_cpu) to the next power of two. */
+#define PERCPU_SIZE_SHIFT \
+	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
+
 struct pending_irq;
 
 struct per_cpu {
-	/* Keep these two in sync with defines above! */
 	u8 stack[PAGE_SIZE];
 	unsigned long linux_sp;
 	unsigned long linux_ret;
@@ -93,7 +91,7 @@ static inline struct per_cpu *per_cpu(unsigned int cpu)
 static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 {
 	/* Assumes that the trap handler is entered with an empty stack */
-	return (struct registers *)(cpu_data->stack + PERCPU_STACK_END
+	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
 			- sizeof(struct registers));
 }
 
@@ -103,19 +101,6 @@ static inline unsigned int arm_cpu_phys2virt(unsigned int cpu_id)
 }
 
 unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id);
-
-/* Validate defines */
-#define CHECK_ASSUMPTION(assume)	((void)sizeof(char[1 - 2*!(assume)]))
-
-static inline void __check_assumptions(void)
-{
-	struct per_cpu cpu_data;
-
-	CHECK_ASSUMPTION(sizeof(struct per_cpu) == (1 << PERCPU_SIZE_SHIFT));
-	CHECK_ASSUMPTION(sizeof(cpu_data.stack) == PERCPU_STACK_END);
-	CHECK_ASSUMPTION(__builtin_offsetof(struct per_cpu, linux_sp) ==
-			 PERCPU_LINUX_SP);
-}
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PERCPU_H */
