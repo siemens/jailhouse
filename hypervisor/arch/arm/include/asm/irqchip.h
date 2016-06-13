@@ -64,7 +64,6 @@ struct irqchip_ops {
 struct pending_irq {
 	u32	virt_id;
 
-	u8	priority;
 	u8	hw;
 	union {
 		/* Physical id, when hw is 1 */

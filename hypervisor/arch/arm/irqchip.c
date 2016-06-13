@@ -134,8 +134,6 @@ int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
 	struct pending_irq pending;
 
 	pending.virt_id = irq_id;
-	/* Priority must be less than ICC_PMR */
-	pending.priority = 0;
 
 	if (is_sgi(irq_id)) {
 		pending.hw = 0;
