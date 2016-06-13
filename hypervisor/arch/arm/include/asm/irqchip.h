@@ -67,10 +67,6 @@ struct pending_irq {
 	union {
 		/* Physical id, when hw is 1 */
 		u16 irq;
-		struct {
-			/* GICv2 needs cpuid for SGIs */
-			u16 cpuid	: 15;
-		} sgi __attribute__((packed));
 	} type;
 
 	struct pending_irq *next;
