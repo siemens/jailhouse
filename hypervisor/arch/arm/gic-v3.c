@@ -263,7 +263,7 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 			return MMIO_HANDLED;
 		}
 	}
-	mmio_perform_access((unsigned long)phys_redist, mmio);
+	mmio_perform_access(phys_redist, mmio);
 	return MMIO_HANDLED;
 }
 
