@@ -370,18 +370,9 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 			return -EINVAL;
 	}
 
-	if (free_lr == -1) {
-		u32 hcr;
-		/*
-		 * All list registers are in use, trigger a maintenance
-		 * interrupt once they are available again.
-		 */
-		arm_read_sysreg(ICH_HCR_EL2, hcr);
-		hcr |= ICH_HCR_UIE;
-		arm_write_sysreg(ICH_HCR_EL2, hcr);
-
+	if (free_lr == -1)
+		/* All list registers are in use */
 		return -EBUSY;
-	}
 
 	lr = irq->virt_id;
 	/* Only group 1 interrupts */
@@ -395,6 +386,18 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 	gic_write_lr(free_lr, lr);
 
 	return 0;
+}
+
+static void gicv3_enable_maint_irq(bool enable)
+{
+	u32 hcr;
+
+	arm_read_sysreg(ICH_HCR_EL2, hcr);
+	if (enable)
+		hcr |= ICH_HCR_UIE;
+	else
+		hcr &= ~ICH_HCR_UIE;
+	arm_write_sysreg(ICH_HCR_EL2, hcr);
 }
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
@@ -411,5 +414,6 @@ struct irqchip_ops gic_irqchip = {
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
+	.enable_maint_irq = gicv3_enable_maint_irq,
 	.eoi_irq = gic_eoi_irq,
 };

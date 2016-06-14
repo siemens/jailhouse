@@ -56,6 +56,7 @@ struct irqchip_ops {
 	void	(*eoi_irq)(u32 irqn, bool deactivate);
 	int	(*inject_irq)(struct per_cpu *cpu_data,
 			      struct pending_irq *irq);
+	void	(*enable_maint_irq)(bool enable);
 
 	int	(*mmio_access)(struct mmio_access *access);
 };

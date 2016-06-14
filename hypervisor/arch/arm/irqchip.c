@@ -167,10 +167,14 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 
 	while (pending != NULL) {
 		err = irqchip.inject_irq(cpu_data, pending);
-		if (err == -EBUSY)
-			/* The list registers are full. */
-			break;
-		else
+		if (err == -EBUSY) {
+			/*
+			 * The list registers are full, trigger maintenance
+			 * interrupt and leave.
+			 */
+			irqchip.enable_maint_irq(true);
+			return;
+		} else {
 			/*
 			 * Removal only changes the pointers, but does not
 			 * deallocate anything.
@@ -180,9 +184,16 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 			 * after this removal, which isn't an issue.
 			 */
 			irqchip_remove_pending(cpu_data, pending);
+		}
 
 		pending = pending->next;
 	}
+
+	/*
+	 * The software interrupt queue is empty - turn off the maintenance
+	 * interrupt.
+	 */
+	irqchip.enable_maint_irq(false);
 }
 
 void irqchip_handle_irq(struct per_cpu *cpu_data)
