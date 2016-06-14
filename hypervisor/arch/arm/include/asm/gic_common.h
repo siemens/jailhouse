@@ -50,6 +50,8 @@ struct sgi;
 
 int gic_probe_cpu_id(unsigned int cpu);
 enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio);
+enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
+				      unsigned int irq);
 void gic_handle_sgir_write(struct sgi *sgi, bool virt_input);
 void gic_handle_irq(struct per_cpu *cpu_data);
 void gic_target_spis(struct cell *config_cell, struct cell *dest_cell);

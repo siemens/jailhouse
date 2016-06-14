@@ -288,6 +288,13 @@ static void gic_enable_maint_irq(bool enable)
 	mmio_write32(gich_base + GICH_HCR, hcr);
 }
 
+enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
+				      unsigned int irq)
+{
+	/* doesn't exist in v2 - ignore access */
+	return MMIO_HANDLED;
+}
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	return 1;

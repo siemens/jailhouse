@@ -101,46 +101,6 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 }
 
 /*
- * GICv3 uses a 64bit register IROUTER for each IRQ
- */
-static enum mmio_result handle_irq_route(struct mmio_access *mmio,
-					 unsigned int irq)
-{
-	struct cell *cell = this_cell();
-	unsigned int cpu;
-
-	/* Ignore aff3 on AArch32 (return 0) */
-	if (mmio->size == 4 && (mmio->address % 8))
-		return MMIO_HANDLED;
-
-	/* SGIs and PPIs are res0 */
-	if (!is_spi(irq))
-		return MMIO_HANDLED;
-
-	/*
-	 * Ignore accesses to SPIs that do not belong to the cell. This isn't
-	 * forbidden, because the guest driver may simply iterate over all
-	 * registers at initialisation
-	 */
-	if (!spi_in_cell(cell, irq - 32))
-		return MMIO_HANDLED;
-
-	/* Translate the virtual cpu id into the physical one */
-	if (mmio->is_write) {
-		mmio->value = arm_cpu_virt2phys(cell, mmio->value);
-		if (mmio->value == -1) {
-			printk("Attempt to route IRQ%d outside of cell\n", irq);
-			return MMIO_ERROR;
-		}
-		mmio_perform_access(gicd_base, mmio);
-	} else {
-		cpu = mmio_read32(gicd_base + GICD_IROUTER + 8 * irq);
-		mmio->value = arm_cpu_phys2virt(cpu);
-	}
-	return MMIO_HANDLED;
-}
-
-/*
  * GICv2 uses 8bit values for each IRQ in the ITARGETRs registers
  */
 static enum mmio_result handle_irq_target(struct mmio_access *mmio,
@@ -304,7 +264,7 @@ enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio)
 
 	switch (reg) {
 	case REG_RANGE(GICD_IROUTER, 1024, 8):
-		ret = handle_irq_route(mmio, (reg - GICD_IROUTER) / 8);
+		ret = gic_handle_irq_route(mmio, (reg - GICD_IROUTER) / 8);
 		break;
 
 	case REG_RANGE(GICD_ITARGETSR, 1024, 1):
