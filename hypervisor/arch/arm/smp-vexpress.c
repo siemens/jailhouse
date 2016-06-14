@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/irqchip.h>
 #include <asm/paging.h>
