@@ -1,23 +1,31 @@
 Setup on Banana Pi ARM board
 ============================
 
-The Banana Pi is a cheap Raspberry-Pi-like ARM board with an Allwinner A20 SoC (dual-core Cortex-A7).
-It runs mainline Linux kernels and U-Boot and is comparably well hackable. Further information can be found on http://linux-sunxi.org.
+The Banana Pi is a cheap Raspberry-Pi-like ARM board with an Allwinner A20 SoC
+(dual-core Cortex-A7). It runs mainline Linux kernels and U-Boot and is
+comparably well hackable. Further information can be found on
+http://linux-sunxi.org.
 
-In order to run Jailhouse, the Linux kernel version should be at least 3.19.
-The configuration used for continuous integration builds can serve as reference, see `ci/kernel-config-banana-pi`.
+In order to run Jailhouse, the Linux kernel version should be at least 3.19. The
+configuration used for continuous integration builds can serve as reference, see
+`ci/kernel-config-banana-pi`.
 
-Meanwhile, an U-Boot release more recent than v2015.04 is required. Tested and known to work is release v2016.03.
-Note that, **since v2015.10, you need to disable CONFIG_VIDEO in the U-Boot config**, or U-Boot will configure the framebuffer at the end of the physical RAM where Jailhouse is located.
+Meanwhile, an U-Boot release more recent than v2015.04 is required. Tested and
+known to work is release v2016.03. Note that, **since v2015.10, you need to
+disable CONFIG_VIDEO in the U-Boot config**, or U-Boot will configure the
+framebuffer at the end of the physical RAM where Jailhouse is located.
 
-Below is a tutorial about setting up Jailhouse on a **BananaPi M1** board, and running [FreeRTOS-cell](https://github.com/siemens/freertos-cell) on the top of it. The tutorial is based on :
+Below is a tutorial about setting up Jailhouse on a **BananaPi M1** board, and
+running [FreeRTOS-cell](https://github.com/siemens/freertos-cell) on the top of
+it. The tutorial is based on:
  - Ubuntu-14.04 on a x86-64 machine
  - BananaPi M1 board, running bananian-16.04
 
 
 Installation
 ------------
-Follow the instructions on [BananaPi official site](https://www.bananian.org/download) to build your sd card.
+Follow the instructions on [BananaPi official site](https://www.bananian.org/download)
+to build your sd-card.
 
 Basically here are the steps,
 ```bash
@@ -28,10 +36,12 @@ $ sudo apt-get update && sudo apt-get install unzip screen
 $ unzip ./bananian-latest.zip
 $ lsblk | grep mmcblk
 
-#Write the image to sdcard, replace `mmcblk0` below with the device name returned from `lsblk`
+# Write the image to sdcard, replace `mmcblk0` below with the device name
+# returned from `lsblk`
 $ sudo dd bs=1M if=~/bananian-*.img of=/dev/mmcblk0
 
-#Insert the sd-card to BananaPi, connect it to our machine using ttl cable. On Ubuntu,
+#Insert the sd-card to BananaPi, connect it to our machine using ttl cable.
+#On Ubuntu,
 $ screen /dev/ttyUSB0 115200
 
 #On BananaPi, login with root/pi, then expand the filesystem
@@ -44,56 +54,63 @@ $ bananian-config
 
 Adjusting U-boot for kernel booting arguments.
 ---------------------------------------------
-Jailhouse needs to boot with certain Kernel arguments to reserve memory for other cells (using `mem=...`). We must adjust U-boot config file to boot with these arguments.
-The u-boot partition is not mounted by default. Thus, we need to mount it first. On bananian,
+Jailhouse needs to boot with certain Kernel arguments to reserve memory for
+other cells (using `mem=...`). We must adjust U-boot config file to boot with
+these arguments. The u-boot partition is not mounted by default. Thus, we need
+to mount it first. On bananian,
 ```bash
 $ mkdir /p1
 $ mount /dev/mmcblk0p1 /p1
 $ vi /p1/boot.cmd
 ```
-Append `mem=932M vmalloc=512M` on the end of line that starts with `setenv bootargs`. After editing, the file should look like:
+Append `mem=932M vmalloc=512M` on the end of line that starts with
+`setenv bootargs`. After editing, the file should look like:
 ```bash
-#--------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Boot loader script to boot with different boot methods for old and new kernel
 # Credits: https://github.com/igorpecovnik - Thank you for this great script!
-#--------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 if load mmc 0:1 0x00000000 uImage-next
 then
 # mainline kernel >= 4.x
-#--------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 setenv bootargs console=ttyS0,115200 console=tty0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait mem=932M vmalloc=512M
 load mmc 0:1 0x49000000 dtb/${fdtfile}
 load mmc 0:1 0x46000000 uImage-next
 bootm 0x46000000 - 0x49000000
-#--------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 else
 # sunxi 3.4.x
-#--------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 setenv bootargs console=ttyS0,115200 console=tty0 console=tty1 sunxi_g2d_mem_reserve=0 sunxi_ve_mem_reserve=0 hdmi.audio=EDID:0 disp.screen0_output_mode=EDID:1680x1050p60 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait
 setenv bootm_boot_mode sec
 load mmc 0:1 0x43000000 script.bin
 load mmc 0:1 0x48000000 uImage
 bootm 0x48000000
-#--------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 fi
 ```
-After saving the file, create u-boot recognizable image `*.src` from `*.cmd` using mkimage
+After saving the file, create u-boot recognizable image `*.src` from `*.cmd`
+using mkimage
 ```bash
 $ apt-get update && apt-get install -y u-boot-tools
 $ cd /p1
 $ mkimage -C none -A arm -T script -d boot.cmd boot.scr
 ```
-See more on [disccusion](https://groups.google.com/forum/#!topic/jailhouse-dev/LzyOqEHvEk0) about why it's `mem=932M` instead of `mem=958M`.
+See more on [disccusion](https://groups.google.com/forum/#!topic/jailhouse-dev/LzyOqEHvEk0)
+about why it's `mem=932M` instead of `mem=958M`.
 
 
 Cross Compiling Kernel for ARM on x86
 -------------------------------------
-Jailhouse need to be compiled with kernel objects. Thus we first need a copy of kernel source code and compile it.
+Jailhouse need to be compiled with kernel objects. Thus we first need a copy of
+kernel source code and compile it.
 
-Jailhouse requires Kernel Version >= 3.19. Here, we'll use Kernel version 4.3.3 with patch provided by Bananian team.
+Jailhouse requires Kernel Version >= 3.19. Here, we'll use Kernel version 4.3.3
+with patch provided by Bananian team.
 
-We'll cross compile on a x86 machine for faster compilation.
-On the compiling machine,
+We'll cross compile on a x86 machine for faster compilation. On the compiling
+machine,
 * Obtaining Kernel source code & patches for bananapi, and jailhouse
 ```bash
 $ sudo apt-get update && sudo apt-get install -y git
@@ -138,7 +155,9 @@ $ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j8 uImage modules dtbs LOADA
 
 Installing Kernel
 -----------------
-Here we choose to mount compiled kernel-source directory on BananaPi. Instead one can choose to transfer the directory that contains kernel source to BananaPi.
+Here we choose to mount compiled kernel-source directory on BananaPi. Instead
+one can choose to transfer the directory that contains kernel source to
+BananaPi.
 ```bash
 #On Compiling machine,
 $ sudo apt-get update && sudo apt-get install -y sshfs
@@ -160,7 +179,8 @@ $ cp -v arch/arm/boot/dts/*.dtb /boot/dtb/
 $ reboot
 ```
 
-Verify installation using `$ uname -r`, if the kernel is installed successfully, the bash command above should return `4.3.3-dirty`.
+Verify installation using `$ uname -r`, if the kernel is installed successfully,
+the bash command above should return `4.3.3-dirty`.
 
 
 Cross Compiling Jailhouse(w/ FreeRTOS-cell) for ARM on x86
@@ -218,9 +238,11 @@ $ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- \
 
 Testing Jailhouse On BananaPi
 -----------------------------
-To test jailhouse on BananaPi, we would need the `*.cell` file where could be located in the cross-compiled `jailhouse` & `freertos-cell` directory.
+To test jailhouse on BananaPi, we would need the `*.cell` file where could be
+located in the cross-compiled `jailhouse` & `freertos-cell` directory.
 
-Here we transfer these two directory from the compiling machine to BananaPi using sftp.
+Here we transfer these two directory from the compiling machine to BananaPi
+using sftp.
 ```bash
 #On Compiling Machine,
 $ cd ~ && tar -zcf jailhouse-compiled.tar.gz jailhouse freertos-cell
@@ -238,7 +260,9 @@ $ jailhouse cell create ~/jailhouse/configs/bannapi-freertos-demo.cell
 $ jailhouse cell load FreeRTOS ~/freertos-cell/freertos-demo.bin
 $ jailhouse cell start FreeRTOS
 
-#Jailhouse and FreeRTOS cell has been started, you should able to get some output from the FreeRTOS demo application on the second serial interface of BananaPi.
+#Jailhouse and FreeRTOS cell has been started, you should able to get some
+#output from the FreeRTOS demo application on the second serial interface of
+#BananaPi.
 
 #After making sure all things works well, turn off jailhouse using command below
 $ jailhouse cell shutdown FreeRTOS
