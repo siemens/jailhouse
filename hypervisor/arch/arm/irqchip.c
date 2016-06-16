@@ -129,16 +129,16 @@ int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
-int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
+void irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
 {
 	struct pending_irq pending;
 
 	pending.virt_id = irq_id;
 
 	if (try_inject && irqchip.inject_irq(cpu_data, &pending) == 0)
-		return 0;
+		return;
 
-	return irqchip_insert_pending(cpu_data, &pending);
+	irqchip_insert_pending(cpu_data, &pending);
 }
 
 /*

@@ -86,7 +86,7 @@ void irqchip_eoi_irq(u32 irqn, bool deactivate);
 void irqchip_inject_pending(struct per_cpu *cpu_data);
 int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
 int irqchip_remove_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
-int irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject);
+void irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject);
 
 bool spi_in_cell(struct cell *cell, unsigned int spi);
 
