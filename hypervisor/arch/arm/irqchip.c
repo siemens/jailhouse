@@ -224,6 +224,8 @@ int irqchip_init(void)
 	case 0x4:
 		memcpy(&irqchip, &gic_irqchip, sizeof(struct irqchip_ops));
 		break;
+	default:
+		goto err_no_distributor;
 	}
 
 	if (irqchip.init) {
@@ -234,7 +236,7 @@ int irqchip_init(void)
 	}
 
 err_no_distributor:
-	printk("GIC: no distributor found\n");
+	printk("GIC: no supported distributor found\n");
 	arch_unmap_device(gicd_base, gicd_size);
 
 	return -ENODEV;
