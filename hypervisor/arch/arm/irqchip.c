@@ -73,6 +73,14 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	}
 
 	spin_unlock(&cpu_data->pending_irqs_lock);
+
+	/*
+	 * The list registers are full, trigger maintenance interrupt if we are
+	 * on the target CPU. In the other case, the caller will send a
+	 * SGI_INJECT, and irqchip_inject_pending will take care.
+	 */
+	if (local_injection)
+		irqchip.enable_maint_irq(true);
 }
 
 void irqchip_inject_pending(struct per_cpu *cpu_data)
