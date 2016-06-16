@@ -46,29 +46,24 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 			unsigned int bits_per_irq, bool is_poke)
 {
 	struct cell *cell = this_cell();
-	unsigned int spi;
+	unsigned int irq;
 	unsigned long access_mask = 0;
 	/*
 	 * In order to avoid division, the number of bits per irq is limited
 	 * to powers of 2 for the moment.
 	 */
 	unsigned long irqs_per_reg = 32 >> ffsl(bits_per_irq);
-	unsigned long spi_bits = (1 << bits_per_irq) - 1;
+	unsigned long irq_bits = (1 << bits_per_irq) - 1;
 	/* First, extract the first interrupt affected by this access */
 	unsigned int first_irq = reg_index * irqs_per_reg;
 
-	/* For SGIs or PPIs, let the caller do the mmio access */
-	if (!is_spi(first_irq)) {
-		mmio_perform_access(gicd_base, mmio);
-		return MMIO_HANDLED;
-	}
+	for (irq = first_irq; irq < first_irq + irqs_per_reg; irq++) {
+		unsigned int bit_nr = (irq - first_irq) * bits_per_irq;
 
-	/* For SPIs, compare against the cell config mask */
-	first_irq -= 32;
-	for (spi = first_irq; spi < first_irq + irqs_per_reg; spi++) {
-		unsigned int bit_nr = (spi - first_irq) * bits_per_irq;
-		if (spi_in_cell(cell, spi))
-			access_mask |= spi_bits << bit_nr;
+		if ((is_spi(irq) && spi_in_cell(cell, irq - 32)) ||
+		    irq == SGI_INJECT || irq == SGI_CPU_OFF ||
+		    irq == MAINTENANCE_IRQ)
+			access_mask |= irq_bits << bit_nr;
 	}
 
 	if (!mmio->is_write) {
