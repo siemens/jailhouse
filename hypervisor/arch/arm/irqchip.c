@@ -160,7 +160,7 @@ int irqchip_remove_pending(struct per_cpu *cpu_data, struct pending_irq *irq)
 	return 0;
 }
 
-int irqchip_inject_pending(struct per_cpu *cpu_data)
+void irqchip_inject_pending(struct per_cpu *cpu_data)
 {
 	int err;
 	struct pending_irq *pending = cpu_data->first_pending;
@@ -183,8 +183,6 @@ int irqchip_inject_pending(struct per_cpu *cpu_data)
 
 		pending = pending->next;
 	}
-
-	return 0;
 }
 
 void irqchip_handle_irq(struct per_cpu *cpu_data)
