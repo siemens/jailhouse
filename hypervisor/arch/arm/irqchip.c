@@ -127,20 +127,14 @@ int irqchip_send_sgi(struct sgi *sgi)
 
 int irqchip_cpu_init(struct per_cpu *cpu_data)
 {
-	if (irqchip.cpu_init)
-		return irqchip.cpu_init(cpu_data);
-
-	return 0;
+	return irqchip.cpu_init(cpu_data);
 }
 
 int irqchip_cpu_reset(struct per_cpu *cpu_data)
 {
 	cpu_data->pending_irqs_head = cpu_data->pending_irqs_tail = 0;
 
-	if (irqchip.cpu_reset)
-		return irqchip.cpu_reset(cpu_data, false);
-
-	return 0;
+	return irqchip.cpu_reset(cpu_data, false);
 }
 
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
@@ -150,8 +144,7 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	 * it has been initialised: this function may be executed during the
 	 * setup phase.
 	 */
-	if (irqchip.cpu_reset)
-		irqchip.cpu_reset(cpu_data, true);
+	irqchip.cpu_reset(cpu_data, true);
 }
 
 static const struct jailhouse_irqchip *
