@@ -293,7 +293,7 @@ unsigned int irqchip_mmio_count_regions(struct cell *cell)
 	return 1;
 }
 
-struct irqchip_ops gic_irqchip = {
+struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,

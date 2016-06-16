@@ -24,6 +24,8 @@
 /* AMBA's biosfood */
 #define AMBA_DEVICE	0xb105f00d
 
+extern struct irqchip_ops irqchip;
+
 void *gicd_base;
 unsigned long gicd_size;
 
@@ -32,7 +34,6 @@ unsigned long gicd_size;
  * per-cpu setup, which means that a bool must be set by the master CPU
  */
 static bool irqchip_is_init;
-static struct irqchip_ops irqchip;
 
 bool spi_in_cell(struct cell *cell, unsigned int spi)
 {
@@ -189,9 +190,6 @@ void irqchip_root_cell_shrink(struct cell *cell)
 	root_cell.arch.spis &= ~(cell->arch.spis);
 }
 
-/* Only the GIC is implemented */
-extern struct irqchip_ops gic_irqchip;
-
 int irqchip_init(void)
 {
 	int i, err;
@@ -222,7 +220,6 @@ int irqchip_init(void)
 	case 0x2:
 	case 0x3:
 	case 0x4:
-		memcpy(&irqchip, &gic_irqchip, sizeof(struct irqchip_ops));
 		break;
 	default:
 		goto err_no_distributor;
