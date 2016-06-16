@@ -248,7 +248,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 		/* Check that there is no overlapping */
 		lr = gic_read_lr(i);
 		if ((lr & GICH_LR_VIRT_ID_MASK) == irq->virt_id)
-			return -EINVAL;
+			return -EEXIST;
 	}
 
 	if (first_free == -1)

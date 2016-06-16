@@ -367,7 +367,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 		 * should be sufficient.
 		 */
 		if ((u32)lr == irq->virt_id)
-			return -EINVAL;
+			return -EEXIST;
 	}
 
 	if (free_lr == -1)

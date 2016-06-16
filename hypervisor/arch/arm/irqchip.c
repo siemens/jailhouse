@@ -135,10 +135,8 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
 
 	pending.virt_id = irq_id;
 
-	if (try_inject && irqchip.inject_irq(cpu_data, &pending) == 0)
-		return;
-
-	irqchip_insert_pending(cpu_data, &pending);
+	if (!try_inject || irqchip.inject_irq(cpu_data, &pending) == -EBUSY)
+		irqchip_insert_pending(cpu_data, &pending);
 }
 
 /*
