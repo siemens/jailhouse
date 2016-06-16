@@ -21,6 +21,7 @@
 #ifndef __ASSEMBLY__
 
 #include <jailhouse/cell.h>
+#include <asm/irqchip.h>
 #include <asm/psci.h>
 #include <asm/spinlock.h>
 #include <asm/sysregs.h>
@@ -28,8 +29,6 @@
 /* Round up sizeof(struct per_cpu) to the next power of two. */
 #define PERCPU_SIZE_SHIFT \
 	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
-
-struct pending_irq;
 
 struct per_cpu {
 	u8 stack[PAGE_SIZE];
@@ -41,10 +40,12 @@ struct per_cpu {
 	unsigned int cpu_id;
 	unsigned int virt_id;
 
-	/* Other CPUs can insert sgis into the pending array */
-	spinlock_t gic_lock;
-	struct pending_irq *pending_irqs;
-	struct pending_irq *first_pending;
+	/* synchronizes parallel insertions of SGIs into the pending ring */
+	spinlock_t pending_irqs_lock;
+	u16 pending_irqs[MAX_PENDING_IRQS];
+	unsigned int pending_irqs_head;
+	/* removal from the ring happens lockless, thus tail is volatile */
+	volatile unsigned int pending_irqs_tail;
 	/* Only GICv3: redistributor base */
 	void *gicr_base;
 

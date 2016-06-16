@@ -13,19 +13,14 @@
 #ifndef _JAILHOUSE_ASM_IRQCHIP_H
 #define _JAILHOUSE_ASM_IRQCHIP_H
 
-/*
- * Since there is no finer-grained allocation than page-alloc for the moment,
- * and it is very complicated to predict the total size needed at
- * initialisation, each cpu is allocated one page of pending irqs.
- * This allows for 256 pending IRQs, which should be sufficient.
- */
-#define MAX_PENDING_IRQS	(PAGE_SIZE / sizeof(struct pending_irq))
+#define MAX_PENDING_IRQS	256
 
 #include <jailhouse/cell.h>
 #include <jailhouse/mmio.h>
-#include <asm/percpu.h>
 
 #ifndef __ASSEMBLY__
+
+struct per_cpu;
 
 struct sgi {
 	/*
@@ -54,8 +49,7 @@ struct irqchip_ops {
 	int	(*send_sgi)(struct sgi *sgi);
 	void	(*handle_irq)(struct per_cpu *cpu_data);
 	void	(*eoi_irq)(u32 irqn, bool deactivate);
-	int	(*inject_irq)(struct per_cpu *cpu_data,
-			      struct pending_irq *irq);
+	int	(*inject_irq)(struct per_cpu *cpu_data, u16 irq_id);
 	void	(*enable_maint_irq)(bool enable);
 
 	int	(*mmio_access)(struct mmio_access *access);
@@ -85,9 +79,7 @@ void irqchip_handle_irq(struct per_cpu *cpu_data);
 void irqchip_eoi_irq(u32 irqn, bool deactivate);
 
 void irqchip_inject_pending(struct per_cpu *cpu_data);
-int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
-int irqchip_remove_pending(struct per_cpu *cpu_data, struct pending_irq *irq);
-void irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject);
+void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id, bool try_inject);
 
 bool spi_in_cell(struct cell *cell, unsigned int spi);
 

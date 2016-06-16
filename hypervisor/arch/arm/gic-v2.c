@@ -228,7 +228,7 @@ static int gic_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
-static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
+static int gic_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 {
 	int i;
 	int first_free = -1;
@@ -247,7 +247,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 
 		/* Check that there is no overlapping */
 		lr = gic_read_lr(i);
-		if ((lr & GICH_LR_VIRT_ID_MASK) == irq->virt_id)
+		if ((lr & GICH_LR_VIRT_ID_MASK) == irq_id)
 			return -EEXIST;
 	}
 
@@ -255,12 +255,12 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 		return -EBUSY;
 
 	/* Inject group 0 interrupt (seen as IRQ by the guest) */
-	lr = irq->virt_id;
+	lr = irq_id;
 	lr |= GICH_LR_PENDING_BIT;
 
-	if (!is_sgi(irq->virt_id)) {
+	if (!is_sgi(irq_id)) {
 		lr |= GICH_LR_HW_BIT;
-		lr |= irq->virt_id << GICH_LR_PHYS_ID_SHIFT;
+		lr |= (u32)irq_id << GICH_LR_PHYS_ID_SHIFT;
 	}
 
 	gic_write_lr(first_free, lr);

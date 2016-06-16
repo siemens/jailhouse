@@ -49,142 +49,49 @@ bool spi_in_cell(struct cell *cell, unsigned int spi)
 	return spi_mask & (1 << (spi & 31));
 }
 
-static int irqchip_init_pending(struct per_cpu *cpu_data)
+void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id, bool try_inject)
 {
-	struct pending_irq *pend_array;
+	unsigned int new_tail;
 
-	if (cpu_data->pending_irqs == NULL) {
-		cpu_data->pending_irqs = pend_array = page_alloc(&mem_pool, 1);
-		if (pend_array == NULL)
-			return -ENOMEM;
-	} else {
-		pend_array = cpu_data->pending_irqs;
+	if (try_inject && irqchip.inject_irq(cpu_data, irq_id) != -EBUSY)
+		return;
+
+	spin_lock(&cpu_data->pending_irqs_lock);
+
+	new_tail = (cpu_data->pending_irqs_tail + 1) % MAX_PENDING_IRQS;
+
+	/* Queue space available? */
+	if (new_tail != cpu_data->pending_irqs_head) {
+		cpu_data->pending_irqs[cpu_data->pending_irqs_tail] = irq_id;
+		cpu_data->pending_irqs_tail = new_tail;
+		/*
+		 * Make the change to pending_irqs_tail visible before the
+		 * caller sends SGI_INJECT.
+		 */
+		memory_barrier();
 	}
 
-	memset(pend_array, 0, PAGE_SIZE);
-
-	cpu_data->pending_irqs = pend_array;
-	cpu_data->first_pending = NULL;
-
-	return 0;
-}
-
-/*
- * Find the first available pending struct for insertion. The `prev' pointer is
- * set to the previous pending interrupt, if any, to help inserting the new one
- * into the list.
- * Returns NULL when no slot is available
- */
-static struct pending_irq* get_pending_slot(struct per_cpu *cpu_data,
-					    struct pending_irq **prev)
-{
-	u32 i, pending_idx;
-	struct pending_irq *pending = cpu_data->first_pending;
-
-	*prev = NULL;
-
-	for (i = 0; i < MAX_PENDING_IRQS; i++) {
-		pending_idx = pending - cpu_data->pending_irqs;
-		if (pending == NULL || i < pending_idx)
-			return cpu_data->pending_irqs + i;
-
-		*prev = pending;
-		pending = pending->next;
-	}
-
-	return NULL;
-}
-
-int irqchip_insert_pending(struct per_cpu *cpu_data, struct pending_irq *irq)
-{
-	struct pending_irq *prev = NULL;
-	struct pending_irq *slot;
-
-	spin_lock(&cpu_data->gic_lock);
-
-	slot = get_pending_slot(cpu_data, &prev);
-	if (slot == NULL) {
-		spin_unlock(&cpu_data->gic_lock);
-		return -ENOMEM;
-	}
-
-	/*
-	 * Don't override the pointers yet, they may be read by the injection
-	 * loop. Odds are astronomically low, but hey.
-	 */
-	memcpy(slot, irq, sizeof(struct pending_irq) - 2 * sizeof(void *));
-	slot->prev = prev;
-	if (prev) {
-		slot->next = prev->next;
-		prev->next = slot;
-	} else {
-		slot->next = cpu_data->first_pending;
-		cpu_data->first_pending = slot;
-	}
-	if (slot->next)
-		slot->next->prev = slot;
-
-	spin_unlock(&cpu_data->gic_lock);
-
-	return 0;
-}
-
-void irqchip_set_pending(struct per_cpu *cpu_data, u32 irq_id, bool try_inject)
-{
-	struct pending_irq pending;
-
-	pending.virt_id = irq_id;
-
-	if (!try_inject || irqchip.inject_irq(cpu_data, &pending) == -EBUSY)
-		irqchip_insert_pending(cpu_data, &pending);
-}
-
-/*
- * Only executed by `irqchip_inject_pending' on a CPU to inject its own stuff.
- */
-int irqchip_remove_pending(struct per_cpu *cpu_data, struct pending_irq *irq)
-{
-	spin_lock(&cpu_data->gic_lock);
-
-	if (cpu_data->first_pending == irq)
-		cpu_data->first_pending = irq->next;
-	if (irq->prev)
-		irq->prev->next = irq->next;
-	if (irq->next)
-		irq->next->prev = irq->prev;
-
-	spin_unlock(&cpu_data->gic_lock);
-
-	return 0;
+	spin_unlock(&cpu_data->pending_irqs_lock);
 }
 
 void irqchip_inject_pending(struct per_cpu *cpu_data)
 {
-	int err;
-	struct pending_irq *pending = cpu_data->first_pending;
+	u16 irq_id;
 
-	while (pending != NULL) {
-		err = irqchip.inject_irq(cpu_data, pending);
-		if (err == -EBUSY) {
+	while (cpu_data->pending_irqs_head != cpu_data->pending_irqs_tail) {
+		irq_id = cpu_data->pending_irqs[cpu_data->pending_irqs_head];
+
+		if (irqchip.inject_irq(cpu_data, irq_id) == -EBUSY) {
 			/*
 			 * The list registers are full, trigger maintenance
 			 * interrupt and leave.
 			 */
 			irqchip.enable_maint_irq(true);
 			return;
-		} else {
-			/*
-			 * Removal only changes the pointers, but does not
-			 * deallocate anything.
-			 * Concurrent accesses are avoided with the spinlock,
-			 * but the `next' pointer of the current pending object
-			 * may be rewritten by an external insert before or
-			 * after this removal, which isn't an issue.
-			 */
-			irqchip_remove_pending(cpu_data, pending);
 		}
 
-		pending = pending->next;
+		cpu_data->pending_irqs_head =
+			(cpu_data->pending_irqs_head + 1) % MAX_PENDING_IRQS;
 	}
 
 	/*
@@ -211,12 +118,6 @@ int irqchip_send_sgi(struct sgi *sgi)
 
 int irqchip_cpu_init(struct per_cpu *cpu_data)
 {
-	int err;
-
-	err = irqchip_init_pending(cpu_data);
-	if (err)
-		return err;
-
 	if (irqchip.cpu_init)
 		return irqchip.cpu_init(cpu_data);
 
@@ -225,11 +126,7 @@ int irqchip_cpu_init(struct per_cpu *cpu_data)
 
 int irqchip_cpu_reset(struct per_cpu *cpu_data)
 {
-	int err;
-
-	err = irqchip_init_pending(cpu_data);
-	if (err)
-		return err;
+	cpu_data->pending_irqs_head = cpu_data->pending_irqs_tail = 0;
 
 	if (irqchip.cpu_reset)
 		return irqchip.cpu_reset(cpu_data, false);

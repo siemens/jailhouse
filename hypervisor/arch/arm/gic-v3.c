@@ -340,7 +340,7 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 		arm_write_sysreg(ICC_DIR_EL1, irq_id);
 }
 
-static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
+static int gic_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 {
 	int i;
 	int free_lr = -1;
@@ -366,7 +366,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 		 * A strict phys->virt id mapping is used for SPIs, so this test
 		 * should be sufficient.
 		 */
-		if ((u32)lr == irq->virt_id)
+		if ((u32)lr == irq_id)
 			return -EEXIST;
 	}
 
@@ -374,13 +374,13 @@ static int gic_inject_irq(struct per_cpu *cpu_data, struct pending_irq *irq)
 		/* All list registers are in use */
 		return -EBUSY;
 
-	lr = irq->virt_id;
+	lr = irq_id;
 	/* Only group 1 interrupts */
 	lr |= ICH_LR_GROUP_BIT;
 	lr |= ICH_LR_PENDING;
-	if (!is_sgi(irq->virt_id)) {
+	if (!is_sgi(irq_id)) {
 		lr |= ICH_LR_HW_BIT;
-		lr |= (u64)irq->virt_id << ICH_LR_PHYS_ID_SHIFT;
+		lr |= (u64)irq_id << ICH_LR_PHYS_ID_SHIFT;
 	}
 
 	gic_write_lr(free_lr, lr);
