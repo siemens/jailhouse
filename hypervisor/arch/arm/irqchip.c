@@ -49,11 +49,12 @@ bool spi_in_cell(struct cell *cell, unsigned int spi)
 	return spi_mask & (1 << (spi & 31));
 }
 
-void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id, bool try_inject)
+void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 {
+	bool local_injection = (this_cpu_data() == cpu_data);
 	unsigned int new_tail;
 
-	if (try_inject && irqchip.inject_irq(cpu_data, irq_id) != -EBUSY)
+	if (local_injection && irqchip.inject_irq(cpu_data, irq_id) != -EBUSY)
 		return;
 
 	spin_lock(&cpu_data->pending_irqs_lock);

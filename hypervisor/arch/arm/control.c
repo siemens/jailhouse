@@ -329,7 +329,7 @@ bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
 
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ]++;
 
-	irqchip_set_pending(cpu_data, irqn, true);
+	irqchip_set_pending(cpu_data, irqn);
 
 	return false;
 }

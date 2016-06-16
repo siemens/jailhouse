@@ -293,7 +293,7 @@ void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 		if (sgi->routing_mode == 0 && !is_target)
 			continue;
 
-		irqchip_set_pending(per_cpu(cpu), sgi->id, false);
+		irqchip_set_pending(per_cpu(cpu), sgi->id);
 		sgi->targets |= (1 << cpu);
 	}
 
