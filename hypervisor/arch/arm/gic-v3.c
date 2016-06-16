@@ -92,14 +92,18 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 			arm_write_sysreg(ICC_DIR_EL1, i);
 	}
 
+	/* Ensure all IPIs and the maintenance PPI are enabled. */
+	mmio_write32(gicr + GICR_ISENABLER,
+		     0x0000ffff | (1 << MAINTENANCE_IRQ));
+
 	/*
-	 * Disable all PPIs, ensure IPIs are enabled.
-	 * On shutdown, the root cell expects to find all its PPIs still enabled
-	 * when returning to the driver.
+	 * Disable PPIs, except for the maintenance interrupt.
+	 * On shutdown, the root cell expects to find all its PPIs still
+	 * enabled - except for the maintenance interrupt we used.
 	 */
-	if (!root_shutdown)
-		mmio_write32(gicr + GICR_ICENABLER, 0xffff0000);
-	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff);
+	mmio_write32(gicr + GICR_ICENABLER,
+		     root_shutdown ? 1 << MAINTENANCE_IRQ :
+				     0xffff0000 & ~(1 << MAINTENANCE_IRQ));
 
 	if (root_shutdown) {
 		/* Restore the root config */
@@ -152,8 +156,9 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 		return -ENODEV;
 	}
 
-	/* Ensure all IPIs are enabled */
-	mmio_write32(redist_base + GICR_SGI_BASE + GICR_ISENABLER, 0x0000ffff);
+	/* Ensure all IPIs and the maintenance PPI are enabled. */
+	mmio_write32(redist_base + GICR_SGI_BASE + GICR_ISENABLER,
+		     0x0000ffff | (1 << MAINTENANCE_IRQ));
 
 	/*
 	 * Set EOIMode to 1

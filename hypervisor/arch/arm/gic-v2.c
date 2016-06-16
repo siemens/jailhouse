@@ -76,11 +76,18 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 			mmio_write32(gicc_base + GICC_DIR, i);
 	}
 
-	/* Disable PPIs if necessary */
-	if (!root_shutdown)
-		mmio_write32(gicd_base + GICD_ICENABLER, 0xffff0000);
-	/* Ensure IPIs are enabled */
-	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff);
+	/* Ensure all IPIs and the maintenance PPI are enabled */
+	mmio_write32(gicd_base + GICD_ISENABLER,
+		     0x0000ffff | (1 << MAINTENANCE_IRQ));
+
+	/*
+	 * Disable PPIs, except for the maintenance interrupt.
+	 * On shutdown, the root cell expects to find all its PPIs still
+	 * enabled - except for the maintenance interrupt we used.
+	 */
+	mmio_write32(gicd_base + GICD_ICENABLER,
+		     root_shutdown ? 1 << MAINTENANCE_IRQ :
+				     0xffff0000 & ~(1 << MAINTENANCE_IRQ));
 
 	if (is_shutdown)
 		mmio_write32(gich_base + GICH_HCR, 0);
@@ -110,8 +117,9 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	u32 vtr, vmcr;
 	u32 cell_gicc_ctlr, cell_gicc_pmr;
 
-	/* Ensure all IPIs are enabled */
-	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff);
+	/* Ensure all IPIs and the maintenance PPI are enabled. */
+	mmio_write32(gicd_base + GICD_ISENABLER,
+		     0x0000ffff | (1 << MAINTENANCE_IRQ));
 
 	cell_gicc_ctlr = mmio_read32(gicc_base + GICC_CTLR);
 	cell_gicc_pmr = mmio_read32(gicc_base + GICC_PMR);
