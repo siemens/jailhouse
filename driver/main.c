@@ -257,6 +257,15 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	header = (struct jailhouse_header *)hypervisor_mem;
 	header->max_cpus = max_cpus;
 
+	/*
+	 * ARMv8 requires to clean D-cache and invalidate I-cache for memory
+	 * containing new instructions. On x86 this is a NOP. On ARMv7 the
+	 * firmware does its own cache maintenance, so it is an
+	 * extraneous (but harmless) flush.
+	 */
+	flush_icache_range((unsigned long)hypervisor_mem,
+			   (unsigned long)(hypervisor_mem + header->core_size));
+
 	config = (struct jailhouse_system *)
 		(hypervisor_mem + hv_core_and_percpu_size);
 	if (copy_from_user(config, arg, config_size)) {
