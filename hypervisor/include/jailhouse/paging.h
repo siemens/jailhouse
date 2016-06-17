@@ -183,6 +183,7 @@ extern struct paging_structures hv_paging_structs;
 unsigned long paging_get_phys_invalid(pt_entry_t pte, unsigned long virt);
 
 void *page_alloc(struct page_pool *pool, unsigned int num);
+void *page_alloc_aligned(struct page_pool *pool, unsigned int num);
 void page_free(struct page_pool *pool, void *first_page, unsigned int num);
 
 /**

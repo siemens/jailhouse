@@ -89,6 +89,56 @@ static unsigned long find_next_free_page(struct page_pool *pool,
 
 /**
  * Allocate consecutive pages from the specified pool.
+ * @param pool		Page pool to allocate from.
+ * @param num		Number of pages.
+ * @param align_mask	Choose start so that start_page_no & align_mask == 0.
+ *
+ * @return Pointer to first page or NULL if allocation failed.
+ *
+ * @see page_free
+ */
+static void *page_alloc_internal(struct page_pool *pool, unsigned int num,
+				 unsigned long align_mask)
+{
+	/* The pool itself might not be aligned as required. */
+	unsigned long aligned_start =
+		((unsigned long)pool->base_address >> PAGE_SHIFT) & align_mask;
+	unsigned long next = aligned_start;
+	unsigned long start, last;
+	unsigned int allocated;
+
+restart:
+	/* Forward the search start to the next aligned page. */
+	if ((next - aligned_start) & align_mask)
+		next += num - ((next - aligned_start) & align_mask);
+
+	start = next = find_next_free_page(pool, next);
+	if (start == INVALID_PAGE_NR || num == 0)
+		return NULL;
+
+	/* Enforce alignment (none of align_mask is 0). */
+	if ((start - aligned_start) & align_mask)
+		goto restart;
+
+	for (allocated = 1, last = start; allocated < num;
+	     allocated++, last = next) {
+		next = find_next_free_page(pool, last + 1);
+		if (next == INVALID_PAGE_NR)
+			return NULL;
+		if (next != last + 1)
+			goto restart;	/* not consecutive */
+	}
+
+	for (allocated = 0; allocated < num; allocated++)
+		set_bit(start + allocated, pool->used_bitmap);
+
+	pool->used_pages += num;
+
+	return pool->base_address + start * PAGE_SIZE;
+}
+
+/**
+ * Allocate consecutive pages from the specified pool.
  * @param pool	Page pool to allocate from.
  * @param num	Number of pages.
  *
@@ -98,31 +148,21 @@ static unsigned long find_next_free_page(struct page_pool *pool,
  */
 void *page_alloc(struct page_pool *pool, unsigned int num)
 {
-	unsigned long start, last, next;
-	unsigned int allocated;
+	return page_alloc_internal(pool, num, 0);
+}
 
-	start = find_next_free_page(pool, 0);
-	if (start == INVALID_PAGE_NR || num == 0)
-		return NULL;
-
-restart:
-	for (allocated = 1, last = start; allocated < num;
-	     allocated++, last = next) {
-		next = find_next_free_page(pool, last + 1);
-		if (next == INVALID_PAGE_NR)
-			return NULL;
-		if (next != last + 1) {
-			start = next;
-			goto restart;
-		}
-	}
-
-	for (allocated = 0; allocated < num; allocated++)
-		set_bit(start + allocated, pool->used_bitmap);
-
-	pool->used_pages += num;
-
-	return pool->base_address + start * PAGE_SIZE;
+/**
+ * Allocate aligned consecutive pages from the specified pool.
+ * @param pool	Page pool to allocate from.
+ * @param num	Number of pages. Num needs to be a power of 2.
+ *
+ * @return Pointer to first page or NULL if allocation failed.
+ *
+ * @see page_free
+ */
+void *page_alloc_aligned(struct page_pool *pool, unsigned int num)
+{
+	return page_alloc_internal(pool, num, num - 1);
 }
 
 /**
