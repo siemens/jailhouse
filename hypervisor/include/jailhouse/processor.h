@@ -12,4 +12,4 @@
 
 #include <asm/processor.h>
 
-int phys_processor_id(void);
+unsigned long phys_processor_id(void);

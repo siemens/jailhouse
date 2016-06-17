@@ -300,7 +300,7 @@ x86_exception_handler(struct exception_frame *frame)
 		     frame->vector);
 	if (frame->error != -1)
 		panic_printk("Error code: %x\n", frame->error);
-	panic_printk("Physical CPU ID: %d\n", phys_processor_id());
+	panic_printk("Physical CPU ID: %lu\n", phys_processor_id());
 	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", frame->rip, frame->rsp,
 		     frame->flags);
 	if (frame->vector == PF_VECTOR)

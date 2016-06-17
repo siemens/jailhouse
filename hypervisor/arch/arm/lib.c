@@ -15,9 +15,9 @@
 #include <jailhouse/types.h>
 #include <asm/sysregs.h>
 
-int phys_processor_id(void)
+unsigned long phys_processor_id(void)
 {
-	u32 mpidr;
+	unsigned long mpidr;
 
 	arm_read_sysreg(MPIDR_EL1, mpidr);
 	return mpidr & MPIDR_CPUID_MASK;
