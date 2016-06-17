@@ -210,5 +210,5 @@ hypervisor_header = {
 	.signature = JAILHOUSE_SIGNATURE,
 	.core_size = (unsigned long)__page_pool - JAILHOUSE_BASE,
 	.percpu_size = sizeof(struct per_cpu),
-	.entry = arch_entry,
+	.entry = arch_entry - JAILHOUSE_BASE,
 };

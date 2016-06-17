@@ -36,7 +36,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define JAILHOUSE_BASE		__MAKE_UL(0xfffffffff0000000)
+#define JAILHOUSE_BASE			__MAKE_UL(0xfffffffff0000000)
+#define JAILHOUSE_BORROW_ROOT_PT	1
 
 /*
  * As this is never called on a CPU without VM extensions,

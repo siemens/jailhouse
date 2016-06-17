@@ -139,11 +139,14 @@ static void enter_hypervisor(void *info)
 {
 	struct jailhouse_header *header = info;
 	unsigned int cpu = smp_processor_id();
+	int (*entry)(unsigned int);
 	int err;
+
+	entry = header->entry + (unsigned long) hypervisor_mem;
 
 	if (cpu < header->max_cpus)
 		/* either returns 0 or the same error code across all CPUs */
-		err = header->entry(cpu);
+		err = entry(cpu);
 	else
 		err = -EINVAL;
 
@@ -178,6 +181,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	struct jailhouse_system *config;
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
+	unsigned long remap_addr = 0;
 	void __iomem *console = NULL;
 	unsigned long config_size;
 	const char *fw_name;
@@ -235,7 +239,10 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	    config_size >= hv_mem->size - hv_core_and_percpu_size)
 		goto error_release_fw;
 
-	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, JAILHOUSE_BASE,
+#ifdef JAILHOUSE_BORROW_ROOT_PT
+	remap_addr = JAILHOUSE_BASE;
+#endif
+	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, remap_addr,
 					   hv_mem->size);
 	if (!hypervisor_mem) {
 		pr_err("jailhouse: Unable to map RAM reserved for hypervisor "
@@ -258,6 +265,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 
 	if (config->debug_console.flags & JAILHOUSE_MEM_IO) {
+#ifdef JAILHOUSE_BORROW_ROOT_PT
 		console = ioremap(config->debug_console.phys_start,
 				  config->debug_console.size);
 		if (!console) {
@@ -270,6 +278,10 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		/* The hypervisor has no notion of address spaces, so we need
 		 * to enforce conversion. */
 		header->debug_console_base = (void * __force)console;
+#else
+		header->debug_console_base =
+			(void * __force) config->debug_console.phys_start;
+#endif
 	}
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
