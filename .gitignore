@@ -1,4 +1,4 @@
-# Built outputs
+# Build outputs - only!
 *.[oa]
 *.mod.[co]
 *.cmd
@@ -17,9 +17,3 @@ hypervisor/include/generated
 *.s
 ci/out
 ci/*.tar.xz
-
-# Tools outputs
-*~
-*.sw[pon]
-cscope.*
-ncscope.*
