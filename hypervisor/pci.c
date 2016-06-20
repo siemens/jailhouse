@@ -72,7 +72,7 @@ unsigned int pci_mmio_count_regions(struct cell *cell)
 		jailhouse_cell_pci_devices(cell->config);
 	unsigned int n, regions = 0;
 
-	if (system_config->platform_info.x86.mmconfig_base)
+	if (system_config->platform_info.pci_mmconfig_base)
 		regions++;
 
 	for (n = 0; n < cell->config->num_pci_devices; n++)
@@ -359,9 +359,9 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
  */
 int pci_init(void)
 {
-	mmcfg_start = system_config->platform_info.x86.mmconfig_base;
+	mmcfg_start = system_config->platform_info.pci_mmconfig_base;
 	if (mmcfg_start != 0) {
-		end_bus = system_config->platform_info.x86.mmconfig_end_bus;
+		end_bus = system_config->platform_info.pci_mmconfig_end_bus;
 		mmcfg_size = (end_bus + 1) * 256 * 4096;
 
 		pci_space = paging_map_device(mmcfg_start, mmcfg_size);

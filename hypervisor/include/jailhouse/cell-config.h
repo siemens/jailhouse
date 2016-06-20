@@ -175,24 +175,27 @@ struct jailhouse_system {
 	/** Jailhouse's location in memory */
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory debug_console;
-	union {
-		struct {
-			__u64 mmconfig_base;
-			__u8 mmconfig_end_bus;
-			__u8 padding[5];
-			__u16 pm_timer_address;
-			struct jailhouse_iommu
-				iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
-		} __attribute__((packed)) x86;
-		struct {
-			u64 gicd_base;
-			u64 gicc_base;
-			u64 gich_base;
-			u64 gicv_base;
-			u64 gicr_base;
-			u8 maintenance_irq;
-			u8 padding[3];
-		} __attribute__((packed)) arm;
+	struct {
+		__u64 pci_mmconfig_base;
+		__u8 pci_mmconfig_end_bus;
+		__u8 padding;
+		union {
+			struct {
+				__u16 pm_timer_address;
+				__u8 padding[4];
+				struct jailhouse_iommu
+					iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
+			} __attribute__((packed)) x86;
+			struct {
+				u64 gicd_base;
+				u64 gicc_base;
+				u64 gich_base;
+				u64 gicv_base;
+				u64 gicr_base;
+				u8 maintenance_irq;
+				u8 padding[3];
+			} __attribute__((packed)) arm;
+		} __attribute__((packed));
 	} __attribute__((packed)) platform_info;
 	__u32 interrupt_limit;
 	struct jailhouse_cell_desc root_cell;

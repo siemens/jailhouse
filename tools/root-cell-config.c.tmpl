@@ -62,26 +62,28 @@ struct {
 		.debug_console = {
 			.phys_start = 0x3f8,
 		},
-		.platform_info.x86 = {
-			.mmconfig_base = ${hex(mmconfig.base)},
-			.mmconfig_end_bus = ${hex(mmconfig.end_bus)},
-			.pm_timer_address = ${hex(pm_timer_base)},
-			% if iommu_units:
-			.iommu_units = {
-				% for unit in iommu_units:
-				{
-					.base = ${hex(unit.base_addr)},
-					.size = ${hex(unit.mmio_size)},
-					% if unit.is_amd_iommu:
-					.amd_bdf = ${hex(unit.amd_bdf)},
-					.amd_base_cap = ${hex(unit.amd_base_cap)},
-					.amd_msi_cap = ${hex(unit.amd_msi_cap)},
-					.amd_features = ${hex(unit.amd_features)},
-				        % endif
+		.platform_info = {
+			.pci_mmconfig_base = ${hex(mmconfig.base)},
+			.pci_mmconfig_end_bus = ${hex(mmconfig.end_bus)},
+			.x86 = {
+				.pm_timer_address = ${hex(pm_timer_base)},
+				% if iommu_units:
+				.iommu_units = {
+					% for unit in iommu_units:
+					{
+						.base = ${hex(unit.base_addr)},
+						.size = ${hex(unit.mmio_size)},
+						% if unit.is_amd_iommu:
+						.amd_bdf = ${hex(unit.amd_bdf)},
+						.amd_base_cap = ${hex(unit.amd_base_cap)},
+						.amd_msi_cap = ${hex(unit.amd_msi_cap)},
+						.amd_features = ${hex(unit.amd_features)},
+						% endif
+					},
+					% endfor
 				},
-				% endfor
+				% endif
 			},
-			% endif
 		},
 		.interrupt_limit = 256,
 		.root_cell = {

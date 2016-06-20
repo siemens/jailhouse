@@ -40,18 +40,20 @@ struct {
 		.debug_console = {
 			.phys_start = 0x3f8,
 		},
-		.platform_info.x86 = {
-			.mmconfig_base = 0xe0000000,
-			.mmconfig_end_bus = 0xff,
-			.pm_timer_address = 0x808,
-			.iommu_units = {
-				{
-					.base = 0xfeb80000,
-					.size = 0x80000,
-					.amd_bdf = 0x02,
-					.amd_base_cap = 0x40,
-					.amd_msi_cap = 0x54,
-					.amd_features = 0x80048824,
+		.platform_info = {
+			.pci_mmconfig_base = 0xe0000000,
+			.pci_mmconfig_end_bus = 0xff,
+			.x86 = {
+				.pm_timer_address = 0x808,
+				.iommu_units = {
+					{
+						.base = 0xfeb80000,
+						.size = 0x80000,
+						.amd_bdf = 0x02,
+						.amd_base_cap = 0x40,
+						.amd_msi_cap = 0x54,
+						.amd_features = 0x80048824,
+					},
 				},
 			},
 		},

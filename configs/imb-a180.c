@@ -39,10 +39,12 @@ struct {
 		.debug_console = {
 			.phys_start = 0x3f8,
 		},
-		.platform_info.x86 = {
-			.mmconfig_base = 0xe0000000,
-			.mmconfig_end_bus = 0xff,
-			.pm_timer_address = 0x808,
+		.platform_info = {
+			.pci_mmconfig_base = 0xe0000000,
+			.pci_mmconfig_end_bus = 0xff,
+			.x86 = {
+				.pm_timer_address = 0x808,
+			},
 		},
 		.root_cell = {
 			.name = "IMB-A180",

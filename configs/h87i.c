@@ -35,18 +35,20 @@ struct {
 		.debug_console = {
 			.phys_start = 0xe010,
 		},
-		.platform_info.x86 = {
-			.mmconfig_base = 0xf8000000,
-			.mmconfig_end_bus = 0x3f,
-			.pm_timer_address = 0x1808,
-			.iommu_units = {
-				{
-					.base = 0xfed90000,
-					.size = 0x1000,
-				},
-				{
-					.base = 0xfed91000,
-					.size = 0x1000,
+		.platform_info = {
+			.pci_mmconfig_base = 0xf8000000,
+			.pci_mmconfig_end_bus = 0x3f,
+			.x86 = {
+				.pm_timer_address = 0x1808,
+				.iommu_units = {
+					{
+						.base = 0xfed90000,
+						.size = 0x1000,
+					},
+					{
+						.base = 0xfed91000,
+						.size = 0x1000,
+					},
 				},
 			},
 		},
