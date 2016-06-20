@@ -26,6 +26,7 @@
 #include <jailhouse/string.h>
 #include <jailhouse/utils.h>
 #include <jailhouse/processor.h>
+#include <asm/pci.h>
 
 #define VIRTIO_VENDOR_ID	0x1af4
 #define IVSHMEM_DEVICE_ID	0x1110
@@ -168,7 +169,7 @@ int ivshmem_update_msix(struct pci_device *device)
 	if (ivshmem_is_msix_masked(ive))
 		return 0;
 
-	irq_msg = pci_translate_msi_vector(device, 0, 0, msi);
+	irq_msg = x86_pci_translate_msi(device, 0, 0, msi);
 	if (!irq_msg.valid)
 		return 0;
 

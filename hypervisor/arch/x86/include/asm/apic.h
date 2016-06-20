@@ -172,9 +172,5 @@ void x2apic_handle_read(void);
 
 u32 x2apic_filter_logical_dest(struct cell *cell, u32 destination);
 
-struct apic_irq_message
-pci_translate_msi_vector(struct pci_device *device, unsigned int vector,
-			 unsigned int legacy_vectors, union x86_msi_vector msi);
-
 /** @} */
 #endif /* !_JAILHOUSE_ASM_APIC_H */
