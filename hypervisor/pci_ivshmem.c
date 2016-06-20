@@ -19,7 +19,6 @@
  * choosing the same BDF, memory location, and memory size.
  */
 
-#include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
