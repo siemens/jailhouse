@@ -26,7 +26,7 @@
 #include <jailhouse/string.h>
 #include <jailhouse/utils.h>
 #include <jailhouse/processor.h>
-#include <asm/pci.h>
+#include <asm/percpu.h>
 
 #define VIRTIO_VENDOR_ID	0x1af4
 #define IVSHMEM_DEVICE_ID	0x1110
@@ -67,22 +67,6 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 4,
 };
 
-static void ivshmem_write_doorbell(struct ivshmem_endpoint *ive)
-{
-	struct ivshmem_endpoint *remote = ive->remote;
-	struct apic_irq_message irq_msg;
-
-	if (!remote)
-		return;
-
-	/* get a copy of the struct before using it, the read barrier makes
-	 * sure the copy is consistent */
-	irq_msg = remote->irq_msg;
-	memory_load_barrier();
-	if (irq_msg.valid)
-		apic_send_irq(irq_msg);
-}
-
 static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
@@ -96,7 +80,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 
 	if (mmio->address == IVSHMEM_REG_DBELL) {
 		if (mmio->is_write)
-			ivshmem_write_doorbell(ive);
+			arch_ivshmem_write_doorbell(ive);
 		else
 			mmio->value = 0;
 		return MMIO_HANDLED;
@@ -106,7 +90,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		if (mmio->is_write) {
 			ive->state = mmio->value;
 			memory_barrier();
-			ivshmem_write_doorbell(ive);
+			arch_ivshmem_write_doorbell(ive);
 		} else {
 			mmio->value = ive->state;
 		}
@@ -126,7 +110,13 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	return MMIO_ERROR;
 }
 
-static bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive)
+/**
+ * Check if MSI-X doorbell interrupt is masked.
+ * @param ive		Ivshmem endpoint the mask should be checked for.
+ *
+ * @return True if MSI-X interrupt is masked.
+ */
+bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive)
 {
 	union pci_msix_registers c;
 
@@ -144,50 +134,6 @@ static bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive)
 		return true;
 
 	return false;
-}
-
-/**
- * Update cached MSI-X state of the given ivshmem device.
- * @param device	The device to be updated.
- *
- * @return 0 on success, negative error code otherwise.
- */
-int ivshmem_update_msix(struct pci_device *device)
-{
-	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
-	union x86_msi_vector msi = {
-		.raw.address = device->msix_vectors[0].address,
-		.raw.data = device->msix_vectors[0].data,
-	};
-	struct apic_irq_message irq_msg;
-
-	/* before doing anything mark the cached irq_msg as invalid,
-	 * on success it will be valid on return. */
-	ive->irq_msg.valid = 0;
-	memory_barrier();
-
-	if (ivshmem_is_msix_masked(ive))
-		return 0;
-
-	irq_msg = x86_pci_translate_msi(device, 0, 0, msi);
-	if (!irq_msg.valid)
-		return 0;
-
-	if (!apic_filter_irq_dest(ive->device->cell, &irq_msg)) {
-		panic_printk("FATAL: ivshmem MSI-X target outside of "
-			     "cell \"%s\" device %02x:%02x.%x\n",
-			     device->cell->config->name,
-			     PCI_BDF_PARAMS(device->info->bdf));
-		return -EPERM;
-	}
-	/* now copy the whole struct into our cache and mark the cache
-	 * valid at the end */
-	irq_msg.valid = 0;
-	ive->irq_msg = irq_msg;
-	memory_barrier();
-	ive->irq_msg.valid = 1;
-
-	return 0;
 }
 
 static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
@@ -210,7 +156,7 @@ static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 	} else {
 		if (mmio->is_write) {
 			msix_table[mmio->address / 4] = mmio->value;
-			if (ivshmem_update_msix(ive->device))
+			if (arch_ivshmem_update_msix(ive->device))
 				return MMIO_ERROR;
 		} else {
 			mmio->value = msix_table[mmio->address / 4];
@@ -236,7 +182,7 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 
 	if ((val & PCI_CMD_MASTER) != (*cmd & PCI_CMD_MASTER)) {
 		*cmd = (*cmd & ~PCI_CMD_MASTER) | (val & PCI_CMD_MASTER);
-		err = ivshmem_update_msix(device);
+		err = arch_ivshmem_update_msix(device);
 		if (err)
 			return err;
 	}
@@ -274,7 +220,7 @@ static int ivshmem_write_msix_control(struct ivshmem_endpoint *ive, u32 val)
 	newval.fmask = p->fmask;
 	if (ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] != newval.raw) {
 		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] = newval.raw;
-		return ivshmem_update_msix(ive->device);
+		return arch_ivshmem_update_msix(ive->device);
 	}
 	return 0;
 }

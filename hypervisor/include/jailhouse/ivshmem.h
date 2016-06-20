@@ -15,7 +15,7 @@
 #define _JAILHOUSE_IVSHMEM_H
 
 #include <jailhouse/pci.h>
-#include <asm/apic.h>
+#include <asm/ivshmem.h>
 
 #define IVSHMEM_CFG_MSIX_CAP	0x50
 #define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
@@ -33,7 +33,7 @@ struct ivshmem_endpoint {
 	u64 bar4_address;
 	struct pci_device *device;
 	struct ivshmem_endpoint *remote;
-	struct apic_irq_message irq_msg;
+	struct arch_pci_ivshmem arch;
 };
 
 int ivshmem_init(struct cell *cell, struct pci_device *device);
@@ -43,6 +43,22 @@ enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,
 				      unsigned int row, u32 mask, u32 value);
 enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value);
+
+bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive);
+
+/**
+ * Handle write to doorbell register.
+ * @param ive		Ivshmem endpoint the write was performed on.
+ */
+void arch_ivshmem_write_doorbell(struct ivshmem_endpoint *ive);
+
+/**
+ * Update cached MSI-X state (if any) of the given ivshmem device.
+ * @param device	The device to be updated.
+ *
+ * @return 0 on success, negative error code otherwise.
+ */
+int arch_ivshmem_update_msix(struct pci_device *device);
 
 /** @} IVSHMEM */
 #endif /* !_JAILHOUSE_IVSHMEM_H */
