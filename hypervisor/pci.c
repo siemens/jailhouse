@@ -12,6 +12,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/ivshmem.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>

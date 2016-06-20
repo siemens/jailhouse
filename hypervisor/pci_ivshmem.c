@@ -19,13 +19,13 @@
  * choosing the same BDF, memory location, and memory size.
  */
 
+#include <jailhouse/ivshmem.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
 #include <jailhouse/utils.h>
 #include <jailhouse/processor.h>
-#include <asm/apic.h>
 
 #define VIRTIO_VENDOR_ID	0x1af4
 #define IVSHMEM_DEVICE_ID	0x1110
@@ -37,28 +37,14 @@
 #define IVSHMEM_CFG_SHMEM_SZ	0x48
 
 #define IVSHMEM_MSIX_VECTORS	1
-#define IVSHMEM_CFG_MSIX_CAP	0x50
 
 #define IVSHMEM_REG_IVPOS	8
 #define IVSHMEM_REG_DBELL	12
 #define IVSHMEM_REG_LSTATE	16
 #define IVSHMEM_REG_RSTATE	20
 
-#define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
-
 #define IVSHMEM_BAR0_SIZE	256
 #define IVSHMEM_BAR4_SIZE	((0x18 * IVSHMEM_MSIX_VECTORS + 0xf) & ~0xf)
-
-struct pci_ivshmem_endpoint {
-	u32 cspace[IVSHMEM_CFG_SIZE / sizeof(u32)];
-	u32 ivpos;
-	u32 state;
-	u64 bar0_address;
-	u64 bar4_address;
-	struct pci_device *device;
-	struct pci_ivshmem_endpoint *remote;
-	struct apic_irq_message irq_msg;
-};
 
 struct pci_ivshmem_data {
 	struct pci_ivshmem_endpoint eps[2];

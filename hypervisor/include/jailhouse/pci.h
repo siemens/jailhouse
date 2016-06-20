@@ -243,17 +243,5 @@ int arch_pci_update_msi(struct pci_device *device,
  */
 int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index);
 
-/**
- * @defgroup PCI-IVSHMEM ivshmem
- * @{
- */
-int pci_ivshmem_init(struct cell *cell, struct pci_device *device);
-void pci_ivshmem_exit(struct pci_device *device);
-int pci_ivshmem_update_msix(struct pci_device *device);
-enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
-				      unsigned int row, u32 mask, u32 value);
-enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
-				     u32 *value);
-/** @} PCI-IVSHMEM */
 /** @} PCI */
 #endif /* !_JAILHOUSE_PCI_H */

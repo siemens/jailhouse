@@ -13,6 +13,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/ivshmem.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/pci.h>
