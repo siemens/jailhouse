@@ -362,10 +362,10 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 int pci_init(void)
 {
 	mmcfg_start = system_config->platform_info.pci_mmconfig_base;
-	if (mmcfg_start != 0) {
-		end_bus = system_config->platform_info.pci_mmconfig_end_bus;
-		mmcfg_size = (end_bus + 1) * 256 * 4096;
+	end_bus = system_config->platform_info.pci_mmconfig_end_bus;
+	mmcfg_size = (end_bus + 1) * 256 * 4096;
 
+	if (mmcfg_start != 0 && !system_config->platform_info.pci_is_virtual) {
 		pci_space = paging_map_device(mmcfg_start, mmcfg_size);
 		if (!pci_space)
 			return -ENOMEM;
@@ -638,7 +638,7 @@ int pci_cell_init(struct cell *cell)
 	unsigned int ndev, ncap;
 	int err;
 
-	if (pci_space)
+	if (mmcfg_start != 0)
 		mmio_region_register(cell, mmcfg_start, mmcfg_size,
 				     pci_mmconfig_access_handler, NULL);
 

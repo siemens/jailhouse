@@ -178,7 +178,7 @@ struct jailhouse_system {
 	struct {
 		__u64 pci_mmconfig_base;
 		__u8 pci_mmconfig_end_bus;
-		__u8 padding;
+		__u8 pci_is_virtual;
 		union {
 			struct {
 				__u16 pm_timer_address;
