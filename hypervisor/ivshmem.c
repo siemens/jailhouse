@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-/** @addtogroup PCI-IVSHMEM
+/** @addtogroup IVSHMEM
  * Inter Cell communication using a virtual PCI device. The device provides
  * shared memory and interrupts based on MSI-X.
  *
@@ -46,12 +46,12 @@
 #define IVSHMEM_BAR0_SIZE	256
 #define IVSHMEM_BAR4_SIZE	((0x18 * IVSHMEM_MSIX_VECTORS + 0xf) & ~0xf)
 
-struct pci_ivshmem_data {
-	struct pci_ivshmem_endpoint eps[2];
-	struct pci_ivshmem_data *next;
+struct ivshmem_data {
+	struct ivshmem_endpoint eps[2];
+	struct ivshmem_data *next;
 };
 
-static struct pci_ivshmem_data *ivshmem_list;
+static struct ivshmem_data *ivshmem_list;
 
 static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[0x00/4] = (IVSHMEM_DEVICE_ID << 16) | VIRTIO_VENDOR_ID,
@@ -66,9 +66,9 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 4,
 };
 
-static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
+static void ivshmem_write_doorbell(struct ivshmem_endpoint *ive)
 {
-	struct pci_ivshmem_endpoint *remote = ive->remote;
+	struct ivshmem_endpoint *remote = ive->remote;
 	struct apic_irq_message irq_msg;
 
 	if (!remote)
@@ -85,7 +85,7 @@ static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
 static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
-	struct pci_ivshmem_endpoint *ive = arg;
+	struct ivshmem_endpoint *ive = arg;
 
 	/* read-only IVPosition */
 	if (mmio->address == IVSHMEM_REG_IVPOS && !mmio->is_write) {
@@ -125,7 +125,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	return MMIO_ERROR;
 }
 
-static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
+static bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive)
 {
 	union pci_msix_registers c;
 
@@ -145,11 +145,18 @@ static bool ivshmem_is_msix_masked(struct pci_ivshmem_endpoint *ive)
 	return false;
 }
 
-static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
+/**
+ * Update cached MSI-X state of the given ivshmem device.
+ * @param device	The device to be updated.
+ *
+ * @return 0 on success, negative error code otherwise.
+ */
+int ivshmem_update_msix(struct pci_device *device)
 {
+	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	union x86_msi_vector msi = {
-		.raw.address = ive->device->msix_vectors[0].address,
-		.raw.data = ive->device->msix_vectors[0].data,
+		.raw.address = device->msix_vectors[0].address,
+		.raw.data = device->msix_vectors[0].data,
 	};
 	struct apic_irq_message irq_msg;
 
@@ -161,15 +168,15 @@ static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
 	if (ivshmem_is_msix_masked(ive))
 		return 0;
 
-	irq_msg = pci_translate_msi_vector(ive->device, 0, 0, msi);
+	irq_msg = pci_translate_msi_vector(device, 0, 0, msi);
 	if (!irq_msg.valid)
 		return 0;
 
 	if (!apic_filter_irq_dest(ive->device->cell, &irq_msg)) {
 		panic_printk("FATAL: ivshmem MSI-X target outside of "
 			     "cell \"%s\" device %02x:%02x.%x\n",
-			     ive->device->cell->config->name,
-			     PCI_BDF_PARAMS(ive->device->info->bdf));
+			     device->cell->config->name,
+			     PCI_BDF_PARAMS(device->info->bdf));
 		return -EPERM;
 	}
 	/* now copy the whole struct into our cache and mark the cache
@@ -184,7 +191,7 @@ static int ivshmem_update_msix(struct pci_ivshmem_endpoint *ive)
 
 static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 {
-	struct pci_ivshmem_endpoint *ive = arg;
+	struct ivshmem_endpoint *ive = arg;
 	u32 *msix_table = (u32 *)ive->device->msix_vectors;
 
 	if (mmio->address % 4)
@@ -202,7 +209,7 @@ static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 	} else {
 		if (mmio->is_write) {
 			msix_table[mmio->address / 4] = mmio->value;
-			if (ivshmem_update_msix(ive))
+			if (ivshmem_update_msix(ive->device))
 				return MMIO_ERROR;
 		} else {
 			mmio->value = msix_table[mmio->address / 4];
@@ -220,7 +227,7 @@ fail:
  * update the command register
  * note that we only accept writes to two flags
  */
-static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
+static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 {
 	u16 *cmd = (u16 *)&ive->cspace[PCI_CFG_COMMAND/4];
 	struct pci_device *device = ive->device;
@@ -228,7 +235,7 @@ static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
 
 	if ((val & PCI_CMD_MASTER) != (*cmd & PCI_CMD_MASTER)) {
 		*cmd = (*cmd & ~PCI_CMD_MASTER) | (val & PCI_CMD_MASTER);
-		err = ivshmem_update_msix(ive);
+		err = ivshmem_update_msix(device);
 		if (err)
 			return err;
 	}
@@ -255,7 +262,7 @@ static int ivshmem_write_command(struct pci_ivshmem_endpoint *ive, u16 val)
 	return 0;
 }
 
-static int ivshmem_write_msix_control(struct pci_ivshmem_endpoint *ive, u32 val)
+static int ivshmem_write_msix_control(struct ivshmem_endpoint *ive, u32 val)
 {
 	union pci_msix_registers *p = (union pci_msix_registers *)&val;
 	union pci_msix_registers newval = {
@@ -266,15 +273,14 @@ static int ivshmem_write_msix_control(struct pci_ivshmem_endpoint *ive, u32 val)
 	newval.fmask = p->fmask;
 	if (ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] != newval.raw) {
 		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] = newval.raw;
-		return ivshmem_update_msix(ive);
+		return ivshmem_update_msix(ive->device);
 	}
 	return 0;
 }
 
-static struct pci_ivshmem_data **ivshmem_find(struct pci_device *d,
-					      int *cellnum)
+static struct ivshmem_data **ivshmem_find(struct pci_device *d, int *cellnum)
 {
-	struct pci_ivshmem_data **ivp, *iv;
+	struct ivshmem_data **ivp, *iv;
 	u16 bdf2;
 
 	for (ivp = &ivshmem_list; *ivp; ivp = &((*ivp)->next)) {
@@ -299,13 +305,13 @@ static struct pci_ivshmem_data **ivshmem_find(struct pci_device *d,
 	return NULL;
 }
 
-static void ivshmem_connect_cell(struct pci_ivshmem_data *iv,
+static void ivshmem_connect_cell(struct ivshmem_data *iv,
 				 struct pci_device *d,
 				 const struct jailhouse_memory *mem,
 				 int cellnum)
 {
-	struct pci_ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
-	struct pci_ivshmem_endpoint *ive = &iv->eps[cellnum];
+	struct ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
+	struct ivshmem_endpoint *ive = &iv->eps[cellnum];
 
 	d->bar[0] = PCI_BAR_64BIT;
 	d->bar[4] = PCI_BAR_64BIT;
@@ -332,10 +338,10 @@ static void ivshmem_connect_cell(struct pci_ivshmem_data *iv,
 	d->ivshmem_endpoint = ive;
 }
 
-static void ivshmem_disconnect_cell(struct pci_ivshmem_data *iv, int cellnum)
+static void ivshmem_disconnect_cell(struct ivshmem_data *iv, int cellnum)
 {
-	struct pci_ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
-	struct pci_ivshmem_endpoint *ive = &iv->eps[cellnum];
+	struct ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
+	struct ivshmem_endpoint *ive = &iv->eps[cellnum];
 
 	ive->device->ivshmem_endpoint = NULL;
 	ive->device = NULL;
@@ -354,10 +360,10 @@ static void ivshmem_disconnect_cell(struct pci_ivshmem_data *iv, int cellnum)
  *
  * @see pci_cfg_write_moderate
  */
-enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
+enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,
 				      unsigned int row, u32 mask, u32 value)
 {
-	struct pci_ivshmem_endpoint *ive = device->ivshmem_endpoint;
+	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 
 	if (row >= ARRAY_SIZE(default_cspace))
 		return PCI_ACCESS_REJECT;
@@ -386,10 +392,10 @@ enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
  *
  * @see pci_cfg_read_moderate
  */
-enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
+enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value)
 {
-	struct pci_ivshmem_endpoint *ive = device->ivshmem_endpoint;
+	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 
 	if (address < sizeof(default_cspace))
 		*value = ive->cspace[address / 4] >> ((address % 4) * 8);
@@ -399,27 +405,16 @@ enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
 }
 
 /**
- * Update cached MSI-X state of the given ivshmem device.
- * @param device	The device to be updated.
- *
- * @return 0 on success, negative error code otherwise.
- */
-int pci_ivshmem_update_msix(struct pci_device *device)
-{
-	return ivshmem_update_msix(device->ivshmem_endpoint);
-}
-
-/**
  * Register a new ivshmem device.
  * @param cell		The cell the device should be attached to.
  * @param device	The device to be registered.
  *
  * @return 0 on success, negative error code otherwise.
  */
-int pci_ivshmem_init(struct cell *cell, struct pci_device *device)
+int ivshmem_init(struct cell *cell, struct pci_device *device)
 {
 	const struct jailhouse_memory *mem, *mem0;
-	struct pci_ivshmem_data **ivp;
+	struct ivshmem_data **ivp;
 	struct pci_device *dev0;
 
 	if (device->info->num_msix_vectors != 1)
@@ -469,9 +464,9 @@ connected:
  * @param device	The device to be stopped.
  *
  */
-void pci_ivshmem_exit(struct pci_device *device)
+void ivshmem_exit(struct pci_device *device)
 {
-	struct pci_ivshmem_data **ivp, *iv;
+	struct ivshmem_data **ivp, *iv;
 	int cellnum;
 
 	ivp = ivshmem_find(device, &cellnum);

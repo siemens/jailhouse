@@ -393,7 +393,7 @@ static int vtd_emulate_inv_int(unsigned int unit_no, unsigned int index)
 
 	device = pci_get_assigned_device(&root_cell, irte_usage->device_id);
 	if (device && device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_update_msix(device);
+		return ivshmem_update_msix(device);
 
 	irq_msg = iommu_get_remapped_root_int(unit_no, irte_usage->device_id,
 					      irte_usage->vector, index);

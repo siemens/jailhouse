@@ -226,7 +226,7 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 	}
 
 	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_cfg_read(device, address, value);
+		return ivshmem_pci_cfg_read(device, address, value);
 
 	if (address < PCI_CONFIG_HEADER_SIZE)
 		return PCI_ACCESS_PERFORM;
@@ -309,7 +309,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 		switch (cfg_control.type) {
 		case PCI_CONFIG_ALLOW:
 			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-				return pci_ivshmem_cfg_write(device,
+				return ivshmem_pci_cfg_write(device,
 						address / 4, mask, value);
 			return PCI_ACCESS_PERFORM;
 		case PCI_CONFIG_RDONLY:
@@ -320,7 +320,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	}
 
 	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
-		return pci_ivshmem_cfg_write(device, address / 4, mask, value);
+		return ivshmem_pci_cfg_write(device, address / 4, mask, value);
 
 	cap = pci_find_capability(device, address);
 	if (!cap || !(cap->flags & JAILHOUSE_PCICAPS_WRITE))
@@ -659,7 +659,7 @@ int pci_cell_init(struct cell *cell)
 		device->msix_vectors = device->msix_vector_array;
 
 		if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
-			err = pci_ivshmem_init(cell, device);
+			err = ivshmem_init(cell, device);
 			if (err)
 				goto error;
 
@@ -736,7 +736,7 @@ void pci_cell_exit(struct cell *cell)
 	for_each_configured_pci_device(device, cell)
 		if (device->cell) {
 			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
-				pci_ivshmem_exit(device);
+				ivshmem_exit(device);
 			} else {
 				pci_remove_physical_device(device);
 				pci_return_device_to_root_cell(device);
@@ -776,7 +776,7 @@ void pci_config_commit(struct cell *cell_added_removed)
 					goto error;
 			}
 			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
-				err = pci_ivshmem_update_msix(device);
+				err = ivshmem_update_msix(device);
 				if (err) {
 					cap = NULL;
 					goto error;

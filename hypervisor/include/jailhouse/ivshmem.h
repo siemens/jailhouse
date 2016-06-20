@@ -21,28 +21,28 @@
 #define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
 
 /**
- * @defgroup PCI-IVSHMEM ivshmem
+ * @defgroup IVSHMEM ivshmem
  * @{
  */
 
-struct pci_ivshmem_endpoint {
+struct ivshmem_endpoint {
 	u32 cspace[IVSHMEM_CFG_SIZE / sizeof(u32)];
 	u32 ivpos;
 	u32 state;
 	u64 bar0_address;
 	u64 bar4_address;
 	struct pci_device *device;
-	struct pci_ivshmem_endpoint *remote;
+	struct ivshmem_endpoint *remote;
 	struct apic_irq_message irq_msg;
 };
 
-int pci_ivshmem_init(struct cell *cell, struct pci_device *device);
-void pci_ivshmem_exit(struct pci_device *device);
-int pci_ivshmem_update_msix(struct pci_device *device);
-enum pci_access pci_ivshmem_cfg_write(struct pci_device *device,
+int ivshmem_init(struct cell *cell, struct pci_device *device);
+void ivshmem_exit(struct pci_device *device);
+int ivshmem_update_msix(struct pci_device *device);
+enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,
 				      unsigned int row, u32 mask, u32 value);
-enum pci_access pci_ivshmem_cfg_read(struct pci_device *device, u16 address,
+enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value);
 
-/** @} PCI-IVSHMEM */
+/** @} IVSHMEM */
 #endif /* !_JAILHOUSE_IVSHMEM_H */

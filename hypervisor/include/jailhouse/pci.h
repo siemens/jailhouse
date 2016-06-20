@@ -41,6 +41,7 @@
 #define PCI_IVSHMEM_NUM_MMIO_REGIONS	2
 
 struct cell;
+struct ivshmem_endpoint;
 
 /**
  * @defgroup PCI PCI Subsystem
@@ -135,7 +136,7 @@ struct pci_device {
 	/** Shadow state of MSI-X config space registers. */
 	union pci_msix_registers msix_registers;
 	/** ivshmem specific data. */
-	struct pci_ivshmem_endpoint *ivshmem_endpoint;
+	struct ivshmem_endpoint *ivshmem_endpoint;
 	/** Real MSI-X table. */
 	union pci_msix_vector *msix_table;
 	/** Shadow state of MSI-X table. */
