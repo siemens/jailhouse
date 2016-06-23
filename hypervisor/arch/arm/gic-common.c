@@ -167,10 +167,10 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	}
 
 	/*
-	 * The registers are byte-accessible, extend the access to a word if
-	 * necessary.
+	 * The registers are byte-accessible, but we always do word accesses.
 	 */
 	offset = spi % 4;
+	mmio->address &= ~0x3;
 	mmio->value <<= 8 * offset;
 	mmio->size = 4;
 	spi -= offset;
