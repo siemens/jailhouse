@@ -28,6 +28,8 @@ install:
   - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu wily main'
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-mako gcc-arm-linux-gnueabihf make
+  # Update scan.coverity.com certificate
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
   # Install kernel build environment
   - pushd ci
   - wget -q http://www.kiszka.org/downloads/travis-ci/kernel-build.tar.xz
