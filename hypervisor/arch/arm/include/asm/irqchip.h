@@ -55,14 +55,6 @@ struct irqchip_ops {
 	int	(*mmio_access)(struct mmio_access *access);
 };
 
-/* Virtual interrupts waiting to be injected */
-struct pending_irq {
-	u32	virt_id;
-
-	struct pending_irq *next;
-	struct pending_irq *prev;
-} __attribute__((packed));
-
 unsigned int irqchip_mmio_count_regions(struct cell *cell);
 
 int irqchip_init(void);
