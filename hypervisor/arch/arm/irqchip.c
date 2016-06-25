@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2016
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -15,6 +17,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <asm/control.h>
 #include <asm/gic_common.h>
 #include <asm/irqchip.h>
 #include <asm/platform.h>
@@ -23,6 +26,11 @@
 
 /* AMBA's biosfood */
 #define AMBA_DEVICE	0xb105f00d
+
+#define for_each_irqchip(chip, config, counter)				\
+	for ((chip) = jailhouse_cell_irqchips(config), (counter) = 0;	\
+	     (counter) < (config)->num_irqchips;			\
+	     (chip)++, (counter)++)
 
 extern struct irqchip_ops irqchip;
 
@@ -37,17 +45,10 @@ static bool irqchip_is_init;
 
 bool spi_in_cell(struct cell *cell, unsigned int spi)
 {
-	/* FIXME: Change the configuration to a bitmask range */
-	u32 spi_mask;
-
-	if (spi >= 64)
+	if (spi + 32 >= sizeof(cell->arch.irq_bitmap) * 8)
 		return false;
-	else if (spi >= 32)
-		spi_mask = cell->arch.spis >> 32;
-	else
-		spi_mask = cell->arch.spis;
 
-	return spi_mask & (1 << (spi & 31));
+	return cell->arch.irq_bitmap[(spi + 32) / 32] & (1 << (spi % 32));
 }
 
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
@@ -148,47 +149,74 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	irqchip.cpu_reset(cpu_data, true);
 }
 
-static const struct jailhouse_irqchip *
-irqchip_find_config(struct jailhouse_cell_desc *config)
-{
-	const struct jailhouse_irqchip *irq_config =
-		jailhouse_cell_irqchips(config);
-
-	if (config->num_irqchips)
-		return irq_config;
-	else
-		return NULL;
-}
-
 int irqchip_cell_init(struct cell *cell)
 {
-	const struct jailhouse_irqchip *pins = irqchip_find_config(cell->config);
+	const struct jailhouse_irqchip *chip;
+	unsigned int n;
 
-	cell->arch.spis = (pins ? *(u64 *)pins->pin_bitmap : 0);
+	for_each_irqchip(chip, cell->config, n) {
+		if (chip->address != (unsigned long)gicd_base)
+			continue;
+		if (chip->pin_base % 32 != 0 ||
+		    chip->pin_base + sizeof(chip->pin_bitmap) * 8 >
+		    sizeof(cell->arch.irq_bitmap) * 8)
+			return trace_error(-EINVAL);
+		memcpy(&cell->arch.irq_bitmap[chip->pin_base / 32],
+		       chip->pin_bitmap, sizeof(chip->pin_bitmap));
+	}
+	/*
+	 * Permit direct access to all SGIs and PPIs except for those used by
+	 * the hypervisor.
+	 */
+	cell->arch.irq_bitmap[0] = ~((1 << SGI_INJECT) | (1 << SGI_CPU_OFF) |
+				     (1 << MAINTENANCE_IRQ));
 
 	return irqchip.cell_init(cell);
 }
 
 void irqchip_cell_exit(struct cell *cell)
 {
-	const struct jailhouse_irqchip *root_pins =
-		irqchip_find_config(root_cell.config);
+	const struct jailhouse_irqchip *chip;
+	unsigned int n, pos;
 
 	/* might be called by arch_shutdown while rolling back
 	 * a failed setup */
 	if (!irqchip_is_init)
 		return;
 
-	if (root_pins)
-		root_cell.arch.spis |=
-			cell->arch.spis & *(u64 *)root_pins->pin_bitmap;
+	/* set all pins of the old cell in the root cell */
+	for_each_irqchip(chip, cell->config, n) {
+		if (chip->address != (unsigned long)gicd_base)
+			continue;
+		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
+			root_cell.arch.irq_bitmap[chip->pin_base / 32] |=
+				chip->pin_bitmap[pos];
+	}
+
+	/* mask out pins again that actually didn't belong to the root cell */
+	for_each_irqchip(chip, root_cell.config, n) {
+		if (chip->address != (unsigned long)gicd_base)
+			continue;
+		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
+			root_cell.arch.irq_bitmap[chip->pin_base / 32] &=
+				chip->pin_bitmap[pos];
+	}
 
 	irqchip.cell_exit(cell);
 }
 
 void irqchip_root_cell_shrink(struct cell *cell)
 {
-	root_cell.arch.spis &= ~(cell->arch.spis);
+	const struct jailhouse_irqchip *irqchip;
+	unsigned int n, pos;
+
+	for_each_irqchip(irqchip, cell->config, n) {
+		if (irqchip->address != (unsigned long)gicd_base)
+			continue;
+		for (pos = 0; pos < ARRAY_SIZE(irqchip->pin_bitmap); pos++)
+			root_cell.arch.irq_bitmap[irqchip->pin_base / 32] &=
+				~irqchip->pin_bitmap[pos];
+	}
 }
 
 int irqchip_init(void)

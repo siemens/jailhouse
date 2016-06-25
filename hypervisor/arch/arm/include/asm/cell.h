@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -31,7 +31,7 @@ struct arch_cell {
 	spinlock_t caches_lock;
 	bool needs_flush;
 
-	u64 spis;
+	u32 irq_bitmap[1024/32];
 
 	unsigned int last_virt_id;
 };
