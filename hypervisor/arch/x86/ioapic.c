@@ -358,7 +358,7 @@ int ioapic_cell_init(struct cell *cell)
 		ioapic->info = irqchip;
 		ioapic->cell = cell;
 		ioapic->phys_ioapic = phys_ioapic;
-		ioapic->pin_bitmap = (u32)irqchip->pin_bitmap;
+		ioapic->pin_bitmap = irqchip->pin_bitmap[0];
 		cell->arch.num_ioapics++;
 
 		mmio_region_register(cell, irqchip->address, PAGE_SIZE,
@@ -390,7 +390,7 @@ void ioapic_cell_exit(struct cell *cell)
 		if (root_ioapic)
 			root_ioapic->pin_bitmap |=
 				ioapic->pin_bitmap &
-				root_ioapic->info->pin_bitmap;
+				root_ioapic->info->pin_bitmap[0];
 	}
 
 	page_free(&mem_pool, cell->arch.ioapics, 1);

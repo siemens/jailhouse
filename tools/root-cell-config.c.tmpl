@@ -125,7 +125,9 @@ struct {
 		{
 			.address = ${hex(i.address)},
 			.id = ${hex(i.irqchip_id())},
-			.pin_bitmap = 0xffffff,
+			.pin_bitmap = {
+				0xffffff
+			},
 		},
 		% endfor
 	},

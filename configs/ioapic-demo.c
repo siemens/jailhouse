@@ -61,7 +61,9 @@ struct {
 		/* IOAPIC */ {
 			.address = 0xfec00000,
 			.id = 0xff01,
-			.pin_bitmap = 0x000200, /* ACPI IRQ */
+			.pin_bitmap = {
+				0x000200 /* ACPI IRQ */
+			},
 		},
 	},
 

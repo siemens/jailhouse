@@ -334,13 +334,17 @@ struct {
 		{
 			.address = 0xfec00000,
 			.id = 0x0,
-			.pin_bitmap = 0xffffff,
+			.pin_bitmap = {
+				0xffffff
+			},
 		},
 		/* IOAPIC 1, GSI base 24 */
 		{
 			.address = 0xfec01000,
 			.id = 0x0,
-			.pin_bitmap = 0xffffff,
+			.pin_bitmap = {
+				0xffffff
+			},
 		},
 	},
 

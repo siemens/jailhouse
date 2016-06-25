@@ -106,7 +106,10 @@ struct {
 	.irqchips = {
 		/* GIC */ {
 			.address = 0x2f000000,
-			.pin_bitmap = 0xffffffffffffffff,
+			.pin_base = 32,
+			.pin_bitmap = {
+				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+			},
 		},
 	},
 

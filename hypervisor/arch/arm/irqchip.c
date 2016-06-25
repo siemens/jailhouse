@@ -164,7 +164,7 @@ int irqchip_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *pins = irqchip_find_config(cell->config);
 
-	cell->arch.spis = (pins ? pins->pin_bitmap : 0);
+	cell->arch.spis = (pins ? *(u64 *)pins->pin_bitmap : 0);
 
 	return irqchip.cell_init(cell);
 }
@@ -180,7 +180,8 @@ void irqchip_cell_exit(struct cell *cell)
 		return;
 
 	if (root_pins)
-		root_cell.arch.spis |= cell->arch.spis & root_pins->pin_bitmap;
+		root_cell.arch.spis |=
+			cell->arch.spis & *(u64 *)root_pins->pin_bitmap;
 
 	irqchip.cell_exit(cell);
 }

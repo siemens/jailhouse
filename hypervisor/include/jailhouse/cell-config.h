@@ -101,8 +101,9 @@ struct jailhouse_cache {
 
 struct jailhouse_irqchip {
 	__u64 address;
-	__u64 id;
-	__u64 pin_bitmap;
+	__u32 id;
+	__u32 pin_base;
+	__u32 pin_bitmap[4];
 } __attribute__((packed));
 
 #define JAILHOUSE_PCI_TYPE_DEVICE	0x01

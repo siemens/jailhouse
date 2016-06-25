@@ -371,7 +371,9 @@ struct {
 		/* IOAPIC */ {
 			.address = 0xfec00000,
 			.id = 0x0,
-			.pin_bitmap = 0xffffff,
+			.pin_bitmap = {
+				0xffffff
+			},
 		},
 	},
 
