@@ -104,7 +104,7 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
  * GICv2 uses 8bit values for each IRQ in the ITARGETRs registers
  */
 static enum mmio_result handle_irq_target(struct mmio_access *mmio,
-					  unsigned int reg)
+					  unsigned int irq)
 {
 	/*
 	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
@@ -112,7 +112,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	 */
 	struct cell *cell = this_cell();
 	unsigned int i, cpu;
-	unsigned int spi = reg - 32;
+	unsigned int spi = irq - 32;
 	unsigned int offset;
 	u32 access_mask = 0;
 	u8 targets;
@@ -121,7 +121,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	 * Let the guest freely access its SGIs and PPIs, which may be used to
 	 * fill its CPU interface map.
 	 */
-	if (!is_spi(reg)) {
+	if (!is_spi(irq)) {
 		mmio_perform_access(gicd_base, mmio);
 		return MMIO_HANDLED;
 	}
@@ -162,7 +162,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	if (mmio->is_write) {
 		spin_lock(&dist_lock);
 		u32 itargetsr =
-			mmio_read32(gicd_base + GICD_ITARGETSR + reg + offset);
+			mmio_read32(gicd_base + GICD_ITARGETSR + irq + offset);
 		mmio->value &= access_mask;
 		/* Combine with external SPIs */
 		mmio->value |= (itargetsr & ~access_mask);
