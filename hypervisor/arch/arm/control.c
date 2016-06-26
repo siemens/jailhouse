@@ -359,7 +359,6 @@ int arch_cell_create(struct cell *cell)
 		arch_mmu_cell_destroy(cell);
 		return err;
 	}
-	irqchip_root_cell_shrink(cell);
 
 	register_smp_ops(cell);
 

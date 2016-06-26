@@ -152,7 +152,8 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 int irqchip_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *chip;
-	unsigned int n;
+	unsigned int n, pos;
+	int err;
 
 	for_each_irqchip(chip, cell->config, n) {
 		if (chip->address != (unsigned long)gicd_base)
@@ -171,7 +172,20 @@ int irqchip_cell_init(struct cell *cell)
 	cell->arch.irq_bitmap[0] = ~((1 << SGI_INJECT) | (1 << SGI_CPU_OFF) |
 				     (1 << MAINTENANCE_IRQ));
 
-	return irqchip.cell_init(cell);
+	err = irqchip.cell_init(cell);
+	if (err)
+		return err;
+
+	if (cell != &root_cell)
+		for_each_irqchip(chip, cell->config, n) {
+			if (chip->address != (unsigned long)gicd_base)
+				continue;
+			for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
+				root_cell.arch.irq_bitmap[chip->pin_base/32] &=
+					~chip->pin_bitmap[pos];
+		}
+
+	return 0;
 }
 
 void irqchip_cell_exit(struct cell *cell)
@@ -204,20 +218,6 @@ void irqchip_cell_exit(struct cell *cell)
 
 	if (irqchip.cell_exit)
 		irqchip.cell_exit(cell);
-}
-
-void irqchip_root_cell_shrink(struct cell *cell)
-{
-	const struct jailhouse_irqchip *irqchip;
-	unsigned int n, pos;
-
-	for_each_irqchip(irqchip, cell->config, n) {
-		if (irqchip->address != (unsigned long)gicd_base)
-			continue;
-		for (pos = 0; pos < ARRAY_SIZE(irqchip->pin_bitmap); pos++)
-			root_cell.arch.irq_bitmap[irqchip->pin_base / 32] &=
-				~irqchip->pin_bitmap[pos];
-	}
 }
 
 int irqchip_init(void)
