@@ -33,6 +33,19 @@ static DEFINE_SPINLOCK(dist_lock);
 /* The GIC interface numbering does not necessarily match the logical map */
 static u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
+/* Check that the targeted interface belongs to the cell */
+bool gic_targets_in_cell(struct cell *cell, u8 targets)
+{
+	unsigned int cpu;
+
+	for (cpu = 0; cpu < ARRAY_SIZE(target_cpu_map); cpu++)
+		if (targets & target_cpu_map[cpu] &&
+		    per_cpu(cpu)->cell != cell)
+			return false;
+
+	return true;
+}
+
 /*
  * Most of the GIC distributor writes only reconfigure the IRQs corresponding to
  * the bits of the written value, by using separate `set' and `clear' registers.
@@ -106,9 +119,9 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	 * access corresponds to the reg index
 	 */
 	struct cell *cell = this_cell();
-	unsigned int i, cpu;
 	unsigned int offset;
 	u32 access_mask = 0;
+	unsigned int i;
 	u8 targets;
 
 	/*
@@ -140,14 +153,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 
 		targets = (mmio->value >> (8 * i)) & 0xff;
 
-		/* Check that the targeted interface belongs to the cell */
-		for (cpu = 0; cpu < 8; cpu++) {
-			if (!(targets & target_cpu_map[cpu]))
-				continue;
-
-			if (per_cpu(cpu)->cell == cell)
-				continue;
-
+		if (!gic_targets_in_cell(cell, targets)) {
 			printk("Attempt to route IRQ%d outside of cell\n", irq);
 			return MMIO_ERROR;
 		}
