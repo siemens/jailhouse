@@ -154,7 +154,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 			if (per_cpu(cpu)->cell == cell)
 				continue;
 
-			printk("Attempt to route SPI%d outside of cell\n", spi);
+			printk("Attempt to route IRQ%d outside of cell\n", irq);
 			return MMIO_ERROR;
 		}
 	}
