@@ -43,12 +43,12 @@ unsigned long gicd_size;
  */
 static bool irqchip_is_init;
 
-bool spi_in_cell(struct cell *cell, unsigned int spi)
+bool irqchip_irq_in_cell(struct cell *cell, unsigned int irq_id)
 {
-	if (spi + 32 >= sizeof(cell->arch.irq_bitmap) * 8)
+	if (irq_id >= sizeof(cell->arch.irq_bitmap) * 8)
 		return false;
 
-	return cell->arch.irq_bitmap[(spi + 32) / 32] & (1 << (spi % 32));
+	return (cell->arch.irq_bitmap[irq_id / 32] & (1 << (irq_id % 32))) != 0;
 }
 
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)

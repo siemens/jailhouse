@@ -73,7 +73,7 @@ void irqchip_eoi_irq(u32 irqn, bool deactivate);
 void irqchip_inject_pending(struct per_cpu *cpu_data);
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id);
 
-bool spi_in_cell(struct cell *cell, unsigned int spi);
+bool irqchip_irq_in_cell(struct cell *cell, unsigned int irq_id);
 
 #endif /* __ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_IRQCHIP_H */

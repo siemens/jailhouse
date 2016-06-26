@@ -57,14 +57,9 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 	/* First, extract the first interrupt affected by this access */
 	unsigned int first_irq = reg_index * irqs_per_reg;
 
-	for (irq = first_irq; irq < first_irq + irqs_per_reg; irq++) {
-		unsigned int bit_nr = (irq - first_irq) * bits_per_irq;
-
-		if ((is_spi(irq) && spi_in_cell(cell, irq - 32)) ||
-		    irq == SGI_INJECT || irq == SGI_CPU_OFF ||
-		    irq == MAINTENANCE_IRQ)
-			access_mask |= irq_bits << bit_nr;
-	}
+	for (irq = 0; irq < irqs_per_reg; irq++)
+		if (irqchip_irq_in_cell(cell, first_irq + irq))
+			access_mask |= irq_bits << (irq * bits_per_irq);
 
 	if (!mmio->is_write) {
 		/* Restrict the read value */
@@ -112,7 +107,6 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	 */
 	struct cell *cell = this_cell();
 	unsigned int i, cpu;
-	unsigned int spi = irq - 32;
 	unsigned int offset;
 	u32 access_mask = 0;
 	u8 targets;
@@ -129,14 +123,14 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	/*
 	 * The registers are byte-accessible, but we always do word accesses.
 	 */
-	offset = spi % 4;
+	offset = irq % 4;
 	mmio->address &= ~0x3;
 	mmio->value <<= 8 * offset;
 	mmio->size = 4;
-	spi -= offset;
+	irq &= ~0x3;
 
-	for (i = 0; i < 4; i++, spi++) {
-		if (spi_in_cell(cell, spi))
+	for (i = 0; i < 4; i++, irq++) {
+		if (irqchip_irq_in_cell(cell, irq))
 			access_mask |= 0xff << (8 * i);
 		else
 			continue;
@@ -364,7 +358,7 @@ void gic_target_spis(struct cell *config_cell, struct cell *dest_cell)
 	itargetsr += 4 * 8;
 
 	for (i = 0; i < 64; i++, shift = (shift + 8) % 32) {
-		if (spi_in_cell(config_cell, i)) {
+		if (irqchip_irq_in_cell(config_cell, 32 + i)) {
 			mask |= (0xff << shift);
 			bits |= (cpu_itf << shift);
 		}

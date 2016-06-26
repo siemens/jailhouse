@@ -212,10 +212,9 @@ static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
 	for_each_cpu(first_cpu, dest_cell->cpu_set)
 		break;
 
-	for (i = 0; i < 64; i++, irouter += 8) {
-		if (spi_in_cell(config_cell, i))
+	for (i = 0; i < 64; i++, irouter += 8)
+		if (irqchip_irq_in_cell(config_cell, 32 + i))
 			mmio_write64(irouter, first_cpu);
-	}
 }
 
 static enum mmio_result gic_handle_redist_access(void *arg,
@@ -360,7 +359,7 @@ enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 	 * forbidden, because the guest driver may simply iterate over all
 	 * registers at initialisation
 	 */
-	if (!spi_in_cell(cell, irq - 32))
+	if (!irqchip_irq_in_cell(cell, irq))
 		return MMIO_HANDLED;
 
 	/* Translate the virtual cpu id into the physical one */
