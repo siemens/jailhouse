@@ -283,12 +283,6 @@ static int gic_cell_init(struct cell *cell)
 	return 0;
 }
 
-static void gic_cell_exit(struct cell *cell)
-{
-	/* Reset interrupt routing of the cell's spis*/
-	gic_route_spis(cell, &root_cell);
-}
-
 static int gic_send_sgi(struct sgi *sgi)
 {
 	u64 val;
@@ -454,7 +448,6 @@ struct irqchip_ops irqchip = {
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
 	.cell_init = gic_cell_init,
-	.cell_exit = gic_cell_exit,
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,

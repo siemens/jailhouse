@@ -202,7 +202,8 @@ void irqchip_cell_exit(struct cell *cell)
 				chip->pin_bitmap[pos];
 	}
 
-	irqchip.cell_exit(cell);
+	if (irqchip.cell_exit)
+		irqchip.cell_exit(cell);
 }
 
 void irqchip_root_cell_shrink(struct cell *cell)
