@@ -34,6 +34,14 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 		      int exception);
 
 /**
+ * Get the first CPU in a given set.
+ * @param set		CPU set.
+ *
+ * @return First CPU in set, or max_cpu_id + 1 if the set is empty.
+ */
+#define first_cpu(set)		next_cpu(-1, (set), -1)
+
+/**
  * Loop-generating macro for iterating over all CPUs in a set.
  * @param cpu		Iteration variable holding the current CPU ID
  * 			(unsigned int).
