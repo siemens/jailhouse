@@ -202,19 +202,13 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 }
 
-static void gic_route_spis(struct cell *config_cell, struct cell *dest_cell)
+static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
-	int i;
-	void *irouter = gicd_base + GICD_IROUTER;
-	unsigned int first_cpu;
+	void *irouter = gicd_base + GICD_IROUTER + irq_id;
+	u32 route = mmio_read32(irouter);
 
-	/* Use the core functions to retrieve the first physical id */
-	for_each_cpu(first_cpu, dest_cell->cpu_set)
-		break;
-
-	for (i = 0; i < 64; i++, irouter += 8)
-		if (irqchip_irq_in_cell(config_cell, 32 + i))
-			mmio_write64(irouter, first_cpu);
+	if (!cell_owns_cpu(cell, route))
+		mmio_write32(irouter, first_cpu(cell->cpu_set));
 }
 
 static enum mmio_result gic_handle_redist_access(void *arg,
@@ -273,8 +267,6 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 
 static int gic_cell_init(struct cell *cell)
 {
-	gic_route_spis(cell, cell);
-
 	mmio_region_register(cell, (unsigned long)gicd_base, gicd_size,
 			     gic_handle_dist_access, NULL);
 	mmio_region_register(cell, (unsigned long)gicr_base, gicr_size,
@@ -448,6 +440,7 @@ struct irqchip_ops irqchip = {
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
 	.cell_init = gic_cell_init,
+	.adjust_irq_target = gic_adjust_irq_target,
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,

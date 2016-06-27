@@ -45,6 +45,7 @@ struct irqchip_ops {
 	int	(*cell_init)(struct cell *cell);
 	void	(*cell_exit)(struct cell *cell);
 	int	(*cpu_reset)(struct per_cpu *cpu_data, bool is_shutdown);
+	void	(*adjust_irq_target)(struct cell *cell, u16 irq_id);
 
 	int	(*send_sgi)(struct sgi *sgi);
 	void	(*handle_irq)(struct per_cpu *cpu_data);

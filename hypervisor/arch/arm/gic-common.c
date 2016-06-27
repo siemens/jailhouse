@@ -31,7 +31,7 @@ extern unsigned int gicd_size;
 static DEFINE_SPINLOCK(dist_lock);
 
 /* The GIC interface numbering does not necessarily match the logical map */
-static u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /* Check that the targeted interface belongs to the cell */
 bool gic_targets_in_cell(struct cell *cell, u8 targets)
@@ -342,42 +342,5 @@ void gic_handle_irq(struct per_cpu *cpu_data)
 		 * interrupt that needs handling in the guest (e.g. timer)
 		 */
 		irqchip_eoi_irq(irq_id, handled);
-	}
-}
-
-void gic_target_spis(struct cell *config_cell, struct cell *dest_cell)
-{
-	unsigned int i, first_cpu, cpu_itf;
-	unsigned int shift = 0;
-	void *itargetsr = gicd_base + GICD_ITARGETSR;
-	u32 targets;
-	u32 mask = 0;
-	u32 bits = 0;
-
-	/* Always route to the first logical CPU on reset */
-	for_each_cpu(first_cpu, dest_cell->cpu_set)
-		break;
-
-	cpu_itf = target_cpu_map[first_cpu];
-
-	/* ITARGETSR0-7 contain the PPIs and SGIs, and are read-only. */
-	itargetsr += 4 * 8;
-
-	for (i = 0; i < 64; i++, shift = (shift + 8) % 32) {
-		if (irqchip_irq_in_cell(config_cell, 32 + i)) {
-			mask |= (0xff << shift);
-			bits |= (cpu_itf << shift);
-		}
-
-		/* ITARGETRs have 4 IRQ per register */
-		if ((i + 1) % 4 == 0) {
-			targets = mmio_read32(itargetsr);
-			targets &= ~mask;
-			targets |= bits;
-			mmio_write32(itargetsr, targets);
-			itargetsr += 4;
-			mask = 0;
-			bits = 0;
-		}
 	}
 }

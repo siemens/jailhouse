@@ -182,15 +182,6 @@ static int gic_cell_init(struct cell *cell)
 	int err;
 
 	/*
-	 * target_cpu_map has not been populated by all available CPUs when the
-	 * setup code initialises the root cell. It is assumed that the kernel
-	 * already has configured all its SPIs anyway, and that it will redirect
-	 * them when unplugging a CPU.
-	 */
-	if (cell != &root_cell)
-		gic_target_spis(cell, cell);
-
-	/*
 	 * Let the guest access the virtual CPU interface instead of the
 	 * physical one.
 	 *
@@ -216,6 +207,21 @@ static void gic_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->arch.mm, (unsigned long)gicc_base, gicc_size,
 		       PAGING_NON_COHERENT);
+}
+
+static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
+{
+	void *itargetsr = gicd_base + GICD_ITARGETSR + (irq_id & ~0x3);
+	u32 targets = mmio_read32(itargetsr);
+	unsigned int shift = irq_id % 4;
+
+	if (gic_targets_in_cell(cell, (u8)(targets >> shift)))
+		return;
+
+	targets &= ~(0xff << shift);
+	targets |= target_cpu_map[first_cpu(cell->cpu_set)] << shift;
+
+	mmio_write32(itargetsr, targets);
 }
 
 static int gic_send_sgi(struct sgi *sgi)
@@ -304,6 +310,7 @@ struct irqchip_ops irqchip = {
 	.cpu_reset = gic_cpu_reset,
 	.cell_init = gic_cell_init,
 	.cell_exit = gic_cell_exit,
+	.adjust_irq_target = gic_adjust_irq_target,
 
 	.send_sgi = gic_send_sgi,
 	.handle_irq = gic_handle_irq,

@@ -17,6 +17,7 @@
 #include <jailhouse/types.h>
 
 #define GICD_CTLR			0x0000
+# define GICD_CTLR_ARE_NS		(1 << 4)
 #define GICD_TYPER			0x0004
 #define GICD_IIDR			0x0008
 #define GICD_IGROUPR			0x0080
@@ -48,13 +49,14 @@ struct arm_mmio_access;
 struct per_cpu;
 struct sgi;
 
+extern u8 target_cpu_map[];
+
 int gic_probe_cpu_id(unsigned int cpu);
 enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio);
 enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 				      unsigned int irq);
 void gic_handle_sgir_write(struct sgi *sgi, bool virt_input);
 void gic_handle_irq(struct per_cpu *cpu_data);
-void gic_target_spis(struct cell *config_cell, struct cell *dest_cell);
 bool gic_targets_in_cell(struct cell *cell, u8 targets);
 
 #endif /* !__ASSEMBLY__ */
