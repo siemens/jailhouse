@@ -40,16 +40,16 @@ static unsigned int gicr_size;
 
 static int gic_init(void)
 {
-	int err;
+	/* TODO: need to validate more? */
+	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
+		return trace_error(-EIO);
 
 	/* FIXME: parse a dt */
 	gicr_base = GICR_BASE;
 	gicr_size = GICR_SIZE;
 
 	/* Let the per-cpu code access the redistributors */
-	err = arch_map_device(gicr_base, gicr_base, gicr_size);
-
-	return err;
+	return arch_map_device(gicr_base, gicr_base, gicr_size);
 }
 
 static void gic_clear_pending_irqs(void)
