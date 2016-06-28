@@ -340,6 +340,10 @@ class PCIDevice:
     def parse_pcidevice_sysfsdir(basedir, dir):
         dpath = os.path.join(basedir, dir)
         f = input_open(os.path.join(dpath, 'config'), 'rb')
+        (vendor_device,) = struct.unpack('<I', f.read(4))
+        if vendor_device == 0xffffffff:
+            print('WARNING: Ignoring apparently disabled PCI device %s' % dir)
+            return None
         f.seek(0x0A)
         (classcode,) = struct.unpack('<H', f.read(2))
         f.close()
