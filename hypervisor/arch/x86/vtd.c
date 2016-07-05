@@ -48,7 +48,6 @@ struct vtd_entry {
 # define VTD_VER_MIN			0x10
 #define VTD_CAP_REG			0x08
 # define VTD_CAP_NUM_DID_MASK		BIT_MASK(2, 0)
-# define VTD_CAP_CM			(1UL << 7)
 # define VTD_CAP_SAGAW39		(1UL << 9)
 # define VTD_CAP_SAGAW48		(1UL << 10)
 # define VTD_CAP_SLLPS2M		(1UL << 34)
@@ -652,9 +651,6 @@ int iommu_init(void)
 		if (dmar_pt_levels > 0 && dmar_pt_levels != pt_levels)
 			return trace_error(-EIO);
 		dmar_pt_levels = pt_levels;
-
-		if (caps & VTD_CAP_CM)
-			return trace_error(-EIO);
 
 		ecaps = mmio_read64(reg_base + VTD_ECAP_REG);
 		if (!(ecaps & VTD_ECAP_QI) || !(ecaps & VTD_ECAP_IR) ||
