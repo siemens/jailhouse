@@ -32,13 +32,11 @@ static void arch_reset_el1(struct registers *regs)
 	arm_write_banked_reg(SP_svc, 0);
 	arm_write_banked_reg(SP_abt, 0);
 	arm_write_banked_reg(SP_und, 0);
-	arm_write_banked_reg(SP_svc, 0);
 	arm_write_banked_reg(SP_irq, 0);
 	arm_write_banked_reg(SP_fiq, 0);
 	arm_write_banked_reg(LR_svc, 0);
 	arm_write_banked_reg(LR_abt, 0);
 	arm_write_banked_reg(LR_und, 0);
-	arm_write_banked_reg(LR_svc, 0);
 	arm_write_banked_reg(LR_irq, 0);
 	arm_write_banked_reg(LR_fiq, 0);
 	arm_write_banked_reg(R8_fiq, 0);
@@ -49,7 +47,6 @@ static void arch_reset_el1(struct registers *regs)
 	arm_write_banked_reg(SPSR_svc, 0);
 	arm_write_banked_reg(SPSR_abt, 0);
 	arm_write_banked_reg(SPSR_und, 0);
-	arm_write_banked_reg(SPSR_svc, 0);
 	arm_write_banked_reg(SPSR_irq, 0);
 	arm_write_banked_reg(SPSR_fiq, 0);
 
