@@ -80,7 +80,7 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 };
 static u8 __attribute__((aligned(PAGE_SIZE))) apic_access_page[PAGE_SIZE];
 static struct paging ept_paging[EPT_PAGE_DIR_LEVELS];
-static u32 enable_rdtscp;
+static u32 secondary_exec_addon;
 static unsigned long cr_maybe1[2], cr_required1[2];
 
 static bool vmxon(struct per_cpu *cpu_data)
@@ -233,12 +233,13 @@ static int vmx_check_features(void)
 	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
 		return trace_error(-EIO);
 
-	/* require RDTSCP if present in CPUID */
-	if (cpuid_edx(0x80000001, 0) & X86_FEATURE_RDTSCP) {
-		enable_rdtscp = SECONDARY_EXEC_RDTSCP;
-		if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_RDTSCP))
-			return trace_error(-EIO);
-	}
+	/* require RDTSCP and INVPCID if present in CPUID */
+	if (cpuid_edx(0x80000001, 0) & X86_FEATURE_RDTSCP)
+		secondary_exec_addon |= SECONDARY_EXEC_RDTSCP;
+	if (cpuid_ebx(0x07, 0) & X86_FEATURE_INVPCID)
+		secondary_exec_addon |= SECONDARY_EXEC_INVPCID;
+	if ((vmx_proc_ctrl2 & secondary_exec_addon) != secondary_exec_addon)
+		return trace_error(-EIO);
 
 	/* require PAT and EFER save/restore */
 	vmx_entry_ctrl = read_msr(MSR_IA32_VMX_ENTRY_CTLS) >> 32;
@@ -565,7 +566,7 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 	val = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2);
 	val |= SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES |
 		SECONDARY_EXEC_ENABLE_EPT | SECONDARY_EXEC_UNRESTRICTED_GUEST |
-		enable_rdtscp;
+		secondary_exec_addon;
 	ok &= vmcs_write32(SECONDARY_VM_EXEC_CONTROL, val);
 
 	ok &= vmcs_write64(APIC_ACCESS_ADDR,

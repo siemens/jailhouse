@@ -28,6 +28,7 @@
 #define X86_FEATURE_HYPERVISOR				(1 << 31)
 
 /* leaf 0x07, subleaf 0, EBX */
+#define X86_FEATURE_INVPCID				(1 << 10)
 #define X86_FEATURE_CAT					(1 << 15)
 
 /* leaf 0x80000001, ECX */
