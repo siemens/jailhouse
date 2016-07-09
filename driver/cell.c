@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -129,29 +129,10 @@ void jailhouse_cell_register_root(void)
 
 void jailhouse_cell_delete_root(void)
 {
-	cell_delete(root_cell);
-}
-
-void jailhouse_cell_delete_all(void)
-{
-	struct cell *cell, *tmp;
-	unsigned int cpu;
-
 	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
 				     JAILHOUSE_PCI_ACTION_DEL);
 
-	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_DEVICE,
-				     JAILHOUSE_PCI_ACTION_RELEASE);
-
-	list_for_each_entry_safe(cell, tmp, &cells, entry)
-		jailhouse_cell_delete(cell);
-
-	for_each_cpu(cpu, &offlined_cpus) {
-		if (cpu_up(cpu) != 0)
-			pr_err("Jailhouse: failed to bring CPU %d back "
-			       "online\n", cpu);
-		cpumask_clear_cpu(cpu, &offlined_cpus);
-	}
+	cell_delete(root_cell);
 }
 
 int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
@@ -389,23 +370,14 @@ int jailhouse_cmd_cell_start(const char __user *arg)
 	return err;
 }
 
-int jailhouse_cmd_cell_destroy(const char __user *arg)
+static int cell_destroy(struct cell *cell)
 {
-	struct jailhouse_cell_id cell_id;
-	struct cell *cell;
 	unsigned int cpu;
 	int err;
 
-	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
-		return -EFAULT;
-
-	err = cell_management_prologue(&cell_id, &cell);
-	if (err)
-		return err;
-
 	err = jailhouse_call_arg1(JAILHOUSE_HC_CELL_DESTROY, cell->id);
 	if (err)
-		goto unlock_out;
+		return err;
 
 	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (cpumask_test_cpu(cpu, &offlined_cpus)) {
@@ -423,10 +395,46 @@ int jailhouse_cmd_cell_destroy(const char __user *arg)
 	pr_info("Destroyed Jailhouse cell \"%s\"\n",
 		kobject_name(&cell->kobj));
 
-	jailhouse_cell_delete(cell);
+	cell_delete(cell);
 
-unlock_out:
+	return 0;
+}
+
+int jailhouse_cmd_cell_destroy(const char __user *arg)
+{
+	struct jailhouse_cell_id cell_id;
+	struct cell *cell;
+	int err;
+
+	if (copy_from_user(&cell_id, arg, sizeof(cell_id)))
+		return -EFAULT;
+
+	err = cell_management_prologue(&cell_id, &cell);
+	if (err)
+		return err;
+
+	err = cell_destroy(cell);
+
 	mutex_unlock(&jailhouse_lock);
 
 	return err;
+}
+
+int jailhouse_cmd_cell_destroy_non_root(void)
+{
+	struct cell *cell, *tmp;
+	int err;
+
+	list_for_each_entry_safe(cell, tmp, &cells, entry) {
+		if (cell == root_cell)
+			continue;
+		err = cell_destroy(cell);
+		if (err) {
+			pr_err("Jailhouse: failed to destroy cell \"%s\"\n",
+			       kobject_name(&cell->kobj));
+			return err;
+		}
+	}
+
+	return 0;
 }
