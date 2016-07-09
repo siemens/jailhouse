@@ -39,11 +39,6 @@ extern struct cell *root_cell;
 
 void jailhouse_cell_kobj_release(struct kobject *kobj);
 
-struct cell *
-jailhouse_cell_create(const struct jailhouse_cell_desc *cell_desc);
-void jailhouse_cell_register(struct cell *cell);
-void jailhouse_cell_delete(struct cell *cell);
-
 int jailhouse_cell_prepare_root(const struct jailhouse_cell_desc *cell_desc);
 void jailhouse_cell_register_root(void);
 void jailhouse_cell_delete_root(void);

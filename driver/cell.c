@@ -37,7 +37,7 @@ void jailhouse_cell_kobj_release(struct kobject *kobj)
 	kfree(cell);
 }
 
-struct cell *jailhouse_cell_create(const struct jailhouse_cell_desc *cell_desc)
+static struct cell *cell_create(const struct jailhouse_cell_desc *cell_desc)
 {
 	struct cell *cell;
 	int err;
@@ -82,7 +82,7 @@ struct cell *jailhouse_cell_create(const struct jailhouse_cell_desc *cell_desc)
 	return cell;
 }
 
-void jailhouse_cell_register(struct cell *cell)
+static void cell_register(struct cell *cell)
 {
 	list_add_tail(&cell->entry, &cells);
 	jailhouse_sysfs_cell_register(cell);
@@ -100,7 +100,7 @@ static struct cell *find_cell(struct jailhouse_cell_id *cell_id)
 	return NULL;
 }
 
-void jailhouse_cell_delete(struct cell *cell)
+static void cell_delete(struct cell *cell)
 {
 	list_del(&cell->entry);
 	jailhouse_sysfs_cell_delete(cell);
@@ -108,7 +108,7 @@ void jailhouse_cell_delete(struct cell *cell)
 
 int jailhouse_cell_prepare_root(const struct jailhouse_cell_desc *cell_desc)
 {
-	root_cell = jailhouse_cell_create(cell_desc);
+	root_cell = cell_create(cell_desc);
 	if (IS_ERR(root_cell))
 		return PTR_ERR(root_cell);
 
@@ -124,12 +124,12 @@ void jailhouse_cell_register_root(void)
 				     JAILHOUSE_PCI_ACTION_ADD);
 
 	root_cell->id = 0;
-	jailhouse_cell_register(root_cell);
+	cell_register(root_cell);
 }
 
 void jailhouse_cell_delete_root(void)
 {
-	jailhouse_cell_delete(root_cell);
+	cell_delete(root_cell);
 }
 
 void jailhouse_cell_delete_all(void)
@@ -203,7 +203,7 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		goto unlock_out;
 	}
 
-	cell = jailhouse_cell_create(config);
+	cell = cell_create(config);
 	if (IS_ERR(cell)) {
 		err = PTR_ERR(cell);
 		goto unlock_out;
@@ -234,7 +234,7 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	}
 
 	cell->id = id;
-	jailhouse_cell_register(cell);
+	cell_register(cell);
 
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);
 
@@ -254,7 +254,7 @@ error_cpu_online:
 	}
 
 error_cell_delete:
-	jailhouse_cell_delete(cell);
+	cell_delete(cell);
 	goto unlock_out;
 }
 
