@@ -76,8 +76,10 @@ Return code:    EAX
 Hypercall "Disable" (code 0)
 - - - - - - - - - - - - - - -
 
-Tries to destroy all non-Linux cells and then shuts down the hypervisor,
-returning full control over the hardware back to Linux.
+Tries to shuts down the hypervisor, returning full control over the hardware
+back to Linux. All non-root cells must have been destroyed prior to issuing
+this hypercall. The hypercall has to be invoked on all CPUs of the root cell to
+achieve a consistent shutdown.
 
 This hypercall can only be issued on CPUs belonging to the Linux cell.
 
@@ -86,8 +88,9 @@ Arguments: None
 Return code: 0 on success, negative error code otherwise
 
     Possible errors are:
-        -EPERM  (-1) - hypercall was issued over a non-Linux cell or an active
-                       cell rejected the shutdown request
+        -EPERM  (-1)  - hypercall was issued over a non-Linux cell or an active
+                        cell rejected the shutdown request
+        -EBUSY  (-16) - one or more non-root cells still exist
 
 
 Hypercall "Cell Create" (code 1)

@@ -669,7 +669,6 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 static int shutdown(struct per_cpu *cpu_data)
 {
 	unsigned int this_cpu = cpu_data->cpu_id;
-	struct cell *cell;
 	unsigned int cpu;
 	int state, ret;
 
@@ -677,32 +676,40 @@ static int shutdown(struct per_cpu *cpu_data)
 	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
+	/*
+	 * This may race against another root cell CPU invoking a different
+	 * management hypercall (cell create, set loadable, start, destroy).
+	 * Those suspend the root cell to protect against concurrent requests.
+	 * We can't do this here because all root cell CPUs will invoke this
+	 * function, and cell_suspend doesn't support such a scenario. We are
+	 * safe nevertheless because we only need to see a consistent num_cells
+	 * that is not increasing anymore once the shutdown was started:
+	 *
+	 * If another CPU in a management hypercall already called cell_suspend,
+	 * it is now waiting for this CPU to react. In this case, we see
+	 * num_cells prior to any change, can start the shutdown if it is 1, and
+	 * will prevent the other CPU from changing it anymore. This is because
+	 * we are taking one CPU away from the hypervisor when leaving shutdown.
+	 * This will lock up the root cell (which is violating the hypercall
+	 * protocol), but only if it was the last cell.
+	 *
+	 * If the other CPU already returned from cell_suspend, we cannot be
+	 * running in parallel before that CPU releases the root cell again via
+	 * cell_resume. In that case, we will see the result of the change.
+	 *
+	 * shutdown_lock is here just to coordinate between the root cell CPUs
+	 * who is evaluating num_cells and should start the shutdown depending
+	 * on its state.
+	 */
 	spin_lock(&shutdown_lock);
 
 	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
-		state = SHUTDOWN_STARTED;
-		for_each_non_root_cell(cell)
-			if (!cell_shutdown_ok(cell))
-				state = -EPERM;
-
-		if (state == SHUTDOWN_STARTED) {
+		if (num_cells == 1) {
 			printk("Shutting down hypervisor\n");
-
-			for_each_non_root_cell(cell) {
-				cell_suspend(cell, cpu_data);
-
-				printk("Closing cell \"%s\"\n",
-				       cell->config->name);
-
-				for_each_cpu(cpu, cell->cpu_set) {
-					printk(" Releasing CPU %d\n", cpu);
-					arch_shutdown_cpu(cpu);
-				}
-			}
-
-			printk("Closing root cell \"%s\"\n",
-			       root_cell.config->name);
 			arch_shutdown();
+			state = SHUTDOWN_STARTED;
+		} else {
+			state = -EBUSY;
 		}
 
 		for_each_cpu(cpu, root_cell.cpu_set)
