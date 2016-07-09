@@ -190,13 +190,6 @@ void arch_park_cpu(unsigned int cpu_id)
 	arch_resume_cpu(cpu_id);
 }
 
-void arch_shutdown_cpu(unsigned int cpu_id)
-{
-	arch_suspend_cpu(cpu_id);
-	per_cpu(cpu_id)->shutdown_cpu = true;
-	arch_resume_cpu(cpu_id);
-}
-
 void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 			int sipi_vector)
 {
@@ -247,12 +240,6 @@ void x86_check_events(void)
 
 		while (cpu_data->suspend_cpu)
 			cpu_relax();
-
-		if (cpu_data->shutdown_cpu) {
-			apic_clear();
-			vcpu_exit(cpu_data);
-			asm volatile("1: hlt; jmp 1b");
-		}
 
 		spin_lock(&cpu_data->control_lock);
 

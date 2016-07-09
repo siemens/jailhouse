@@ -112,19 +112,7 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	 */
 	irqchip_eoi_irq(SGI_CPU_OFF, true);
 
-	if (is_shutdown) {
-#ifndef CONFIG_MACH_VEXPRESS
-		if (cell != &root_cell) {
-			irqchip_cpu_shutdown(cpu_data);
-
-			smc(PSCI_CPU_OFF, 0, 0, 0);
-			smc(PSCI_CPU_OFF_V0_1_UBOOT, 0, 0, 0);
-			panic_printk("FATAL: PSCI_CPU_OFF failed\n");
-			panic_stop();
-		}
-#endif
-		/* arch_shutdown_self resets the GIC on all remaining CPUs. */
-	} else {
+	if (!is_shutdown) {
 		err = irqchip_cpu_reset(cpu_data);
 		if (err)
 			printk("IRQ setup failed\n");
@@ -411,32 +399,9 @@ void arch_panic_park(void)
 	__builtin_unreachable();
 }
 
-/*
- * This handler is only used for cells, not for the root. The core already
- * issued a cpu_suspend. arch_reset_cpu will cause arch_reset_self to be
- * called on that CPU, which will in turn call arch_shutdown_self.
- */
-void arch_shutdown_cpu(unsigned int cpu_id)
-{
-	struct per_cpu *cpu_data = per_cpu(cpu_id);
-
-	cpu_data->virt_id = cpu_id;
-	cpu_data->shutdown = true;
-
-	if (psci_wait_cpu_stopped(cpu_id))
-		printk("FATAL: unable to stop CPU%d\n", cpu_id);
-
-	arch_reset_cpu(cpu_id);
-}
-
 void arch_shutdown(void)
 {
 	unsigned int cpu;
-	struct cell *cell = root_cell.next;
-
-	/* Re-route each SPI to CPU0 */
-	for (; cell != NULL; cell = cell->next)
-		irqchip_cell_exit(cell);
 
 	/*
 	 * Let the exit handler call reset_self to let the core finish its

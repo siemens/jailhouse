@@ -194,21 +194,6 @@ void arch_reset_cpu(unsigned int cpu_id);
 void arch_park_cpu(unsigned int cpu_id);
 
 /**
- * Releases hypervisor control over the target CPU.
- * @param cpu_id	ID of the target CPU.
- *
- * @note This function must not be invoked for the caller's CPU.
- *
- * @note The target CPU need not be suspended before calling the function.
- *
- * @note The caller has to ensure that the target CPU has enough time to reach
- * the shutdown position before destroying the code path it has to take to get
- * there. This can be ensured by bringing the CPU online again under Linux
- * before cleaning up the hypervisor.
- */
-void arch_shutdown_cpu(unsigned int cpu_id);
-
-/**
  * Performs the architecture-specific steps for mapping a memory region into a
  * cell's address space.
  * @param cell		Cell for which the mapping shall be done.

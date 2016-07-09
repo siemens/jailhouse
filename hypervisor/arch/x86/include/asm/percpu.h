@@ -131,8 +131,6 @@ struct per_cpu {
 	bool flush_vcpu_caches;
 	/** Set to true for pending cache allocation updates (Intel only). */
 	bool update_cat;
-	/** Set to true for instructing the CPU to disable hypervisor mode. */
-	bool shutdown_cpu;
 	/** State of the shutdown process. Possible values:
 	 * @li SHUTDOWN_NONE: no shutdown in progress
 	 * @li SHUTDOWN_STARTED: shutdown in progress
