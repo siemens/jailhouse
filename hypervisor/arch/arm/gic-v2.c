@@ -59,7 +59,7 @@ static void gic_clear_pending_irqs(void)
 	mmio_write32(gich_base + GICH_APR, 0);
 }
 
-static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
+static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
 	unsigned int i;
 	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
@@ -108,8 +108,6 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 		gich_vmcr = 0;
 	}
 	mmio_write32(gich_base + GICH_VMCR, gich_vmcr);
-
-	return 0;
 }
 
 static int gic_cpu_init(struct per_cpu *cpu_data)

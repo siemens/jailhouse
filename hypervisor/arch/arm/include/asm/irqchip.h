@@ -44,7 +44,7 @@ struct irqchip_ops {
 	int	(*cpu_init)(struct per_cpu *cpu_data);
 	int	(*cell_init)(struct cell *cell);
 	void	(*cell_exit)(struct cell *cell);
-	int	(*cpu_reset)(struct per_cpu *cpu_data, bool is_shutdown);
+	void	(*cpu_reset)(struct per_cpu *cpu_data, bool is_shutdown);
 	void	(*adjust_irq_target)(struct cell *cell, u16 irq_id);
 
 	int	(*send_sgi)(struct sgi *sgi);
@@ -60,7 +60,7 @@ unsigned int irqchip_mmio_count_regions(struct cell *cell);
 
 int irqchip_init(void);
 int irqchip_cpu_init(struct per_cpu *cpu_data);
-int irqchip_cpu_reset(struct per_cpu *cpu_data);
+void irqchip_cpu_reset(struct per_cpu *cpu_data);
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data);
 
 int irqchip_cell_init(struct cell *cell);

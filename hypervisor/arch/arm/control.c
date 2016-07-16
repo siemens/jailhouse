@@ -112,11 +112,8 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	 */
 	irqchip_eoi_irq(SGI_CPU_OFF, true);
 
-	if (!is_shutdown) {
-		err = irqchip_cpu_reset(cpu_data);
-		if (err)
-			printk("IRQ setup failed\n");
-	}
+	if (!is_shutdown)
+		irqchip_cpu_reset(cpu_data);
 
 	/* Wait for the driver to call cpu_up */
 	if (cell == &root_cell || is_shutdown)

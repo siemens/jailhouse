@@ -71,7 +71,7 @@ static void gic_clear_pending_irqs(void)
 	}
 }
 
-static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
+static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
 	unsigned int i;
 	void *gicr = cpu_data->gicr_base;
@@ -79,8 +79,8 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
 	u32 ich_vmcr;
 
-	if (gicr == 0)
-		return -ENODEV;
+	if (!gicr)
+		return;
 
 	gic_clear_pending_irqs();
 
@@ -120,8 +120,6 @@ static int gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	}
 
 	arm_write_sysreg(ICH_VMCR_EL2, 0);
-
-	return 0;
 }
 
 static int gic_cpu_init(struct per_cpu *cpu_data)
