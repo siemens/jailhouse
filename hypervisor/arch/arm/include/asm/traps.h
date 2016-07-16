@@ -29,8 +29,6 @@ enum trap_return {
 struct trap_context {
 	unsigned long *regs;
 	u32 hsr;
-	u32 cpsr;
-	u32 pc;
 };
 
 typedef int (*trap_handler)(struct trap_context *ctx);

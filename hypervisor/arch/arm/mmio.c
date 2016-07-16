@@ -28,30 +28,35 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	unsigned int lr_offset;
 	unsigned long vbar;
 	bool is_thumb;
-	u32 sctlr, ttbcr;
+	u32 sctlr, ttbcr, cpsr, pc;
 
 	arm_read_sysreg(SCTLR_EL1, sctlr);
 	arm_read_sysreg(TTBCR, ttbcr);
 
+	arm_read_banked_reg(ELR_hyp, pc);
+	arm_read_banked_reg(SPSR_hyp, cpsr);
+
 	/* Set cpsr */
-	is_thumb = ctx->cpsr & PSR_T_BIT;
-	ctx->cpsr &= ~(PSR_MODE_MASK | PSR_IT_MASK(0xff) | PSR_T_BIT
+	is_thumb = cpsr & PSR_T_BIT;
+	cpsr &= ~(PSR_MODE_MASK | PSR_IT_MASK(0xff) | PSR_T_BIT
 			| PSR_J_BIT | PSR_E_BIT);
-	ctx->cpsr |= (PSR_ABT_MODE | PSR_I_BIT | PSR_A_BIT);
+	cpsr |= (PSR_ABT_MODE | PSR_I_BIT | PSR_A_BIT);
 	if (sctlr & SCTLR_TE_BIT)
-		ctx->cpsr |= PSR_T_BIT;
+		cpsr |= PSR_T_BIT;
 	if (sctlr & SCTLR_EE_BIT)
-		ctx->cpsr |= PSR_E_BIT;
+		cpsr |= PSR_E_BIT;
+
+	arm_write_banked_reg(SPSR_hyp, cpsr);
 
 	lr_offset = (is_thumb ? 4 : 0);
-	arm_write_banked_reg(LR_abt, ctx->pc + lr_offset);
+	arm_write_banked_reg(LR_abt, pc + lr_offset);
 
 	/* Branch to dabt vector */
 	if (sctlr & SCTLR_V_BIT)
 		vbar = 0xffff0000;
 	else
 		arm_read_sysreg(VBAR, vbar);
-	ctx->pc = vbar + 0x10;
+	arm_write_banked_reg(ELR_hyp, vbar + 0x10);
 
 	/* Signal a debug fault. DFSR layout depends on the LPAE bit */
 	if (ttbcr >> 31)
