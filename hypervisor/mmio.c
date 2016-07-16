@@ -314,7 +314,8 @@ static enum mmio_result mmio_handle_subpage(void *arg, struct mmio_access *mmio)
 invalid_access:
 	panic_printk("FATAL: Invalid MMIO %s, address: %x, size: %x\n",
 		     mmio->is_write ? "write" : "read",
-		     mem->phys_start + mmio->address, mmio->size);
+		     (unsigned long)mem->phys_start + mmio->address,
+		     mmio->size);
 	return MMIO_ERROR;
 }
 
