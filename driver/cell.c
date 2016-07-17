@@ -275,6 +275,9 @@ static int load_image(struct cell *cell,
 	if (copy_from_user(&image, uimage, sizeof(image)))
 		return -EFAULT;
 
+	if (image.size == 0)
+		return 0;
+
 	mem = cell->memory_regions;
 	for (regions = cell->num_memory_regions; regions > 0; regions--) {
 		image_offset = image.target_address - mem->virt_start;
