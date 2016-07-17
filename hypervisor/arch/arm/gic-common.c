@@ -95,9 +95,8 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 		mmio_perform_access(gicd_base, mmio);
 		mmio->is_write = true;
 
-		/* Clear 0 bits */
-		mmio->value &= ~(access_mask & ~access_val);
-		mmio->value |= access_val;
+		mmio->value &= ~access_mask;
+		mmio->value |= access_val & access_mask;
 		mmio_perform_access(gicd_base, mmio);
 
 		spin_unlock(&dist_lock);
