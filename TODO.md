@@ -11,13 +11,16 @@ x86 support
 
 ARM support
   - v7 (32-bit)
+    - analyze cp15 system control registers access, trap critical ones
+  - v8 (64-bit) [WIP]
+  - common (v7 and v8)
     - System MMU support
     - improve support for platform variations (device tree?)
-  - v8 (64-bit) [WIP]
-  - support for big endian
-    - infrastructure to support BE architectures (byte-swapping services)
-    - usage of that infrastructure in generic subsystems
-    - specific BE support for ARMv7, then v8
+    - re-evaluate IRQ priorities for GIC emulation and possibly add support
+    - support for big endian
+      - infrastructure to support BE architectures (byte-swapping services)
+      - usage of that infrastructure in generic subsystems
+      - specific BE support for ARMv7, then v8
 
 Configuration
  - review of format, rework of textual representation
