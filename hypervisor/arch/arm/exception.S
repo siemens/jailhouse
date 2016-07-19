@@ -61,7 +61,7 @@ vmexit_common:
 	 * Because the hypervisor may call vmreturn to reset the stack,
 	 * arch_handle_exit has to return with the guest registers in r0
 	 */
-.globl vmreturn
+	.globl vmreturn
 vmreturn:
 	mov	sp, r0
 	add	sp, #4
@@ -75,7 +75,13 @@ vmreturn:
 	 * r0-r3:	arguments
 	 * r0:		return value
 	 */
-.globl hvc
+	.globl hvc
 hvc:
 	hvc	#0
+	bx	lr
+
+	.arch_extension sec
+	.globl smc
+smc:
+	smc	#0
 	bx	lr
