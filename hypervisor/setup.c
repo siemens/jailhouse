@@ -33,7 +33,7 @@ static void init_early(unsigned int cpu_id)
 {
 	unsigned long core_and_percpu_size = hypervisor_header.core_size +
 		sizeof(struct per_cpu) * hypervisor_header.max_cpus;
-	unsigned long hyp_phys_start, hyp_phys_end;
+	u64 hyp_phys_start, hyp_phys_end;
 	struct jailhouse_memory hv_page;
 
 	master_cpu_id = cpu_id;
