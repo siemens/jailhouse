@@ -12,6 +12,7 @@ Contribution Checklist
 - use git to manage your changes [*recomended*]
 
 - follow Documentation/coding-style.txt coding style [**required**]
+    - for python code run pep8 coding style checker [**required**]
 
 - add the required copyright header to each new file introduced, see
   [licensing information](LICENSING.md) [**required**]
