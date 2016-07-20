@@ -382,7 +382,7 @@ void arch_config_commit(struct cell *cell_added_removed)
 
 void __attribute__((noreturn)) arch_panic_stop(void)
 {
-	psci_cpu_off(this_cpu_data());
+	asm volatile ("1: wfi; b 1b");
 	__builtin_unreachable();
 }
 
