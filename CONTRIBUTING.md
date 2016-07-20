@@ -39,6 +39,12 @@ Contribution Checklist
       your work" in https://www.kernel.org/doc/Documentation/SubmittingPatches
     - check with your employer when not working on your own!
 
+- add Fixes: to all bug-fix commits [*recommended*]
+    - the Fixes: tag format shall be:
+        Fixes: 12-byte-hash ("subject of bug-introducting commit")
+    - if you are unsure of the bug-introducting commit do *not* add a
+      Fixes: tag - no Fixes: tag is better than a wrong Fixes: tag.
+
 - post patches to mailing list [**required**]
     - use `git format-patch/send-email` if possible
     - send patches inline, do not append them
