@@ -23,8 +23,8 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[10];
-	struct jailhouse_irqchip irqchips[1];
+	struct jailhouse_memory mem_regions[11];
+	struct jailhouse_irqchip irqchips[3];
 } __attribute__((packed)) config = {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
@@ -42,7 +42,7 @@ struct {
 
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
-			.num_irqchips = 1,
+			.num_irqchips = ARRAY_SIZE(config.irqchips),
 		},
 	},
 
@@ -68,6 +68,13 @@ struct {
 		/* HACK: Clock and Reset Controller */ {
 			.phys_start = 0x60006000,
 			.virt_start = 0x60006000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* GPIO */ {
+			.phys_start = 0x6000d000,
+			.virt_start = 0x6000d000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
@@ -126,6 +133,20 @@ struct {
 		/* GIC */ {
 			.address = 0x50041000,
 			.pin_base = 32,
+			.pin_bitmap = {
+				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+			},
+		},
+		/* GIC */ {
+			.address = 0x50041000,
+			.pin_base = 96,
+			.pin_bitmap = {
+				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+			},
+		},
+		/* GIC */ {
+			.address = 0x50041000,
+			.pin_base = 160,
 			.pin_bitmap = {
 				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
 			},
