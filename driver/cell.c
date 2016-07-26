@@ -309,13 +309,18 @@ static int load_image(struct cell *cell,
 			   image.size))
 		err = -EFAULT;
 	/*
-	 * ARMv8 requires to clean D-cache and invalidate I-cache for memory
-	 * containing new instructions. On x86 this is a NOP. On ARMv7 the
-	 * firmware does its own cache maintenance, so it is an
-	 * extraneous (but harmless) flush.
+	 * ARMv7 and ARMv8 require to clean D-cache and invalidate I-cache for
+	 * memory containing new instructions. On x86 this is a NOP.
 	 */
 	flush_icache_range((unsigned long)(image_mem + page_offs),
 			   (unsigned long)(image_mem + page_offs) + image.size);
+#ifdef CONFIG_ARM
+	/*
+	 * ARMv7 requires to flush the written code and data out of D-cache to
+	 * allow the guest starting off with caches disabled.
+	 */
+	__cpuc_flush_dcache_area(image_mem + page_offs, image.size);
+#endif
 
 	vunmap(image_mem);
 
