@@ -14,9 +14,12 @@
 
 #include <jailhouse/control.h>
 #include <jailhouse/entry.h>
+#include <jailhouse/mmio.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/io.h>
+
+#define VGA_LIMIT		0x100000	/* <1M means VGA */
 
 #define UART_TX			0x0
 #define UART_DLL		0x0
@@ -27,24 +30,72 @@
 #define UART_LSR		0x5
 #define UART_LSR_THRE		0x20
 
-static u16 uart_base;
+static u64 uart_base;
+
+static void uart_pio_out(unsigned int reg, u8 value)
+{
+	outb(value, uart_base + reg);
+}
+
+static u8 uart_pio_in(unsigned int reg)
+{
+	return inb(uart_base + reg);
+}
+
+static void uart_mmio8_out(unsigned int reg, u8 value)
+{
+	mmio_write8((void *)(uart_base + reg), value);
+}
+
+static u8 uart_mmio8_in(unsigned int reg)
+{
+	return mmio_read8((void *)(uart_base + reg));
+}
+
+static void uart_mmio32_out(unsigned int reg, u8 value)
+{
+	mmio_write32((void *)(uart_base + reg * 4), value);
+}
+
+static u8 uart_mmio32_in(unsigned int reg)
+{
+	return mmio_read32((void *)(uart_base + reg * 4));
+}
+
+static void (*uart_reg_out)(unsigned int, u8) = uart_pio_out;
+static u8 (*uart_reg_in)(unsigned int) = uart_pio_in;
 
 static void uart_init(void)
 {
-	if (system_config->debug_console.phys_start == 0 ||
-	    system_config->debug_console.flags & JAILHOUSE_MEM_IO)
+	u64 flags = system_config->debug_console.flags;
+
+	if (system_config->debug_console.phys_start == 0)
 		return;
 
-	uart_base = system_config->debug_console.phys_start;
+	if (flags & JAILHOUSE_MEM_IO) {
+		if (system_config->debug_console.phys_start < VGA_LIMIT)
+			return; /* VGA memory */
 
-	outb(UART_LCR_DLAB, uart_base + UART_LCR);
+		if (flags & JAILHOUSE_MEM_IO_32) {
+			uart_reg_out = uart_mmio32_out;
+			uart_reg_in = uart_mmio32_in;
+		} else {
+			uart_reg_out = uart_mmio8_out;
+			uart_reg_in = uart_mmio8_in;
+		}
+		uart_base = (u64)hypervisor_header.debug_console_base;
+	} else {
+		uart_base = system_config->debug_console.phys_start;
+	}
+
+	uart_reg_out(UART_LCR, UART_LCR_DLAB);
 #ifdef CONFIG_UART_OXPCIE952
 	outb(0x22, uart_base + UART_DLL);
 #else
-	outb(1, uart_base + UART_DLL);
+	uart_reg_out(UART_DLL, 1);
 #endif
-	outb(0, uart_base + UART_DLM);
-	outb(UART_LCR_8N1, uart_base + UART_LCR);
+	uart_reg_out(UART_DLM, 0);
+	uart_reg_out(UART_LCR, UART_LCR_8N1);
 }
 
 static void uart_write(const char *msg)
@@ -58,11 +109,11 @@ static void uart_write(const char *msg)
 			c = *msg++;
 		if (!c)
 			break;
-		while (!(inb(uart_base + UART_LSR) & UART_LSR_THRE))
+		while (!(uart_reg_in(UART_LSR) & UART_LSR_THRE))
 			cpu_relax();
 		if (panic_in_progress && panic_cpu != phys_processor_id())
 			break;
-		outb(c, uart_base + UART_TX);
+		uart_reg_out(UART_TX, c);
 	}
 }
 
@@ -80,7 +131,8 @@ static u16 *vga_mem;
 
 static void vga_init(void)
 {
-	vga_mem = hypervisor_header.debug_console_base;
+	if (system_config->debug_console.phys_start < VGA_LIMIT)
+		vga_mem = hypervisor_header.debug_console_base;
 }
 
 static void vga_scroll(void)
