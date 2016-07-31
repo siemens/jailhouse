@@ -180,7 +180,7 @@ Demonstration in QEMU/KVM
 The included system configuration qemu-vm.c can be used to run Jailhouse in
 QEMU/KVM virtual machine on x86 hosts (Intel and AMD are supported). Currently
 it requires Linux 3.18 or newer on the host side (Intel is fine with 3.17).
-QEMU is required in a recent version (2.1) as well if you want to use the
+QEMU is required in a recent version (2.7) as well if you want to use the
 configuration file included in the source tree.
 
 You also need a Linux guest image with a recent kernel (tested with >= 3.9) and

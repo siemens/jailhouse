@@ -105,56 +105,56 @@ struct {
 			.size = 0x30000,
 			.flags = JAILHOUSE_MEM_READ,
 		},
-		/* MemRegion: fd000000-fdffffff : vesafb */
+		/* MemRegion: fd000000-fdffffff : 0000:00:01.0 (vesafb) */
 		{
 			.phys_start = 0xfd000000,
 			.virt_start = 0xfd000000,
 			.size = 0x1000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: feb80000-febbffff : 0000:00:02.0 */
+		/* MemRegion: fe000000-fe7fffff : 0000:00:1f.7 (virtio-9p) */
+		{
+			.phys_start = 0xfe000000,
+			.virt_start = 0xfe000000,
+			.size = 0x800000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* MemRegion: feb80000-febbffff : 0000:00:02.0 (e1000) */
 		{
 			.phys_start = 0xfeb80000,
 			.virt_start = 0xfeb80000,
 			.size = 0x40000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febc0000-febdffff : e1000 */
+		/* MemRegion: febc0000-febdffff : 0000:00:02.0 (e1000) */
 		{
 			.phys_start = 0xfebc0000,
 			.virt_start = 0xfebc0000,
 			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febe0000-febeffff : 0000:00:01.0 */
-		{
-			.phys_start = 0xfebe0000,
-			.virt_start = 0xfebe0000,
-			.size = 0x10000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
-		/* MemRegion: febf0000-febf3fff : ICH HD audio */
+		/* MemRegion: febf0000-febf3fff : 0000:00:1b.0 (ICH HD audio) */
 		{
 			.phys_start = 0xfebf0000,
 			.virt_start = 0xfebf0000,
 			.size = 0x4000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febf4000-febf4fff : 0000:00:01.0 */
+		/* MemRegion: febf4000-febf4fff : 0000:00:01.0 (vesafd) */
 		{
 			.phys_start = 0xfebf4000,
 			.virt_start = 0xfebf4000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febf5000-febf5fff : ahci */
+		/* MemRegion: febf5000-febf5fff : 0000:00:1f.2 (ahci) */
 		{
 			.phys_start = 0xfebf5000,
 			.virt_start = 0xfebf5000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: fed00000-fed003ff : PNP0103:00 */
+		/* MemRegion: fed00000-fed003ff : PNP0103:00 (HPET) */
 		{
 			.phys_start = 0xfed00000,
 			.virt_start = 0xfed00000,
@@ -296,7 +296,7 @@ struct {
 		},
 		{ /* virtio-9p-pci */
 			.id = 0x11,
-			.start = 0x40,
+			.start = 0x98,
 			.len = 12,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
