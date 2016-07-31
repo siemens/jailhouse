@@ -630,12 +630,8 @@ int iommu_init(void)
 			return err;
 
 		version = mmio_read64(reg_base + VTD_VER_REG) & VTD_VER_MASK;
-		if (version < VTD_VER_MIN || version == 0xff) {
-			//return -EIO;
-			// HACK for QEMU
-			printk("WARNING: No VT-d support found!\n");
-			return 0;
-		}
+		if (version < VTD_VER_MIN || version == 0xff)
+			return -EIO;
 
 		printk("DMAR unit @0x%lx/0x%x\n", unit->base, unit->size);
 
@@ -792,10 +788,6 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 	struct vtd_entry *context_entry_table, *context_entry;
 	int result;
 
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return 0;
-
 	result = vtd_reserve_int_remap_region(bdf, max_vectors);
 	if (result < 0)
 		return result;
@@ -835,10 +827,6 @@ void iommu_remove_pci_device(struct pci_device *device)
 	struct vtd_entry *context_entry;
 	unsigned int n;
 
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return;
-
 	vtd_free_int_remap_region(bdf, MAX(device->info->num_msi_vectors,
 					   device->info->num_msix_vectors));
 
@@ -863,10 +851,6 @@ int iommu_cell_init(struct cell *cell)
 		jailhouse_cell_irqchips(cell->config);
 	unsigned int n;
 	int result;
-
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return 0;
 
 	if (cell->id >= dmar_num_did)
 		return trace_error(-ERANGE);
@@ -894,10 +878,6 @@ int iommu_map_memory_region(struct cell *cell,
 {
 	u32 flags = 0;
 
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return 0;
-
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
 
@@ -917,10 +897,6 @@ int iommu_map_memory_region(struct cell *cell,
 int iommu_unmap_memory_region(struct cell *cell,
 			      const struct jailhouse_memory *mem)
 {
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return 0;
-
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
 
@@ -976,10 +952,6 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 	union vtd_irte irte;
 	int base_index;
 
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return -ENOSYS;
-
 	base_index = vtd_find_int_remap_region(device_id);
 	if (base_index < 0)
 		return base_index;
@@ -1032,10 +1004,6 @@ update_irte:
 
 void iommu_cell_exit(struct cell *cell)
 {
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return;
-
 	page_free(&mem_pool, cell->arch.vtd.pg_structs.root_table, 1);
 
 	/*
@@ -1049,10 +1017,6 @@ void iommu_config_commit(struct cell *cell_added_removed)
 	void *inv_queue = unit_inv_queue;
 	void *reg_base = dmar_reg_base;
 	int n;
-
-	// HACK for QEMU
-	if (dmar_units == 0)
-		return;
 
 	if (cell_added_removed)
 		vtd_init_fault_nmi();

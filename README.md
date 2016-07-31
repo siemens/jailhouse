@@ -179,9 +179,8 @@ Demonstration in QEMU/KVM
 
 The included system configuration qemu-vm.c can be used to run Jailhouse in
 QEMU/KVM virtual machine on x86 hosts (Intel and AMD are supported). Currently
-it requires Linux 3.18 or newer on the host side (Intel is fine with 3.17).
-QEMU is required in a recent version (2.7) as well if you want to use the
-configuration file included in the source tree.
+it requires Linux 4.4 or newer on the host side. QEMU version 2.7 or newer is
+required.
 
 You also need a Linux guest image with a recent kernel (tested with >= 3.9) and
 the ability to build a module for this kernel. Further steps depend on the type
@@ -190,7 +189,8 @@ of CPU you have on your system.
 For Intel CPUs: Make sure the kvm-intel module was loaded with nested=1 to
 enable nested VMX support. Start the virtual machine as follows:
 
-    qemu-system-x86_64 -machine q35 -m 1G -enable-kvm -smp 4 \
+    qemu-system-x86_64 -machine q35,kernel_irqchip=split -m 1G -enable-kvm \
+        -smp 4 -device intel-iommu,intremap=on \
         -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx \
         -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device ide-hd,drive=disk -serial stdio -serial vc \
