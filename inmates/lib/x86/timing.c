@@ -104,7 +104,7 @@ void delay_us(unsigned long microsecs)
 
 unsigned long apic_timer_init(unsigned int vector)
 {
-	unsigned long long apic_freq;
+	unsigned long apic_freq;
 	unsigned long start, end;
 	unsigned long tmr;
 
