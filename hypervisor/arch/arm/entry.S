@@ -13,6 +13,7 @@
 #include <asm/asm-defines.h>
 #include <asm/head.h>
 #include <asm/percpu.h>
+#include <asm/processor.h>
 
 /* Entry point for Linux loader module on JAILHOUSE_ENABLE */
 	.text

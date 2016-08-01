@@ -14,7 +14,6 @@
 #define _JAILHOUSE_ASM_PERCPU_H
 
 #include <jailhouse/types.h>
-#include <asm/paging.h>
 
 #define NUM_ENTRY_REGS			13
 
@@ -22,6 +21,7 @@
 
 #include <jailhouse/cell.h>
 #include <asm/irqchip.h>
+#include <asm/processor.h>
 #include <asm/psci.h>
 #include <asm/spinlock.h>
 #include <asm/sysregs.h>
