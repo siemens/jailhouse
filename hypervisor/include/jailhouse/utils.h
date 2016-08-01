@@ -25,3 +25,4 @@
 	((0xffffffffffffffffULL >> (64 - ((last) + 1 - (first)))) << (first))
 
 #define MAX(a, b)		((a) >= (b) ? (a) : (b))
+#define MIN(a, b)		((a) <= (b) ? (a) : (b))
