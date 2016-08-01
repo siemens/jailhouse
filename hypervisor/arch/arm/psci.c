@@ -12,10 +12,10 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <asm/control.h>
 #include <asm/psci.h>
 #include <asm/traps.h>
-#include <jailhouse/control.h>
 
 static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 				struct trap_context *ctx)

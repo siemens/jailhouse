@@ -14,14 +14,14 @@
  * - arch/arm/kvm/emulate.c
  */
 
+#include <jailhouse/control.h>
+#include <jailhouse/printk.h>
 #include <asm/control.h>
 #include <asm/gic_common.h>
-#include <asm/platform.h>
 #include <asm/psci.h>
+#include <asm/platform.h>
 #include <asm/traps.h>
 #include <asm/sysregs.h>
-#include <jailhouse/printk.h>
-#include <jailhouse/control.h>
 
 /*
  * condition code lookup table

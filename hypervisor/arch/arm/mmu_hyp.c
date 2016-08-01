@@ -10,12 +10,12 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/paging.h>
+#include <jailhouse/printk.h>
 #include <asm/control.h>
 #include <asm/setup.h>
 #include <asm/setup_mmu.h>
 #include <asm/sysregs.h>
-#include <jailhouse/paging.h>
-#include <jailhouse/printk.h>
 
 /*
  * Two identity mappings need to be created for enabling the MMU: one for the

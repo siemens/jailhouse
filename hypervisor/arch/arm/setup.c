@@ -10,16 +10,16 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
+#include <jailhouse/paging.h>
+#include <jailhouse/processor.h>
+#include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
 #include <asm/percpu.h>
 #include <asm/setup.h>
 #include <asm/smp.h>
 #include <asm/sysregs.h>
-#include <jailhouse/control.h>
-#include <jailhouse/paging.h>
-#include <jailhouse/processor.h>
-#include <jailhouse/string.h>
 
 static u32 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE / 4] = {
 	0xe320f003, /* 1: wfi  */
