@@ -46,7 +46,7 @@ int arch_init_early(void)
 	if ((err = arch_check_features()) != 0)
 		return err;
 
-	return arch_mmu_cell_init(&root_cell);
+	return arm_paging_cell_init(&root_cell);
 }
 
 int arch_cpu_init(struct per_cpu *cpu_data)
@@ -80,7 +80,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	/* Setup guest traps */
 	arm_write_sysreg(HCR, hcr);
 
-	err = arch_mmu_cpu_cell_init(cpu_data);
+	err = arm_paging_vcpu_init(cpu_data);
 	if (err)
 		return err;
 

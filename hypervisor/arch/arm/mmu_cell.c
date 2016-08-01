@@ -55,7 +55,7 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 	return paging_virt2phys(&cpu_data->cell->arch.mm, gphys, flags);
 }
 
-int arch_mmu_cell_init(struct cell *cell)
+int arm_paging_cell_init(struct cell *cell)
 {
 	cell->arch.mm.root_paging = cell_paging;
 	cell->arch.mm.root_table =
@@ -67,12 +67,12 @@ int arch_mmu_cell_init(struct cell *cell)
 	return 0;
 }
 
-void arch_mmu_cell_destroy(struct cell *cell)
+void arm_paging_cell_destroy(struct cell *cell)
 {
 	page_free(&mem_pool, cell->arch.mm.root_table, ARM_CELL_ROOT_PT_SZ);
 }
 
-int arch_mmu_cpu_cell_init(struct per_cpu *cpu_data)
+int arm_paging_vcpu_init(struct per_cpu *cpu_data)
 {
 	struct cell *cell = cpu_data->cell;
 	unsigned long cell_table = paging_hvirt2phys(cell->arch.mm.root_table);

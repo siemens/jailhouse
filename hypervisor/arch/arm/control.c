@@ -95,7 +95,7 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	bool is_shutdown = cpu_data->shutdown;
 
 	if (!is_shutdown)
-		err = arch_mmu_cpu_cell_init(cpu_data);
+		err = arm_paging_vcpu_init(cpu_data);
 	if (err)
 		printk("MMU setup failed\n");
 	/*
@@ -322,7 +322,7 @@ int arch_cell_create(struct cell *cell)
 	unsigned int cpu;
 	unsigned int virt_id = 0;
 
-	err = arch_mmu_cell_init(cell);
+	err = arm_paging_cell_init(cell);
 	if (err)
 		return err;
 
@@ -338,7 +338,7 @@ int arch_cell_create(struct cell *cell)
 
 	err = irqchip_cell_init(cell);
 	if (err) {
-		arch_mmu_cell_destroy(cell);
+		arm_paging_cell_destroy(cell);
 		return err;
 	}
 
@@ -361,7 +361,7 @@ void arch_cell_destroy(struct cell *cell)
 
 	irqchip_cell_exit(cell);
 
-	arch_mmu_cell_destroy(cell);
+	arm_paging_cell_destroy(cell);
 }
 
 /* Note: only supports synchronous flushing as triggered by config_commit! */
