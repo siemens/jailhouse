@@ -55,6 +55,41 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 	return paging_virt2phys(&cpu_data->cell->arch.mm, gphys, flags);
 }
 
+void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)
+{
+	unsigned long vaddr = TEMPORARY_MAPPING_BASE +
+		this_cpu_id() * PAGE_SIZE * NUM_TEMPORARY_PAGES;
+	unsigned long region_addr, region_size, size;
+	struct jailhouse_memory const *mem;
+	unsigned int n;
+
+	for_each_mem_region(mem, cell->config, n) {
+		if (mem->flags & (JAILHOUSE_MEM_IO | JAILHOUSE_MEM_COMM_REGION))
+			continue;
+
+		region_addr = mem->phys_start;
+		region_size = mem->size;
+
+		while (region_size > 0) {
+			size = MIN(region_size,
+				   NUM_TEMPORARY_PAGES * PAGE_SIZE);
+
+			/* cannot fail, mapping area is preallocated */
+			paging_create(&hv_paging_structs, region_addr, size,
+				      vaddr, PAGE_DEFAULT_FLAGS,
+				      PAGING_NON_COHERENT);
+
+			arm_dcaches_flush((void *)vaddr, size, flush);
+
+			region_addr += size;
+			region_size -= size;
+		}
+	}
+
+	/* ensure completion of the flush */
+	dmb(ish);
+}
+
 int arm_paging_cell_init(struct cell *cell)
 {
 	cell->arch.mm.root_paging = cell_paging;
