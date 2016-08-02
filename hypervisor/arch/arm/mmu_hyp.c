@@ -369,3 +369,18 @@ int arch_unmap_device(void *vaddr, unsigned long size)
 	return paging_destroy(&hv_paging_structs, (unsigned long)vaddr, size,
 			PAGING_NON_COHERENT);
 }
+
+void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush)
+{
+	while (size > 0) {
+		/* clean / invalidate by MVA to PoC */
+		if (flush == DCACHE_CLEAN)
+			arm_write_sysreg(DCCMVAC, addr);
+		else if (flush == DCACHE_INVALIDATE)
+			arm_write_sysreg(DCIMVAC, addr);
+		else
+			arm_write_sysreg(DCCIMVAC, addr);
+		size -= MIN(cache_line_size, size);
+		addr += cache_line_size;
+	}
+}

@@ -175,6 +175,12 @@ struct per_cpu;
 
 typedef u64 *pt_entry_t;
 
+enum dcache_flush {
+	DCACHE_CLEAN,
+	DCACHE_INVALIDATE,
+	DCACHE_CLEAN_AND_INVALIDATE,
+};
+
 extern unsigned int cpu_parange;
 extern unsigned int cache_line_size;
 
@@ -182,6 +188,8 @@ int arm_paging_cell_init(struct cell *cell);
 void arm_paging_cell_destroy(struct cell *cell);
 
 int arm_paging_vcpu_init(struct per_cpu *cpu_data);
+
+void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
 
 /* return the bits supported for the physical address range for this
  * machine; in arch_paging_init this value will be kept in
@@ -203,15 +211,10 @@ static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 		arm_write_sysreg(TLBIMVAH, page_addr & PAGE_MASK);
 }
 
-/* Used to clean the PAGE_MAP_COHERENT page table changes */
+/* Used to clean the PAGING_COHERENT page table changes */
 static inline void arch_paging_flush_cpu_caches(void *addr, long size)
 {
-	do {
-		/* Clean by MVA to PoC */
-		arm_write_sysreg(DCCMVAC, addr);
-		size -= cache_line_size;
-		addr += cache_line_size;
-	} while (size > 0);
+	arm_dcaches_flush(addr, size, DCACHE_CLEAN);
 }
 
 #endif /* !__ASSEMBLY__ */
