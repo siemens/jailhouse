@@ -28,7 +28,7 @@ enum trap_return {
 
 struct trap_context {
 	unsigned long *regs;
-	u32 esr;
+	u32 hsr;
 	u32 cpsr;
 	u32 pc;
 };

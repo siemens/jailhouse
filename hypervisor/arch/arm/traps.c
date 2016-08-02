@@ -48,11 +48,11 @@ static const unsigned short cc_map[16] = {
 	0			/* NV                     */
 };
 
-/* Check condition field either from ESR or from SPSR in thumb mode */
+/* Check condition field either from HSR or from SPSR in thumb mode */
 static bool arch_failed_condition(struct trap_context *ctx)
 {
-	u32 class = ESR_EC(ctx->esr);
-	u32 icc = ESR_ICC(ctx->esr);
+	u32 class = HSR_EC(ctx->hsr);
+	u32 icc = HSR_ICC(ctx->hsr);
 	u32 cpsr = ctx->cpsr;
 	u32 flags = cpsr >> 28;
 	u32 cond;
@@ -64,8 +64,8 @@ static bool arch_failed_condition(struct trap_context *ctx)
 		return false;
 
 	/* Is condition field valid? */
-	if (icc & ESR_ICC_CV_BIT) {
-		cond = ESR_ICC_COND(icc);
+	if (icc & HSR_ICC_CV_BIT) {
+		cond = HSR_ICC_COND(icc);
 	} else {
 		/* This can happen in Thumb mode: examine IT state. */
 		unsigned long it = PSR_IT(cpsr);
@@ -118,7 +118,7 @@ static void arch_advance_itstate(struct trap_context *ctx)
 
 void arch_skip_instruction(struct trap_context *ctx)
 {
-	u32 instruction_length = ESR_IL(ctx->esr);
+	u32 instruction_length = HSR_IL(ctx->hsr);
 
 	ctx->pc += (instruction_length ? 4 : 2);
 	arch_advance_itstate(ctx);
@@ -194,8 +194,8 @@ static void dump_guest_regs(struct trap_context *ctx)
 	u8 reg;
 	unsigned long reg_val;
 
-	panic_printk("pc=0x%08x cpsr=0x%08x esr=0x%08x\n", ctx->pc, ctx->cpsr,
-			ctx->esr);
+	panic_printk("pc=0x%08x cpsr=0x%08x hsr=0x%08x\n", ctx->pc, ctx->cpsr,
+		     ctx->hsr);
 	for (reg = 0; reg < 15; reg++) {
 		access_cell_reg(ctx, reg, &reg_val, true);
 		panic_printk("r%d=0x%08x ", reg, reg_val);
@@ -233,12 +233,12 @@ static int arch_handle_hvc(struct trap_context *ctx)
 
 static int arch_handle_cp15_32(struct trap_context *ctx)
 {
-	u32 opc2	= ctx->esr >> 17 & 0x7;
-	u32 opc1	= ctx->esr >> 14 & 0x7;
-	u32 crn		= ctx->esr >> 10 & 0xf;
-	u32 rt		= ctx->esr >> 5 & 0xf;
-	u32 crm		= ctx->esr >> 1 & 0xf;
-	u32 read	= ctx->esr & 1;
+	u32 opc2	= ctx->hsr >> 17 & 0x7;
+	u32 opc1	= ctx->hsr >> 14 & 0x7;
+	u32 crn		= ctx->hsr >> 10 & 0xf;
+	u32 rt		= ctx->hsr >> 5 & 0xf;
+	u32 crm		= ctx->hsr >> 1 & 0xf;
+	u32 read	= ctx->hsr & 1;
 
 	if (opc1 == 0 && crn == 1 && crm == 0 && opc2 == 1) {
 		/* Do not let the guest disable coherency by writing ACTLR... */
@@ -258,11 +258,11 @@ static int arch_handle_cp15_32(struct trap_context *ctx)
 static int arch_handle_cp15_64(struct trap_context *ctx)
 {
 	unsigned long rt_val, rt2_val;
-	u32 opc1	= ctx->esr >> 16 & 0x7;
-	u32 rt2		= ctx->esr >> 10 & 0xf;
-	u32 rt		= ctx->esr >> 5 & 0xf;
-	u32 crm		= ctx->esr >> 1 & 0xf;
-	u32 read	= ctx->esr & 1;
+	u32 opc1	= ctx->hsr >> 16 & 0x7;
+	u32 rt2		= ctx->hsr >> 10 & 0xf;
+	u32 rt		= ctx->hsr >> 5 & 0xf;
+	u32 crm		= ctx->hsr >> 1 & 0xf;
+	u32 read	= ctx->hsr & 1;
 
 	if (!read) {
 		access_cell_reg(ctx, rt, &rt_val, true);
@@ -287,11 +287,11 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 
 static const trap_handler trap_handlers[38] =
 {
-	[ESR_EC_CP15_32]	= arch_handle_cp15_32,
-	[ESR_EC_CP15_64]	= arch_handle_cp15_64,
-	[ESR_EC_HVC]		= arch_handle_hvc,
-	[ESR_EC_SMC]		= arch_handle_smc,
-	[ESR_EC_DABT]		= arch_handle_dabt,
+	[HSR_EC_CP15_32]	= arch_handle_cp15_32,
+	[HSR_EC_CP15_64]	= arch_handle_cp15_64,
+	[HSR_EC_HVC]		= arch_handle_hvc,
+	[HSR_EC_SMC]		= arch_handle_smc,
+	[HSR_EC_DABT]		= arch_handle_dabt,
 };
 
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
@@ -302,8 +302,8 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
 
 	arm_read_banked_reg(ELR_hyp, ctx.pc);
 	arm_read_banked_reg(SPSR_hyp, ctx.cpsr);
-	arm_read_sysreg(ESR_EL2, ctx.esr);
-	exception_class = ESR_EC(ctx.esr);
+	arm_read_sysreg(HSR, ctx.hsr);
+	exception_class = HSR_EC(ctx.hsr);
 	ctx.regs = guest_regs->usr;
 
 	/*

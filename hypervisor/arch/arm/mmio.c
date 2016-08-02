@@ -68,7 +68,7 @@ int arch_handle_dabt(struct trap_context *ctx)
 	unsigned long hpfar;
 	unsigned long hdfar;
 	/* Decode the syndrome fields */
-	u32 icc		= ESR_ICC(ctx->esr);
+	u32 icc		= HSR_ICC(ctx->hsr);
 	u32 isv		= icc >> 24;
 	u32 sas		= icc >> 22 & 0x3;
 	u32 sse		= icc >> 21 & 0x1;

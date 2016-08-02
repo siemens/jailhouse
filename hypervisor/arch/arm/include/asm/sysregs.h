@@ -43,6 +43,7 @@
 #define VMPIDR_EL2	SYSREG_32(4, c0, c0, 5)
 #define SCTLR_EL2	SYSREG_32(4, c1, c0, 0)
 #define ESR_EL2		SYSREG_32(4, c5, c2, 0)
+#define HSR		ESR_EL2 /* AArch32 name */
 #define TPIDR_EL2	SYSREG_32(4, c13, c0, 2)
 #define TTBR0_EL2	SYSREG_64(4, c2)
 #define TCR_EL2		SYSREG_32(4, c2, c0, 2)
