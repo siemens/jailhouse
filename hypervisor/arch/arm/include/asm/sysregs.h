@@ -103,7 +103,7 @@
 
 #define ICIALLUIS	SYSREG_32(0, c7, c1, 0)
 #define ICIALLU		SYSREG_32(0, c7, c5, 0)
-#define DCCIMVAC	SYSREG_32(0, c7, c10, 1)
+#define DCCMVAC		SYSREG_32(0, c7, c10, 1)
 #define DCCSW		SYSREG_32(0, c7, c10, 2)
 #define DCCISW		SYSREG_32(0, c7, c14, 2)
 

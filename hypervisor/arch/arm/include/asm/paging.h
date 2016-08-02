@@ -207,8 +207,8 @@ static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 static inline void arch_paging_flush_cpu_caches(void *addr, long size)
 {
 	do {
-		/* Clean & invalidate by MVA to PoC */
-		arm_write_sysreg(DCCIMVAC, addr);
+		/* Clean by MVA to PoC */
+		arm_write_sysreg(DCCMVAC, addr);
 		size -= cache_line_size;
 		addr += cache_line_size;
 	} while (size > 0);
