@@ -26,6 +26,7 @@
 #include <jailhouse.h>
 
 #define JAILHOUSE_EXEC_DIR	LIBEXECDIR "/jailhouse"
+#define JAILHOUSE_DEVICE	"/dev/jailhouse"
 
 enum shutdown_load_mode {LOAD, SHUTDOWN};
 
@@ -101,9 +102,9 @@ static int open_dev()
 {
 	int fd;
 
-	fd = open("/dev/jailhouse", O_RDWR);
+	fd = open(JAILHOUSE_DEVICE, O_RDWR);
 	if (fd < 0) {
-		perror("opening /dev/jailhouse");
+		perror("opening " JAILHOUSE_DEVICE);
 		exit(1);
 	}
 	return fd;
