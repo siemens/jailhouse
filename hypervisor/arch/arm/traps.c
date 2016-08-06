@@ -233,14 +233,11 @@ static int arch_handle_hvc(struct trap_context *ctx)
 
 static int arch_handle_cp15_32(struct trap_context *ctx)
 {
-	u32 opc2	= ctx->hsr >> 17 & 0x7;
-	u32 opc1	= ctx->hsr >> 14 & 0x7;
-	u32 crn		= ctx->hsr >> 10 & 0xf;
 	u32 rt		= ctx->hsr >> 5 & 0xf;
-	u32 crm		= ctx->hsr >> 1 & 0xf;
 	u32 read	= ctx->hsr & 1;
 
-	if (opc1 == 0 && crn == 1 && crm == 0 && opc2 == 1) {
+	/* trapped by HCR.TAC */
+	if (HSR_MATCH_MCR_MRC(ctx->hsr, 1, 0, 0, 1)) { /* ACTLR */
 		/* Do not let the guest disable coherency by writing ACTLR... */
 		if (read) {
 			unsigned long val;
@@ -258,10 +255,8 @@ static int arch_handle_cp15_32(struct trap_context *ctx)
 static int arch_handle_cp15_64(struct trap_context *ctx)
 {
 	unsigned long rt_val, rt2_val;
-	u32 opc1	= ctx->hsr >> 16 & 0x7;
 	u32 rt2		= ctx->hsr >> 10 & 0xf;
 	u32 rt		= ctx->hsr >> 5 & 0xf;
-	u32 crm		= ctx->hsr >> 1 & 0xf;
 	u32 read	= ctx->hsr & 1;
 
 	if (!read) {
@@ -270,16 +265,12 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	}
 
 #ifdef CONFIG_ARM_GIC_V3
-	/* Trapped ICC_SGI1R write */
-	if (!read && opc1 == 0 && crm == 12) {
+	/* trapped by HCR.IMO/FMO */
+	if (!read && HSR_MATCH_MCRR_MRRC(ctx->hsr, 0, 12)) { /* ICC_SGI1R */
 		arch_skip_instruction(ctx);
 		gicv3_handle_sgir_write((u64)rt2_val << 32 | rt_val);
 		return TRAP_HANDLED;
 	}
-#else
-	/* Avoid `unused' warning... */
-	crm = crm;
-	opc1 = opc1;
 #endif
 
 	return TRAP_UNHANDLED;

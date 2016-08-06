@@ -145,6 +145,14 @@
 #define HSR_ICC_CV_BIT		(1 << 24)
 #define HSR_ICC_COND(icc)	((icc) >> 20 & 0xf)
 
+#define HSR_MATCH_MCR_MRC(hsr, crn, opc1, crm, opc2)		\
+	(((hsr) & (BIT_MASK(19, 10) | BIT_MASK(4, 1))) ==	\
+	 (((opc2) << 17) | ((opc1) << 14) | ((crn) << 10) | ((crm) << 1)))
+
+#define HSR_MATCH_MCRR_MRRC(hsr, opc1, crm)			\
+	(((hsr) & (BIT_MASK(19, 16) | BIT_MASK(4, 1))) ==	\
+	 (((opc1) << 16) | ((crm) << 1)))
+
 #define EXIT_REASON_UNDEF	0x1
 #define EXIT_REASON_HVC		0x2
 #define EXIT_REASON_PABT	0x3
