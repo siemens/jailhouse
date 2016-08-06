@@ -44,9 +44,9 @@ typedef int (*trap_handler)(struct trap_context *ctx);
 #define _access_banked(reg, val, is_read)				\
 	do {								\
 		if (is_read)						\
-			arm_write_banked_reg(reg, val);			\
-		else							\
 			arm_read_banked_reg(reg, val);			\
+		else							\
+			arm_write_banked_reg(reg, val);			\
 	} while (0)
 
 #define access_banked_reg(mode, reg, val, is_read)			\
