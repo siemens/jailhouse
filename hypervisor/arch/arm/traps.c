@@ -233,47 +233,99 @@ static int arch_handle_hvc(struct trap_context *ctx)
 
 static int arch_handle_cp15_32(struct trap_context *ctx)
 {
-	u32 rt		= ctx->hsr >> 5 & 0xf;
-	u32 read	= ctx->hsr & 1;
+	u32 hsr = ctx->hsr;
+	u32 rt = (hsr >> 5) & 0xf;
+	u32 read = hsr & 1;
+	unsigned long val;
+
+#define CP15_32_PERFORM_WRITE(crn, opc1, crm, opc2) ({			\
+	bool match = false;						\
+	if (HSR_MATCH_MCR_MRC(hsr, crn, opc1, crm, opc2)) {		\
+		arm_write_sysreg_32(opc1, c##crn, c##crm, opc2, val);	\
+		match = true;						\
+	}								\
+	match;								\
+})
+
+	if (!read)
+		access_cell_reg(ctx, rt, &val, true);
 
 	/* trapped by HCR.TAC */
 	if (HSR_MATCH_MCR_MRC(ctx->hsr, 1, 0, 0, 1)) { /* ACTLR */
 		/* Do not let the guest disable coherency by writing ACTLR... */
-		if (read) {
-			unsigned long val;
+		if (read)
 			arm_read_sysreg(ACTLR_EL1, val);
-			access_cell_reg(ctx, rt, &val, false);
-		}
-		arch_skip_instruction(ctx);
-
-		return TRAP_HANDLED;
+	}
+	/* all other regs are write-only / only trapped on writes */
+	else if (read) {
+		return TRAP_UNHANDLED;
+	}
+	/* trapped if HCR.TVM is set */
+	else if (HSR_MATCH_MCR_MRC(hsr, 1, 0, 0, 0)) { /* SCTLR */
+		// TODO: check if caches are turned on or off
+		arm_write_sysreg(SCTLR_EL1, val);
+	} else if (!(CP15_32_PERFORM_WRITE(2, 0, 0, 0) ||   /* TTBR0 */
+		     CP15_32_PERFORM_WRITE(2, 0, 0, 1) ||   /* TTBR1 */
+		     CP15_32_PERFORM_WRITE(2, 0, 0, 2) ||   /* TTBCR */
+		     CP15_32_PERFORM_WRITE(3, 0, 0, 0) ||   /* DACR */
+		     CP15_32_PERFORM_WRITE(5, 0, 0, 0) ||   /* DFSR */
+		     CP15_32_PERFORM_WRITE(5, 0, 0, 1) ||   /* IFSR */
+		     CP15_32_PERFORM_WRITE(6, 0, 0, 0) ||   /* DFAR */
+		     CP15_32_PERFORM_WRITE(6, 0, 0, 2) ||   /* IFAR */
+		     CP15_32_PERFORM_WRITE(5, 0, 1, 0) ||   /* ADFSR */
+		     CP15_32_PERFORM_WRITE(5, 0, 1, 1) ||   /* AIDSR */
+		     CP15_32_PERFORM_WRITE(10, 0, 2, 0) ||  /* PRRR / MAIR0 */
+		     CP15_32_PERFORM_WRITE(10, 0, 2, 1) ||  /* NMRR / MAIR1 */
+		     CP15_32_PERFORM_WRITE(13, 0, 0, 1))) { /* CONTEXTIDR */
+		return TRAP_UNHANDLED;
 	}
 
-	return TRAP_UNHANDLED;
+	if (read)
+		access_cell_reg(ctx, rt, &val, false);
+
+	arch_skip_instruction(ctx);
+
+	return TRAP_HANDLED;
 }
 
 static int arch_handle_cp15_64(struct trap_context *ctx)
 {
-	unsigned long rt_val, rt2_val;
-	u32 rt2		= ctx->hsr >> 10 & 0xf;
-	u32 rt		= ctx->hsr >> 5 & 0xf;
-	u32 read	= ctx->hsr & 1;
+	u32 hsr  = ctx->hsr;
+	u32 rt2  = (hsr >> 10) & 0xf;
+	u32 rt   = (hsr >> 5) & 0xf;
+	u32 read = hsr & 1;
+	unsigned long lo, hi;
 
-	if (!read) {
-		access_cell_reg(ctx, rt, &rt_val, true);
-		access_cell_reg(ctx, rt2, &rt2_val, true);
-	}
+#define CP15_64_PERFORM_WRITE(opc1, crm) ({		\
+	bool match = false;				\
+	if (HSR_MATCH_MCRR_MRRC(hsr, opc1, crm)) {	\
+		arm_write_sysreg_64(opc1, c##crm, ((u64)hi << 32) | lo); \
+		match = true;				\
+	}						\
+	match;						\
+})
+
+	/* all regs are write-only / only trapped on writes */
+	if (read)
+		return TRAP_UNHANDLED;
+
+	access_cell_reg(ctx, rt, &lo, true);
+	access_cell_reg(ctx, rt2, &hi, true);
 
 #ifdef CONFIG_ARM_GIC_V3
 	/* trapped by HCR.IMO/FMO */
-	if (!read && HSR_MATCH_MCRR_MRRC(ctx->hsr, 0, 12)) { /* ICC_SGI1R */
-		arch_skip_instruction(ctx);
-		gicv3_handle_sgir_write((u64)rt2_val << 32 | rt_val);
-		return TRAP_HANDLED;
-	}
+	if (HSR_MATCH_MCRR_MRRC(ctx->hsr, 0, 12)) /* ICC_SGI1R */
+		gicv3_handle_sgir_write(((u64)hi << 32) | lo);
+	else
 #endif
+	/* trapped if HCR.TVM is set */
+	if (!(CP15_64_PERFORM_WRITE(0, 2) ||	/* TTBR0 */
+	      CP15_64_PERFORM_WRITE(1, 2)))	/* TTBR1 */
+		return TRAP_UNHANDLED;
 
-	return TRAP_UNHANDLED;
+	arch_skip_instruction(ctx);
+
+	return TRAP_HANDLED;
 }
 
 static const trap_handler trap_handlers[38] =
