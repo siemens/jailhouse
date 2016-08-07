@@ -59,7 +59,34 @@ struct per_cpu {
 	__attribute__((aligned(8))) struct psci_mbox psci_mbox;
 	struct psci_mbox guest_mbox;
 
+	/**
+	 * Lock protecting CPU state changes done for control tasks.
+	 *
+	 * The lock protects the following fields (unless CPU is suspended):
+	 * @li per_cpu::suspend_cpu
+	 * @li per_cpu::cpu_suspended (except for spinning on it to become
+	 *                             true)
+	 * @li per_cpu::flush_vcpu_caches
+	 */
+	spinlock_t control_lock;
+
+	/** Set to true for instructing the CPU to suspend. */
+	volatile bool suspend_cpu;
+	/** True if CPU is waiting for power-on. */
+	volatile bool wait_for_poweron;
+	/** True if CPU is suspended. */
+	volatile bool cpu_suspended;
+	/** Set to true for pending reset. */
+	bool reset;
+	/** Set to true for pending park. */
+	bool park;
+	/** Set to true for a pending TLB flush for the paging layer that does
+	 *  host physical <-> guest physical memory mappings. */
 	bool flush_vcpu_caches;
+
+	unsigned long cpu_on_entry;
+	unsigned long cpu_on_context;
+
 	int shutdown_state;
 	unsigned long mpidr;
 	bool failed;

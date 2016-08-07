@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2016
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -120,6 +122,86 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	vmreturn(regs);
 }
 
+static void cpu_reset(void)
+{
+	struct per_cpu *cpu_data = this_cpu_data();
+	struct cell *cell = cpu_data->cell;
+	struct registers *regs = guest_regs(cpu_data);
+	u32 sctlr;
+
+	/* Wipe all banked and usr regs */
+	memset(regs, 0, sizeof(struct registers));
+
+	arm_write_banked_reg(SP_usr, 0);
+	arm_write_banked_reg(SP_svc, 0);
+	arm_write_banked_reg(SP_abt, 0);
+	arm_write_banked_reg(SP_und, 0);
+	arm_write_banked_reg(SP_irq, 0);
+	arm_write_banked_reg(SP_fiq, 0);
+	arm_write_banked_reg(LR_svc, 0);
+	arm_write_banked_reg(LR_abt, 0);
+	arm_write_banked_reg(LR_und, 0);
+	arm_write_banked_reg(LR_irq, 0);
+	arm_write_banked_reg(LR_fiq, 0);
+	arm_write_banked_reg(R8_fiq, 0);
+	arm_write_banked_reg(R9_fiq, 0);
+	arm_write_banked_reg(R10_fiq, 0);
+	arm_write_banked_reg(R11_fiq, 0);
+	arm_write_banked_reg(R12_fiq, 0);
+	arm_write_banked_reg(SPSR_svc, 0);
+	arm_write_banked_reg(SPSR_abt, 0);
+	arm_write_banked_reg(SPSR_und, 0);
+	arm_write_banked_reg(SPSR_irq, 0);
+	arm_write_banked_reg(SPSR_fiq, 0);
+
+	/* Wipe the system registers */
+	arm_read_sysreg(SCTLR_EL1, sctlr);
+	sctlr = sctlr & ~SCTLR_MASK;
+	arm_write_sysreg(SCTLR_EL1, sctlr);
+	arm_write_sysreg(CPACR_EL1, 0);
+	arm_write_sysreg(CONTEXTIDR_EL1, 0);
+	arm_write_sysreg(PAR_EL1, 0);
+	arm_write_sysreg(TTBR0_EL1, 0);
+	arm_write_sysreg(TTBR1_EL1, 0);
+	arm_write_sysreg(CSSELR_EL1, 0);
+
+	arm_write_sysreg(CNTKCTL_EL1, 0);
+	arm_write_sysreg(CNTP_CTL_EL0, 0);
+	arm_write_sysreg(CNTP_CVAL_EL0, 0);
+	arm_write_sysreg(CNTV_CTL_EL0, 0);
+	arm_write_sysreg(CNTV_CVAL_EL0, 0);
+
+	/* AArch32 specific */
+	arm_write_sysreg(TTBCR, 0);
+	arm_write_sysreg(DACR, 0);
+	arm_write_sysreg(VBAR, 0);
+	arm_write_sysreg(DFSR, 0);
+	arm_write_sysreg(DFAR, 0);
+	arm_write_sysreg(IFSR, 0);
+	arm_write_sysreg(IFAR, 0);
+	arm_write_sysreg(ADFSR, 0);
+	arm_write_sysreg(AIFSR, 0);
+	arm_write_sysreg(MAIR0, 0);
+	arm_write_sysreg(MAIR1, 0);
+	arm_write_sysreg(AMAIR0, 0);
+	arm_write_sysreg(AMAIR1, 0);
+	arm_write_sysreg(TPIDRURW, 0);
+	arm_write_sysreg(TPIDRURO, 0);
+	arm_write_sysreg(TPIDRPRW, 0);
+
+	arm_write_banked_reg(SPSR_hyp, RESET_PSR);
+	arm_write_banked_reg(ELR_hyp, cpu_data->cpu_on_entry);
+
+	/* transfer the context that may have been passed to PSCI_CPU_ON */
+	regs->usr[1] = cpu_data->cpu_on_context;
+
+	arm_write_sysreg(VMPIDR_EL2, cpu_data->virt_id | MPIDR_MP_BIT);
+
+	arm_paging_vcpu_init(&cell->arch.mm);
+
+	irqchip_cpu_reset(cpu_data);
+}
+
 static void arch_suspend_self(struct per_cpu *cpu_data)
 {
 	psci_suspend(cpu_data);
@@ -129,6 +211,25 @@ static void arch_suspend_self(struct per_cpu *cpu_data)
 		dsb(nsh);
 		cpu_data->flush_vcpu_caches = false;
 	}
+}
+
+static void enter_cpu_off(struct per_cpu *cpu_data)
+{
+	cpu_data->park = false;
+	cpu_data->wait_for_poweron = true;
+}
+
+void arm_cpu_park(void)
+{
+	struct per_cpu *cpu_data = this_cpu_data();
+
+	spin_lock(&cpu_data->control_lock);
+	enter_cpu_off(cpu_data);
+	spin_unlock(&cpu_data->control_lock);
+
+	cpu_reset();
+	arm_write_banked_reg(ELR_hyp, 0);
+	arm_paging_vcpu_init(&parking_mm);
 }
 
 static void arch_dump_exit(struct registers *regs, const char *reason)
@@ -196,6 +297,15 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 	return regs;
 }
 
+void arm_cpu_kick(unsigned int cpu_id)
+{
+	struct sgi sgi = {};
+
+	sgi.targets = 1 << cpu_id;
+	sgi.id = SGI_EVENT;
+	irqchip_send_sgi(&sgi);
+}
+
 /* CPU must be stopped */
 void arch_resume_cpu(unsigned int cpu_id)
 {
@@ -246,6 +356,62 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	psci_wait_cpu_stopped(cpu_id);
 }
 
+static void check_events(struct per_cpu *cpu_data)
+{
+	bool reset = false;
+
+	spin_lock(&cpu_data->control_lock);
+
+	do {
+		if (cpu_data->suspend_cpu)
+			cpu_data->cpu_suspended = true;
+
+		spin_unlock(&cpu_data->control_lock);
+
+		while (cpu_data->suspend_cpu)
+			cpu_relax();
+
+		spin_lock(&cpu_data->control_lock);
+
+		if (!cpu_data->suspend_cpu) {
+			cpu_data->cpu_suspended = false;
+
+			if (cpu_data->park) {
+				enter_cpu_off(cpu_data);
+				break;
+			}
+
+			if (cpu_data->reset) {
+				cpu_data->reset = false;
+				if (cpu_data->cpu_on_entry !=
+				    PSCI_INVALID_ADDRESS) {
+					cpu_data->wait_for_poweron = false;
+					reset = true;
+				} else {
+					enter_cpu_off(cpu_data);
+				}
+				break;
+			}
+		}
+	} while (cpu_data->suspend_cpu);
+
+	if (cpu_data->flush_vcpu_caches) {
+		cpu_data->flush_vcpu_caches = false;
+		arm_paging_vcpu_flush_tlbs();
+	}
+
+	spin_unlock(&cpu_data->control_lock);
+
+	/*
+	 * wait_for_poweron is only modified on this CPU, so checking outside of
+	 * control_lock is fine.
+	 */
+	if (cpu_data->wait_for_poweron)
+		arm_cpu_park();
+	else if (reset)
+		cpu_reset();
+}
+
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
 {
 	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
@@ -256,6 +422,9 @@ void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
 		break;
 	case SGI_CPU_OFF:
 		arch_suspend_self(cpu_data);
+		break;
+	case SGI_EVENT:
+		check_events(cpu_data);
 		break;
 	default:
 		printk("WARN: unknown SGI received %d\n", irqn);
@@ -309,6 +478,8 @@ int arch_cell_create(struct cell *cell)
 	 * the cell set
 	 */
 	for_each_cpu(cpu, cell->cpu_set) {
+		per_cpu(cpu)->cpu_on_entry =
+			(virt_id == 0) ? 0 : PSCI_INVALID_ADDRESS;
 		per_cpu(cpu)->virt_id = virt_id;
 		virt_id++;
 	}
@@ -334,9 +505,12 @@ void arch_cell_destroy(struct cell *cell)
 
 	for_each_cpu(cpu, cell->cpu_set) {
 		percpu = per_cpu(cpu);
+
 		/* Re-assign the physical IDs for the root cell */
 		percpu->virt_id = percpu->cpu_id;
 		arch_reset_cpu(cpu);
+
+		percpu->cpu_on_entry = PSCI_INVALID_ADDRESS;
 	}
 
 	irqchip_cell_exit(cell);
