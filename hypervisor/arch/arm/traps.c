@@ -222,11 +222,16 @@ static int arch_handle_smc(struct trap_context *ctx)
 static int arch_handle_hvc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
+	unsigned long code = regs[0];
 
-	if (IS_PSCI_32(regs[0]) || IS_PSCI_UBOOT(regs[0]))
+	if (IS_PSCI_32(code) || IS_PSCI_UBOOT(code)) {
 		regs[0] = psci_dispatch(ctx);
-	else
-		regs[0] = hypercall(regs[0], regs[1], regs[2]);
+	} else {
+		regs[0] = hypercall(code, regs[1], regs[2]);
+
+		if (code == JAILHOUSE_HC_DISABLE && regs[0] == 0)
+			arch_shutdown_self(this_cpu_data());
+	}
 
 	return TRAP_HANDLED;
 }

@@ -61,7 +61,6 @@ struct per_cpu {
 
 	bool flush_vcpu_caches;
 	int shutdown_state;
-	bool shutdown;
 	unsigned long mpidr;
 	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));

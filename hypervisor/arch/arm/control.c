@@ -91,10 +91,8 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	unsigned long reset_address;
 	struct cell *cell = cpu_data->cell;
 	struct registers *regs = guest_regs(cpu_data);
-	bool is_shutdown = cpu_data->shutdown;
 
-	if (!is_shutdown)
-		arm_paging_vcpu_init(cpu_data);
+	arm_paging_vcpu_init(cpu_data);
 
 	/*
 	 * We come from the IRQ handler, but we won't return there, so the IPI
@@ -102,11 +100,10 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	 */
 	irqchip_eoi_irq(SGI_CPU_OFF, true);
 
-	if (!is_shutdown)
-		irqchip_cpu_reset(cpu_data);
+	irqchip_cpu_reset(cpu_data);
 
 	/* Wait for the driver to call cpu_up */
-	if (cell == &root_cell || is_shutdown)
+	if (cell == &root_cell)
 		reset_address = arch_smp_spin(cpu_data, root_cell.arch.smp);
 	else
 		reset_address = arch_smp_spin(cpu_data, cell->arch.smp);
@@ -119,10 +116,6 @@ void arch_reset_self(struct per_cpu *cpu_data)
 
 	arm_write_banked_reg(ELR_hyp, reset_address);
 	arm_write_banked_reg(SPSR_hyp, RESET_PSR);
-
-	if (is_shutdown)
-		/* Won't return here. */
-		arch_shutdown_self(cpu_data);
 
 	vmreturn(regs);
 }
@@ -199,10 +192,6 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 		arch_dump_exit(regs, "unknown");
 		panic_stop();
 	}
-
-	if (cpu_data->shutdown)
-		/* Won't return here. */
-		arch_shutdown_self(cpu_data);
 
 	return regs;
 }
@@ -394,12 +383,4 @@ void arch_panic_park(void)
 
 void arch_shutdown(void)
 {
-	unsigned int cpu;
-
-	/*
-	 * Let the exit handler call reset_self to let the core finish its
-	 * shutdown function and release its lock.
-	 */
-	for_each_cpu(cpu, root_cell.cpu_set)
-		per_cpu(cpu)->shutdown = true;
 }
