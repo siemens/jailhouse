@@ -90,7 +90,7 @@ static void destroy_id_maps(void)
 	}
 }
 
-static void __attribute__((naked)) __attribute__((noinline))
+static void __attribute__((naked, noinline))
 cpu_switch_el2(unsigned long phys_bootstrap, virt2phys_t virt2phys)
 {
 	asm volatile(
@@ -134,7 +134,7 @@ cpu_switch_el2(unsigned long phys_bootstrap, virt2phys_t virt2phys)
  * Those two registers are thus supposed to be left intact by the whole MMU
  * setup. The stack is all the same usable, since it is id-mapped as well.
  */
-static void __attribute__((naked)) __attribute__((section(".trampoline")))
+static void __attribute__((naked, section(".trampoline")))
 setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 {
 	u32 tcr = T0SZ
@@ -193,7 +193,7 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 /*
  * Shutdown the MMU and returns to EL1 with the kernel context stored in `regs'
  */
-static void __attribute__((naked)) __attribute__((section(".trampoline")))
+static void __attribute__((naked, section(".trampoline")))
 shutdown_el2(struct registers *regs, unsigned long vectors)
 {
 	u32 sctlr_el2;
