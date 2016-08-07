@@ -88,16 +88,13 @@ static void arch_reset_el1(struct registers *regs)
 
 void arch_reset_self(struct per_cpu *cpu_data)
 {
-	int err = 0;
 	unsigned long reset_address;
 	struct cell *cell = cpu_data->cell;
 	struct registers *regs = guest_regs(cpu_data);
 	bool is_shutdown = cpu_data->shutdown;
 
 	if (!is_shutdown)
-		err = arm_paging_vcpu_init(cpu_data);
-	if (err)
-		printk("MMU setup failed\n");
+		arm_paging_vcpu_init(cpu_data);
 
 	/*
 	 * We come from the IRQ handler, but we won't return there, so the IPI

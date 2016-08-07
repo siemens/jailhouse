@@ -187,7 +187,7 @@ extern unsigned int cache_line_size;
 int arm_paging_cell_init(struct cell *cell);
 void arm_paging_cell_destroy(struct cell *cell);
 
-int arm_paging_vcpu_init(struct per_cpu *cpu_data);
+void arm_paging_vcpu_init(struct per_cpu *cpu_data);
 
 void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
 void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush);

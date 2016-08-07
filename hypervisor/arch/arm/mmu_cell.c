@@ -110,7 +110,7 @@ void arm_paging_cell_destroy(struct cell *cell)
 	page_free(&mem_pool, cell->arch.mm.root_table, ARM_CELL_ROOT_PT_SZ);
 }
 
-int arm_paging_vcpu_init(struct per_cpu *cpu_data)
+void arm_paging_vcpu_init(struct per_cpu *cpu_data)
 {
 	struct cell *cell = cpu_data->cell;
 	unsigned long cell_table = paging_hvirt2phys(cell->arch.mm.root_table);
@@ -131,8 +131,6 @@ int arm_paging_vcpu_init(struct per_cpu *cpu_data)
 	 * means that this unconditionnal flush is redundant on master CPU.
 	 */
 	arch_cpu_tlb_flush(cpu_data);
-
-	return 0;
 }
 
 void arch_cpu_tlb_flush(struct per_cpu *cpu_data)

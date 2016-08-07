@@ -80,9 +80,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	/* Setup guest traps */
 	arm_write_sysreg(HCR, hcr);
 
-	err = arm_paging_vcpu_init(cpu_data);
-	if (err)
-		return err;
+	arm_paging_vcpu_init(cpu_data);
 
 	err = irqchip_init();
 	if (err)
