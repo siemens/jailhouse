@@ -25,9 +25,7 @@
 #include <asm/percpu.h>
 
 void arch_cpu_dcaches_flush(unsigned int action);
-void arch_cpu_icache_flush(void);
 void arch_cpu_tlb_flush(struct per_cpu *cpu_data);
-void arch_cell_caches_flush(struct cell *cell);
 
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);

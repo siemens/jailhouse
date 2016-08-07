@@ -98,13 +98,6 @@ void arch_reset_self(struct per_cpu *cpu_data)
 		err = arm_paging_vcpu_init(cpu_data);
 	if (err)
 		printk("MMU setup failed\n");
-	/*
-	 * On the first CPU to reach this, write all cell datas to memory so it
-	 * can be started with caches disabled.
-	 * On all CPUs, invalidate the instruction caches to take into account
-	 * the potential new instructions.
-	 */
-	arch_cell_caches_flush(cell);
 
 	/*
 	 * We come from the IRQ handler, but we won't return there, so the IPI
@@ -228,16 +221,12 @@ void arch_resume_cpu(unsigned int cpu_id)
 /* CPU must be stopped */
 void arch_park_cpu(unsigned int cpu_id)
 {
-	struct per_cpu *cpu_data = per_cpu(cpu_id);
-
 	/*
 	 * Reset always follows park_cpu, so we just need to make sure that the
 	 * CPU is suspended
 	 */
 	if (psci_wait_cpu_stopped(cpu_id) != 0)
 		printk("ERROR: CPU%d is supposed to be stopped\n", cpu_id);
-	else
-		cpu_data->cell->arch.needs_flush = true;
 }
 
 /* CPU must be stopped */

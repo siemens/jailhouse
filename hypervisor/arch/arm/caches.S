@@ -78,11 +78,3 @@ next_cache:
 finish:	isb
 	pop	{r0-r11}
 	bx	lr
-
-	.global arch_cpu_icache_flush
-arch_cpu_icache_flush:
-	dsb
-	arm_write_sysreg(ICIALLU, r0)	@ r0 value is ignored
-	dsb
-	isb
-	bx	lr
