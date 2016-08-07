@@ -306,37 +306,6 @@ void arm_cpu_kick(unsigned int cpu_id)
 	irqchip_send_sgi(&sgi);
 }
 
-/* CPU must be stopped */
-void arch_resume_cpu(unsigned int cpu_id)
-{
-	/*
-	 * Simply get out of the spin loop by returning to handle_sgi
-	 * If the CPU is being reset, it already has left the PSCI idle loop.
-	 */
-	if (psci_cpu_stopped(cpu_id))
-		psci_resume(cpu_id);
-}
-
-/* CPU must be stopped */
-void arch_park_cpu(unsigned int cpu_id)
-{
-	/*
-	 * Reset always follows park_cpu, so we just need to make sure that the
-	 * CPU is suspended
-	 */
-	if (psci_wait_cpu_stopped(cpu_id) != 0)
-		printk("ERROR: CPU%d is supposed to be stopped\n", cpu_id);
-}
-
-/* CPU must be stopped */
-void arch_reset_cpu(unsigned int cpu_id)
-{
-	unsigned long cpu_data = (unsigned long)per_cpu(cpu_id);
-
-	if (psci_cpu_on(cpu_id, (unsigned long)arch_reset_self, cpu_data))
-		printk("ERROR: unable to reset CPU%d (was running)\n", cpu_id);
-}
-
 void arch_suspend_cpu(unsigned int cpu_id)
 {
 	struct sgi sgi;
@@ -354,6 +323,34 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	irqchip_send_sgi(&sgi);
 
 	psci_wait_cpu_stopped(cpu_id);
+}
+
+void arch_resume_cpu(unsigned int cpu_id)
+{
+	/*
+	 * Simply get out of the spin loop by returning to handle_sgi
+	 * If the CPU is being reset, it already has left the PSCI idle loop.
+	 */
+	if (psci_cpu_stopped(cpu_id))
+		psci_resume(cpu_id);
+}
+
+void arch_reset_cpu(unsigned int cpu_id)
+{
+	unsigned long cpu_data = (unsigned long)per_cpu(cpu_id);
+
+	if (psci_cpu_on(cpu_id, (unsigned long)arch_reset_self, cpu_data))
+		printk("ERROR: unable to reset CPU%d (was running)\n", cpu_id);
+}
+
+void arch_park_cpu(unsigned int cpu_id)
+{
+	/*
+	 * Reset always follows park_cpu, so we just need to make sure that the
+	 * CPU is suspended
+	 */
+	if (psci_wait_cpu_stopped(cpu_id) != 0)
+		printk("ERROR: CPU%d is supposed to be stopped\n", cpu_id);
 }
 
 static void check_events(struct per_cpu *cpu_data)
