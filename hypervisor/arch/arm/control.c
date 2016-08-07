@@ -352,6 +352,8 @@ void arch_cell_destroy(struct cell *cell)
 	unsigned int cpu;
 	struct per_cpu *percpu;
 
+	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
+
 	for_each_cpu(cpu, cell->cpu_set) {
 		percpu = per_cpu(cpu);
 		/* Re-assign the physical IDs for the root cell */
@@ -366,6 +368,7 @@ void arch_cell_destroy(struct cell *cell)
 
 void arch_cell_reset(struct cell *cell)
 {
+	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
 }
 
 /* Note: only supports synchronous flushing as triggered by config_commit! */
