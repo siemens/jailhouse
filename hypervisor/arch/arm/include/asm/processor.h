@@ -182,6 +182,12 @@ struct registers {
 #define wfi()		asm volatile("wfi")
 #define sev()		asm volatile("sev")
 
+#define arm_read_banked_reg(reg, val) \
+	asm volatile ("mrs %0, " #reg "\n" : "=r" (val))
+
+#define arm_write_banked_reg(reg, val) \
+	asm volatile ("msr " #reg ", %0\n" : : "r" (val))
+
 unsigned int smc(unsigned int r0, ...);
 unsigned int hvc(unsigned int r0, ...);
 

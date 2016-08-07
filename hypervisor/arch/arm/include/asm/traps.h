@@ -33,12 +33,6 @@ struct trap_context {
 
 typedef int (*trap_handler)(struct trap_context *ctx);
 
-#define arm_read_banked_reg(reg, val)					\
-	asm volatile ("mrs %0, " #reg "\n" : "=r" (val))
-
-#define arm_write_banked_reg(reg, val)					\
-	asm volatile ("msr " #reg ", %0\n" : : "r" (val))
-
 #define _access_banked(reg, val, is_read)				\
 	do {								\
 		if (is_read)						\
