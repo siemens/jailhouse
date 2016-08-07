@@ -292,7 +292,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	 * they will be off at EL2. From this point forward and until the caches
 	 * are re-enabled, we cannot write anything critical to memory.
 	 */
-	arch_cpu_dcaches_flush(CACHES_CLEAN);
+	arm_dcaches_clean_by_sw();
 
 	cpu_switch_el2(phys_bootstrap, virt2phys);
 	/*
@@ -343,7 +343,7 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 		      PAGING_NON_COHERENT);
 	spin_unlock(&map_lock);
 
-	arch_cpu_dcaches_flush(CACHES_CLEAN);
+	arm_dcaches_clean_by_sw();
 
 	/*
 	 * Final shutdown:

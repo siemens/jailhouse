@@ -191,6 +191,7 @@ void arm_paging_vcpu_init(struct paging_structures *pg_structs);
 
 void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
 void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush);
+void arm_dcaches_clean_by_sw(void);
 
 static inline void arm_paging_vcpu_flush_tlbs(void)
 {

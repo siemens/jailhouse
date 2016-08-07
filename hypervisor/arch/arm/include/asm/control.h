@@ -16,9 +16,6 @@
 #define SGI_INJECT	0
 #define SGI_EVENT	1
 
-#define CACHES_CLEAN		0
-#define CACHES_CLEAN_INVALIDATE	1
-
 #ifndef __ASSEMBLY__
 
 #include <jailhouse/cell.h>
@@ -26,8 +23,6 @@
 #include <asm/percpu.h>
 
 extern struct paging_structures parking_mm;
-
-void arch_cpu_dcaches_flush(unsigned int action);
 
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
