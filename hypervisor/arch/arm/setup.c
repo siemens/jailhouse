@@ -73,9 +73,7 @@ int arch_init_early(void)
 
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
-	int err = 0;
-	unsigned long hcr = HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT
-			  | HCR_TSC_BIT | HCR_TAC_BIT | HCR_TSW_BIT;
+	int err;
 
 	cpu_data->virt_id = cpu_data->cpu_id;
 	cpu_data->mpidr = phys_processor_id();
@@ -99,7 +97,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	arm_write_sysreg(TPIDR_EL2, cpu_data);
 
 	/* Setup guest traps */
-	arm_write_sysreg(HCR, hcr);
+	arm_write_sysreg(HCR, HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT |
+			      HCR_TSC_BIT | HCR_TAC_BIT | HCR_TSW_BIT);
 
 	arm_paging_vcpu_init(&root_cell.arch.mm);
 
