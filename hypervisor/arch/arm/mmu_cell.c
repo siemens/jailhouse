@@ -110,18 +110,16 @@ void arm_paging_cell_destroy(struct cell *cell)
 	page_free(&mem_pool, cell->arch.mm.root_table, ARM_CELL_ROOT_PT_SZ);
 }
 
-void arm_paging_vcpu_init(struct per_cpu *cpu_data)
+void arm_paging_vcpu_init(struct paging_structures *pg_structs)
 {
-	struct cell *cell = cpu_data->cell;
-	unsigned long cell_table = paging_hvirt2phys(cell->arch.mm.root_table);
+	unsigned long cell_table = paging_hvirt2phys(pg_structs->root_table);
 	u64 vttbr = 0;
-	u32 vtcr = VTCR_CELL;
 
-	vttbr |= (u64)cell->id << VTTBR_VMID_SHIFT;
+	vttbr |= (u64)this_cell()->id << VTTBR_VMID_SHIFT;
 	vttbr |= (u64)(cell_table & TTBR_MASK);
 
 	arm_write_sysreg(VTTBR_EL2, vttbr);
-	arm_write_sysreg(VTCR_EL2, vtcr);
+	arm_write_sysreg(VTCR_EL2, VTCR_CELL);
 
 	/* Ensure that the new VMID is present before flushing the caches */
 	isb();

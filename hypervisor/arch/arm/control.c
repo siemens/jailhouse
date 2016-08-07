@@ -92,7 +92,7 @@ void arch_reset_self(struct per_cpu *cpu_data)
 	struct cell *cell = cpu_data->cell;
 	struct registers *regs = guest_regs(cpu_data);
 
-	arm_paging_vcpu_init(cpu_data);
+	arm_paging_vcpu_init(&cell->arch.mm);
 
 	/*
 	 * We come from the IRQ handler, but we won't return there, so the IPI
