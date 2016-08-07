@@ -236,6 +236,7 @@ static int arch_handle_cp15_32(struct trap_context *ctx)
 	u32 hsr = ctx->hsr;
 	u32 rt = (hsr >> 5) & 0xf;
 	u32 read = hsr & 1;
+	u32 hcr, old_sctlr;
 	unsigned long val;
 
 #define CP15_32_PERFORM_WRITE(crn, opc1, crm, opc2) ({			\
@@ -260,10 +261,33 @@ static int arch_handle_cp15_32(struct trap_context *ctx)
 	else if (read) {
 		return TRAP_UNHANDLED;
 	}
+	/* trapped by HCR.TSW */
+	else if (HSR_MATCH_MCR_MRC(hsr, 7, 0, 6, 2) ||  /* DCISW */
+		   HSR_MATCH_MCR_MRC(hsr, 7, 0, 10, 2) || /* DCCSW */
+		   HSR_MATCH_MCR_MRC(hsr, 7, 0, 14, 2)) { /* DCCISW */
+		arm_read_sysreg(HCR, hcr);
+		if (!(hcr & HCR_TVM_BIT)) {
+			arm_cell_dcaches_flush(this_cell(),
+					       DCACHE_CLEAN_AND_INVALIDATE);
+			arm_write_sysreg(HCR, hcr | HCR_TVM_BIT);
+		}
+	}
 	/* trapped if HCR.TVM is set */
 	else if (HSR_MATCH_MCR_MRC(hsr, 1, 0, 0, 0)) { /* SCTLR */
-		// TODO: check if caches are turned on or off
+		arm_read_sysreg(SCTLR_EL1, old_sctlr);
+
 		arm_write_sysreg(SCTLR_EL1, val);
+
+		/* Check if caches were turned on or off. */
+		if (SCTLR_C_AND_M_SET(val) != SCTLR_C_AND_M_SET(old_sctlr)) {
+			/* Flush dcaches again if they were enabled before. */
+			if (SCTLR_C_AND_M_SET(old_sctlr))
+				arm_cell_dcaches_flush(this_cell(),
+						DCACHE_CLEAN_AND_INVALIDATE);
+			/* Stop tracking VM control regs. */
+			arm_read_sysreg(HCR, hcr);
+			arm_write_sysreg(HCR, hcr & ~HCR_TVM_BIT);
+		}
 	} else if (!(CP15_32_PERFORM_WRITE(2, 0, 0, 0) ||   /* TTBR0 */
 		     CP15_32_PERFORM_WRITE(2, 0, 0, 1) ||   /* TTBR1 */
 		     CP15_32_PERFORM_WRITE(2, 0, 0, 2) ||   /* TTBCR */

@@ -64,6 +64,9 @@
 #define SCTLR_AFE_BIT	(1 << 29)
 #define SCTLR_TE_BIT	(1 << 30)
 
+#define SCTLR_C_AND_M_SET(sctlr)	\
+	(((sctlr) & (SCTLR_C_BIT | SCTLR_M_BIT)) == (SCTLR_C_BIT | SCTLR_M_BIT))
+
 /* Bits to wipe on cell reset */
 #define SCTLR_MASK	(SCTLR_M_BIT | SCTLR_A_BIT | SCTLR_C_BIT	\
 			| SCTLR_I_BIT | SCTLR_V_BIT | SCTLR_WXN_BIT	\
