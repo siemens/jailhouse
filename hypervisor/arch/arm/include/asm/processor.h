@@ -188,6 +188,14 @@ struct registers {
 #define arm_write_banked_reg(reg, val) \
 	asm volatile ("msr " #reg ", %0\n" : : "r" (val))
 
+#define arm_rw_banked_reg(reg, val, is_read)		\
+	do {						\
+		if (is_read)				\
+			arm_read_banked_reg(reg, val);	\
+		else					\
+			arm_write_banked_reg(reg, val);	\
+	} while (0)
+
 unsigned int smc(unsigned int r0, ...);
 unsigned int hvc(unsigned int r0, ...);
 

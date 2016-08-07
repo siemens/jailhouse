@@ -33,22 +33,14 @@ struct trap_context {
 
 typedef int (*trap_handler)(struct trap_context *ctx);
 
-#define _access_banked(reg, val, is_read)				\
-	do {								\
-		if (is_read)						\
-			arm_read_banked_reg(reg, val);			\
-		else							\
-			arm_write_banked_reg(reg, val);			\
-	} while (0)
-
 #define access_banked_reg(mode, reg, val, is_read)			\
 	do {								\
 		switch (reg) {						\
 		case 13:						\
-			_access_banked(SP_##mode, *val, is_read);	\
+			arm_rw_banked_reg(SP_##mode, *val, is_read);	\
 			break;						\
 		case 14:						\
-			_access_banked(LR_##mode, *val, is_read);	\
+			arm_rw_banked_reg(LR_##mode, *val, is_read);	\
 			break;						\
 		default:						\
 			printk("ERROR: access r%d in "#mode"\n", reg);	\
@@ -58,11 +50,11 @@ typedef int (*trap_handler)(struct trap_context *ctx);
 static inline void access_fiq_reg(u8 reg, unsigned long *val, bool is_read)
 {
 	switch (reg) {
-	case 8:  _access_banked(r8_fiq,  *val, is_read); break;
-	case 9:  _access_banked(r9_fiq,  *val, is_read); break;
-	case 10: _access_banked(r10_fiq, *val, is_read); break;
-	case 11: _access_banked(r11_fiq, *val, is_read); break;
-	case 12: _access_banked(r12_fiq, *val, is_read); break;
+	case 8:  arm_rw_banked_reg(r8_fiq,  *val, is_read); break;
+	case 9:  arm_rw_banked_reg(r9_fiq,  *val, is_read); break;
+	case 10: arm_rw_banked_reg(r10_fiq, *val, is_read); break;
+	case 11: arm_rw_banked_reg(r11_fiq, *val, is_read); break;
+	case 12: arm_rw_banked_reg(r12_fiq, *val, is_read); break;
 	default:
 		 /* Use existing error reporting */
 		 access_banked_reg(fiq, reg, val, is_read);
