@@ -47,20 +47,6 @@ typedef int (*trap_handler)(struct trap_context *ctx);
 		}							\
 	} while (0)
 
-static inline void access_fiq_reg(u8 reg, unsigned long *val, bool is_read)
-{
-	switch (reg) {
-	case 8:  arm_rw_banked_reg(r8_fiq,  *val, is_read); break;
-	case 9:  arm_rw_banked_reg(r9_fiq,  *val, is_read); break;
-	case 10: arm_rw_banked_reg(r10_fiq, *val, is_read); break;
-	case 11: arm_rw_banked_reg(r11_fiq, *val, is_read); break;
-	case 12: arm_rw_banked_reg(r12_fiq, *val, is_read); break;
-	default:
-		 /* Use existing error reporting */
-		 access_banked_reg(fiq, reg, val, is_read);
-	}
-}
-
 void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 		     bool is_read);
 void arch_skip_instruction(struct trap_context *ctx);

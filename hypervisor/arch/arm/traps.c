@@ -147,12 +147,25 @@ void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 	mode &= PSR_MODE_MASK;
 
 	switch (reg) {
-	case 0 ... 7:
-		access_usr_reg(ctx, reg, val, is_read);
-		break;
-	case 8 ... 12:
-		if (mode == PSR_FIQ_MODE)
-			access_fiq_reg(reg, val, is_read);
+	case 0 ... 12:
+		if (reg >= 8 && mode == PSR_FIQ_MODE)
+			switch (reg) {
+			case 8:
+				arm_rw_banked_reg(r8_fiq, *val, is_read);
+				break;
+			case 9:
+				arm_rw_banked_reg(r9_fiq, *val, is_read);
+				break;
+			case 10:
+				arm_rw_banked_reg(r10_fiq, *val, is_read);
+				break;
+			case 11:
+				arm_rw_banked_reg(r11_fiq, *val, is_read);
+				break;
+			case 12:
+				arm_rw_banked_reg(r12_fiq, *val, is_read);
+				break;
+			}
 		else
 			access_usr_reg(ctx, reg, val, is_read);
 		break;
