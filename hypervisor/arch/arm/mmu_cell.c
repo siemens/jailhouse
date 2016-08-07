@@ -92,6 +92,9 @@ void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)
 
 int arm_paging_cell_init(struct cell *cell)
 {
+	if (cell->id > 0xff)
+		return trace_error(-E2BIG);
+
 	cell->arch.mm.root_paging = cell_paging;
 	cell->arch.mm.root_table =
 		page_alloc_aligned(&mem_pool, ARM_CELL_ROOT_PT_SZ);
@@ -114,10 +117,6 @@ int arm_paging_vcpu_init(struct per_cpu *cpu_data)
 	u64 vttbr = 0;
 	u32 vtcr = VTCR_CELL;
 
-	if (cell->id > 0xff) {
-		panic_printk("No cell ID available\n");
-		return -E2BIG;
-	}
 	vttbr |= (u64)cell->id << VTTBR_VMID_SHIFT;
 	vttbr |= (u64)(cell_table & TTBR_MASK);
 
