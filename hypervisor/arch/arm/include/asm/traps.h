@@ -61,15 +61,6 @@ static inline void access_fiq_reg(u8 reg, unsigned long *val, bool is_read)
 	}
 }
 
-static inline void access_usr_reg(struct trap_context *ctx, u8 reg,
-				  unsigned long *val, bool is_read)
-{
-	if (is_read)
-		*val = ctx->regs[reg];
-	else
-		ctx->regs[reg] = *val;
-}
-
 void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 		     bool is_read);
 void arch_skip_instruction(struct trap_context *ctx);
