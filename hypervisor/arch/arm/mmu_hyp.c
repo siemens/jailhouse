@@ -149,8 +149,7 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 
 	/* Ensure that MMU is disabled. */
 	arm_read_sysreg(SCTLR_EL2, sctlr_el2);
-	if (sctlr_el2 & SCTLR_M_BIT)
-		return;
+	arm_write_sysreg(SCTLR_EL2, sctlr_el2 & ~SCTLR_M_BIT);
 
 	/*
 	 * This setup code is always preceded by a complete cache flush, so
