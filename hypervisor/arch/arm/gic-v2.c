@@ -192,7 +192,7 @@ static int gic_cell_init(struct cell *cell)
 			    gicc_size, (unsigned long)gicc_base,
 			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
 			     S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
-			    PAGING_NON_COHERENT);
+			    PAGING_COHERENT);
 	if (err)
 		return err;
 
@@ -204,7 +204,7 @@ static int gic_cell_init(struct cell *cell)
 static void gic_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->arch.mm, (unsigned long)gicc_base, gicc_size,
-		       PAGING_NON_COHERENT);
+		       PAGING_COHERENT);
 }
 
 static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)

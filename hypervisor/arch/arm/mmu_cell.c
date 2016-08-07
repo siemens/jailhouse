@@ -38,14 +38,14 @@ int arch_map_memory_region(struct cell *cell,
 	*/
 
 	return paging_create(&cell->arch.mm, phys_start, mem->size,
-		mem->virt_start, flags, PAGING_NON_COHERENT);
+			     mem->virt_start, flags, PAGING_COHERENT);
 }
 
 int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 {
 	return paging_destroy(&cell->arch.mm, mem->virt_start, mem->size,
-			PAGING_NON_COHERENT);
+			      PAGING_COHERENT);
 }
 
 unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
