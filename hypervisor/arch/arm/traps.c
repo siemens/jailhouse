@@ -138,6 +138,14 @@ static inline void access_usr_reg(struct trap_context *ctx, u8 reg,
 		ctx->regs[reg] = *val;
 }
 
+#define access_banked_r13_r14(mode, reg, val, is_read)			\
+	do {								\
+		if (reg == 13)						\
+			arm_rw_banked_reg(SP_##mode, *val, is_read);	\
+		else							\
+			arm_rw_banked_reg(LR_##mode, *val, is_read);	\
+	} while (0)
+
 void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 		     bool is_read)
 {
@@ -179,24 +187,24 @@ void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 			 * regs.
 			 */
 			if (reg == 13)
-				access_banked_reg(usr, reg, val, is_read);
+				access_banked_r13_r14(usr, reg, val, is_read);
 			else
 				access_usr_reg(ctx, 13, val, is_read);
 			break;
 		case PSR_SVC_MODE:
-			access_banked_reg(svc, reg, val, is_read);
+			access_banked_r13_r14(svc, reg, val, is_read);
 			break;
 		case PSR_UND_MODE:
-			access_banked_reg(und, reg, val, is_read);
+			access_banked_r13_r14(und, reg, val, is_read);
 			break;
 		case PSR_ABT_MODE:
-			access_banked_reg(abt, reg, val, is_read);
+			access_banked_r13_r14(abt, reg, val, is_read);
 			break;
 		case PSR_IRQ_MODE:
-			access_banked_reg(irq, reg, val, is_read);
+			access_banked_r13_r14(irq, reg, val, is_read);
 			break;
 		case PSR_FIQ_MODE:
-			access_banked_reg(fiq, reg, val, is_read);
+			access_banked_r13_r14(fiq, reg, val, is_read);
 			break;
 		}
 		break;

@@ -33,20 +33,6 @@ struct trap_context {
 
 typedef int (*trap_handler)(struct trap_context *ctx);
 
-#define access_banked_reg(mode, reg, val, is_read)			\
-	do {								\
-		switch (reg) {						\
-		case 13:						\
-			arm_rw_banked_reg(SP_##mode, *val, is_read);	\
-			break;						\
-		case 14:						\
-			arm_rw_banked_reg(LR_##mode, *val, is_read);	\
-			break;						\
-		default:						\
-			printk("ERROR: access r%d in "#mode"\n", reg);	\
-		}							\
-	} while (0)
-
 void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 		     bool is_read);
 void arch_skip_instruction(struct trap_context *ctx);
