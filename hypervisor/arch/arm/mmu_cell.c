@@ -130,16 +130,5 @@ void arm_paging_vcpu_init(struct per_cpu *cpu_data)
 	 * since they register themselves to the root cpu_set afterwards. It
 	 * means that this unconditionnal flush is redundant on master CPU.
 	 */
-	arch_cpu_tlb_flush(cpu_data);
-}
-
-void arch_cpu_tlb_flush(struct per_cpu *cpu_data)
-{
-	/*
-	 * Invalidate all stage-1 and 2 TLB entries for the current VMID
-	 * ERET will ensure completion of these ops
-	 */
-	tlb_flush_guest();
-	dsb(nsh);
-	cpu_data->flush_vcpu_caches = false;
+	arm_paging_vcpu_flush_tlbs();
 }

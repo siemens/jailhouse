@@ -131,8 +131,11 @@ static void arch_suspend_self(struct per_cpu *cpu_data)
 {
 	psci_suspend(cpu_data);
 
-	if (cpu_data->flush_vcpu_caches)
-		arch_cpu_tlb_flush(cpu_data);
+	if (cpu_data->flush_vcpu_caches) {
+		arm_paging_vcpu_flush_tlbs();
+		dsb(nsh);
+		cpu_data->flush_vcpu_caches = false;
+	}
 }
 
 static void arch_dump_exit(struct registers *regs, const char *reason)
@@ -364,7 +367,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 
 	for_each_cpu(cpu, cell->cpu_set)
 		if (cpu == this_cpu_id())
-			arch_cpu_tlb_flush(per_cpu(cpu));
+			arm_paging_vcpu_flush_tlbs();
 		else
 			per_cpu(cpu)->flush_vcpu_caches = true;
 }

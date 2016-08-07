@@ -145,7 +145,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	arm_write_sysreg(VTCR_EL2, 0);
 
 	/* Remove stage-2 mappings */
-	arch_cpu_tlb_flush(cpu_data);
+	arm_paging_vcpu_flush_tlbs();
 
 	/* TLB flush needs the cell's VMID */
 	isb();

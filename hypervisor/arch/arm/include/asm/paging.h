@@ -192,6 +192,15 @@ void arm_paging_vcpu_init(struct per_cpu *cpu_data);
 void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
 void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush);
 
+static inline void arm_paging_vcpu_flush_tlbs(void)
+{
+	/*
+	 * Invalidate all stage-1 and 2 TLB entries for the current VMID
+	 * ERET will ensure completion of these ops
+	 */
+	arm_write_sysreg(TLBIALL, 0);
+}
+
 /* return the bits supported for the physical address range for this
  * machine; in arch_paging_init this value will be kept in
  * cpu_parange for later reference */
