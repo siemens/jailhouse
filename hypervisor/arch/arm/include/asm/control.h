@@ -22,7 +22,10 @@
 #ifndef __ASSEMBLY__
 
 #include <jailhouse/cell.h>
+#include <jailhouse/paging.h>
 #include <asm/percpu.h>
+
+extern struct paging_structures parking_mm;
 
 void arch_cpu_dcaches_flush(unsigned int action);
 
