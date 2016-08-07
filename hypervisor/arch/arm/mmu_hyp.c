@@ -200,9 +200,6 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 		:
 		: "r" (phys2virt)
 		: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
-
-	/* Not reached (cannot be a while(1), it confuses the compiler) */
-	asm volatile("b	.");
 }
 
 /*
