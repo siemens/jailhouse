@@ -14,8 +14,11 @@
 #include <jailhouse/printk.h>
 #include <asm/control.h>
 #include <asm/setup.h>
-#include <asm/setup_mmu.h>
 #include <asm/sysregs.h>
+
+/* functions used for translating addresses during the MMU setup process */
+typedef void* (*phys2virt_t)(unsigned long);
+typedef unsigned long (*virt2phys_t)(volatile const void *);
 
 /*
  * Two identity mappings need to be created for enabling the MMU: one for the
@@ -181,10 +184,23 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 	isb();
 
 	/*
-	 * Inlined epilogue that returns to switch_exception_level.
+	 * Epilogue that returns to switch_exception_level.
 	 * Must not touch anything else than the stack
 	 */
-	cpu_switch_phys2virt(phys2virt);
+	asm volatile(
+		"mov	r0, lr\n\t"
+		"blx	%0\n\t"
+		/* Save virt_lr */
+		"push	{r0}\n\t"
+		/* Translate phys_sp */
+		"mov	r0, sp\n\t"
+		"blx	%0\n\t"
+		/* Jump back to virtual addresses */
+		"mov	sp, r0\n\t"
+		"pop	{pc}\n\t"
+		:
+		: "r" (phys2virt)
+		: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
 
 	/* Not reached (cannot be a while(1), it confuses the compiler) */
 	asm volatile("b	.");
