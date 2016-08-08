@@ -489,6 +489,7 @@ int arch_cell_create(struct cell *cell)
 	}
 
 	register_smp_ops(cell);
+	smp_cell_init(cell);
 
 	return 0;
 }
@@ -509,6 +510,8 @@ void arch_cell_destroy(struct cell *cell)
 
 		percpu->cpu_on_entry = PSCI_INVALID_ADDRESS;
 	}
+
+	smp_cell_exit(cell);
 
 	irqchip_cell_exit(cell);
 

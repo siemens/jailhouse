@@ -124,7 +124,7 @@ int arch_init_late(void)
 	/* Platform-specific SMP operations */
 	register_smp_ops(&root_cell);
 
-	err = root_cell.arch.smp->init(&root_cell);
+	err = smp_init();
 	if (err)
 		return err;
 
