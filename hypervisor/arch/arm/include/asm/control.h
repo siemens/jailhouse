@@ -15,7 +15,6 @@
 
 #define SGI_INJECT	0
 #define SGI_EVENT	1
-#define SGI_CPU_OFF	2
 
 #define CACHES_CLEAN		0
 #define CACHES_CLEAN_INVALIDATE	1
@@ -35,8 +34,9 @@ void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs);
 bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn);
-void arch_reset_self(struct per_cpu *cpu_data);
+
 void arch_shutdown_self(struct per_cpu *cpu_data);
+
 unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 
 void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);

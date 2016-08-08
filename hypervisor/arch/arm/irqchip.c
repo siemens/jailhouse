@@ -169,7 +169,7 @@ int irqchip_cell_init(struct cell *cell)
 	 * Permit direct access to all SGIs and PPIs except for those used by
 	 * the hypervisor.
 	 */
-	cell->arch.irq_bitmap[0] = ~((1 << SGI_INJECT) | (1 << SGI_CPU_OFF) |
+	cell->arch.irq_bitmap[0] = ~((1 << SGI_INJECT) | (1 << SGI_EVENT) |
 				     (1 << MAINTENANCE_IRQ));
 
 	err = irqchip.cell_init(cell);

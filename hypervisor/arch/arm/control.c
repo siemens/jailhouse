@@ -20,107 +20,9 @@
 #include <asm/irqchip.h>
 #include <asm/platform.h>
 #include <asm/processor.h>
+#include <asm/smp.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
-
-static void arch_reset_el1(struct registers *regs)
-{
-	u32 sctlr;
-
-	/* Wipe all banked and usr regs */
-	memset(regs, 0, sizeof(struct registers));
-
-	arm_write_banked_reg(SP_usr, 0);
-	arm_write_banked_reg(SP_svc, 0);
-	arm_write_banked_reg(SP_abt, 0);
-	arm_write_banked_reg(SP_und, 0);
-	arm_write_banked_reg(SP_irq, 0);
-	arm_write_banked_reg(SP_fiq, 0);
-	arm_write_banked_reg(LR_svc, 0);
-	arm_write_banked_reg(LR_abt, 0);
-	arm_write_banked_reg(LR_und, 0);
-	arm_write_banked_reg(LR_irq, 0);
-	arm_write_banked_reg(LR_fiq, 0);
-	arm_write_banked_reg(R8_fiq, 0);
-	arm_write_banked_reg(R9_fiq, 0);
-	arm_write_banked_reg(R10_fiq, 0);
-	arm_write_banked_reg(R11_fiq, 0);
-	arm_write_banked_reg(R12_fiq, 0);
-	arm_write_banked_reg(SPSR_svc, 0);
-	arm_write_banked_reg(SPSR_abt, 0);
-	arm_write_banked_reg(SPSR_und, 0);
-	arm_write_banked_reg(SPSR_irq, 0);
-	arm_write_banked_reg(SPSR_fiq, 0);
-
-	/* Wipe the system registers */
-	arm_read_sysreg(SCTLR_EL1, sctlr);
-	sctlr = sctlr & ~SCTLR_MASK;
-	arm_write_sysreg(SCTLR_EL1, sctlr);
-	arm_write_sysreg(CPACR_EL1, 0);
-	arm_write_sysreg(CONTEXTIDR_EL1, 0);
-	arm_write_sysreg(PAR_EL1, 0);
-	arm_write_sysreg(TTBR0_EL1, 0);
-	arm_write_sysreg(TTBR1_EL1, 0);
-	arm_write_sysreg(CSSELR_EL1, 0);
-
-	arm_write_sysreg(CNTKCTL_EL1, 0);
-	arm_write_sysreg(CNTP_CTL_EL0, 0);
-	arm_write_sysreg(CNTP_CVAL_EL0, 0);
-	arm_write_sysreg(CNTV_CTL_EL0, 0);
-	arm_write_sysreg(CNTV_CVAL_EL0, 0);
-
-	/* AArch32 specific */
-	arm_write_sysreg(TTBCR, 0);
-	arm_write_sysreg(DACR, 0);
-	arm_write_sysreg(VBAR, 0);
-	arm_write_sysreg(DFSR, 0);
-	arm_write_sysreg(DFAR, 0);
-	arm_write_sysreg(IFSR, 0);
-	arm_write_sysreg(IFAR, 0);
-	arm_write_sysreg(ADFSR, 0);
-	arm_write_sysreg(AIFSR, 0);
-	arm_write_sysreg(MAIR0, 0);
-	arm_write_sysreg(MAIR1, 0);
-	arm_write_sysreg(AMAIR0, 0);
-	arm_write_sysreg(AMAIR1, 0);
-	arm_write_sysreg(TPIDRURW, 0);
-	arm_write_sysreg(TPIDRURO, 0);
-	arm_write_sysreg(TPIDRPRW, 0);
-}
-
-void arch_reset_self(struct per_cpu *cpu_data)
-{
-	unsigned long reset_address;
-	struct cell *cell = cpu_data->cell;
-	struct registers *regs = guest_regs(cpu_data);
-
-	arm_paging_vcpu_init(&cell->arch.mm);
-
-	/*
-	 * We come from the IRQ handler, but we won't return there, so the IPI
-	 * is deactivated here.
-	 */
-	irqchip_eoi_irq(SGI_CPU_OFF, true);
-
-	irqchip_cpu_reset(cpu_data);
-
-	/* Wait for the driver to call cpu_up */
-	if (cell == &root_cell)
-		reset_address = arch_smp_spin(cpu_data, root_cell.arch.smp);
-	else
-		reset_address = arch_smp_spin(cpu_data, cell->arch.smp);
-
-	/* Set the new MPIDR */
-	arm_write_sysreg(VMPIDR_EL2, cpu_data->virt_id | MPIDR_MP_BIT);
-
-	/* Restore an empty context */
-	arch_reset_el1(regs);
-
-	arm_write_banked_reg(ELR_hyp, reset_address);
-	arm_write_banked_reg(SPSR_hyp, RESET_PSR);
-
-	vmreturn(regs);
-}
 
 static void cpu_reset(void)
 {
@@ -200,17 +102,6 @@ static void cpu_reset(void)
 	arm_paging_vcpu_init(&cell->arch.mm);
 
 	irqchip_cpu_reset(cpu_data);
-}
-
-static void arch_suspend_self(struct per_cpu *cpu_data)
-{
-	psci_suspend(cpu_data);
-
-	if (cpu_data->flush_vcpu_caches) {
-		arm_paging_vcpu_flush_tlbs();
-		dsb(nsh);
-		cpu_data->flush_vcpu_caches = false;
-	}
 }
 
 static void enter_cpu_off(struct per_cpu *cpu_data)
@@ -308,49 +199,48 @@ void arm_cpu_kick(unsigned int cpu_id)
 
 void arch_suspend_cpu(unsigned int cpu_id)
 {
-	struct sgi sgi;
+	struct per_cpu *target_data = per_cpu(cpu_id);
+	bool target_suspended;
 
-	if (psci_cpu_stopped(cpu_id))
-		return;
+	spin_lock(&target_data->control_lock);
 
-	sgi.routing_mode = 0;
-	sgi.aff1 = 0;
-	sgi.aff2 = 0;
-	sgi.aff3 = 0;
-	sgi.targets = 1 << cpu_id;
-	sgi.id = SGI_CPU_OFF;
+	target_data->suspend_cpu = true;
+	target_suspended = target_data->cpu_suspended;
 
-	irqchip_send_sgi(&sgi);
+	spin_unlock(&target_data->control_lock);
 
-	psci_wait_cpu_stopped(cpu_id);
+	if (!target_suspended) {
+		arm_cpu_kick(cpu_id);
+
+		while (!target_data->cpu_suspended)
+			cpu_relax();
+	}
 }
 
 void arch_resume_cpu(unsigned int cpu_id)
 {
-	/*
-	 * Simply get out of the spin loop by returning to handle_sgi
-	 * If the CPU is being reset, it already has left the PSCI idle loop.
-	 */
-	if (psci_cpu_stopped(cpu_id))
-		psci_resume(cpu_id);
+	struct per_cpu *target_data = per_cpu(cpu_id);
+
+	/* take lock to avoid theoretical race with a pending suspension */
+	spin_lock(&target_data->control_lock);
+
+	target_data->suspend_cpu = false;
+
+	spin_unlock(&target_data->control_lock);
 }
 
 void arch_reset_cpu(unsigned int cpu_id)
 {
-	unsigned long cpu_data = (unsigned long)per_cpu(cpu_id);
+	per_cpu(cpu_id)->reset = true;
 
-	if (psci_cpu_on(cpu_id, (unsigned long)arch_reset_self, cpu_data))
-		printk("ERROR: unable to reset CPU%d (was running)\n", cpu_id);
+	arch_resume_cpu(cpu_id);
 }
 
 void arch_park_cpu(unsigned int cpu_id)
 {
-	/*
-	 * Reset always follows park_cpu, so we just need to make sure that the
-	 * CPU is suspended
-	 */
-	if (psci_wait_cpu_stopped(cpu_id) != 0)
-		printk("ERROR: CPU%d is supposed to be stopped\n", cpu_id);
+	per_cpu(cpu_id)->park = true;
+
+	arch_resume_cpu(cpu_id);
 }
 
 static void check_events(struct per_cpu *cpu_data)
@@ -416,9 +306,6 @@ void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
 	switch (irqn) {
 	case SGI_INJECT:
 		irqchip_inject_pending(cpu_data);
-		break;
-	case SGI_CPU_OFF:
-		arch_suspend_self(cpu_data);
 		break;
 	case SGI_EVENT:
 		check_events(cpu_data);
@@ -488,7 +375,6 @@ int arch_cell_create(struct cell *cell)
 		return err;
 	}
 
-	register_smp_ops(cell);
 	smp_cell_init(cell);
 
 	return 0;
@@ -506,7 +392,6 @@ void arch_cell_destroy(struct cell *cell)
 
 		/* Re-assign the physical IDs for the root cell */
 		percpu->virt_id = percpu->cpu_id;
-		arch_reset_cpu(cpu);
 
 		percpu->cpu_on_entry = PSCI_INVALID_ADDRESS;
 	}
@@ -545,15 +430,7 @@ void __attribute__((noreturn)) arch_panic_stop(void)
 	__builtin_unreachable();
 }
 
-void arch_panic_park(void)
-{
-	/* Won't return to panic_park */
-	if (phys_processor_id() == panic_cpu)
-		panic_in_progress = 0;
-
-	psci_cpu_off(this_cpu_data());
-	__builtin_unreachable();
-}
+void arch_panic_park(void) __attribute__((alias("arm_cpu_park")));
 
 void arch_shutdown(void)
 {

@@ -27,5 +27,3 @@ obj-$(CONFIG_SERIAL_AMBA_PL011) += dbg-write-pl011.o
 obj-$(CONFIG_SERIAL_8250_DW) += uart-8250-dw.o
 obj-$(CONFIG_SERIAL_TEGRA) += uart-tegra.o
 obj-$(CONFIG_MACH_VEXPRESS) += smp-vexpress.o
-obj-$(CONFIG_MACH_SUN7I) += smp-sun7i.o
-obj-$(CONFIG_MACH_TEGRA124) += smp-tegra124.o

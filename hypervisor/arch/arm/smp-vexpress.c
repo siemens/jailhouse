@@ -27,7 +27,7 @@ static unsigned long root_entry;
 
 static enum mmio_result smp_mmio(void *arg, struct mmio_access *mmio)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	struct per_cpu *target_data, *cpu_data = this_cpu_data();
 	unsigned int cpu;
 
 	if (mmio->address != VEXPRESS_FLAGSSET || !mmio->is_write)
@@ -35,45 +35,24 @@ static enum mmio_result smp_mmio(void *arg, struct mmio_access *mmio)
 		return MMIO_HANDLED;
 
 	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id) {
-		per_cpu(cpu)->guest_mbox.entry = mmio->value;
-		psci_try_resume(cpu);
+		target_data = per_cpu(cpu);
+
+		arch_suspend_cpu(cpu);
+
+		spin_lock(&target_data->control_lock);
+
+		if (target_data->wait_for_poweron) {
+			target_data->cpu_on_entry = mmio->value;
+			target_data->cpu_on_context = 0;
+			target_data->reset = true;
+		}
+
+		spin_unlock(&target_data->control_lock);
+
+		arch_resume_cpu(cpu);
 	}
 
 	return MMIO_HANDLED;
-}
-
-static unsigned long smp_spin(struct per_cpu *cpu_data)
-{
-	/*
-	 * This is super-dodgy: we assume nothing wrote to the flag register
-	 * since the kernel called smp_prepare_cpus, at initialisation.
-	 */
-	return root_entry;
-}
-
-static struct smp_ops vexpress_smp_ops = {
-	.cpu_spin = smp_spin,
-};
-
-/*
- * Store the guest's secondaries into our PSCI, and wake them up when we catch
- * an access to the mbox from the primary.
- */
-static struct smp_ops vexpress_guest_smp_ops = {
-	.cpu_spin = psci_emulate_spin,
-};
-
-void register_smp_ops(struct cell *cell)
-{
-	/*
-	 * mach-vexpress only writes the SYS_FLAGS once at boot, so the root
-	 * cell cannot rely on this write to guess where the secondary CPUs
-	 * should return.
-	 */
-	if (cell == &root_cell)
-		cell->arch.smp = &vexpress_smp_ops;
-	else
-		cell->arch.smp = &vexpress_guest_smp_ops;
 }
 
 int smp_init(void)
@@ -104,5 +83,7 @@ void smp_cell_exit(struct cell *cell)
 	for_each_cpu(cpu, cell->cpu_set) {
 		per_cpu(cpu)->cpu_on_entry = root_entry;
 		per_cpu(cpu)->cpu_on_context = 0;
+		arch_suspend_cpu(cpu);
+		arch_reset_cpu(cpu);
 	}
 }

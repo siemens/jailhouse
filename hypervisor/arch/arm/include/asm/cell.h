@@ -13,9 +13,6 @@
 #ifndef _JAILHOUSE_ASM_CELL_H
 #define _JAILHOUSE_ASM_CELL_H
 
-#include <jailhouse/types.h>
-#include <asm/smp.h>
-
 #ifndef __ASSEMBLY__
 
 #include <jailhouse/paging.h>
@@ -23,7 +20,6 @@
 /** ARM-specific cell states. */
 struct arch_cell {
 	struct paging_structures mm;
-	struct smp_ops *smp;
 
 	u32 irq_bitmap[1024/32];
 

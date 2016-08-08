@@ -2,9 +2,11 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2016
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -78,19 +80,37 @@ int psci_wait_cpu_stopped(unsigned int cpu_id)
 static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 				struct trap_context *ctx)
 {
+	struct per_cpu *target_data;
+	bool kick_cpu = false;
 	unsigned int cpu;
-	struct psci_mbox *mbox;
+	long result;
 
 	cpu = arm_cpu_by_mpidr(cpu_data->cell, ctx->regs[1]);
 	if (cpu == -1)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
 
-	mbox = &(per_cpu(cpu)->guest_mbox);
-	mbox->entry = ctx->regs[2];
-	mbox->context = ctx->regs[3];
+	target_data = per_cpu(cpu);
 
-	return psci_resume(cpu);
+	spin_lock(&target_data->control_lock);
+
+	if (target_data->wait_for_poweron) {
+		target_data->cpu_on_entry = ctx->regs[2];
+		target_data->cpu_on_context = ctx->regs[3];
+		target_data->reset = true;
+		kick_cpu = true;
+
+		result = PSCI_SUCCESS;
+	} else {
+		result = PSCI_ALREADY_ON;
+	}
+
+	spin_unlock(&target_data->control_lock);
+
+	if (kick_cpu)
+		arm_cpu_kick(cpu);
+
+	return result;
 }
 
 static long psci_emulate_affinity_info(struct per_cpu *cpu_data,
@@ -102,33 +122,8 @@ static long psci_emulate_affinity_info(struct per_cpu *cpu_data,
 		/* Virtual id not in set */
 		return PSCI_DENIED;
 
-	return psci_cpu_stopped(cpu) ? PSCI_CPU_IS_OFF : PSCI_CPU_IS_ON;
-}
-
-/* Returns the secondary address set by the guest */
-unsigned long psci_emulate_spin(struct per_cpu *cpu_data)
-{
-	struct psci_mbox *mbox = &(cpu_data->guest_mbox);
-
-	mbox->entry = 0;
-
-	/* Wait for emulate_cpu_on or a trapped mmio to the mbox */
-	while (mbox->entry == 0)
-		psci_suspend(cpu_data);
-
-	return mbox->entry;
-}
-
-int psci_cell_init(struct cell *cell)
-{
-	unsigned int cpu;
-
-	for_each_cpu(cpu, cell->cpu_set) {
-		per_cpu(cpu)->guest_mbox.entry = 0;
-		per_cpu(cpu)->guest_mbox.context = 0;
-	}
-
-	return 0;
+	return per_cpu(cpu)->wait_for_poweron ?
+		PSCI_CPU_IS_OFF : PSCI_CPU_IS_ON;
 }
 
 long psci_dispatch(struct trap_context *ctx)
@@ -143,13 +138,7 @@ long psci_dispatch(struct trap_context *ctx)
 
 	case PSCI_CPU_OFF:
 	case PSCI_CPU_OFF_V0_1_UBOOT:
-		/*
-		 * The reset function will take care of calling
-		 * psci_emulate_spin
-		 */
-		arch_reset_self(cpu_data);
-
-		/* Not reached */
+		arm_cpu_park();
 		return 0;
 
 	case PSCI_CPU_ON_32:

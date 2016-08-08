@@ -14,6 +14,7 @@
 #include <asm/irqchip.h>
 #include <asm/percpu.h>
 #include <asm/setup.h>
+#include <asm/smp.h>
 #include <asm/sysregs.h>
 #include <jailhouse/control.h>
 #include <jailhouse/paging.h>
@@ -76,7 +77,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	unsigned long hcr = HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT
 			  | HCR_TSC_BIT | HCR_TAC_BIT | HCR_TSW_BIT;
 
-	cpu_data->psci_mbox.entry = 0;
 	cpu_data->virt_id = cpu_data->cpu_id;
 	cpu_data->mpidr = phys_processor_id();
 
@@ -120,9 +120,6 @@ int arch_init_late(void)
 	err = irqchip_cell_init(&root_cell);
 	if (err)
 		return err;
-
-	/* Platform-specific SMP operations */
-	register_smp_ops(&root_cell);
 
 	err = smp_init();
 	if (err)
