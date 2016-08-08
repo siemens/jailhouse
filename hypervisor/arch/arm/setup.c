@@ -82,8 +82,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	 * Copy the registers to restore from the linux stack here, because we
 	 * won't be able to access it later
 	 */
-	memcpy(&cpu_data->linux_reg, (void *)cpu_data->linux_sp, NUM_ENTRY_REGS
-			* sizeof(unsigned long));
+	memcpy(&cpu_data->linux_reg, (void *)cpu_data->linux_sp,
+	       NUM_ENTRY_REGS * sizeof(unsigned long));
 
 	err = switch_exception_level(cpu_data);
 	if (err)
