@@ -55,10 +55,6 @@ struct per_cpu {
 
 	bool initialized;
 
-	/* The mbox will be accessed with a ldrd, which requires alignment */
-	__attribute__((aligned(8))) struct psci_mbox psci_mbox;
-	struct psci_mbox guest_mbox;
-
 	/**
 	 * Lock protecting CPU state changes done for control tasks.
 	 *
