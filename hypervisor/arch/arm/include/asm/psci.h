@@ -24,19 +24,19 @@
 #define PSCI_CPU_OFF_V0_1_UBOOT		0x95c1ba5f
 #define PSCI_CPU_ON_V0_1_UBOOT		0x95c1ba60
 
-#define PSCI_SUCCESS		0
-#define PSCI_NOT_SUPPORTED	(-1)
-#define PSCI_INVALID_PARAMETERS	(-2)
-#define PSCI_DENIED		(-3)
-#define PSCI_ALREADY_ON		(-4)
+#define PSCI_SUCCESS			0
+#define PSCI_NOT_SUPPORTED		(-1)
+#define PSCI_INVALID_PARAMETERS		(-2)
+#define PSCI_DENIED			(-3)
+#define PSCI_ALREADY_ON			(-4)
 
-#define PSCI_CPU_IS_ON		0
-#define PSCI_CPU_IS_OFF		1
+#define PSCI_CPU_IS_ON			0
+#define PSCI_CPU_IS_OFF			1
 
-#define IS_PSCI_32(hvc)		(((hvc) >> 24) == 0x84)
-#define IS_PSCI_UBOOT(hvc)	(((hvc) >> 8) == 0x95c1ba)
+#define IS_PSCI_32(hvc)			(((hvc) >> 24) == 0x84)
+#define IS_PSCI_UBOOT(hvc)		(((hvc) >> 8) == 0x95c1ba)
 
-#define PSCI_INVALID_ADDRESS	0xffffffff
+#define PSCI_INVALID_ADDRESS		0xffffffff
 
 struct trap_context;
 
