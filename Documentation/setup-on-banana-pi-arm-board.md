@@ -8,7 +8,31 @@ http://linux-sunxi.org.
 
 In order to run Jailhouse, the Linux kernel version should be at least 3.19. The
 configuration used for continuous integration builds can serve as reference, see
-`ci/kernel-config-banana-pi`.
+`ci/kernel-config-banana-pi`. The kernel requires a small patch in order to
+build the Jailhouse driver module:
+
+```diff
+diff --git a/arch/arm/kernel/armksyms.c b/arch/arm/kernel/armksyms.c
+index 7e45f69..dc0336e 100644
+--- a/arch/arm/kernel/armksyms.c
++++ b/arch/arm/kernel/armksyms.c
+@@ -20,6 +20,7 @@
+ 
+ #include <asm/checksum.h>
+ #include <asm/ftrace.h>
++#include <asm/virt.h>
+ 
+ /*
+  * libgcc functions - functions that are used internally by the
+@@ -181,3 +182,7 @@ EXPORT_SYMBOL(__pv_offset);
+ EXPORT_SYMBOL(arm_smccc_smc);
+ EXPORT_SYMBOL(arm_smccc_hvc);
+ #endif
++
++#ifdef CONFIG_ARM_VIRT_EXT
++EXPORT_SYMBOL_GPL(__boot_cpu_mode);
++#endif
+```
 
 Meanwhile, an U-Boot release more recent than v2015.04 is required. Tested and
 known to work is release v2016.03. Note that, **since v2015.10, you need to
