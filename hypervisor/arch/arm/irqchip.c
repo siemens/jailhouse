@@ -183,7 +183,7 @@ int irqchip_cell_init(struct cell *cell)
 		if (chip->address != (unsigned long)gicd_base)
 			continue;
 		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
-			root_cell.arch.irq_bitmap[chip->pin_base / 32] &=
+			root_cell.arch.irq_bitmap[chip->pin_base / 32 + pos] &=
 				~chip->pin_bitmap[pos];
 	}
 
@@ -212,7 +212,7 @@ void irqchip_cell_exit(struct cell *cell)
 		if (chip->address != (unsigned long)gicd_base)
 			continue;
 		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
-			root_cell.arch.irq_bitmap[chip->pin_base / 32] |=
+			root_cell.arch.irq_bitmap[chip->pin_base / 32 + pos] |=
 				chip->pin_bitmap[pos];
 	}
 
@@ -221,7 +221,7 @@ void irqchip_cell_exit(struct cell *cell)
 		if (chip->address != (unsigned long)gicd_base)
 			continue;
 		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
-			root_cell.arch.irq_bitmap[chip->pin_base / 32] &=
+			root_cell.arch.irq_bitmap[chip->pin_base / 32 + pos] &=
 				chip->pin_bitmap[pos];
 	}
 
