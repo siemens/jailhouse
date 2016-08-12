@@ -362,6 +362,9 @@ int ioapic_cell_init(struct cell *cell)
 			return err;
 		}
 
+		if (irqchip->pin_base != 0)
+			return trace_error(-EINVAL);
+
 		ioapic = &cell->arch.ioapics[n];
 		ioapic->info = irqchip;
 		ioapic->cell = cell;
