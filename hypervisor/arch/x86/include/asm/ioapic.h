@@ -13,7 +13,15 @@
 #include <jailhouse/cell.h>
 #include <asm/spinlock.h>
 
-#define IOAPIC_NUM_PINS		24
+/*
+ * There can be up to 240 pins according to the specs, but it remains unclear
+ * how those can be addressed because only an 8-bit index register is specified
+ * so far. Therefore, we limit ourselves to implementations with up to 120 pins.
+ * That has the additional advantage that we can continue to use only a single
+ * struct jailhouse_irqchip to describe an IOAPIC so that we can keep a 1:1
+ * relationship with struct cell_ioapic.
+ */
+#define IOAPIC_MAX_PINS		120
 
 union ioapic_redir_entry {
 	struct {
@@ -53,10 +61,12 @@ struct phys_ioapic {
 	unsigned long base_addr;
 	/** Virtual address of mapped registers. */
 	void *reg_base;
+	/** Number of supported pins. */
+	unsigned int pins;
 	/** Lock protecting physical accesses. */
 	spinlock_t lock;
 	/** Shadow state of redirection entries as seen by the cells. */
-	union ioapic_redir_entry shadow_redir_table[IOAPIC_NUM_PINS];
+	union ioapic_redir_entry shadow_redir_table[IOAPIC_MAX_PINS];
 };
 
 /**
@@ -72,9 +82,8 @@ struct cell_ioapic {
 
 	/** Shadow value of index register. */
 	u32 index_reg_val;
-	/** Bitmap of pins currently assigned to this cell. Only requires 32
-	 * bits because the IOAPIC has just 24 pins. */
-	u32 pin_bitmap;
+	/** Bitmap of pins currently assigned to this cell. */
+	u32 pin_bitmap[(IOAPIC_MAX_PINS + 31) / 32];
 };
 
 static inline unsigned int ioapic_mmio_count_regions(struct cell *cell)

@@ -849,6 +849,7 @@ int iommu_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *irqchip =
 		jailhouse_cell_irqchips(cell->config);
+	struct phys_ioapic *ioapic;
 	unsigned int n;
 	int result;
 
@@ -862,8 +863,10 @@ int iommu_cell_init(struct cell *cell)
 
 	/* reserve regions for IRQ chips (if not done already) */
 	for (n = 0; n < cell->config->num_irqchips; n++, irqchip++) {
-		result = vtd_reserve_int_remap_region(irqchip->id,
-						      IOAPIC_NUM_PINS);
+		result = ioapic_get_or_add_phys(irqchip, &ioapic);
+		if (result == 0)
+			result = vtd_reserve_int_remap_region(irqchip->id,
+							      ioapic->pins);
 		if (result < 0) {
 			iommu_cell_exit(cell);
 			return result;
