@@ -333,7 +333,7 @@ void vcpu_handle_cpuid(void)
 
 		cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
 		      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
-		if (function == 0x01)
+		if (function == 0x01 && this_cell() != &root_cell)
 			guest_regs->rcx |= X86_FEATURE_HYPERVISOR;
 		break;
 	}
