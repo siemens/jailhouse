@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -216,8 +216,8 @@ void ioapic_prepare_handover(void)
 	}
 }
 
-static struct phys_ioapic *
-ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip)
+int ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip,
+			   struct phys_ioapic **phys_ioapic_ptr)
 {
 	struct phys_ioapic *phys_ioapic;
 	unsigned int n, index;
@@ -225,22 +225,24 @@ ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip)
 
 	for_each_phys_ioapic(phys_ioapic, n)
 		if (phys_ioapic->base_addr == irqchip->address)
-			return phys_ioapic;
+			goto done;
 
+	/*
+	 * phys_ioapic now points to the first free slot in phys_ioapics,
+	 * provided there is one.
+	 */
 	if (num_phys_ioapics == IOAPIC_MAX_CHIPS)
-		return trace_error(NULL);
+		return trace_error(-ERANGE);
 
 	phys_ioapic->reg_base = page_alloc(&remap_pool, 1);
 	if (!phys_ioapic->reg_base)
-		return trace_error(NULL);
+		return -ENOMEM;
 	err = paging_create(&hv_paging_structs, irqchip->address, PAGE_SIZE,
 			    (unsigned long)phys_ioapic->reg_base,
 			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 			    PAGING_NON_COHERENT);
-	if (err) {
-		page_free(&remap_pool, phys_ioapic->reg_base, 1);
-		return NULL;
-	}
+	if (err)
+		goto error_page_free;
 
 	phys_ioapic->base_addr = irqchip->address;
 	num_phys_ioapics++;
@@ -250,7 +252,13 @@ ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip)
 			ioapic_reg_read(phys_ioapic,
 					IOAPIC_REDIR_TBL_START + index);
 
-	return phys_ioapic;
+done:
+	*phys_ioapic_ptr = phys_ioapic;
+	return 0;
+
+error_page_free:
+	page_free(&remap_pool, phys_ioapic->reg_base, 1);
+	return err;
 }
 
 static struct cell_ioapic *ioapic_find_by_address(struct cell *cell,
@@ -348,10 +356,10 @@ int ioapic_cell_init(struct cell *cell)
 		return -ENOMEM;
 
 	for (n = 0; n < cell->config->num_irqchips; n++, irqchip++) {
-		phys_ioapic = ioapic_get_or_add_phys(irqchip);
-		if (!phys_ioapic) {
+		err = ioapic_get_or_add_phys(irqchip, &phys_ioapic);
+		if (err) {
 			ioapic_cell_exit(cell);
-			return -ENOMEM;
+			return err;
 		}
 
 		ioapic = &cell->arch.ioapics[n];
