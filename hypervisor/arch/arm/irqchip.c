@@ -176,21 +176,22 @@ int irqchip_cell_init(struct cell *cell)
 	if (err)
 		return err;
 
-	if (cell != &root_cell) {
-		for_each_irqchip(chip, cell->config, n) {
-			if (chip->address != (unsigned long)gicd_base)
-				continue;
-			for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
-				root_cell.arch.irq_bitmap[chip->pin_base/32] &=
-					~chip->pin_bitmap[pos];
-		}
+	if (cell == &root_cell)
+		return 0;
 
-		for (n = 32; n < sizeof(cell->arch.irq_bitmap) * 8; n++) {
-			if (irqchip_irq_in_cell(cell, n))
-				irqchip.adjust_irq_target(cell, n);
-			if (irqchip_irq_in_cell(&root_cell, n))
-				irqchip.adjust_irq_target(&root_cell, n);
-		}
+	for_each_irqchip(chip, cell->config, n) {
+		if (chip->address != (unsigned long)gicd_base)
+			continue;
+		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
+			root_cell.arch.irq_bitmap[chip->pin_base / 32] &=
+				~chip->pin_bitmap[pos];
+	}
+
+	for (n = 32; n < sizeof(cell->arch.irq_bitmap) * 8; n++) {
+		if (irqchip_irq_in_cell(cell, n))
+			irqchip.adjust_irq_target(cell, n);
+		if (irqchip_irq_in_cell(&root_cell, n))
+			irqchip.adjust_irq_target(&root_cell, n);
 	}
 
 	return 0;
