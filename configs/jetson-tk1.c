@@ -23,7 +23,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[11];
+	struct jailhouse_memory mem_regions[12];
 	struct jailhouse_irqchip irqchips[3];
 } __attribute__((packed)) config = {
 	.header = {
@@ -90,6 +90,13 @@ struct {
 			.phys_start = 0x70019000,
 			.virt_start = 0x70019000,
 			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* XUSB */ {
+			.phys_start = 0x70090000,
+			.virt_start = 0x70090000,
+			.size = 0x8000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
