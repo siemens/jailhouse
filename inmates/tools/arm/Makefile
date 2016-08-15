@@ -12,6 +12,8 @@
 
 include $(INMATES_LIB)/Makefile.lib
 
-INMATES :=
+INMATES := linux-loader.bin
+
+linux-loader-y := linux-loader.o
 
 $(eval $(call DECLARE_TARGETS,$(INMATES)))
