@@ -451,7 +451,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 	 * Note that the APM defines all reserved CR4 bits as must-be-zero.
 	 */
 	if (cpu_data->linux_cr0 & X86_CR0_RESERVED)
-		return -EIO;
+		return trace_error(-EIO);
 
 	/* bring CR0 and CR4 into well-defined states */
 	write_cr0(X86_CR0_HOST_STATE);

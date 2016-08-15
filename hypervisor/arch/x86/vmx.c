@@ -645,7 +645,7 @@ int vcpu_init(struct per_cpu *cpu_data)
 	 */
 	if ((cpu_data->linux_cr0 | cr_required1[CR0_IDX]) & X86_CR0_RESERVED ||
 	    (cpu_data->linux_cr4 | cr_required1[CR4_IDX]) & X86_CR4_RESERVED)
-		return -EIO;
+		return trace_error(-EIO);
 	/*
 	 * Bring CR0 and CR4 into well-defined states. If they do not match
 	 * with VMX requirements, vmxon will fail.

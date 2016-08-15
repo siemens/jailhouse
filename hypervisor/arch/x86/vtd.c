@@ -631,7 +631,7 @@ int iommu_init(void)
 
 		version = mmio_read64(reg_base + VTD_VER_REG) & VTD_VER_MASK;
 		if (version < VTD_VER_MIN || version == 0xff)
-			return -EIO;
+			return trace_error(-EIO);
 
 		printk("DMAR unit @0x%lx/0x%x\n", unit->base, unit->size);
 
