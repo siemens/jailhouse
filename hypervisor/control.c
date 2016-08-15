@@ -581,13 +581,13 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	if (err)
 		return err;
 
+	if (cell->loadable)
+		goto out_resume;
+
 	for_each_cpu(cpu, cell->cpu_set) {
 		per_cpu(cpu)->failed = false;
 		arch_park_cpu(cpu);
 	}
-
-	if (cell->loadable)
-		goto out_resume;
 
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 	cell->loadable = true;
