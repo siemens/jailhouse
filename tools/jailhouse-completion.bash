@@ -11,13 +11,13 @@
 # the COPYING file in the top-level directory.
 #
 
-# usage: - include the directory containing the `jailhouse`-tool into your
+# usage: - add the directory containing the `jailhouse`-tool to your
 #          ${PATH}-variable
-#        - source this tile `. tools/jailhouse_bashcompletion`
-#        - alternatively you can but this file into your distributions
+#        - source this file `. tools/jailhouse-completion.bash`
+#        - alternatively you can put this file into your distribution's
 #          bash-completion directory
 #
-#          there is a broad variety of places where distris may put this:
+#          there is a broad variety of places where distributions may put this:
 #               - /usr/share/bash-completion/
 #               - /etc/bash_completion.d/
 #               - $BASH_COMPLETION_COMPAT_DIR
