@@ -249,6 +249,17 @@ int arch_cell_create(struct cell *cell);
 void arch_cell_destroy(struct cell *cell);
 
 /**
+ * Performs the architecture-specific steps for resetting a cell.
+ * @param cell		Cell to be reset.
+ *
+ * @note This function shall not reset individual cell CPUs. Instead, this is
+ * triggered by the core via arch_reset_cpu().
+ *
+ * @see arch_reset_cpu
+ */
+void arch_cell_reset(struct cell *cell);
+
+/**
  * Performs the architecture-specific steps for applying configuration changes.
  * @param cell_added_removed	Cell that was added or removed to/from the
  * 				system or NULL.

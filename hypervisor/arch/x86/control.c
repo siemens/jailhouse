@@ -127,6 +127,10 @@ void arch_cell_destroy(struct cell *cell)
 	vcpu_cell_exit(cell);
 }
 
+void arch_cell_reset(struct cell *cell)
+{
+}
+
 void arch_config_commit(struct cell *cell_added_removed)
 {
 	iommu_config_commit(cell_added_removed);
