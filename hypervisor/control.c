@@ -168,7 +168,7 @@ retry:
  *
  * @return 0 on success, negative error code otherwise.
  *
- * @note The cell data structure must be zero-initialized.
+ * @note Uninitialized fields of the cell data structure must be zeroed.
  */
 int cell_init(struct cell *cell)
 {
