@@ -168,8 +168,10 @@ class PCIBARs:
     def __init__(self, dir):
         self.mask = []
         f = input_open(os.path.join(dir, 'resource'), 'r')
-        for n in range(6):
+        n = 0
+        while (n < 6):
             (start, end, flags) = f.readline().split()
+            n += 1
             flags = int(flags, 16)
             if flags & PCIBARs.IORESOURCE_IO:
                 mask = ~(int(end, 16) - int(start, 16))
