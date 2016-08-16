@@ -174,11 +174,16 @@ class PCIBARs:
             if flags & PCIBARs.IORESOURCE_IO:
                 mask = ~(int(end, 16) - int(start, 16))
             elif flags & PCIBARs.IORESOURCE_MEM:
-                mask = ~(int(end, 16) - int(start, 16))
                 if flags & PCIBARs.IORESOURCE_MEM_64:
+                    mask = int(end, 16) - int(start, 16)
+                    (start, end, flags) = f.readline().split()
+                    mask |= (int(end, 16) - int(start, 16)) << 32
+                    mask = ~(mask)
                     self.mask.append(mask & 0xffffffff)
                     mask >>= 32
                     n += 1
+                else:
+                    mask = ~(int(end, 16) - int(start, 16))
             else:
                 mask = 0
             self.mask.append(mask & 0xffffffff)
