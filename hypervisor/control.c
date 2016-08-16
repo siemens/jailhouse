@@ -164,7 +164,7 @@ retry:
 
 /**
  * Initialize a new cell.
- * @param cell	Cell to be initializes.
+ * @param cell	Cell to be initialized.
  *
  * @return 0 on success, negative error code otherwise.
  *
