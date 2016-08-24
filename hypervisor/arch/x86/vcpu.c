@@ -333,8 +333,14 @@ void vcpu_handle_cpuid(void)
 
 		cpuid((u32 *)&guest_regs->rax, (u32 *)&guest_regs->rbx,
 		      (u32 *)&guest_regs->rcx, (u32 *)&guest_regs->rdx);
-		if (function == 0x01 && this_cell() != &root_cell)
-			guest_regs->rcx |= X86_FEATURE_HYPERVISOR;
+		if (function == 0x01) {
+			if (this_cell() != &root_cell)
+				guest_regs->rcx |= X86_FEATURE_HYPERVISOR;
+
+			guest_regs->rcx &= ~X86_FEATURE_OSXSAVE;
+			if (vcpu_vendor_get_guest_cr4() & X86_CR4_OSXSAVE)
+				guest_regs->rcx |= X86_FEATURE_OSXSAVE;
+		}
 		break;
 	}
 

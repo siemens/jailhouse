@@ -25,6 +25,7 @@
 /* leaf 0x01, ECX */
 #define X86_FEATURE_VMX					(1 << 5)
 #define X86_FEATURE_XSAVE				(1 << 26)
+#define X86_FEATURE_OSXSAVE				(1 << 27)
 #define X86_FEATURE_HYPERVISOR				(1 << 31)
 
 /* leaf 0x07, subleaf 0, EBX */
