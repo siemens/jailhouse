@@ -1041,7 +1041,7 @@ static bool vmx_handle_xsetbv(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 
-	if (cpuid_ecx(1, 0) & X86_FEATURE_XSAVE &&
+	if (vcpu_vendor_get_guest_cr4() & X86_CR4_OSXSAVE &&
 	    guest_regs->rax & X86_XCR0_FP &&
 	    (guest_regs->rax & ~cpuid_eax(0x0d, 0)) == 0 &&
 	     guest_regs->rcx == 0 && guest_regs->rdx == 0) {
