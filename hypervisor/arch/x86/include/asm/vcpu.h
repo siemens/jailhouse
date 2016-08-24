@@ -100,6 +100,8 @@ void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state);
 void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io);
 void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio);
 
+unsigned long vcpu_vendor_get_guest_cr4(void);
+
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs);
 
 void vcpu_vendor_set_guest_pat(unsigned long val);

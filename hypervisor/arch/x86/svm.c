@@ -902,6 +902,11 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 	mmio->is_write = !!(vmcb->exitinfo1 & 0x2);
 }
 
+unsigned long vcpu_vendor_get_guest_cr4(void)
+{
+	return this_cpu_data()->vmcb.cr4;
+}
+
 void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
 	struct vmcb *vmcb = &cpu_data->vmcb;

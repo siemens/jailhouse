@@ -436,6 +436,14 @@ static bool vmx_set_guest_cr(unsigned int cr_idx, unsigned long val)
 	return ok;
 }
 
+unsigned long vcpu_vendor_get_guest_cr4(void)
+{
+	unsigned long host_mask = cr_required1[CR4_IDX] | ~cr_maybe1[CR4_IDX];
+
+	return (vmcs_read64(CR4_READ_SHADOW) & host_mask) |
+		(vmcs_read64(GUEST_CR4) & ~host_mask);
+}
+
 static bool vmx_set_cell_config(void)
 {
 	struct cell *cell = this_cell();
