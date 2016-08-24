@@ -965,10 +965,6 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 				goto vmentry;
 		}
 		break;
-	case VMEXIT_XSETBV:
-		if (vcpu_handle_xsetbv())
-			goto vmentry;
-		break;
 	case VMEXIT_IOIO:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
 		if (vcpu_handle_io_access())
