@@ -114,8 +114,6 @@ bool vcpu_handle_msr_write(void);
 
 void vcpu_handle_cpuid(void);
 
-bool vcpu_handle_xsetbv(void);
-
 void vcpu_reset(unsigned int sipi_vector);
 void vcpu_vendor_reset(unsigned int sipi_vector);
 
