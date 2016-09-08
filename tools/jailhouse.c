@@ -128,6 +128,7 @@ static void *read_string(const char *string, size_t *size)
 static void *read_file(const char *name, size_t *size)
 {
 	struct stat stat;
+	ssize_t result;
 	void *buffer;
 	int fd;
 
@@ -148,7 +149,8 @@ static void *read_file(const char *name, size_t *size)
 		exit(1);
 	}
 
-	if (read(fd, buffer, stat.st_size) < stat.st_size) {
+	result = read(fd, buffer, stat.st_size);
+	if (result < 0) {
 		fprintf(stderr, "reading %s: %s\n", name, strerror(errno));
 		exit(1);
 	}
@@ -156,7 +158,7 @@ static void *read_file(const char *name, size_t *size)
 	close(fd);
 
 	if (size)
-		*size = stat.st_size;
+		*size = (size_t)result;
 
 	return buffer;
 }
