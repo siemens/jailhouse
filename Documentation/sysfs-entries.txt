@@ -16,7 +16,10 @@ can be used for monitoring the state of the hypervisor and its cells.
    |  |- state                  - "running", "running/locked", "shut down", or
    |  |                           "failed"
    |  |- cpus_assigned          - bitmask of assigned logical CPUs
+   |  |- cpus_assigned_list     - human readable list of assigned logical CPUs
    |  |- cpus_failed            - bitmask of logical CPUs that caused a failure
+   |  |- cpus_failed_list       - human readable list of logical CPUs that
+   |  |                           caused a failure
    |  `- statistics
    |     |- vmexits_total       - Total number of VM exits
    |     `- vmexits_<reason>    - VM exits due to <reason>
