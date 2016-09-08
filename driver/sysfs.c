@@ -139,6 +139,27 @@ static struct attribute_group stats_attr_group = {
 	.name = "statistics"
 };
 
+static int print_cpumask(char *buf, size_t size, cpumask_t *mask, bool as_list)
+{
+	int written;
+
+	if (as_list)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+		written = scnprintf(buf, size, "%*pbl\n",
+				    cpumask_pr_args(mask));
+	else
+		written = scnprintf(buf, size, "%*pb\n",
+				    cpumask_pr_args(mask));
+#else
+		written = cpulist_scnprintf(buf, size, mask);
+	else
+		written = cpumask_scnprintf(buf, size, mask);
+	written += scnprintf(buf + written, size - written, "\n");
+#endif
+
+	return written;
+}
+
 static ssize_t name_show(struct kobject *kobj, struct kobj_attribute *attr,
 			 char *buffer)
 {
@@ -170,16 +191,8 @@ static ssize_t cpus_assigned_show(struct kobject *kobj,
 				  struct kobj_attribute *attr, char *buf)
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
-	int written;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
-	written = scnprintf(buf, PAGE_SIZE, "%*pb\n",
-			    cpumask_pr_args(&cell->cpus_assigned));
-#else
-	written = cpumask_scnprintf(buf, PAGE_SIZE, &cell->cpus_assigned);
-	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");
-#endif
-	return written;
+	return print_cpumask(buf, PAGE_SIZE, &cell->cpus_assigned, false);
 }
 
 static ssize_t cpus_failed_show(struct kobject *kobj,
@@ -199,13 +212,7 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 		    JAILHOUSE_CPU_FAILED)
 			cpumask_set_cpu(cpu, cpus_failed);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
-	written = scnprintf(buf, PAGE_SIZE, "%*pb\n",
-			    cpumask_pr_args(cpus_failed));
-#else
-	written = cpumask_scnprintf(buf, PAGE_SIZE, cpus_failed);
-	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");
-#endif
+	written = print_cpumask(buf, PAGE_SIZE, cpus_failed, false);
 
 	free_cpumask_var(cpus_failed);
 
