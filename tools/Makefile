@@ -21,7 +21,6 @@ TARGETS := jailhouse
 INST_TARGETS := $(TARGETS)
 HELPERS := \
 	jailhouse-cell-linux \
-	jailhouse-cell-list \
 	jailhouse-cell-stats \
 	jailhouse-config-create \
 	jailhouse-hardware-check

@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -27,6 +28,7 @@
 
 #define JAILHOUSE_EXEC_DIR	LIBEXECDIR "/jailhouse"
 #define JAILHOUSE_DEVICE	"/dev/jailhouse"
+#define JAILHOUSE_CELLS		"/sys/devices/jailhouse/cells/"
 
 enum shutdown_load_mode {LOAD, SHUTDOWN};
 
@@ -34,11 +36,17 @@ struct extension {
 	char *cmd, *subcmd, *help;
 };
 
+struct jailhouse_cell_info {
+	struct jailhouse_cell_id id;
+	char *state;
+	char *cpus_assigned_list;
+	char *cpus_failed_list;
+};
+
 static const struct extension extensions[] = {
 	{ "cell", "linux", "CELLCONFIG KERNEL [-i | --initrd FILE]\n"
 	  "              [-c | --cmdline \"STRING\"] "
 					"[-w | --write-params FILE]" },
-	{ "cell", "list", "" },
 	{ "cell", "stats", "{ ID | [--name] NAME }" },
 	{ "config", "create", "[-h] [-g] [-r ROOT] "
 	  "[--mem-inmates MEM_INMATES]\n"
@@ -57,6 +65,7 @@ static void __attribute__((noreturn)) help(char *prog, int exit_status)
 	       "   enable SYSCONFIG\n"
 	       "   disable\n"
 	       "   cell create CELLCONFIG\n"
+	       "   cell list\n"
 	       "   cell load { ID | [--name] NAME } "
 				"{ IMAGE | { -s | --string } \"STRING\" }\n"
 	       "             [-a | --address ADDRESS] ...\n"
@@ -163,6 +172,30 @@ static void *read_file(const char *name, size_t *size)
 	return buffer;
 }
 
+static char *read_sysfs_cell_string(const unsigned int id, const char *entry)
+{
+	char *ret, buffer[128];
+	size_t size;
+
+	snprintf(buffer, sizeof(buffer), JAILHOUSE_CELLS "%u/%s", id, entry);
+	ret = read_file(buffer, &size);
+
+	/* entries in /sys/devices/jailhouse/cells must not be empty */
+	if (size == 0) {
+		snprintf(buffer, sizeof(buffer), "reading " JAILHOUSE_CELLS "%u/%s",
+			 id, entry);
+		perror(buffer);
+		exit(1);
+	}
+
+	/* chop trailing linefeeds and enforce the string to be null-terminated */
+	if (ret[size-1] != '\n')
+		ret = realloc(ret, ++size);
+	ret[size-1] = 0;
+
+	return ret;
+}
+
 static int enable(int argc, char *argv[])
 {
 	void *config;
@@ -249,6 +282,90 @@ static bool match_opt(const char *argv, const char *short_opt,
 {
 	return strcmp(argv, short_opt) == 0 ||
 		strcmp(argv, long_opt) == 0;
+}
+
+static struct jailhouse_cell_info *get_cell_info(const unsigned int id)
+{
+	struct jailhouse_cell_info *cinfo;
+	char *tmp;
+
+	cinfo = malloc(sizeof(struct jailhouse_cell_info));
+	if (cinfo == NULL) {
+		fprintf(stderr, "insufficient memory\n");
+		exit(1);
+	}
+
+	/* set cell id */
+	cinfo->id.id = id;
+
+	/* get cell name */
+	tmp = read_sysfs_cell_string(id, "name");
+	strncpy(cinfo->id.name, tmp, JAILHOUSE_CELL_ID_NAMELEN);
+	cinfo->id.name[JAILHOUSE_CELL_ID_NAMELEN] = 0;
+	free(tmp);
+
+	/* get cell state */
+	cinfo->state = read_sysfs_cell_string(id, "state");
+
+	/* get assigned cpu list */
+	cinfo->cpus_assigned_list =
+		read_sysfs_cell_string(id, "cpus_assigned_list");
+
+	/* get failed cpu list */
+	cinfo->cpus_failed_list = read_sysfs_cell_string(id, "cpus_failed_list");
+
+	return cinfo;
+}
+
+static void cell_info_free(struct jailhouse_cell_info *cinfo)
+{
+	free(cinfo->state);
+	free(cinfo->cpus_assigned_list);
+	free(cinfo->cpus_failed_list);
+	free(cinfo);
+}
+
+static int cell_match(const struct dirent *dirent)
+{
+	return dirent->d_name[0] != '.';
+}
+
+static int cell_list(int argc, char *argv[])
+{
+	struct dirent **namelist;
+	struct jailhouse_cell_info *cinfo;
+	unsigned int id;
+	int i, num_entries;
+	(void)argv;
+
+	if (argc != 3)
+		help(argv[0], 1);
+
+	num_entries = scandir(JAILHOUSE_CELLS, &namelist, cell_match, alphasort);
+	if (num_entries == -1) {
+		/* Silently return if kernel module is not loaded */
+		if (errno == ENOENT)
+			return 0;
+
+		perror("scandir");
+		return -1;
+	}
+
+	if (num_entries > 0)
+		printf("%-8s%-24s%-16s%-24s%-24s\n",
+		       "ID", "Name", "State", "Assigned CPUs", "Failed CPUs");
+	for (i = 0; i < num_entries; i++) {
+		id = (unsigned int)strtoul(namelist[i]->d_name, NULL, 10);
+
+		cinfo = get_cell_info(id);
+		printf("%-8d%-24s%-16s%-24s%-24s\n", cinfo->id.id, cinfo->id.name,
+		       cinfo->state, cinfo->cpus_assigned_list, cinfo->cpus_failed_list);
+		cell_info_free(cinfo);
+		free(namelist[i]);
+	}
+
+	free(namelist);
+	return 0;
 }
 
 static int cell_shutdown_load(int argc, char *argv[],
@@ -369,6 +486,8 @@ static int cell_management(int argc, char *argv[])
 
 	if (strcmp(argv[2], "create") == 0) {
 		err = cell_create(argc, argv);
+	} else if (strcmp(argv[2], "list") == 0) {
+		err = cell_list(argc, argv);
 	} else if (strcmp(argv[2], "load") == 0) {
 		err = cell_shutdown_load(argc, argv, LOAD);
 	} else if (strcmp(argv[2], "start") == 0) {
