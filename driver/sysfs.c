@@ -160,6 +160,29 @@ static int print_cpumask(char *buf, size_t size, cpumask_t *mask, bool as_list)
 	return written;
 }
 
+static int print_failed_cpus(char *buf, size_t size, const struct cell *cell,
+			 bool as_list)
+{
+	cpumask_var_t cpus_failed;
+	unsigned int cpu;
+	int written;
+
+	if (!zalloc_cpumask_var(&cpus_failed, GFP_KERNEL))
+		return -ENOMEM;
+
+	for_each_cpu(cpu, &cell->cpus_assigned)
+		if (jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
+					JAILHOUSE_CPU_INFO_STATE) ==
+		    JAILHOUSE_CPU_FAILED)
+			cpumask_set_cpu(cpu, cpus_failed);
+
+	written = print_cpumask(buf, size, cpus_failed, as_list);
+
+	free_cpumask_var(cpus_failed);
+
+	return written;
+}
+
 static ssize_t name_show(struct kobject *kobj, struct kobj_attribute *attr,
 			 char *buffer)
 {
@@ -199,24 +222,8 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 				struct kobj_attribute *attr, char *buf)
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
-	cpumask_var_t cpus_failed;
-	unsigned int cpu;
-	int written;
 
-	if (!zalloc_cpumask_var(&cpus_failed, GFP_KERNEL))
-		return -ENOMEM;
-
-	for_each_cpu(cpu, &cell->cpus_assigned)
-		if (jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
-					JAILHOUSE_CPU_INFO_STATE) ==
-		    JAILHOUSE_CPU_FAILED)
-			cpumask_set_cpu(cpu, cpus_failed);
-
-	written = print_cpumask(buf, PAGE_SIZE, cpus_failed, false);
-
-	free_cpumask_var(cpus_failed);
-
-	return written;
+	return print_failed_cpus(buf, PAGE_SIZE, cell, false);
 }
 
 static struct kobj_attribute cell_name_attr = __ATTR_RO(name);
