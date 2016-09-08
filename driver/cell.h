@@ -26,6 +26,7 @@ struct cell {
 	struct kobject kobj;
 	struct list_head entry;
 	unsigned int id;
+	char name[JAILHOUSE_CELL_ID_NAMELEN+1];
 	cpumask_t cpus_assigned;
 	u32 num_memory_regions;
 	struct jailhouse_memory *memory_regions;

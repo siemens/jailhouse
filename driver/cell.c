@@ -64,6 +64,9 @@ static struct cell *cell_create(const struct jailhouse_cell_desc *cell_desc)
 		return ERR_PTR(-ENOMEM);
 	}
 
+	memcpy(cell->name, cell_desc->name, JAILHOUSE_CELL_ID_NAMELEN);
+	cell->name[JAILHOUSE_CELL_ID_NAMELEN] = 0;
+
 	memcpy(cell->memory_regions, jailhouse_cell_mem_regions(cell_desc),
 	       sizeof(struct jailhouse_memory) * cell->num_memory_regions);
 
@@ -95,7 +98,7 @@ static struct cell *find_cell(struct jailhouse_cell_id *cell_id)
 	list_for_each_entry(cell, &cells, entry)
 		if (cell_id->id == cell->id ||
 		    (cell_id->id == JAILHOUSE_CELL_ID_UNUSED &&
-		     strcmp(kobject_name(&cell->kobj), cell_id->name) == 0))
+		     strcmp(cell->name, cell_id->name) == 0))
 			return cell;
 	return NULL;
 }
@@ -400,8 +403,7 @@ static int cell_destroy(struct cell *cell)
 	jailhouse_pci_do_all_devices(cell, JAILHOUSE_PCI_TYPE_DEVICE,
 	                             JAILHOUSE_PCI_ACTION_RELEASE);
 
-	pr_info("Destroyed Jailhouse cell \"%s\"\n",
-		kobject_name(&cell->kobj));
+	pr_info("Destroyed Jailhouse cell \"%s\"\n", cell->name);
 
 	cell_delete(cell);
 
@@ -438,8 +440,7 @@ int jailhouse_cmd_cell_destroy_non_root(void)
 			continue;
 		err = cell_destroy(cell);
 		if (err) {
-			pr_err("Jailhouse: failed to destroy cell \"%s\"\n",
-			       kobject_name(&cell->kobj));
+			pr_err("Jailhouse: failed to destroy cell \"%s\"\n", cell->name);
 			return err;
 		}
 	}
