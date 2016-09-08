@@ -53,7 +53,6 @@ static void init_early(unsigned int cpu_id)
 
 	root_cell.config = &system_config->root_cell;
 
-	root_cell.id = -1;
 	error = cell_init(&root_cell);
 	if (error)
 		return;

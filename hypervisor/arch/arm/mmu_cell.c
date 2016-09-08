@@ -92,7 +92,7 @@ void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)
 
 int arm_paging_cell_init(struct cell *cell)
 {
-	if (cell->id > 0xff)
+	if (cell->config->id > 0xff)
 		return trace_error(-E2BIG);
 
 	cell->arch.mm.root_paging = cell_paging;
@@ -115,7 +115,7 @@ void arm_paging_vcpu_init(struct paging_structures *pg_structs)
 	unsigned long cell_table = paging_hvirt2phys(pg_structs->root_table);
 	u64 vttbr = 0;
 
-	vttbr |= (u64)this_cell()->id << VTTBR_VMID_SHIFT;
+	vttbr |= (u64)this_cell()->config->id << VTTBR_VMID_SHIFT;
 	vttbr |= (u64)(cell_table & TTBR_MASK);
 
 	arm_write_sysreg(VTTBR_EL2, vttbr);

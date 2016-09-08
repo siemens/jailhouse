@@ -809,7 +809,7 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 		paging_hvirt2phys(cell->arch.vtd.pg_structs.root_table);
 	context_entry->hi_word =
 		(dmar_pt_levels == 3 ? VTD_CTX_AGAW_39 : VTD_CTX_AGAW_48) |
-		(cell->id << VTD_CTX_DID_SHIFT);
+		(cell->config->id << VTD_CTX_DID_SHIFT);
 	arch_paging_flush_cpu_caches(context_entry, sizeof(*context_entry));
 
 	return 0;
@@ -853,7 +853,7 @@ int iommu_cell_init(struct cell *cell)
 	unsigned int n;
 	int result;
 
-	if (cell->id >= dmar_num_did)
+	if (cell->config->id >= dmar_num_did)
 		return trace_error(-ERANGE);
 
 	cell->arch.vtd.pg_structs.root_paging = vtd_paging;
@@ -1033,8 +1033,8 @@ void iommu_config_commit(struct cell *cell_added_removed)
 		dmar_units_initialized = true;
 	} else {
 		if (cell_added_removed)
-			vtd_flush_domain_caches(cell_added_removed->id);
-		vtd_flush_domain_caches(root_cell.id);
+			vtd_flush_domain_caches(cell_added_removed->config->id);
+		vtd_flush_domain_caches(root_cell.config->id);
 	}
 }
 

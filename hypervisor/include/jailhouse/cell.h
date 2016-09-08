@@ -35,8 +35,6 @@ struct cell {
 	/** Architecture-specific fields. */
 	struct arch_cell arch;
 
-	/** ID of the cell. */
-	unsigned int id;
 	/** Number of pages used for storing cell-specific states and
 	 * configuration data. */
 	unsigned int data_pages;

@@ -40,17 +40,29 @@ void jailhouse_cell_kobj_release(struct kobject *kobj)
 static struct cell *cell_create(const struct jailhouse_cell_desc *cell_desc)
 {
 	struct cell *cell;
+	unsigned int id;
 	int err;
 
 	if (cell_desc->num_memory_regions >=
 	    ULONG_MAX / sizeof(struct jailhouse_memory))
 		return ERR_PTR(-EINVAL);
 
+	/* determine cell id */
+	id = 0;
+retry:
+	list_for_each_entry(cell, &cells, entry)
+		if (cell->id == id) {
+			id++;
+			goto retry;
+		}
+
 	cell = kzalloc(sizeof(*cell), GFP_KERNEL);
 	if (!cell)
 		return ERR_PTR(-ENOMEM);
 
 	INIT_LIST_HEAD(&cell->entry);
+
+	cell->id = id;
 
 	bitmap_copy(cpumask_bits(&cell->cpus_assigned),
 		    jailhouse_cell_cpu_set(cell_desc),
@@ -146,7 +158,7 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	void __user *user_config;
 	struct cell *cell;
 	unsigned int cpu;
-	int id, err = 0;
+	int err = 0;
 
 	if (copy_from_user(&cell_params, arg, sizeof(cell_params)))
 		return -EFAULT;
@@ -193,6 +205,8 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		goto unlock_out;
 	}
 
+	config->id = cell->id;
+
 	if (!cpumask_subset(&cell->cpus_assigned, &root_cell->cpus_assigned)) {
 		err = -EBUSY;
 		goto error_cell_delete;
@@ -211,13 +225,10 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	jailhouse_pci_do_all_devices(cell, JAILHOUSE_PCI_TYPE_DEVICE,
 	                             JAILHOUSE_PCI_ACTION_CLAIM);
 
-	id = jailhouse_call_arg1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
-	if (id < 0) {
-		err = id;
+	err = jailhouse_call_arg1(JAILHOUSE_HC_CELL_CREATE, __pa(config));
+	if (err < 0)
 		goto error_cpu_online;
-	}
 
-	cell->id = id;
 	cell_register(cell);
 
 	pr_info("Created Jailhouse cell \"%s\"\n", config->name);

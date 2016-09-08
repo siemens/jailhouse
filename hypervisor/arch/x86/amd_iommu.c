@@ -360,7 +360,7 @@ int iommu_cell_init(struct cell *cell)
 	if (iommu_units_count == 0)
 		return 0;
 
-	if (cell->id > 0xffff)
+	if (cell->config->id > 0xffff)
 		return trace_error(-ERANGE);
 
 	return 0;
@@ -529,7 +529,7 @@ int iommu_add_pci_device(struct cell *cell, struct pci_device *device)
 	memset(dte, 0, sizeof(*dte));
 
 	/* DomainID */
-	dte->raw64[1] = cell->id & 0xffff;
+	dte->raw64[1] = cell->config->id & 0xffff;
 
 	/* Translation information */
 	dte->raw64[0] = DTE_IR | DTE_IW |
@@ -689,9 +689,9 @@ void iommu_config_commit(struct cell *cell_added_removed)
 		/* Flush caches */
 		if (cell_added_removed) {
 			amd_iommu_invalidate_pages(iommu,
-					cell_added_removed->id & 0xffff);
+					cell_added_removed->config->id & 0xffff);
 			amd_iommu_invalidate_pages(iommu,
-					root_cell.id & 0xffff);
+					root_cell.config->id & 0xffff);
 		}
 		/* Execute all commands in the buffer */
 		amd_iommu_completion_wait(iommu);

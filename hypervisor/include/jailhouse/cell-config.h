@@ -54,6 +54,7 @@
 struct jailhouse_cell_desc {
 	char signature[8];
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
+	__u32 id; /* set by the driver */
 	__u32 flags;
 
 	__u32 cpu_set_size;

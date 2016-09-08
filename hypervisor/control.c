@@ -147,21 +147,6 @@ static void cell_reconfig_completed(void)
 				  MSG_INFORMATION);
 }
 
-static unsigned int get_free_cell_id(void)
-{
-	unsigned int id = 0;
-	struct cell *cell;
-
-retry:
-	for_each_cell(cell)
-		if (cell->id == id) {
-			id++;
-			goto retry;
-		}
-
-	return id;
-}
-
 /**
  * Initialize a new cell.
  * @param cell	Cell to be initialized.
@@ -177,8 +162,6 @@ int cell_init(struct cell *cell)
 	unsigned long cpu_set_size = cell->config->cpu_set_size;
 	struct cpu_set *cpu_set;
 	int err;
-
-	cell->id = get_free_cell_id();
 
 	if (cpu_set_size > PAGE_SIZE)
 		return trace_error(-EINVAL);
@@ -367,7 +350,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		 * sizeof(cell->config->name) == sizeof(cfg->name) and
 		 * cell->config->name is guaranteed to be null-terminated.
 		 */
-		if (strcmp(cell->config->name, cfg->name) == 0) {
+		if (strcmp(cell->config->name, cfg->name) == 0 ||
+		    cell->config->id == cfg->id) {
 			err = -EEXIST;
 			goto err_resume;
 		}
@@ -468,7 +452,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	cell_resume(cpu_data);
 
-	return cell->id;
+	return 0;
 
 err_destroy_cell:
 	cell_destroy_internal(cpu_data, cell);
@@ -501,7 +485,7 @@ static int cell_management_prologue(enum management_task task,
 	cell_suspend(&root_cell, cpu_data);
 
 	for_each_cell(*cell_ptr)
-		if ((*cell_ptr)->id == id)
+		if ((*cell_ptr)->config->id == id)
 			break;
 
 	if (!*cell_ptr) {
@@ -652,7 +636,7 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 	 * this hypercall.
 	 */
 	for_each_cell(cell)
-		if (cell->id == id) {
+		if (cell->config->id == id) {
 			u32 state = cell->comm_page.comm_region.cell_state;
 
 			switch (state) {

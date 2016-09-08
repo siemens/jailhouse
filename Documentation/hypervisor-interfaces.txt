@@ -105,7 +105,7 @@ This hypercall can only be issued on CPUs belonging to the Linux cell.
 Arguments: 1. Guest-physical address of cell configuration (see [2] for
               details)
 
-Return code: Positive cell ID or negative error code
+Return code: 0 on success or negative error code
 
     Possible errors are:
         -EPERM  (-1)  - hypercall was issued over a non-root cell or an active
@@ -115,7 +115,7 @@ Return code: Positive cell ID or negative error code
         -EBUSY  (-16) - a resource of the new cell is already in use by another
                         non-root cell, or the caller's CPU is supposed to be
                         given to the new cell
-        -EEXIST (-17) - a cell with the given name already exists
+        -EEXIST (-17) - a cell with the given name or id already exists
         -EINVAL (-22) - incorrect or inconsistent configuration data
 
 
