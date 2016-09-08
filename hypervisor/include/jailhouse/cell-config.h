@@ -45,6 +45,12 @@
 
 #define JAILHOUSE_CELL_DESC_SIGNATURE	"JAILCELL"
 
+/**
+ * The jailhouse cell configuration.
+ *
+ * @note Keep Config._HEADER_FORMAT in jailhouse-cell-linux in sync with this
+ * structure.
+ */
 struct jailhouse_cell_desc {
 	char signature[8];
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
