@@ -77,7 +77,7 @@ static struct cell *cell_create(const struct jailhouse_cell_desc *cell_desc)
 		return ERR_PTR(err);
 	}
 
-	err = jailhouse_sysfs_cell_create(cell, cell_desc->name);
+	err = jailhouse_sysfs_cell_create(cell);
 	if (err)
 		/* cleanup done by jailhouse_sysfs_cell_create */
 		return ERR_PTR(err);

@@ -232,12 +232,12 @@ static struct kobj_type cell_type = {
 	.default_attrs = cell_attrs,
 };
 
-int jailhouse_sysfs_cell_create(struct cell *cell, const char *name)
+int jailhouse_sysfs_cell_create(struct cell *cell)
 {
 	int err;
 
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
-				   name);
+				   cell->name);
 	if (err) {
 		jailhouse_cell_kobj_release(&cell->kobj);
 		return err;

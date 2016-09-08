@@ -15,7 +15,7 @@
 
 #include <linux/device.h>
 
-int jailhouse_sysfs_cell_create(struct cell *cell, const char *name);
+int jailhouse_sysfs_cell_create(struct cell *cell);
 void jailhouse_sysfs_cell_register(struct cell *cell);
 void jailhouse_sysfs_cell_delete(struct cell *cell);
 
