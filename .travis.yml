@@ -30,11 +30,18 @@ install:
   - sudo apt-get install -qq python-mako gcc-arm-linux-gnueabihf make
   # Update scan.coverity.com certificate
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
-  # Install kernel build environment
-  - pushd ci
-  - wget -q http://www.kiszka.org/downloads/travis-ci/kernel-build.tar.xz
-  - tar xJf kernel-build.tar.xz
-  - popd
+  # Install kernel build environment if it's not in the cache
+  - if [ ! -L ci/linux ]; then
+        pushd ci;
+        wget http://www.kiszka.org/downloads/travis-ci/kernel-build.tar.xz;
+        tar xJf kernel-build.tar.xz;
+        popd;
+    fi
+
+cache:
+  directories:
+  - ci/linux
+  - ci/linux-4.4
 
 script:
   - if [ ${COVERITY_SCAN_BRANCH} != 1 ];
