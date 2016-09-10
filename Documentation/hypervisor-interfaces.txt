@@ -255,6 +255,20 @@ Return code: Requested value (>=0) or negative error code
         -EINVAL (-22) - invalid CPU ID
 
 
+Hypercall "Debug Console putc" (code 8)
+- - - - - - - - - - - - - - - - - - - -
+
+Write a single character to the hypervisor's debug console.
+
+Arguments: 1. character to write
+
+Return code: 0 on success, negative error code otherwise
+
+    Possible errors are:
+        -EPERM  (-1)  - cell lacks JAILHOUSE_CELL_DEBUG_CONSOLE flag in its
+                        configuration
+
+
 Communication Region
 --------------------
 

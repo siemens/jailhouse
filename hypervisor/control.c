@@ -802,6 +802,12 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 		return cell_get_state(cpu_data, arg1);
 	case JAILHOUSE_HC_CPU_GET_INFO:
 		return cpu_get_info(cpu_data, arg1, arg2);
+	case JAILHOUSE_HC_DEBUG_CONSOLE_PUTC:
+		if (!(cpu_data->cell->config->flags &
+		      JAILHOUSE_CELL_DEBUG_CONSOLE))
+			return -EPERM;
+		printk("%c", (char)arg1);
+		return 0;
 	default:
 		return -ENOSYS;
 	}
