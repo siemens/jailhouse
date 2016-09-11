@@ -46,12 +46,15 @@ __reset_entry:
 	mov	r0, #0
 	ldr	r1, =bss_start
 	ldr	r2, =bss_dwords
+	cmp	r2, #0
+	beq	2f
+
 1:	str	r0, [r1]
 	add	r1, #4
 	subs	r2, #1
 	bne	1b
 
-	ldr	sp, =stack_top
+2:	ldr	sp, =stack_top
 
 	b	inmate_main
 
