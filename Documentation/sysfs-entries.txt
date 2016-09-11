@@ -11,8 +11,8 @@ can be used for monitoring the state of the hypervisor and its cells.
 |- remap_pool_size              - number of pages in hypervisor remapping pool
 |- remap_pool_used              - used pages of hypervisor remapping pool
 `- cells
-   |- <name of cell>
-   |  |- id                     - unique numerical ID
+   |- <id>                      - unique numerical ID
+   |  |- name                   - cell name
    |  |- state                  - "running", "running/locked", "shut down", or
    |  |                           "failed"
    |  |- cpus_assigned          - bitmask of assigned logical CPUs

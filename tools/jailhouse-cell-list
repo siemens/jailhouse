@@ -54,8 +54,8 @@ if len(sys.argv) > 1:
 cells = []
 for cell_path in glob.glob('/sys/devices/jailhouse/cells/*'):
     cells.append({
-        'name': os.path.basename(cell_path),
-        'id': open(cell_path + "/id").readline().strip(),
+        'id': os.path.basename(cell_path),
+        'name': open(cell_path + "/name").readline().strip(),
         'state': open(cell_path + "/state").readline().strip(),
         'cpus_assigned': read_cpus(cell_path + "/cpus_assigned"),
         'cpus_failed': read_cpus(cell_path + "/cpus_failed")

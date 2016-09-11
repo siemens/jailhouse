@@ -66,12 +66,9 @@ function _jailhouse_get_id() {
 
 		# get possible ids and names
 		if [ -d /sys/devices/jailhouse/cells ]; then
-			for i in /sys/devices/jailhouse/cells/*/id; do
-				ids="${ids} $(cat "${i}" | tr '\n' ' ')"
-			done
-			for n in /sys/devices/jailhouse/cells/*; do
-				_quote_readline_by_ref "${n##*/}" quoted
-				names="${names} ${quoted}"
+			for i in /sys/devices/jailhouse/cells/*; do
+				ids="${ids} ${i##*/}"
+				names="${names} $(<${i}/name)"
 			done
 		fi
 
@@ -85,9 +82,8 @@ function _jailhouse_get_id() {
 
 		# get possible names
 		if [ -d /sys/devices/jailhouse/cells ]; then
-			for n in /sys/devices/jailhouse/cells/*; do
-				_quote_readline_by_ref "${n##*/}" quoted
-				names="${names} ${quoted}"
+			for n in /sys/devices/jailhouse/cells/*/name; do
+				names="${names} $(<${n})"
 			done
 		fi
 

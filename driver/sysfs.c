@@ -139,12 +139,12 @@ static struct attribute_group stats_attr_group = {
 	.name = "statistics"
 };
 
-static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
-		       char *buffer)
+static ssize_t name_show(struct kobject *kobj, struct kobj_attribute *attr,
+			 char *buffer)
 {
 	struct cell *cell = container_of(kobj, struct cell, kobj);
 
-	return sprintf(buffer, "%u\n", cell->id);
+	return sprintf(buffer, "%s\n", cell->name);
 }
 
 static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
@@ -212,14 +212,14 @@ static ssize_t cpus_failed_show(struct kobject *kobj,
 	return written;
 }
 
-static struct kobj_attribute cell_id_attr = __ATTR_RO(id);
+static struct kobj_attribute cell_name_attr = __ATTR_RO(name);
 static struct kobj_attribute cell_state_attr = __ATTR_RO(state);
 static struct kobj_attribute cell_cpus_assigned_attr =
 	__ATTR_RO(cpus_assigned);
 static struct kobj_attribute cell_cpus_failed_attr = __ATTR_RO(cpus_failed);
 
 static struct attribute *cell_attrs[] = {
-	&cell_id_attr.attr,
+	&cell_name_attr.attr,
 	&cell_state_attr.attr,
 	&cell_cpus_assigned_attr.attr,
 	&cell_cpus_failed_attr.attr,
@@ -236,8 +236,8 @@ int jailhouse_sysfs_cell_create(struct cell *cell)
 {
 	int err;
 
-	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%s",
-				   cell->name);
+	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%d",
+				   cell->id);
 	if (err) {
 		jailhouse_cell_kobj_release(&cell->kobj);
 		return err;

@@ -16,10 +16,12 @@ import datetime
 import os
 import sys
 
-stats_dir = "/sys/devices/jailhouse/cells/%s/statistics"
+cells_dir = "/sys/devices/jailhouse/cells/"
+cell_dir  = cells_dir + "%d/"
+stats_dir = cell_dir + "statistics/"
 
 
-def main(stdscr, cell, stats_names):
+def main(stdscr, cell_id, cell_name, stats_names):
     try:
         curses.use_default_colors()
         curses.curs_set(0)
@@ -33,7 +35,7 @@ def main(stdscr, cell, stats_names):
         now = datetime.datetime.now()
 
         for name in stats_names:
-            f = open((stats_dir + "/%s") % (cell, name), "r")
+            f = open((stats_dir + "/%s") % (cell_id, name), "r")
             value[name] = int(f.read())
 
         def sortkey(name):
@@ -43,7 +45,7 @@ def main(stdscr, cell, stats_names):
                 return (old_value[name] - value[name], -value[name], name)
 
         stdscr.erase()
-        stdscr.addstr(0, 0, "Statistics for %s cell" % cell)
+        stdscr.addstr(0, 0, "Statistics for %s cell" % cell_name)
         (height, width) = stdscr.getmaxyx()
         stdscr.hline(2, 0, " ", width, curses.A_REVERSE)
         stdscr.addstr(2, 0, "COUNTER", curses.A_REVERSE)
@@ -89,6 +91,7 @@ if argc < 2 or argc > 3 or (not use_name and argc > 2):
 if sys.argv[1] in ("--help", "-h"):
     usage(0)
 
+cell_id = -1
 try:
     if use_name:
         cell_name = sys.argv[2]
@@ -96,17 +99,21 @@ try:
         cell_name = sys.argv[1]
         try:
             cell_id = int(sys.argv[1])
-            for cell in os.listdir("/sys/devices/jailhouse/cells"):
-                f = open("/sys/devices/jailhouse/cells/%s/id" % cell, "r")
-                if int(f.read()) == cell_id:
-                    cell_name = cell
-                    break
+            with open((cell_dir + "name") % cell_id, "r") as f:
+                cell_name = f.read().rstrip()
         except ValueError:
             pass
 
-    stats_names = os.listdir(stats_dir % cell_name)
+    if cell_id == -1:
+        for id in os.listdir(cells_dir):
+            f = open((cell_dir + "name") % int(id), "r")
+            if f.read().rstrip() == cell_name:
+                cell_id = int(id)
+                break
+
+    stats_names = os.listdir(stats_dir % cell_id)
 except OSError as e:
     print("reading stats: %s" % e.strerror, file=sys.stderr)
     exit(1)
 
-curses.wrapper(main, cell_name, stats_names)
+curses.wrapper(main, cell_id, cell_name, stats_names)
