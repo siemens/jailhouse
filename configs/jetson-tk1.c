@@ -24,7 +24,7 @@ struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[12];
-	struct jailhouse_irqchip irqchips[3];
+	struct jailhouse_irqchip irqchips[2];
 } __attribute__((packed)) config = {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
@@ -146,16 +146,9 @@ struct {
 		},
 		/* GIC */ {
 			.address = 0x50041000,
-			.pin_base = 96,
-			.pin_bitmap = {
-				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
-			},
-		},
-		/* GIC */ {
-			.address = 0x50041000,
 			.pin_base = 160,
 			.pin_bitmap = {
-				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+				0xffffffff, 0xffffffff
 			},
 		},
 	},
