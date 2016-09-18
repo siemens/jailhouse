@@ -299,15 +299,17 @@ static void check_events(struct per_cpu *cpu_data)
 		cpu_reset();
 }
 
-void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn)
+void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
+		     unsigned int count_event)
 {
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
-
 	switch (irqn) {
 	case SGI_INJECT:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] += count_event;
 		irqchip_inject_pending(cpu_data);
 		break;
 	case SGI_EVENT:
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
+			count_event;
 		check_events(cpu_data);
 		break;
 	default:
@@ -331,17 +333,18 @@ unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id)
  * Handle the maintenance interrupt, the rest is injected into the cell.
  * Return true when the IRQ has been handled by the hyp.
  */
-bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn)
+bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn,
+			  unsigned int count_event)
 {
 	if (irqn == MAINTENANCE_IRQ) {
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE]++;
-
+		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE] +=
+			count_event;
 		irqchip_inject_pending(cpu_data);
+
 		return true;
 	}
 
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ]++;
-
+	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ] += count_event;
 	irqchip_set_pending(cpu_data, irqn);
 
 	return false;

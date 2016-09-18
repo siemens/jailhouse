@@ -71,6 +71,8 @@ long psci_dispatch(struct trap_context *ctx)
 	struct per_cpu *cpu_data = this_cpu_data();
 	u32 function_id = ctx->regs[0];
 
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_PSCI]++;
+
 	switch (function_id) {
 	case PSCI_VERSION:
 		/* Major[31:16], minor[15:0] */

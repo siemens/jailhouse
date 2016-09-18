@@ -293,6 +293,8 @@ static int arch_handle_cp15_32(struct trap_context *ctx)
 	match;								\
 })
 
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CP15]++;
+
 	if (!read)
 		access_cell_reg(ctx, rt, &val, true);
 
@@ -373,6 +375,8 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	}						\
 	match;						\
 })
+
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CP15]++;
 
 	/* all regs are write-only / only trapped on writes */
 	if (read)
