@@ -216,12 +216,16 @@ need to add
 
     memmap=66M$0x3b000000
 
-as parameter to the command line of the virtual machine's kernel. The Jailhouse
-QEMU cell config will block use of the serial port by the guest OS, so make
-sure that the guest kernel command line does NOT have its console set to log
-to the serial port (ie remove any 'console=ttyS0' arguments from the grub
-config). Reboot the guest and load jailhouse.ko. Then enable Jailhouse like
-this:
+as parameter to the command line of the virtual machine's kernel. Note that if
+you plan to put this parameter in GRUB2 variables in /etc/default/grub, then you
+will need three escape characters before the dollar
+(e.g. ```GRUB_CMDLINE_LINUX_DEFAULT="memmap=66M\\\$0x3b000000"```).
+
+The Jailhouse QEMU cell config will block use of the serial port by the guest
+OS, so make sure that the guest kernel command line does NOT have its console
+set to log to the serial port (ie remove any 'console=ttyS0' arguments from the
+grub config). Reboot the guest and load jailhouse.ko. Then enable Jailhouse
+like this:
 
     jailhouse enable /path/to/qemu-vm.cell
 
