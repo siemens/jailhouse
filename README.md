@@ -50,7 +50,7 @@ Mailing list:
     - https://groups.google.com/forum/#!forum/jailhouse-dev/join
 
   - Archives
-    - http://news.gmane.org/gmane.linux.jailhouse
+    - https://groups.google.com/forum/#!forum/jailhouse-dev
 
 Continuous integration:
 
@@ -178,9 +178,10 @@ Demonstration in QEMU/KVM
 -------------------------
 
 The included system configuration qemu-vm.c can be used to run Jailhouse in
-QEMU/KVM virtual machine on x86 hosts (Intel and AMD are supported). Currently
-it requires Linux 4.4 or newer on the host side. QEMU version 2.7 or newer is
-required.
+QEMU/KVM virtual machine on x86 hosts.  Currently it requires Linux 4.4 or
+newer on the host side. QEMU version 2.7 or newer is required. Better using an
+Intel architecture since Jailhouse does not yet fully support AMD under
+QEMU/KVM.
 
 You also need a Linux guest image with a recent kernel (tested with >= 3.9) and
 the ability to build a module for this kernel. Further steps depend on the type
@@ -215,12 +216,16 @@ need to add
 
     memmap=66M$0x3b000000
 
-as parameter to the command line of the virtual machine's kernel. The Jailhouse
-QEMU cell config will block use of the serial port by the guest OS, so make
-sure that the guest kernel command line does NOT have its console set to log
-to the serial port (ie remove any 'console=ttyS0' arguments from the grub
-config). Reboot the guest and load jailhouse.ko. Then enable Jailhouse like
-this:
+as parameter to the command line of the virtual machine's kernel. Note that if
+you plan to put this parameter in GRUB2 variables, then you will need three
+escape characters before the dollar
+(e.g. ```GRUB_CMDLINE_LINUX_DEFAULT="memmap=66M\\\$0x3b000000"```).
+
+The Jailhouse QEMU cell config will block use of the serial port by the guest
+OS, so make sure that the guest kernel command line does NOT have its console
+set to log to the serial port (ie remove any 'console=ttyS0' arguments from the
+grub config). Reboot the guest and load jailhouse.ko. Then enable Jailhouse
+like this:
 
     jailhouse enable /path/to/qemu-vm.cell
 
