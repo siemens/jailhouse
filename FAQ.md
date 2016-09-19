@@ -57,6 +57,9 @@ If everything else fails, consider buying a PCI serial adapter. Now, attach
 a Linux machine to the other side of serial connection and use terminal emulator
 like minicom to grab the log messages.
 
+To enable error tracing, put ```#define CONFIG_TRACE_ERROR``` in file
+hypervisor/include/jailhouse/config.h before compiling.
+
 Please note Jailhouse developers may ask you for these logs, shall you come for
 help to jailhouse-dev mailing list, because they are extremely useful to analyze
 machine hangs. So please have the logs at hand, if possible.
