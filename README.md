@@ -50,7 +50,7 @@ Mailing list:
     - https://groups.google.com/forum/#!forum/jailhouse-dev/join
 
   - Archives
-    - http://news.gmane.org/gmane.linux.jailhouse
+    - https://groups.google.com/forum/#!forum/jailhouse-dev
 
 Continuous integration:
 
