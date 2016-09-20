@@ -220,33 +220,40 @@ int gic_probe_cpu_id(unsigned int cpu)
 void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
+	unsigned long targets = sgi->targets;
 	unsigned int cpu;
-	unsigned long targets;
-	unsigned int this_cpu = cpu_data->cpu_id;
-	struct cell *cell = cpu_data->cell;
-	bool is_target = false;
 
-	targets = sgi->targets;
-	sgi->targets = 0;
+	if (sgi->routing_mode == 2) {
+		/* Route to the caller itself */
+		irqchip_set_pending(cpu_data, sgi->id);
+		sgi->targets = (1 << cpu_data->cpu_id);
+	} else {
+		sgi->targets = 0;
 
-	/* Filter the targets */
-	for_each_cpu_except(cpu, cell->cpu_set, this_cpu) {
-		/*
-		 * When using a cpu map to target the different CPUs (GICv2),
-		 * they are independent from the physical CPU IDs, so there is
-		 * no need to translate them to the hypervisor's virtual IDs.
-		 */
-		if (virt_input)
-			is_target = !!test_bit(arm_cpu_phys2virt(cpu),
-					       &targets);
-		else
-			is_target = !!(targets & target_cpu_map[cpu]);
+		for_each_cpu(cpu, cpu_data->cell->cpu_set) {
+			if (sgi->routing_mode == 1) {
+				/* Route to all (cell) CPUs but the caller. */
+				if (cpu == cpu_data->cpu_id)
+					continue;
+			} else if (virt_input) {
+				if (!test_bit(arm_cpu_phys2virt(cpu),
+					      &targets))
+					continue;
+			} else {
+				/*
+				 * When using a cpu map to target the different
+				 * CPUs (GICv2), they are independent from the
+				 * physical CPU IDs, so there is no need to
+				 * translate them to the hypervisor's virtual
+				 * IDs.
+				 */
+				if (!(targets & target_cpu_map[cpu]))
+					continue;
+			}
 
-		if (sgi->routing_mode == 0 && !is_target)
-			continue;
-
-		irqchip_set_pending(per_cpu(cpu), sgi->id);
-		sgi->targets |= (1 << cpu);
+			irqchip_set_pending(per_cpu(cpu), sgi->id);
+			sgi->targets |= (1 << cpu);
+		}
 	}
 
 	/* Let the other CPUS inject their SGIs */
