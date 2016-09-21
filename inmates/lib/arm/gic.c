@@ -21,15 +21,16 @@ void vector_irq(void)
 {
 	u32 irqn;
 
-	do {
+	while (1) {
 		irqn = gic_read_ack();
+		if (irqn == 0x3ff)
+			break;
 
 		if (irq_handler)
 			irq_handler(irqn);
 
 		gic_write_eoi(irqn);
-
-	} while (irqn != 0x3ff);
+	}
 }
 
 void gic_setup(irq_handler_t handler)
