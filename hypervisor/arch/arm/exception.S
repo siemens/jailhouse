@@ -79,9 +79,3 @@ vmreturn:
 hvc:
 	hvc	#0
 	bx	lr
-
-	.arch_extension sec
-	.globl smc
-smc:
-	smc	#0
-	bx	lr
