@@ -28,7 +28,6 @@
 #  define GICR_BASE	((void *)0x2f100000)
 #  define GICR_SIZE	0x100000
 
-#  include <asm/gic_v3.h>
 # else /* GICv2 */
 #  define GICD_BASE	((void *)0x2c001000)
 #  define GICD_SIZE	0x1000
@@ -44,7 +43,6 @@
 #  define GICV_BASE	((void *)0x2c006000)
 #  define GICV_SIZE	0x2000
 
-#  include <asm/gic_v2.h>
 # endif /* GIC */
 
 # define MAINTENANCE_IRQ 25
@@ -63,8 +61,6 @@
 #  define GICV_BASE	((void *)0x01c86000)
 #  define GICV_SIZE	0x2000
 
-#  include <asm/gic_v2.h>
-
 # define MAINTENANCE_IRQ 25
 
 #endif /* CONFIG_MACH_SUN7I */
@@ -79,8 +75,6 @@
 #  define GICH_SIZE	0x2000
 #  define GICV_BASE	((void *)0x50046000)
 #  define GICV_SIZE	0x2000
-
-#  include <asm/gic_v2.h>
 
 # define MAINTENANCE_IRQ 25
 

@@ -15,6 +15,11 @@
 
 #include <jailhouse/mmio.h>
 #include <jailhouse/types.h>
+#if defined(CONFIG_ARM_GIC_V2)
+# include <asm/gic_v2.h>
+#elif defined(CONFIG_ARM_GIC_V3)
+# include <asm/gic_v3.h>
+#endif
 
 #define GICD_CTLR			0x0000
 # define GICD_CTLR_ARE_NS		(1 << 4)
