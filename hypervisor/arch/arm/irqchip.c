@@ -252,7 +252,7 @@ int irqchip_init(void)
 		dev_id |= cidr << i * 8;
 	}
 	if (dev_id != AMBA_DEVICE)
-		goto err_no_distributor;
+		return trace_error(-ENODEV);
 
 	/* Probe the GIC version */
 	pidr2 = mmio_read32(gicd_base + GICD_PIDR2);
@@ -262,7 +262,7 @@ int irqchip_init(void)
 	case 0x4:
 		break;
 	default:
-		goto err_no_distributor;
+		return trace_error(-ENODEV);
 	}
 
 	err = irqchip.init();
@@ -272,10 +272,4 @@ int irqchip_init(void)
 	irqchip_is_init = true;
 
 	return 0;
-
-err_no_distributor:
-	printk("GIC: no supported distributor found\n");
-	arch_unmap_device(gicd_base, gicd_size);
-
-	return -ENODEV;
 }
