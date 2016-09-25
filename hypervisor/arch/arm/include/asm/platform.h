@@ -46,7 +46,6 @@
 # endif /* GIC */
 
 # define MAINTENANCE_IRQ 25
-# define SYSREGS_BASE	((void *)0x1c010000)
 
 #endif /* CONFIG_MACH_VEXPRESS */
 

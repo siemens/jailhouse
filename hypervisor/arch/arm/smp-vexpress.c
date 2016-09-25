@@ -15,9 +15,10 @@
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <asm/control.h>
-#include <asm/platform.h>
 #include <asm/setup.h>
 #include <asm/smp.h>
+
+#define SYSREGS_BASE		((void *)0x1c010000)
 
 #define VEXPRESS_FLAGSSET	0x30
 
