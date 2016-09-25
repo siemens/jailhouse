@@ -265,12 +265,13 @@ int irqchip_init(void)
 		goto err_no_distributor;
 	}
 
-	if (irqchip.init) {
-		err = irqchip.init();
-		irqchip_is_init = true;
-
+	err = irqchip.init();
+	if (err)
 		return err;
-	}
+
+	irqchip_is_init = true;
+
+	return 0;
 
 err_no_distributor:
 	printk("GIC: no supported distributor found\n");
