@@ -56,6 +56,8 @@ struct sgi;
 
 extern u8 target_cpu_map[];
 
+extern void *gicd_base;
+
 int gic_probe_cpu_id(unsigned int cpu);
 enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio);
 enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,

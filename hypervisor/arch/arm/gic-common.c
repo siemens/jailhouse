@@ -24,8 +24,6 @@
 #define REG_RANGE(base, n, size)		\
 		(base) ... ((base) + (n - 1) * (size))
 
-extern void *gicd_base;
-
 static DEFINE_SPINLOCK(dist_lock);
 
 /* The GIC interface numbering does not necessarily match the logical map */

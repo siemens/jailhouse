@@ -32,7 +32,6 @@ static unsigned int gic_num_lr;
 static unsigned int gic_num_priority_bits;
 static u32 gic_version;
 
-extern void *gicd_base;
 static void *gicr_base;
 
 static int gic_init(void)

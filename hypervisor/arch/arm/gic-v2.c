@@ -18,7 +18,6 @@
 
 static unsigned int gic_num_lr;
 
-extern void *gicd_base;
 void *gicc_base;
 void *gich_base;
 
