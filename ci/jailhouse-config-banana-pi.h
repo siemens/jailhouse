@@ -1,3 +1,3 @@
-#define CONFIG_ARM_GIC			1
+#define CONFIG_ARM_GIC_V2		1
 #define CONFIG_MACH_SUN7I		1
 #define CONFIG_SERIAL_8250_DW		1
