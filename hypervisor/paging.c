@@ -445,6 +445,48 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 }
 
 /**
+ * Map physical device resource into hypervisor address space
+ * @param phys		Physical address of the resource.
+ * @param size		Size of the resource.
+ *
+ * @return Virtual mapping address of the resource or NULL on error.
+ */
+void *paging_map_device(unsigned long phys, unsigned long size)
+{
+	void *virt;
+
+	virt = page_alloc(&remap_pool, PAGES(size));
+	if (!virt)
+		return NULL;
+
+	if (paging_create(&hv_paging_structs, phys, size, (unsigned long)virt,
+			  PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
+			  PAGING_NON_COHERENT) != 0) {
+		page_free(&remap_pool, virt, PAGES(size));
+		return NULL;
+	}
+
+	return virt;
+}
+
+/**
+ * Unmap physical device resource from hypervisor address space
+ * @param phys		Physical address of the resource.
+ * @param virt		Virtual address of the resource.
+ * @param size		Size of the resource.
+ *
+ * @note Unmap must use the same parameters as provided to / returned by
+ * paging_map_device().
+ */
+void paging_unmap_device(unsigned long phys, void *virt, unsigned long size)
+{
+	/* Cannot fail if paired with paging_map_device. */
+	paging_destroy(&hv_paging_structs, (unsigned long)virt, size,
+		       PAGING_NON_COHERENT);
+	page_free(&remap_pool, virt, PAGES(size));
+}
+
+/**
  * Map guest (cell) pages into the hypervisor address space.
  * @param pg_structs	Descriptor of the guest paging structures if @c gaddr
  * 			is a guest-virtual address or @c NULL if it is a

@@ -243,6 +243,9 @@ int paging_destroy(const struct paging_structures *pg_structs,
 		   unsigned long virt, unsigned long size,
 		   enum paging_coherent coherent);
 
+void *paging_map_device(unsigned long phys, unsigned long size);
+void paging_unmap_device(unsigned long phys, void *virt, unsigned long size);
+
 void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			     unsigned long gaddr, unsigned int num,
 			     unsigned long flags);
