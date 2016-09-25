@@ -18,7 +18,7 @@
 #include <asm/setup.h>
 #include <asm/smp.h>
 
-#define SYSREGS_BASE		((void *)0x1c010000)
+#define SYSREGS_BASE		0x1c010000
 
 #define VEXPRESS_FLAGSSET	0x30
 
@@ -58,13 +58,13 @@ static enum mmio_result smp_mmio(void *arg, struct mmio_access *mmio)
 
 int smp_init(void)
 {
-	int err;
+	void *sysregs_base;
 
-	err = arch_map_device(SYSREGS_BASE, SYSREGS_BASE, PAGE_SIZE);
-	if (err)
-		return err;
-	root_entry = mmio_read32(SYSREGS_BASE + VEXPRESS_FLAGSSET);
-	arch_unmap_device(SYSREGS_BASE, PAGE_SIZE);
+	sysregs_base = paging_map_device(SYSREGS_BASE, PAGE_SIZE);
+	if (!sysregs_base)
+		return -ENOMEM;
+	root_entry = mmio_read32(sysregs_base + VEXPRESS_FLAGSSET);
+	paging_unmap_device(SYSREGS_BASE, sysregs_base, PAGE_SIZE);
 
 	smp_cell_init(&root_cell);
 

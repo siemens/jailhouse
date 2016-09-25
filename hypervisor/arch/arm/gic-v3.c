@@ -40,11 +40,13 @@ static int gic_init(void)
 	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
 		return trace_error(-EIO);
 
-	gicr_base =
-	    (void *)(unsigned long)system_config->platform_info.arm.gicr_base;
-
 	/* Let the per-cpu code access the redistributors */
-	return arch_map_device(gicr_base, gicr_base, GICR_SIZE);
+	gicr_base = paging_map_device(
+			system_config->platform_info.arm.gicr_base, GICR_SIZE);
+	if (!gicr_base)
+		return -ENOMEM;
+
+	return 0;
 }
 
 static void gic_clear_pending_irqs(void)

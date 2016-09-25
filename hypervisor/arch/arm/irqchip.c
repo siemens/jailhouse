@@ -239,12 +239,10 @@ int irqchip_init(void)
 	if (irqchip_is_init)
 		return 0;
 
-	gicd_base =
-	    (void *)(unsigned long)system_config->platform_info.arm.gicd_base;
-
-	err = arch_map_device(gicd_base, gicd_base, GICD_SIZE);
-	if (err)
-		return err;
+	gicd_base = paging_map_device(
+			system_config->platform_info.arm.gicd_base, GICD_SIZE);
+	if (!gicd_base)
+		return -ENOMEM;
 
 	for (i = 3; i >= 0; i--) {
 		cidr = mmio_read32(gicd_base + GICD_CIDR0 + i * 4);
