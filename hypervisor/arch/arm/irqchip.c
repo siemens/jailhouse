@@ -243,7 +243,8 @@ int irqchip_init(void)
 	gicd_base = GICD_BASE;
 	gicd_size = GICD_SIZE;
 
-	if ((err = arch_map_device(gicd_base, gicd_base, gicd_size)) != 0)
+	err = arch_map_device(gicd_base, gicd_base, gicd_size);
+	if (err)
 		return err;
 
 	for (i = 3; i >= 0; i--) {
