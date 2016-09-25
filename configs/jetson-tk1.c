@@ -15,7 +15,7 @@
  * NOTE: Add "mem=1984M vmalloc=512M" to the kernel command line.
  */
 
-#include <linux/types.h>
+#include <jailhouse/types.h>
 #include <jailhouse/cell-config.h>
 
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])

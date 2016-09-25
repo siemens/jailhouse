@@ -10,7 +10,13 @@
 # the COPYING file in the top-level directory.
 #
 
-ccflags-y := -I$(src)/../hypervisor/include -Wextra
+LINUXINCLUDE := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
+		-I$(src)/../hypervisor/include
+KBUILD_CFLAGS := -Wextra
+
+ifneq ($(wildcard $(obj)/../hypervisor/include/jailhouse/config.h),)
+KBUILD_CFLAGS += -include $(obj)/../hypervisor/include/jailhouse/config.h
+endif
 
 OBJCOPYFLAGS := -O binary
 

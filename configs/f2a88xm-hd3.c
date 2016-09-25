@@ -17,7 +17,7 @@
  *       "memmap=0x4200000$0x3b000000"
  */
 
-#include <linux/types.h>
+#include <jailhouse/types.h>
 #include <jailhouse/cell-config.h>
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))

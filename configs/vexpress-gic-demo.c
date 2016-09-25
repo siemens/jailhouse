@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <linux/types.h>
+#include <jailhouse/types.h>
 #include <jailhouse/cell-config.h>
 
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
