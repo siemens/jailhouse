@@ -16,7 +16,7 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/types.h>
 #include <asm/control.h>
-#include <asm/gic_common.h>
+#include <asm/gic.h>
 #include <asm/irqchip.h>
 #include <asm/platform.h>
 #include <asm/setup.h>

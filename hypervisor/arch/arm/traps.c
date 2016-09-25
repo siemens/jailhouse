@@ -17,7 +17,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <asm/control.h>
-#include <asm/gic_common.h>
+#include <asm/gic.h>
 #include <asm/psci.h>
 #include <asm/platform.h>
 #include <asm/traps.h>
