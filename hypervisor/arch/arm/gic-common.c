@@ -18,7 +18,6 @@
 #include <asm/gic.h>
 #include <asm/irqchip.h>
 #include <asm/percpu.h>
-#include <asm/platform.h>
 #include <asm/spinlock.h>
 #include <asm/traps.h>
 

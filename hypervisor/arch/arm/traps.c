@@ -19,7 +19,6 @@
 #include <asm/control.h>
 #include <asm/gic.h>
 #include <asm/psci.h>
-#include <asm/platform.h>
 #include <asm/traps.h>
 #include <asm/sysregs.h>
 

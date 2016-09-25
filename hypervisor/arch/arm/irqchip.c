@@ -12,6 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
@@ -20,7 +21,6 @@
 #include <asm/control.h>
 #include <asm/gic.h>
 #include <asm/irqchip.h>
-#include <asm/platform.h>
 #include <asm/setup.h>
 #include <asm/sysregs.h>
 
@@ -150,6 +150,7 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 
 int irqchip_cell_init(struct cell *cell)
 {
+	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	const struct jailhouse_irqchip *chip;
 	unsigned int n, pos;
 	int err;
@@ -169,7 +170,7 @@ int irqchip_cell_init(struct cell *cell)
 	 * the hypervisor.
 	 */
 	cell->arch.irq_bitmap[0] = ~((1 << SGI_INJECT) | (1 << SGI_EVENT) |
-				     (1 << MAINTENANCE_IRQ));
+				     (1 << mnt_irq));
 
 	err = irqchip.cell_init(cell);
 	if (err)
@@ -238,8 +239,8 @@ int irqchip_init(void)
 	if (irqchip_is_init)
 		return 0;
 
-	/* FIXME: parse device tree */
-	gicd_base = GICD_BASE;
+	gicd_base =
+	    (void *)(unsigned long)system_config->platform_info.arm.gicd_base;
 
 	err = arch_map_device(gicd_base, gicd_base, GICD_SIZE);
 	if (err)

@@ -37,6 +37,13 @@ struct {
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_IO,
 		},
+		.platform_info.arm = {
+			.gicd_base = 0x50041000,
+			.gicc_base = 0x50042000,
+			.gich_base = 0x50044000,
+			.gicv_base = 0x50046000,
+			.maintenance_irq = 25,
+		},
 		.root_cell = {
 			.name = "Jetson-TK1",
 

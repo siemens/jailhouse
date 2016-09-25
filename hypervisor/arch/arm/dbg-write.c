@@ -14,7 +14,6 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/debug.h>
-#include <asm/platform.h>
 
 static struct uart_chip uart;
 

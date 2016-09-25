@@ -18,7 +18,6 @@
 #include <asm/control.h>
 #include <asm/gic.h>
 #include <asm/irqchip.h>
-#include <asm/platform.h>
 #include <asm/setup.h>
 #include <asm/traps.h>
 
@@ -42,8 +41,8 @@ static int gic_init(void)
 	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
 		return trace_error(-EIO);
 
-	/* FIXME: parse a dt */
-	gicr_base = GICR_BASE;
+	gicr_base =
+	    (void *)(unsigned long)system_config->platform_info.arm.gicr_base;
 
 	/* Let the per-cpu code access the redistributors */
 	return arch_map_device(gicr_base, gicr_base, GICR_SIZE);
@@ -70,6 +69,7 @@ static void gic_clear_pending_irqs(void)
 
 static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
+	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	unsigned int i;
 	void *gicr = cpu_data->gicr_base;
 	unsigned long active;
@@ -90,8 +90,7 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	}
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
-	mmio_write32(gicr + GICR_ISENABLER,
-		     0x0000ffff | (1 << MAINTENANCE_IRQ));
+	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
 	/*
 	 * Disable PPIs, except for the maintenance interrupt.
@@ -99,8 +98,8 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	 * enabled - except for the maintenance interrupt we used.
 	 */
 	mmio_write32(gicr + GICR_ICENABLER,
-		     root_shutdown ? 1 << MAINTENANCE_IRQ :
-				     0xffff0000 & ~(1 << MAINTENANCE_IRQ));
+		     root_shutdown ? 1 << mnt_irq :
+				     0xffff0000 & ~(1 << mnt_irq));
 
 	if (root_shutdown) {
 		/* Restore the root config */
@@ -121,6 +120,7 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 
 static int gic_cpu_init(struct per_cpu *cpu_data)
 {
+	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	u64 typer;
 	u32 pidr;
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
@@ -153,7 +153,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(redist_base + GICR_SGI_BASE + GICR_ISENABLER,
-		     0x0000ffff | (1 << MAINTENANCE_IRQ));
+		     0x0000ffff | (1 << mnt_irq));
 
 	/*
 	 * Set EOIMode to 1

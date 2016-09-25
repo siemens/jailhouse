@@ -32,6 +32,18 @@ struct {
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_IO,
 		},
+		.platform_info.arm = {
+#ifdef CONFIG_ARM_GIC_V3
+			.gicd_base = 0x2f000000,
+			.gicr_base = 0x2f100000,
+#else /* GICv2 */
+			.gicd_base = 0x2c001000,
+			.gicc_base = 0x2c002000,
+			.gich_base = 0x2c004000,
+			.gicv_base = 0x2c006000,
+#endif
+			.maintenance_irq = 25,
+		},
 		.root_cell = {
 			.name = "VExpress Linux",
 

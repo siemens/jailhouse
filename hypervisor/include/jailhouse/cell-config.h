@@ -171,6 +171,15 @@ struct jailhouse_system {
 			struct jailhouse_iommu
 				iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 		} __attribute__((packed)) x86;
+		struct {
+			u64 gicd_base;
+			u64 gicc_base;
+			u64 gich_base;
+			u64 gicv_base;
+			u64 gicr_base;
+			u8 maintenance_irq;
+			u8 padding[3];
+		} __attribute__((packed)) arm;
 	} __attribute__((packed)) platform_info;
 	__u32 interrupt_limit;
 	struct jailhouse_cell_desc root_cell;

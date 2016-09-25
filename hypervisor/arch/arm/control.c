@@ -18,7 +18,6 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
-#include <asm/platform.h>
 #include <asm/processor.h>
 #include <asm/smp.h>
 #include <asm/sysregs.h>
@@ -336,7 +335,7 @@ unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id)
 bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn,
 			  unsigned int count_event)
 {
-	if (irqn == MAINTENANCE_IRQ) {
+	if (irqn == system_config->platform_info.arm.maintenance_irq) {
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE] +=
 			count_event;
 		irqchip_inject_pending(cpu_data);

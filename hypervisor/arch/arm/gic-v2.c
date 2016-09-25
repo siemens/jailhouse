@@ -14,24 +14,22 @@
 #include <jailhouse/mmio.h>
 #include <asm/gic.h>
 #include <asm/irqchip.h>
-#include <asm/platform.h>
 #include <asm/setup.h>
 
 static unsigned int gic_num_lr;
 
 extern void *gicd_base;
 void *gicc_base;
-void *gicv_base;
 void *gich_base;
 
 static int gic_init(void)
 {
 	int err;
 
-	/* FIXME: parse device tree */
-	gicc_base = GICC_BASE;
-	gich_base = GICH_BASE;
-	gicv_base = GICV_BASE;
+	gicc_base =
+	    (void *)(unsigned long)system_config->platform_info.arm.gicc_base;
+	gich_base =
+	    (void *)(unsigned long)system_config->platform_info.arm.gich_base;
 
 	err = arch_map_device(gicc_base, gicc_base, GICC_SIZE);
 	if (err)
@@ -56,6 +54,7 @@ static void gic_clear_pending_irqs(void)
 
 static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
+	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	unsigned int i;
 	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
 	u32 active;
@@ -72,8 +71,7 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	}
 
 	/* Ensure all IPIs and the maintenance PPI are enabled */
-	mmio_write32(gicd_base + GICD_ISENABLER,
-		     0x0000ffff | (1 << MAINTENANCE_IRQ));
+	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
 	/*
 	 * Disable PPIs, except for the maintenance interrupt.
@@ -81,8 +79,8 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	 * enabled - except for the maintenance interrupt we used.
 	 */
 	mmio_write32(gicd_base + GICD_ICENABLER,
-		     root_shutdown ? 1 << MAINTENANCE_IRQ :
-				     0xffff0000 & ~(1 << MAINTENANCE_IRQ));
+		     root_shutdown ? 1 << mnt_irq :
+				     0xffff0000 & ~(1 << mnt_irq));
 
 	if (is_shutdown)
 		mmio_write32(gich_base + GICH_HCR, 0);
@@ -107,12 +105,12 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 
 static int gic_cpu_init(struct per_cpu *cpu_data)
 {
+	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	u32 vtr, vmcr;
 	u32 cell_gicc_ctlr, cell_gicc_pmr;
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
-	mmio_write32(gicd_base + GICD_ISENABLER,
-		     0x0000ffff | (1 << MAINTENANCE_IRQ));
+	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
 	cell_gicc_ctlr = mmio_read32(gicc_base + GICC_CTLR);
 	cell_gicc_pmr = mmio_read32(gicc_base + GICC_PMR);
@@ -183,7 +181,8 @@ static int gic_cell_init(struct cell *cell)
 	 * here.
 	 * As for now, none of them seem to have virtualization extensions.
 	 */
-	err = paging_create(&cell->arch.mm, (unsigned long)gicv_base,
+	err = paging_create(&cell->arch.mm,
+			    system_config->platform_info.arm.gicv_base,
 			    GICC_SIZE, (unsigned long)gicc_base,
 			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
 			     S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
