@@ -35,7 +35,6 @@
 extern struct irqchip_ops irqchip;
 
 void *gicd_base;
-unsigned long gicd_size;
 
 /*
  * The init function must be called after the MMU setup, and whilst in the
@@ -241,9 +240,8 @@ int irqchip_init(void)
 
 	/* FIXME: parse device tree */
 	gicd_base = GICD_BASE;
-	gicd_size = GICD_SIZE;
 
-	err = arch_map_device(gicd_base, gicd_base, gicd_size);
+	err = arch_map_device(gicd_base, gicd_base, GICD_SIZE);
 	if (err)
 		return err;
 

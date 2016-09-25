@@ -20,12 +20,9 @@
 static unsigned int gic_num_lr;
 
 extern void *gicd_base;
-extern unsigned int gicd_size;
 void *gicc_base;
-unsigned int gicc_size;
 void *gicv_base;
 void *gich_base;
-unsigned int gich_size;
 
 static int gic_init(void)
 {
@@ -33,16 +30,14 @@ static int gic_init(void)
 
 	/* FIXME: parse device tree */
 	gicc_base = GICC_BASE;
-	gicc_size = GICC_SIZE;
 	gich_base = GICH_BASE;
-	gich_size = GICH_SIZE;
 	gicv_base = GICV_BASE;
 
-	err = arch_map_device(gicc_base, gicc_base, gicc_size);
+	err = arch_map_device(gicc_base, gicc_base, GICC_SIZE);
 	if (err)
 		return err;
 
-	err = arch_map_device(gich_base, gich_base, gich_size);
+	err = arch_map_device(gich_base, gich_base, GICH_SIZE);
 
 	return err;
 }
@@ -189,21 +184,21 @@ static int gic_cell_init(struct cell *cell)
 	 * As for now, none of them seem to have virtualization extensions.
 	 */
 	err = paging_create(&cell->arch.mm, (unsigned long)gicv_base,
-			    gicc_size, (unsigned long)gicc_base,
+			    GICC_SIZE, (unsigned long)gicc_base,
 			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
 			     S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
 			    PAGING_COHERENT);
 	if (err)
 		return err;
 
-	mmio_region_register(cell, (unsigned long)gicd_base, gicd_size,
+	mmio_region_register(cell, (unsigned long)gicd_base, GICD_SIZE,
 			     gic_handle_dist_access, NULL);
 	return 0;
 }
 
 static void gic_cell_exit(struct cell *cell)
 {
-	paging_destroy(&cell->arch.mm, (unsigned long)gicc_base, gicc_size,
+	paging_destroy(&cell->arch.mm, (unsigned long)gicc_base, GICC_SIZE,
 		       PAGING_COHERENT);
 }
 

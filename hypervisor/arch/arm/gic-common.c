@@ -26,7 +26,6 @@
 		(base) ... ((base) + (n - 1) * (size))
 
 extern void *gicd_base;
-extern unsigned int gicd_size;
 
 static DEFINE_SPINLOCK(dist_lock);
 

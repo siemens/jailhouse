@@ -34,9 +34,7 @@ static unsigned int gic_num_priority_bits;
 static u32 gic_version;
 
 extern void *gicd_base;
-extern unsigned int gicd_size;
 static void *gicr_base;
-static unsigned int gicr_size;
 
 static int gic_init(void)
 {
@@ -46,10 +44,9 @@ static int gic_init(void)
 
 	/* FIXME: parse a dt */
 	gicr_base = GICR_BASE;
-	gicr_size = GICR_SIZE;
 
 	/* Let the per-cpu code access the redistributors */
-	return arch_map_device(gicr_base, gicr_base, gicr_size);
+	return arch_map_device(gicr_base, gicr_base, GICR_SIZE);
 }
 
 static void gic_clear_pending_irqs(void)
@@ -265,9 +262,9 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 
 static int gic_cell_init(struct cell *cell)
 {
-	mmio_region_register(cell, (unsigned long)gicd_base, gicd_size,
+	mmio_region_register(cell, (unsigned long)gicd_base, GICD_SIZE,
 			     gic_handle_dist_access, NULL);
-	mmio_region_register(cell, (unsigned long)gicr_base, gicr_size,
+	mmio_region_register(cell, (unsigned long)gicr_base, GICR_SIZE,
 			     gic_handle_redist_access, NULL);
 
 	return 0;
