@@ -358,23 +358,14 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
  */
 int pci_init(void)
 {
-	int err;
-
 	mmcfg_start = system_config->platform_info.x86.mmconfig_base;
 	if (mmcfg_start != 0) {
 		end_bus = system_config->platform_info.x86.mmconfig_end_bus;
 		mmcfg_size = (end_bus + 1) * 256 * 4096;
 
-		pci_space = page_alloc(&remap_pool, mmcfg_size / PAGE_SIZE);
+		pci_space = paging_map_device(mmcfg_start, mmcfg_size);
 		if (!pci_space)
-			return trace_error(-ENOMEM);
-
-		err = paging_create(&hv_paging_structs, mmcfg_start,
-				    mmcfg_size, (unsigned long)pci_space,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-				    PAGING_NON_COHERENT);
-		if (err)
-			return err;
+			return -ENOMEM;
 	}
 
 	return pci_cell_init(&root_cell);
@@ -573,19 +564,12 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 	err = arch_pci_add_physical_device(cell, device);
 
 	if (!err && device->info->msix_address) {
-		device->msix_table = page_alloc(&remap_pool, size / PAGE_SIZE);
+		device->msix_table =
+			paging_map_device(device->info->msix_address, size);
 		if (!device->msix_table) {
-			err = trace_error(-ENOMEM);
+			err = -ENOMEM;
 			goto error_remove_dev;
 		}
-
-		err = paging_create(&hv_paging_structs,
-				    device->info->msix_address, size,
-				    (unsigned long)device->msix_table,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-				    PAGING_NON_COHERENT);
-		if (err)
-			goto error_page_free;
 
 		if (device->info->num_msix_vectors > PCI_EMBEDDED_MSIX_VECTS) {
 			pages = PAGES(sizeof(union pci_msix_vector) *
@@ -603,11 +587,8 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 	return err;
 
 error_unmap_table:
-	/* cannot fail, destruction of same size as construction */
-	paging_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
-		       size, PAGING_NON_COHERENT);
-error_page_free:
-	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
+	paging_unmap_device(device->info->msix_address, device->msix_table,
+			    size);
 error_remove_dev:
 	arch_pci_remove_physical_device(device);
 	return err;
@@ -615,8 +596,6 @@ error_remove_dev:
 
 static void pci_remove_physical_device(struct pci_device *device)
 {
-	unsigned int size = device->info->msix_region_size;
-
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
 	arch_pci_remove_physical_device(device);
@@ -626,10 +605,8 @@ static void pci_remove_physical_device(struct pci_device *device)
 	if (!device->msix_table)
 		return;
 
-	/* cannot fail, destruction of same size as construction */
-	paging_destroy(&hv_paging_structs, (unsigned long)device->msix_table,
-		       size, PAGING_NON_COHERENT);
-	page_free(&remap_pool, device->msix_table, size / PAGE_SIZE);
+	paging_unmap_device(device->info->msix_address, device->msix_table,
+			    device->info->msix_region_size);
 
 	if (device->msix_vectors != device->msix_vector_array)
 		page_free(&mem_pool, device->msix_vectors,
