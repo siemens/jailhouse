@@ -368,20 +368,6 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	__builtin_unreachable();
 }
 
-int arch_map_device(void *paddr, void *vaddr, unsigned long size)
-{
-	return paging_create(&hv_paging_structs, (unsigned long)paddr, size,
-			(unsigned long)vaddr,
-			PAGE_DEFAULT_FLAGS | S1_PTE_FLAG_DEVICE,
-			PAGING_NON_COHERENT);
-}
-
-int arch_unmap_device(void *vaddr, unsigned long size)
-{
-	return paging_destroy(&hv_paging_structs, (unsigned long)vaddr, size,
-			PAGING_NON_COHERENT);
-}
-
 void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush)
 {
 	while (size > 0) {
