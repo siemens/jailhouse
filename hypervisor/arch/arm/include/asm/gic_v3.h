@@ -15,6 +15,9 @@
 
 #include <asm/sysregs.h>
 
+#define GICD_SIZE		0x10000
+#define GICR_SIZE		0x100000
+
 #define GICD_CIDR0		0xfff0
 #define GICD_CIDR1		0xfff4
 #define GICD_CIDR2		0xfff8

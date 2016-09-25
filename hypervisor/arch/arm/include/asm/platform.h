@@ -24,24 +24,18 @@
 
 # ifdef CONFIG_ARM_GIC_V3
 #  define GICD_BASE	((void *)0x2f000000)
-#  define GICD_SIZE	0x10000
 #  define GICR_BASE	((void *)0x2f100000)
-#  define GICR_SIZE	0x100000
 
 # else /* GICv2 */
 #  define GICD_BASE	((void *)0x2c001000)
-#  define GICD_SIZE	0x1000
 #  define GICC_BASE	((void *)0x2c002000)
 /*
  * WARN: most device trees are broken and report only one page for the GICC.
  * It will brake the handle_irq code, since the GICC_DIR register is located at
  * offset 0x1000...
  */
-#  define GICC_SIZE	0x2000
 #  define GICH_BASE	((void *)0x2c004000)
-#  define GICH_SIZE	0x2000
 #  define GICV_BASE	((void *)0x2c006000)
-#  define GICV_SIZE	0x2000
 
 # endif /* GIC */
 
@@ -52,13 +46,9 @@
 #ifdef CONFIG_MACH_SUN7I
 
 #  define GICD_BASE	((void *)0x01c81000)
-#  define GICD_SIZE	0x1000
 #  define GICC_BASE	((void *)0x01c82000)
-#  define GICC_SIZE	0x2000
 #  define GICH_BASE	((void *)0x01c84000)
-#  define GICH_SIZE	0x2000
 #  define GICV_BASE	((void *)0x01c86000)
-#  define GICV_SIZE	0x2000
 
 # define MAINTENANCE_IRQ 25
 
@@ -67,13 +57,9 @@
 #ifdef CONFIG_MACH_TEGRA124
 
 #  define GICD_BASE	((void *)0x50041000)
-#  define GICD_SIZE	0x1000
 #  define GICC_BASE	((void *)0x50042000)
-#  define GICC_SIZE	0x2000
 #  define GICH_BASE	((void *)0x50044000)
-#  define GICH_SIZE	0x2000
 #  define GICV_BASE	((void *)0x50046000)
-#  define GICV_SIZE	0x2000
 
 # define MAINTENANCE_IRQ 25
 

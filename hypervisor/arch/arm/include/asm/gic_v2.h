@@ -13,6 +13,10 @@
 #ifndef _JAILHOUSE_ASM_GIC_V2_H
 #define _JAILHOUSE_ASM_GIC_V2_H
 
+#define GICC_SIZE		0x2000
+#define GICD_SIZE		0x1000
+#define GICH_SIZE		0x2000
+
 #define GICD_CIDR0		0xff0
 #define GICD_CIDR1		0xff4
 #define GICD_CIDR2		0xff8
