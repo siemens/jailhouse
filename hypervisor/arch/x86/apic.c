@@ -161,7 +161,6 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 int apic_init(void)
 {
 	unsigned long apicbase = read_msr(MSR_IA32_APICBASE);
-	int err;
 
 	if (apicbase & APIC_BASE_EXTD) {
 		apic_ops.read = read_x2apic;
@@ -170,15 +169,9 @@ int apic_init(void)
 		apic_ops.send_ipi = send_x2apic_ipi;
 		using_x2apic = true;
 	} else if (apicbase & APIC_BASE_EN) {
-		xapic_page = page_alloc(&remap_pool, 1);
+		xapic_page = paging_map_device(XAPIC_BASE, PAGE_SIZE);
 		if (!xapic_page)
-			return trace_error(-ENOMEM);
-		err = paging_create(&hv_paging_structs, XAPIC_BASE, PAGE_SIZE,
-				    (unsigned long)xapic_page,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-				    PAGING_NON_COHERENT);
-		if (err)
-			return err;
+			return -ENOMEM;
 		apic_ops.read = read_xapic;
 		apic_ops.read_id = read_xapic_id;
 		apic_ops.write = write_xapic;

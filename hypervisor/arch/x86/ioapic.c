@@ -235,15 +235,9 @@ int ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip,
 	if (num_phys_ioapics == IOAPIC_MAX_CHIPS)
 		return trace_error(-ERANGE);
 
-	phys_ioapic->reg_base = page_alloc(&remap_pool, 1);
+	phys_ioapic->reg_base = paging_map_device(irqchip->address, PAGE_SIZE);
 	if (!phys_ioapic->reg_base)
 		return -ENOMEM;
-	err = paging_create(&hv_paging_structs, irqchip->address, PAGE_SIZE,
-			    (unsigned long)phys_ioapic->reg_base,
-			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			    PAGING_NON_COHERENT);
-	if (err)
-		goto error_page_free;
 
 	phys_ioapic->pins =
 		IOPAPIC_VER_MRE(ioapic_reg_read(phys_ioapic, IOAPIC_VER)) + 1;
@@ -265,10 +259,7 @@ done:
 	return 0;
 
 error_paging_destroy:
-	paging_destroy(&hv_paging_structs, irqchip->address, PAGE_SIZE,
-		       PAGING_NON_COHERENT);
-error_page_free:
-	page_free(&remap_pool, phys_ioapic->reg_base, 1);
+	paging_unmap_device(irqchip->address, phys_ioapic->reg_base, PAGE_SIZE);
 	return err;
 }
 

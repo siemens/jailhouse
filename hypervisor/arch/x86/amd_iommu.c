@@ -198,14 +198,11 @@ static int amd_iommu_init_pci(struct amd_iommu *entry,
 			 4);
 
 	/* Allocate and map MMIO space */
-	entry->mmio_base = page_alloc(&remap_pool, PAGES(iommu->size));
+	entry->mmio_base = paging_map_device(iommu->base, iommu->size);
 	if (!entry->mmio_base)
 		return -ENOMEM;
 
-	return paging_create(&hv_paging_structs, iommu->base, iommu->size,
-			     (unsigned long)entry->mmio_base,
-			     PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			     PAGING_NON_COHERENT);
+	return 0;
 }
 
 static int amd_iommu_init_features(struct amd_iommu *entry,
