@@ -13,10 +13,8 @@
 #ifndef _JAILHOUSE_ASM_TRAPS_H
 #define _JAILHOUSE_ASM_TRAPS_H
 
-#include <jailhouse/printk.h>
 #include <jailhouse/types.h>
 #include <asm/head.h>
-#include <asm/percpu.h>
 
 #ifndef __ASSEMBLY__
 

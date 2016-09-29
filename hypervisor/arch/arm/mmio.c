@@ -11,8 +11,10 @@
  */
 
 #include <jailhouse/mmio.h>
+#include <jailhouse/printk.h>
 #include <asm/bitops.h>
 #include <asm/irqchip.h>
+#include <asm/percpu.h>
 #include <asm/processor.h>
 #include <asm/smp.h>
 #include <asm/traps.h>
