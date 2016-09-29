@@ -11,7 +11,6 @@
  */
 
 #include <asm/asm-defines.h>
-#include <asm/head.h>
 #include <asm/percpu.h>
 #include <asm/processor.h>
 

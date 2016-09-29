@@ -145,6 +145,7 @@
 #define arm_read_sysreg(...) _arm_read_sysreg(__VA_ARGS__)
 
 #ifndef __ASSEMBLY__
+asm(".arch_extension virt\n");
 
 #define arm_write_sysreg_32(op1, crn, crm, op2, val) \
 	asm volatile ("mcr	p15, "#op1", %0, "#crn", "#crm", "#op2"\n" \

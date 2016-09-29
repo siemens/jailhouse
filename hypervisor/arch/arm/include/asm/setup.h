@@ -13,7 +13,6 @@
 #ifndef _JAILHOUSE_ASM_SETUP_H
 #define _JAILHOUSE_ASM_SETUP_H
 
-#include <asm/head.h>
 #include <asm/percpu.h>
 
 #ifndef __ASSEMBLY__

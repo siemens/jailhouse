@@ -10,9 +10,10 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/head.h>
 #include <asm/processor.h>
 #include <asm/sysregs.h>
+
+	.arch_extension virt
 
 	.text
 	.globl hyp_vectors

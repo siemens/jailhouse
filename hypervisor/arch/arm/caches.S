@@ -11,7 +11,6 @@
  */
 
 #include <asm/control.h>
-#include <asm/head.h>
 #include <asm/sysregs.h>
 
 /*

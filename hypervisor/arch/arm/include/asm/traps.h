@@ -14,7 +14,6 @@
 #define _JAILHOUSE_ASM_TRAPS_H
 
 #include <jailhouse/types.h>
-#include <asm/head.h>
 
 #ifndef __ASSEMBLY__
 
