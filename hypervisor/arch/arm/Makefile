@@ -23,6 +23,7 @@ obj-y += mmu_hyp.o caches.o smp.o
 obj-y += $(COMMON)/dbg-write.o $(COMMON)/lib.o $(COMMON)/psci.o
 obj-y += $(COMMON)/paging.o $(COMMON)/mmu_cell.o
 obj-y += $(COMMON)/irqchip.o $(COMMON)/gic-common.o
+obj-y += $(COMMON)/control.o
 obj-$(CONFIG_ARM_GIC_V2) += $(COMMON)/gic-v2.o
 obj-$(CONFIG_ARM_GIC_V3) += gic-v3.o
 obj-$(CONFIG_SERIAL_AMBA_PL011) += $(COMMON)/dbg-write-pl011.o

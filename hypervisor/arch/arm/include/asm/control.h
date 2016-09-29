@@ -39,6 +39,7 @@ unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
 void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data);
 
+void arm_cpu_reset(unsigned long pc);
 void arm_cpu_park(void);
 void arm_cpu_kick(unsigned int cpu_id);
 
