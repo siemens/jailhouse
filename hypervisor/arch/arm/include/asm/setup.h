@@ -17,8 +17,6 @@
 
 #ifndef __ASSEMBLY__
 
-#include <jailhouse/string.h>
-
 static inline void __attribute__((always_inline))
 cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
 {

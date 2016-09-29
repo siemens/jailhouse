@@ -15,8 +15,6 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/control.h>
-#include <asm/irqchip.h>
-#include <asm/percpu.h>
 #include <asm/setup.h>
 #include <asm/smp.h>
 #include <asm/sysregs.h>

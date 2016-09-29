@@ -14,14 +14,11 @@
 
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
-#include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
-#include <asm/processor.h>
 #include <asm/smp.h>
 #include <asm/sysregs.h>
-#include <asm/traps.h>
 
 static void cpu_reset(void)
 {

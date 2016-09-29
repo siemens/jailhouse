@@ -12,10 +12,7 @@
 
 #include <jailhouse/control.h>
 #include <jailhouse/processor.h>
-#include <jailhouse/string.h>
-#include <jailhouse/types.h>
 #include <asm/control.h>
-#include <asm/percpu.h>
 #include <asm/sysregs.h>
 
 unsigned long phys_processor_id(void)
