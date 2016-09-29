@@ -16,14 +16,16 @@ KBUILD_AFLAGS := $(subst -include asm/unified.h,,$(KBUILD_AFLAGS))
 
 always := built-in.o
 
-obj-y := entry.o dbg-write.o exception.o setup.o control.o lib.o
-obj-y += traps.o mmio.o
-obj-y += paging.o mmu_hyp.o mmu_cell.o caches.o
-obj-y += psci.o smp.o
-obj-y += irqchip.o gic-common.o
-obj-$(CONFIG_ARM_GIC_V2) += gic-v2.o
+COMMON := ../arm-common
+
+obj-y := entry.o exception.o setup.o control.o traps.o mmio.o
+obj-y += mmu_hyp.o caches.o smp.o
+obj-y += $(COMMON)/dbg-write.o $(COMMON)/lib.o $(COMMON)/psci.o
+obj-y += $(COMMON)/paging.o $(COMMON)/mmu_cell.o
+obj-y += $(COMMON)/irqchip.o $(COMMON)/gic-common.o
+obj-$(CONFIG_ARM_GIC_V2) += $(COMMON)/gic-v2.o
 obj-$(CONFIG_ARM_GIC_V3) += gic-v3.o
-obj-$(CONFIG_SERIAL_AMBA_PL011) += dbg-write-pl011.o
+obj-$(CONFIG_SERIAL_AMBA_PL011) += $(COMMON)/dbg-write-pl011.o
 obj-$(CONFIG_SERIAL_8250_DW) += uart-8250-dw.o
 obj-$(CONFIG_SERIAL_TEGRA) += uart-tegra.o
 obj-$(CONFIG_MACH_VEXPRESS) += smp-vexpress.o
