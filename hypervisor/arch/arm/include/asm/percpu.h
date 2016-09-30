@@ -22,7 +22,6 @@
 #include <jailhouse/cell.h>
 #include <asm/irqchip.h>
 #include <asm/processor.h>
-#include <asm/psci.h>
 #include <asm/spinlock.h>
 #include <asm/sysregs.h>
 

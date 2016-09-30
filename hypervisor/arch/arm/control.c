@@ -17,6 +17,7 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
+#include <asm/psci.h>
 #include <asm/smp.h>
 #include <asm/sysregs.h>
 
