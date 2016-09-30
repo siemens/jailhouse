@@ -12,13 +12,37 @@
 
 #include <jailhouse/cell.h>
 #include <jailhouse/entry.h>
+#include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
 
+static u32 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE / 4] = {
+	0xd503207f, /* 1: wfi  */
+	0x17ffffff, /*    b 1b */
+};
+
+struct paging_structures parking_mm;
+
 int arch_init_early(void)
 {
+	int err;
+
+	parking_mm.root_paging = cell_paging;
+	parking_mm.root_table =
+		page_alloc_aligned(&mem_pool, ARM_CELL_ROOT_PT_SZ);
+	if (!parking_mm.root_table)
+		return -ENOMEM;
+
+	err = paging_create(&parking_mm, paging_hvirt2phys(parking_code),
+			    PAGE_SIZE, 0,
+			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
+			     S2_PTE_ACCESS_RO | S2_PTE_FLAG_NORMAL),
+			    PAGING_COHERENT);
+	if (err)
+		return err;
+
 	return arm_paging_cell_init(&root_cell);
 }
 

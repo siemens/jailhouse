@@ -18,6 +18,8 @@
 
 #include <asm/percpu.h>
 
+extern struct paging_structures parking_mm;
+
 void arch_cpu_tlb_flush(struct per_cpu *cpu_data);
 void arch_cell_caches_flush(struct cell *cell);
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
@@ -32,5 +34,9 @@ unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 
 void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
 void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data);
+
+void arm_cpu_reset(unsigned long pc);
+void arm_cpu_park(void);
+void arm_cpu_kick(unsigned int cpu_id);
 
 #endif /* !_JAILHOUSE_ASM_CONTROL_H */

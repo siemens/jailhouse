@@ -21,6 +21,7 @@ always := built-in.o
 obj-y := entry.o setup.o control.o mmio.o caches.o
 obj-y += exception.o traps.o
 obj-y += $(COMMON)/dbg-write.o $(COMMON)/lib.o
+obj-y += $(COMMON)/control.o
 obj-y += $(COMMON)/mmu_cell.o $(COMMON)/paging.o
 obj-y += $(COMMON)/irqchip.o $(COMMON)/gic-common.o
 
