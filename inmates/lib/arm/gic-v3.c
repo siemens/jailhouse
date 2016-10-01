@@ -27,11 +27,12 @@
 
 void gic_enable(unsigned int irqn)
 {
-	if (is_spi(irqn))
-		mmio_write32(GICD_BASE + GICD_ISENABLER, 1 << irqn);
-	else
+	if (is_sgi_ppi(irqn))
 		mmio_write32(GICR_BASE + GICR_SGI_BASE + GICR_ISENABLER,
 			     1 << irqn);
+	else if (is_spi(irqn))
+		mmio_write32(GICD_BASE + GICD_ISENABLER + irqn / 32,
+			     1 << (irqn % 32));
 }
 
 int gic_init(void)
