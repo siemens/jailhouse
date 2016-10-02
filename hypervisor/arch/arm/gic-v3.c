@@ -140,12 +140,10 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 			break;
 		}
 
-		redist_base += 0x20000;
-		if (gic_version == 4)
-			redist_base += 0x20000;
+		redist_base += gic_version == 4 ? 0x40000 : 0x20000;
 	} while (!(typer & GICR_TYPER_Last));
 
-	if (cpu_data->gicr_base == 0) {
+	if (!cpu_data->gicr_base) {
 		printk("GIC: No redist found for CPU%d\n", cpu_data->cpu_id);
 		return -ENODEV;
 	}
