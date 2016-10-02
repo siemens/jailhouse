@@ -182,21 +182,23 @@ static int gic_cell_init(struct cell *cell)
 	 */
 	err = paging_create(&cell->arch.mm,
 			    system_config->platform_info.arm.gicv_base,
-			    GICC_SIZE, (unsigned long)gicc_base,
+			    GICC_SIZE,
+			    system_config->platform_info.arm.gicc_base,
 			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
 			     S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
 			    PAGING_COHERENT);
 	if (err)
 		return err;
 
-	mmio_region_register(cell, (unsigned long)gicd_base, GICD_SIZE,
-			     gic_handle_dist_access, NULL);
+	mmio_region_register(cell, system_config->platform_info.arm.gicd_base,
+			     GICD_SIZE, gic_handle_dist_access, NULL);
 	return 0;
 }
 
 static void gic_cell_exit(struct cell *cell)
 {
-	paging_destroy(&cell->arch.mm, (unsigned long)gicc_base, GICC_SIZE,
+	paging_destroy(&cell->arch.mm,
+		       system_config->platform_info.arm.gicc_base, GICC_SIZE,
 		       PAGING_COHERENT);
 }
 

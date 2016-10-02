@@ -156,7 +156,7 @@ int irqchip_cell_init(struct cell *cell)
 	int err;
 
 	for_each_irqchip(chip, cell->config, n) {
-		if (chip->address != (unsigned long)gicd_base)
+		if (chip->address != system_config->platform_info.arm.gicd_base)
 			continue;
 		if (chip->pin_base % 32 != 0 ||
 		    chip->pin_base + sizeof(chip->pin_bitmap) * 8 >
@@ -180,7 +180,7 @@ int irqchip_cell_init(struct cell *cell)
 		return 0;
 
 	for_each_irqchip(chip, cell->config, n) {
-		if (chip->address != (unsigned long)gicd_base)
+		if (chip->address != system_config->platform_info.arm.gicd_base)
 			continue;
 		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
 			root_cell.arch.irq_bitmap[chip->pin_base / 32 + pos] &=
@@ -209,7 +209,7 @@ void irqchip_cell_exit(struct cell *cell)
 
 	/* set all pins of the old cell in the root cell */
 	for_each_irqchip(chip, cell->config, n) {
-		if (chip->address != (unsigned long)gicd_base)
+		if (chip->address != system_config->platform_info.arm.gicd_base)
 			continue;
 		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
 			root_cell.arch.irq_bitmap[chip->pin_base / 32 + pos] |=
@@ -218,7 +218,7 @@ void irqchip_cell_exit(struct cell *cell)
 
 	/* mask out pins again that actually didn't belong to the root cell */
 	for_each_irqchip(chip, root_cell.config, n) {
-		if (chip->address != (unsigned long)gicd_base)
+		if (chip->address != system_config->platform_info.arm.gicd_base)
 			continue;
 		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++)
 			root_cell.arch.irq_bitmap[chip->pin_base / 32 + pos] &=
