@@ -422,6 +422,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 
 void arch_config_commit(struct cell *cell_added_removed)
 {
+	irqchip_config_commit(cell_added_removed);
 }
 
 void __attribute__((noreturn)) arch_panic_stop(void)

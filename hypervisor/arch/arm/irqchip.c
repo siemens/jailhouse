@@ -187,13 +187,6 @@ int irqchip_cell_init(struct cell *cell)
 				~chip->pin_bitmap[pos];
 	}
 
-	for (n = 32; n < sizeof(cell->arch.irq_bitmap) * 8; n++) {
-		if (irqchip_irq_in_cell(cell, n))
-			irqchip.adjust_irq_target(cell, n);
-		if (irqchip_irq_in_cell(&root_cell, n))
-			irqchip.adjust_irq_target(&root_cell, n);
-	}
-
 	return 0;
 }
 
@@ -227,6 +220,21 @@ void irqchip_cell_exit(struct cell *cell)
 
 	if (irqchip.cell_exit)
 		irqchip.cell_exit(cell);
+}
+
+void irqchip_config_commit(struct cell *cell_added_removed)
+{
+	unsigned int n;
+
+	if (!cell_added_removed)
+		return;
+
+	for (n = 32; n < sizeof(cell_added_removed->arch.irq_bitmap) * 8; n++) {
+		if (irqchip_irq_in_cell(cell_added_removed, n))
+			irqchip.adjust_irq_target(cell_added_removed, n);
+		if (irqchip_irq_in_cell(&root_cell, n))
+			irqchip.adjust_irq_target(&root_cell, n);
+	}
 }
 
 int irqchip_init(void)
