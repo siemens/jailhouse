@@ -203,7 +203,7 @@ static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
 	void *itargetsr = gicd_base + GICD_ITARGETSR + (irq_id & ~0x3);
 	u32 targets = mmio_read32(itargetsr);
-	unsigned int shift = irq_id % 4;
+	unsigned int shift = (irq_id % 4) * 8;
 
 	if (gic_targets_in_cell(cell, (u8)(targets >> shift)))
 		return;
