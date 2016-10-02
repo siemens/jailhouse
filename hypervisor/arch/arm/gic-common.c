@@ -113,10 +113,11 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
 	 * access corresponds to the reg index
 	 */
+	unsigned int irq_base = irq & ~0x3;
 	struct cell *cell = this_cell();
 	unsigned int offset;
 	u32 access_mask = 0;
-	unsigned int i;
+	unsigned int n;
 	u8 targets;
 
 	/*
@@ -135,21 +136,21 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	mmio->address &= ~0x3;
 	mmio->value <<= 8 * offset;
 	mmio->size = 4;
-	irq &= ~0x3;
 
-	for (i = 0; i < 4; i++, irq++) {
-		if (irqchip_irq_in_cell(cell, irq))
-			access_mask |= 0xff << (8 * i);
+	for (n = 0; n < 4; n++) {
+		if (irqchip_irq_in_cell(cell, irq_base + n))
+			access_mask |= 0xff << (8 * n);
 		else
 			continue;
 
 		if (!mmio->is_write)
 			continue;
 
-		targets = (mmio->value >> (8 * i)) & 0xff;
+		targets = (mmio->value >> (8 * n)) & 0xff;
 
 		if (!gic_targets_in_cell(cell, targets)) {
-			printk("Attempt to route IRQ%d outside of cell\n", irq);
+			printk("Attempt to route IRQ%d outside of cell\n",
+			       irq_base + n);
 			return MMIO_ERROR;
 		}
 	}
@@ -157,7 +158,7 @@ static enum mmio_result handle_irq_target(struct mmio_access *mmio,
 	if (mmio->is_write) {
 		spin_lock(&dist_lock);
 		u32 itargetsr =
-			mmio_read32(gicd_base + GICD_ITARGETSR + irq + offset);
+			mmio_read32(gicd_base + GICD_ITARGETSR + irq_base);
 		mmio->value &= access_mask;
 		/* Combine with external SPIs */
 		mmio->value |= (itargetsr & ~access_mask);
