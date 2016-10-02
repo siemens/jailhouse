@@ -46,7 +46,7 @@ struct per_cpu {
 	unsigned int pending_irqs_head;
 	/* removal from the ring happens lockless, thus tail is volatile */
 	volatile unsigned int pending_irqs_tail;
-	/* Only GICv3: redistributor base */
+	/* Only GICv3: physical redistributor base */
 	void *gicr_base;
 
 	struct cell *cell;

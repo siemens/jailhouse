@@ -209,10 +209,9 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 	struct cell *cell = this_cell();
 	unsigned int cpu;
 	unsigned int virt_id;
-	void *virt_redist = 0;
-	void *phys_redist = 0;
 	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
-	void *address = (void *)(mmio->address + (unsigned long)gicr_base);
+	void *phys_redist = NULL;
+	unsigned long offs;
 
 	/*
 	 * The redistributor accessed by the cell is not the one stored in these
@@ -221,9 +220,9 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 	 */
 	for_each_cpu(cpu, cell->cpu_set) {
 		virt_id = arm_cpu_phys2virt(cpu);
-		virt_redist = per_cpu(virt_id)->gicr_base;
-		if (address >= virt_redist && address < virt_redist
-				+ redist_size) {
+		offs = per_cpu(virt_id)->gicr_base - gicr_base;
+		if (mmio->address >= offs &&
+		    mmio->address < offs + redist_size) {
 			phys_redist = per_cpu(cpu)->gicr_base;
 			break;
 		}
@@ -232,7 +231,7 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 	if (phys_redist == NULL)
 		return MMIO_ERROR;
 
-	mmio->address = address - virt_redist;
+	mmio->address -= offs;
 
 	/* Change the ID register, all other accesses are allowed. */
 	if (!mmio->is_write) {
