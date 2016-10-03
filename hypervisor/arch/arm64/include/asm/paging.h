@@ -258,8 +258,12 @@ static inline void arm_paging_vcpu_flush_tlbs(void)
 /* Only executed on hypervisor paging struct changes */
 static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 {
-	asm volatile("tlbi vae2, %0\n"
-		     : : "r" (page_addr >> PAGE_SHIFT));
+	asm volatile(
+		"dsb ish\n\t"
+		"tlbi vae2, %0\n\t"
+		"dsb ish\n\t"
+		"isb\n\t"
+		: : "r" (page_addr >> PAGE_SHIFT));
 }
 
 /* Used to clean the PAGE_MAP_COHERENT page table changes */
