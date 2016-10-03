@@ -16,6 +16,9 @@
 #include <asm/percpu.h>
 #include <asm/jailhouse_hypercall.h>
 
+#define LINUX_HVC_GET_VECTORS		0
+#define LINUX_HVC_SET_VECTORS		1
+
 /* Entry point for Linux loader module on JAILHOUSE_ENABLE */
 	.text
 	.globl arch_entry
@@ -54,12 +57,13 @@ arch_entry:
 	 */
 
 	/* keep the linux stub EL2 vectors for later */
-	mov	x0, xzr
+	mov	x0, #LINUX_HVC_GET_VECTORS
 	hvc	#0
 	mov	x16, x0
 
 	/* install bootstrap_vectors */
-	ldr	x0, =bootstrap_vectors
+	mov	x0, #LINUX_HVC_SET_VECTORS
+	ldr	x1, =bootstrap_vectors
 	hvc	#0
 	hvc	#0	/* bootstrap vectors enter EL2 at el2_entry */
 	b	.	/* we don't expect to return here */
