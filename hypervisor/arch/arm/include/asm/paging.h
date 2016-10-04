@@ -218,8 +218,12 @@ static inline void arch_paging_flush_page_tlbs(unsigned long page_addr)
 	 * This instruction is UNDEF at EL1, but the whole TLB is invalidated
 	 * before enabling the EL2 stage 1 MMU anyway.
 	 */
-	if (is_el2())
+	if (is_el2()) {
+		dsb();
 		arm_write_sysreg(TLBIMVAH, page_addr & PAGE_MASK);
+		dsb();
+		isb();
+	}
 }
 
 /* Used to clean the PAGING_COHERENT page table changes */
