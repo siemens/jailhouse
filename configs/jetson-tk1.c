@@ -12,7 +12,7 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  *
- * NOTE: Add "mem=1984M vmalloc=512M" to the kernel command line.
+ * NOTE: Add "mem=1920M vmalloc=512M" to the kernel command line.
  */
 
 #include <jailhouse/types.h>
