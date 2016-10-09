@@ -29,6 +29,7 @@ endef
 
 mach-$(CONFIG_MACH_FOUNDATION_V8)	:= foundation-v8
 mach-$(CONFIG_MACH_AMD_SEATTLE)         := amd-seattle
+mach-$(CONFIG_MACH_HI6220)		:= hi6220
 
 MACHINE					:= mach-$(mach-y)
 KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
