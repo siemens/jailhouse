@@ -39,6 +39,28 @@ prepare_kernel()
 	tar xJf $BASEDIR/$ARCHIVE_FILE
 	ln -s linux-* linux
 	cd linux
+	patch -p1 << EOF
+diff --git a/arch/arm/kernel/armksyms.c b/arch/arm/kernel/armksyms.c
+index f89811f..44458c8 100644
+--- a/arch/arm/kernel/armksyms.c
++++ b/arch/arm/kernel/armksyms.c
+@@ -19,6 +19,7 @@
+ 
+ #include <asm/checksum.h>
+ #include <asm/ftrace.h>
++#include <asm/virt.h>
+ 
+ /*
+  * libgcc functions - functions that are used internally by the
+@@ -175,3 +176,7 @@ EXPORT_SYMBOL(__gnu_mcount_nc);
+ EXPORT_SYMBOL(__pv_phys_pfn_offset);
+ EXPORT_SYMBOL(__pv_offset);
+ #endif
++
++#ifdef CONFIG_ARM_VIRT_EXT
++EXPORT_SYMBOL_GPL(__boot_cpu_mode);
++#endif
+EOF
 }
 
 build_kernel()
