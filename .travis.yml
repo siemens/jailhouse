@@ -54,6 +54,6 @@ addons:
       name: "siemens/jailhouse"
     notification_email: jan.kiszka@siemens.com
     build_script_url: https://raw.githubusercontent.com/$TRAVIS_REPO_SLUG/$TRAVIS_BRANCH/ci/coverity-scan-build.sh
-    build_command_prepend: "cov-configure --comptype gcc --compiler arm-linux-gnueabihf-gcc --template"
+    build_command_prepend: "cov-configure --comptype gcc --compiler arm-linux-gnueabihf-gcc --template; cov-configure --comptype gcc --compiler aarch64-linux-gnu-gcc --template"
     build_command: "unused"
     branch_pattern: coverity_scan.*
