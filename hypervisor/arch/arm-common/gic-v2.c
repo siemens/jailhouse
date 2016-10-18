@@ -53,7 +53,7 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	unsigned int i;
 	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
-	u32 active;
+	unsigned long active;
 	u32 gich_vmcr = 0;
 	u32 gicc_ctlr, gicc_pmr;
 
@@ -61,10 +61,9 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 
 	/* Deactivate all PPIs */
 	active = mmio_read32(gicd_base + GICD_ISACTIVER);
-	for (i = 16; i < 32; i++) {
-		if (test_bit(i, (unsigned long *)&active))
+	for (i = 16; i < 32; i++)
+		if (test_bit(i, &active))
 			mmio_write32(gicc_base + GICC_DIR, i);
-	}
 
 	/* Ensure all IPIs and the maintenance PPI are enabled */
 	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff | (1 << mnt_irq));
