@@ -89,7 +89,7 @@ static void uart_init(void)
 	}
 
 	uart_reg_out(UART_LCR, UART_LCR_DLAB);
-#ifdef CONFIG_UART_OXPCIE952
+#ifdef CONFIG_SERIAL_OXPCIE952
 	outb(0x22, uart_base + UART_DLL);
 #else
 	uart_reg_out(UART_DLL, 1);

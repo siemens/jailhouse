@@ -52,7 +52,7 @@ void printk(const char *fmt, ...)
 	if (!inited) {
 		inited = true;
 		outb(UART_LCR_DLAB, printk_uart_base + UART_LCR);
-#ifdef CONFIG_UART_OXPCIE952
+#ifdef CONFIG_SERIAL_OXPCIE952
 		outb(0x22, printk_uart_base + UART_DLL);
 #else
 		outb(1, printk_uart_base + UART_DLL);  

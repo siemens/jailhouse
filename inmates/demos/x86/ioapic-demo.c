@@ -22,7 +22,7 @@
 
 #include <inmate.h>
 
-#ifdef CONFIG_UART_OXPCIE952
+#ifdef CONFIG_SERIAL_OXPCIE952
 #define UART_BASE		0xe000
 #else
 #define UART_BASE		0x2f8
