@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/uart_pl011.h>
+#include <asm/uart-pl011.h>
 
 /* All the helpers are in the header, to make them re-usable by the inmates */
 void uart_chip_init(struct uart_chip *chip)

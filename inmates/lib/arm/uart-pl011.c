@@ -9,7 +9,7 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
-#include <asm/uart_pl011.h>
+#include <asm/uart-pl011.h>
 #include <mach/uart.h>
 
 void uart_chip_init(struct uart_chip *chip)

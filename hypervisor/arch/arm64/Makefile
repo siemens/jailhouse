@@ -25,5 +25,5 @@ obj-y += $(COMMON)/control.o $(COMMON)/psci.o
 obj-y += $(COMMON)/mmu_cell.o $(COMMON)/paging.o
 obj-y += $(COMMON)/irqchip.o $(COMMON)/gic-common.o
 
-obj-$(CONFIG_SERIAL_AMBA_PL011) += $(COMMON)/dbg-write-pl011.o
+obj-$(CONFIG_SERIAL_AMBA_PL011) += $(COMMON)/uart-pl011.o
 obj-$(CONFIG_ARM_GIC_V2) += $(COMMON)/gic-v2.o
