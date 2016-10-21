@@ -19,7 +19,7 @@ always := built-in.o
 COMMON := ../arm-common
 
 obj-y := entry.o exception.o setup.o control.o traps.o mmio.o
-obj-y += mmu_hyp.o caches.o smp.o
+obj-y += mmu_hyp.o caches.o smp-stubs.o
 obj-y += $(COMMON)/dbg-write.o $(COMMON)/lib.o $(COMMON)/psci.o
 obj-y += $(COMMON)/paging.o $(COMMON)/mmu_cell.o
 obj-y += $(COMMON)/irqchip.o $(COMMON)/gic-common.o
