@@ -10,8 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef JAILHOUSE_ASM_DEBUG_H_
-#define JAILHOUSE_ASM_DEBUG_H_
+#ifndef JAILHOUSE_ASM_UART_H_
+#define JAILHOUSE_ASM_UART_H_
 
 #ifndef __ASSEMBLY__
 
@@ -30,4 +30,4 @@ struct uart_chip {
 void uart_chip_init(struct uart_chip *chip);
 
 #endif /* !__ASSEMBLY__ */
-#endif /* !JAILHOUSE_ASM_DEBUG_H_ */
+#endif /* !JAILHOUSE_ASM_UART_H_ */

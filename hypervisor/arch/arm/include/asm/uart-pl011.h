@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_DEBUG_PL011_H
 #define _JAILHOUSE_ASM_DEBUG_PL011_H
 
-#include <asm/debug.h>
+#include <asm/uart.h>
 #include <asm/processor.h>
 
 #define UART_CLK	24000000

@@ -11,7 +11,7 @@
  */
 
 #include <inmate.h>
-#include <asm/debug.h>
+#include <asm/uart.h>
 #include <stdarg.h>
 
 static struct uart_chip chip;

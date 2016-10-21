@@ -12,7 +12,7 @@
 
 #include <jailhouse/mmio.h>
 #include <jailhouse/processor.h>
-#include <asm/debug.h>
+#include <asm/uart.h>
 
 #define UART_TX			0x0
 #define UART_DLL		0x0
