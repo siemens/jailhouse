@@ -34,7 +34,9 @@ struct {
 			.size = 0x4000000,
 		},
 		.debug_console = {
+			/* uses OXPCIE952 extension card */
 			.address = 0xe010,
+			.divider = 0x22,
 			.flags = JAILHOUSE_CON_TYPE_UART_X86 |
 				 JAILHOUSE_CON_FLAG_PIO,
 		},

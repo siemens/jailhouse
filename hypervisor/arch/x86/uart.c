@@ -55,6 +55,7 @@ static u8 (*uart_reg_in)(unsigned int) = uart_pio_in;
 void uart_init(void)
 {
 	u32 flags = system_config->debug_console.flags;
+	u32 divider = system_config->debug_console.divider;
 
 	if (CON_IS_MMIO(flags)) {
 		uart_reg_out = uart_mmio32_out;
@@ -64,12 +65,11 @@ void uart_init(void)
 		uart_base = system_config->debug_console.address;
 	}
 
+	if (!divider)
+		return;
+
 	uart_reg_out(UART_LCR, UART_LCR_DLAB);
-#ifdef CONFIG_SERIAL_OXPCIE952
-	outb(0x22, uart_base + UART_DLL);
-#else
-	uart_reg_out(UART_DLL, 1);
-#endif
+	uart_reg_out(UART_DLL, divider);
 	uart_reg_out(UART_DLM, 0);
 	uart_reg_out(UART_LCR, UART_LCR_8N1);
 }

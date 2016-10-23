@@ -190,6 +190,8 @@ struct jailhouse_debug_console {
 	__u64 address;
 	__u32 size;
 	__u32 flags;
+	__u32 divider;
+	__u32 __reserved;
 } __attribute__((packed));
 
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYST"

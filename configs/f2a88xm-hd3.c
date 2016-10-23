@@ -40,6 +40,7 @@ struct {
 		},
 		.debug_console = {
 			.address = 0x3f8,
+			/* .divider = 0x1, */
 			.flags = JAILHOUSE_CON_TYPE_UART_X86 |
 				 JAILHOUSE_CON_FLAG_PIO,
 		},

@@ -32,8 +32,12 @@ static void uart_init(struct uart_chip *chip)
 			     mmio_read32(chip->clock_reg) |
 			     (1 << chip->gate_nr));
 
+	/* only initialise if divider is not zero */
+	if (!chip->debug_console->divider)
+		return;
+
 	mmio_write32(chip->virt_base + UART_LCR, UART_LCR_DLAB);
-	mmio_write32(chip->virt_base + UART_DLL, 0x0d);
+	mmio_write32(chip->virt_base + UART_DLL, chip->debug_console->divider);
 	mmio_write32(chip->virt_base + UART_DLM, 0);
 	mmio_write32(chip->virt_base + UART_LCR, UART_LCR_8N1);
 }
