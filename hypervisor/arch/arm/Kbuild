@@ -21,5 +21,4 @@ obj-y += entry.o exception.o setup.o control.o traps.o mmio.o lib.o
 obj-y += mmu_hyp.o caches.o mach-stubs.o
 
 obj-$(CONFIG_ARM_GIC_V3) += gic-v3.o
-obj-$(CONFIG_SERIAL_TEGRA) += uart-tegra.o
 obj-$(CONFIG_MACH_VEXPRESS) += mach-vexpress.o

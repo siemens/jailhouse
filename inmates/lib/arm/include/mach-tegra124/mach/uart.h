@@ -11,3 +11,8 @@
  */
 
 #define UART_BASE	((void *)0x70006300)
+
+/* Do not enable the clock in the inmate, as enabling the clock requires access
+ * to the tegra-car (Clock and Reset Controller) */
+#define UART_CLOCK_REG  ((void *)0)
+#define UART_GATE_NR    0
