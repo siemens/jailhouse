@@ -12,19 +12,16 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/smp.h>
+#ifndef JAILHOUSE_ASM_SMP_H_
+#define JAILHOUSE_ASM_SMP_H_
 
-const unsigned int __attribute__((weak)) smp_mmio_regions;
+struct cell;
 
-int __attribute__((weak)) smp_init(void)
-{
-	return 0;
-}
+extern const unsigned int mach_mmio_regions;
 
-void __attribute__((weak)) smp_cell_init(struct cell *cell)
-{
-}
+int mach_init(void);
 
-void __attribute__((weak)) smp_cell_exit(struct cell *cell)
-{
-}
+void mach_cell_init(struct cell *cell);
+void mach_cell_exit(struct cell *cell);
+
+#endif /* !JAILHOUSE_ASM_SMP_H_ */

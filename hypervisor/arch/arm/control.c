@@ -17,8 +17,8 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
+#include <asm/mach.h>
 #include <asm/psci.h>
-#include <asm/smp.h>
 #include <asm/sysregs.h>
 
 void arm_cpu_reset(unsigned long pc)
@@ -206,7 +206,7 @@ int arch_cell_create(struct cell *cell)
 		return err;
 	}
 
-	smp_cell_init(cell);
+	mach_cell_init(cell);
 
 	return 0;
 }
@@ -227,8 +227,7 @@ void arch_cell_destroy(struct cell *cell)
 		percpu->cpu_on_entry = PSCI_INVALID_ADDRESS;
 	}
 
-	smp_cell_exit(cell);
-
+	mach_cell_exit(cell);
 	irqchip_cell_exit(cell);
 
 	arm_paging_cell_destroy(cell);

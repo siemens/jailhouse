@@ -15,8 +15,8 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/control.h>
+#include <asm/mach.h>
 #include <asm/setup.h>
-#include <asm/smp.h>
 #include <asm/sysregs.h>
 
 static u32 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE / 4] = {
@@ -118,7 +118,7 @@ int arch_init_late(void)
 	if (err)
 		return err;
 
-	err = smp_init();
+	err = mach_init();
 	if (err)
 		return err;
 

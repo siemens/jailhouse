@@ -15,18 +15,19 @@
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <asm/control.h>
+#include <asm/mach.h>
 #include <asm/setup.h>
-#include <asm/smp.h>
 
 #define SYSREGS_BASE		0x1c010000
 
 #define VEXPRESS_FLAGSSET	0x30
 
-const unsigned int smp_mmio_regions = 1;
+const unsigned int mach_mmio_regions = 1;
 
 static unsigned long root_entry;
 
-static enum mmio_result smp_mmio(void *arg, struct mmio_access *mmio)
+static enum mmio_result
+sysregs_access_handler(void *arg, struct mmio_access *mmio)
 {
 	struct per_cpu *target_data, *cpu_data = this_cpu_data();
 	unsigned int cpu;
@@ -56,7 +57,7 @@ static enum mmio_result smp_mmio(void *arg, struct mmio_access *mmio)
 	return MMIO_HANDLED;
 }
 
-int smp_init(void)
+int mach_init(void)
 {
 	void *sysregs_base;
 
@@ -66,18 +67,18 @@ int smp_init(void)
 	root_entry = mmio_read32(sysregs_base + VEXPRESS_FLAGSSET);
 	paging_unmap_device(SYSREGS_BASE, sysregs_base, PAGE_SIZE);
 
-	smp_cell_init(&root_cell);
+	mach_cell_init(&root_cell);
 
 	return 0;
 }
 
-void smp_cell_init(struct cell *cell)
+void mach_cell_init(struct cell *cell)
 {
 	mmio_region_register(cell, (unsigned long)SYSREGS_BASE, PAGE_SIZE,
-			     smp_mmio, NULL);
+			     sysregs_access_handler, NULL);
 }
 
-void smp_cell_exit(struct cell *cell)
+void mach_cell_exit(struct cell *cell)
 {
 	unsigned int cpu;
 
