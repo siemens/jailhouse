@@ -24,7 +24,8 @@
 
 void gic_enable(unsigned int irqn)
 {
-	mmio_write32(GICD_BASE + GICD_ISENABLER, 1 << irqn);
+	mmio_write32(GICD_BASE + GICD_ISENABLER + ((irqn >> 3) & ~0x3),
+		     1 << (irqn & 0x1f));
 }
 
 int gic_init(void)
