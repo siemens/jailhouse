@@ -11,6 +11,7 @@
  */
 
 #include <jailhouse/mmio.h>
+#include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <asm/bitops.h>
 #include <asm/irqchip.h>
