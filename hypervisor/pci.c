@@ -45,7 +45,8 @@ struct pci_cfg_control {
 /* Type 1: Endpoints */
 static const struct pci_cfg_control endpoint_write[PCI_CONFIG_HEADER_SIZE] = {
 	[0x04/4] = {PCI_CONFIG_ALLOW,  0xffffffff}, /* Command, Status */
-	[0x0c/4] = {PCI_CONFIG_ALLOW,  0xff00ffff}, /* BIST, Lat., Cacheline */
+	[0x0c/4] = {PCI_CONFIG_ALLOW,  0xffffffff}, /* BIST, Header Type (r/o),
+						       Latency, Cacheline */
 	[0x30/4] = {PCI_CONFIG_RDONLY, 0xffffffff}, /* ROM BAR */
 	[0x3c/4] = {PCI_CONFIG_ALLOW,  0x000000ff}, /* Int Line */
 };
@@ -55,7 +56,8 @@ static const struct pci_cfg_control endpoint_write[PCI_CONFIG_HEADER_SIZE] = {
  *       perform them on bus rescans. */
 static const struct pci_cfg_control bridge_write[PCI_CONFIG_HEADER_SIZE] = {
 	[0x04/4] = {PCI_CONFIG_ALLOW,  0xffffffff}, /* Command, Status */
-	[0x0c/4] = {PCI_CONFIG_ALLOW,  0xff00ffff}, /* BIST, Lat., Cacheline */
+	[0x0c/4] = {PCI_CONFIG_ALLOW,  0xffffffff}, /* BIST, Header Type (r/o),
+						       Latency, Cacheline */
 	[0x1c/4] = {PCI_CONFIG_RDONLY, 0x0000ffff}, /* I/O Limit & Base */
 	[0x20/4 ...      /* Memory Limit/Base, Prefetch Memory Limit/Base, */
 	 0x30/4] = {PCI_CONFIG_RDONLY, 0xffffffff}, /* I/O Limit & Base */
