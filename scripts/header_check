@@ -15,15 +15,15 @@ if [ "$ARCH" == "" ]; then
 	ARCH=x86
 fi
 
-INCLUDE_ARM64=
-if [ "$ARCH" == "arm64" ]; then
-	INCLUDE_ARM64=-Ihypervisor/arch/arm/include
+INCLUDE_ARM_COMMON=
+if [ "$ARCH" == "arm" ] || [ "$ARCH" == "arm64" ]; then
+	INCLUDE_ARM_COMMON=-Ihypervisor/arch/arm-common/include
 fi
 
 CFLAGS="-fno-builtin-ffsl -Wall -Wstrict-prototypes -Wtype-limits \
 	-Wmissing-declarations -Wmissing-prototypes \
 	-Ihypervisor/arch/$ARCH/include -Ihypervisor/include \
-	$INCLUDE_ARM64 $EXTRA_CFLAGS"
+	$INCLUDE_ARM_COMMON $EXTRA_CFLAGS"
 
 test_compile()
 {

@@ -10,4 +10,4 @@
 # the COPYING file in the top-level directory.
 #
 
-LINUXINCLUDE += -I$(src)/arch/arm/include
+LINUXINCLUDE += -I$(src)/arch/arm-common/include

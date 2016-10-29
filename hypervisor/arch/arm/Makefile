@@ -10,4 +10,6 @@
 # the COPYING file in the top-level directory.
 #
 
+LINUXINCLUDE += -I$(src)/arch/arm-common/include
+
 KBUILD_CFLAGS += -marm
