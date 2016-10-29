@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013
+# Copyright (c) Siemens AG, 2013-2016
 # Copyright (c) Valentine Sinitsyn, 2014
 #
 # Authors:
@@ -22,20 +22,7 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -fno-strict-aliasing -fno-pic -fno-common \
 		 -fno-stack-protector -fno-builtin-ffsl
 
-ifeq ($(SRCARCH),x86)
-KBUILD_CFLAGS += -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
-KBUILD_CFLAGS += $(call cc-option,-mno-avx,)
-KBUILD_CPPFLAGS += -m64
-BUILD_VARIANTS := amd intel
-endif
-
-ifeq ($(SRCARCH),arm)
-KBUILD_CFLAGS += -marm
-endif
-
-ifeq ($(SRCARCH),arm64)
-LINUXINCLUDE += -I$(src)/arch/arm/include
-endif
+include $(src)/arch/$(SRCARCH)/Makefile
 
 ifneq ($(wildcard $(obj)/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(obj)/include/jailhouse/config.h
