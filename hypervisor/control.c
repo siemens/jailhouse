@@ -33,6 +33,9 @@ struct cell root_cell;
 static DEFINE_SPINLOCK(shutdown_lock);
 static unsigned int num_cells = 1;
 
+volatile unsigned long panic_in_progress;
+unsigned long panic_cpu = -1;
+
 /**
  * CPU set iterator.
  * @param cpu		Previous CPU ID.

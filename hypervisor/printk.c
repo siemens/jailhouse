@@ -11,14 +11,12 @@
  */
 
 #include <stdarg.h>
+#include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
-
-volatile unsigned long panic_in_progress;
-unsigned long panic_cpu = -1;
 
 static DEFINE_SPINLOCK(printk_lock);
 

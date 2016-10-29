@@ -12,9 +12,6 @@
 
 #include <jailhouse/types.h>
 
-extern volatile unsigned long panic_in_progress;
-extern unsigned long panic_cpu;
-
 void printk(const char *fmt, ...);
 
 void panic_printk(const char *fmt, ...);

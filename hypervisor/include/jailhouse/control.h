@@ -18,6 +18,9 @@
 #define SHUTDOWN_NONE			0
 #define SHUTDOWN_STARTED		1
 
+extern volatile unsigned long panic_in_progress;
+extern unsigned long panic_cpu;
+
 /**
  * @defgroup Control Control Subsystem
  *

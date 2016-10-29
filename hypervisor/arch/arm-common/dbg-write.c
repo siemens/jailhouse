@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
