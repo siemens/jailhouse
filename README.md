@@ -111,7 +111,7 @@ ARM architecture:
 
   - Abstract:
 
-    - ARMv7 with virtualization extensions
+    - ARMv7 with virtualization extensions or ARMv8
 
     - Appropriate boot loader support (typically U-Boot)
       - Linux is started in HYP mode
@@ -119,7 +119,7 @@ ARM architecture:
 
     - at least 2 logical CPUs
 
-  - Board support:
+  - ARM board:
 
     - Banana Pi ([see more](Documentation/setup-on-banana-pi-arm-board.md))
 
@@ -127,6 +127,12 @@ ARM architecture:
 
     - ARM Versatile Express with Cortex-A15 or A7 cores
       (includes ARM Fast Model)
+
+  - ARM64 board:
+
+    - AMD Seattle / SoftIron Overdrive 3000
+
+    - LeMaker HiKey
 
 On x86, hardware capabilities can be validated by running
 
