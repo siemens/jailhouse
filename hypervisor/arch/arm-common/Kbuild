@@ -1,0 +1,20 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2013-2016
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+include $(CONFIG_MK)
+
+OBJS-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o
+OBJS-y += irqchip.o gic-common.o
+OBJS-$(CONFIG_ARM_GIC_V2) += gic-v2.o
+OBJS-$(CONFIG_SERIAL_AMBA_PL011) += uart-pl011.o
+
+COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))
