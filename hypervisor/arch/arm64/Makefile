@@ -12,8 +12,6 @@
 
 include $(CONFIG_MK)
 
-KBUILD_AFLAGS := $(subst -include asm/unified.h,,$(KBUILD_AFLAGS))
-
 COMMON := ../arm-common
 
 always := built-in.o
