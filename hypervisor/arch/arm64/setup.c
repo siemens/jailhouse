@@ -109,7 +109,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	arm_write_sysreg(VTTBR_EL2, 0);
 
 	/* we will restore the root cell state with the MMU turned off,
-	 * so we need to make sure it has been commited to memory */
+	 * so we need to make sure it has been committed to memory */
 	arch_paging_flush_cpu_caches(guest_regs(cpu_data),
 				     sizeof(struct registers));
 	dsb(ish);

@@ -52,7 +52,7 @@ arch_entry:
 	 * guests, which can execute 'dc isw' (data or unified Cache line
 	 * Invalidate by Set/Way) because when virtualization is enabled
 	 * (HCR_EL2.VM == 1) then HW automatically upgrade 'dc isw' to
-	 * 'dc cisw' (Clean + Invallidate). Executing Clean operation before
+	 * 'dc cisw' (Clean + Invalidate). Executing Clean operation before
 	 * Invalidate is safe in guests.
 	 */
 
@@ -170,7 +170,7 @@ enable_mmu_el2:
 	 * Shareable domain is expected to be the set of PEs controlled by
 	 * a single hypervisor or operating system." (see p. 93 of ARM ARM)
 	 * We should think what hw configuration we support by one instance of
-	 * the hypervisor and choose Inner or Outter sharable domain.
+	 * the hypervisor and choose Inner or Outer sharable domain.
 	 */
 	ldr	x1, =(T0SZ(48) | (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)	\
 			       | (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)	\
