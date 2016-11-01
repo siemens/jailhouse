@@ -127,9 +127,9 @@ arch_shutdown_mmu:
 	/* x0: struct percpu* */
 	mov	x19, x0
 
-	/* Note: no memory accesses must be done after turning MMU off. There
-	 * is non-zero probability that cached data can be not syncronized with
-	 * system memory. CPU can access data bypassing D-cache when MMU is off.
+	/*
+	 * Note: no data accesses must be done after turning MMU off unless the
+	 * target region has been flushed out of D-cache.
 	 */
 
 	/* hand over control of EL2 back to Linux */
