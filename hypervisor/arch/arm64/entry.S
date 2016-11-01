@@ -314,7 +314,7 @@ init_bootstrap_pt:
 
 flush:	adr	x0, bootstrap_pt_l0
 	mov	x1, PAGE_SIZE * 3
-	mov	x2, DCACHE_CLEAN_AND_INVALIDATE_ASM
+	mov	x2, DCACHE_INVALIDATE_ASM
 	b	arm_dcaches_flush	// will ret to caller
 
 
