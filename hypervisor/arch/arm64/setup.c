@@ -115,7 +115,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	dsb(ish);
 
 	/* Return to EL1 */
-	arch_shutdown_mmu(cpu_data);
+	shutdown_el2(cpu_data);
 }
 
 void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)

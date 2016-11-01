@@ -123,8 +123,8 @@ el2_entry:
 	b	.
 
 
-	.globl arch_shutdown_mmu
-arch_shutdown_mmu:
+	.globl shutdown_el2
+shutdown_el2:
 	/* x0: struct percpu* */
 	mov	x19, x0
 
