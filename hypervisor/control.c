@@ -663,7 +663,7 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 	return -ENOENT;
 }
 
-static int shutdown(struct per_cpu *cpu_data)
+static int hypervisor_disable(struct per_cpu *cpu_data)
 {
 	unsigned int this_cpu = cpu_data->cpu_id;
 	unsigned int cpu;
@@ -787,7 +787,7 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 
 	switch (code) {
 	case JAILHOUSE_HC_DISABLE:
-		return shutdown(cpu_data);
+		return hypervisor_disable(cpu_data);
 	case JAILHOUSE_HC_CELL_CREATE:
 		return cell_create(cpu_data, arg1);
 	case JAILHOUSE_HC_CELL_START:
