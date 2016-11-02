@@ -13,13 +13,8 @@
 #ifndef _JAILHOUSE_ASM_SETUP_H
 #define _JAILHOUSE_ASM_SETUP_H
 
-#include <asm/percpu.h>
+#include <jailhouse/types.h>
 
-#ifndef __ASSEMBLY__
+void enable_mmu_el2(u64 ttbr0_el2);
 
-#include <jailhouse/string.h>
-
-void enable_mmu_el2(page_table_t ttbr0_el2);
-
-#endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_SETUP_H */

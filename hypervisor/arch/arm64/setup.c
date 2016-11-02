@@ -54,7 +54,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	int err;
 
 	/* switch to the permanent page tables */
-	enable_mmu_el2(hv_paging_structs.root_table);
+	enable_mmu_el2(paging_hvirt2phys(hv_paging_structs.root_table));
 
 	cpu_data->mpidr = phys_processor_id();
 
