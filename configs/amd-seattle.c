@@ -20,6 +20,7 @@ struct {
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[16];
 	struct jailhouse_irqchip irqchips[3];
+	struct jailhouse_pci_device pci_devices[3];
 } __attribute__((packed)) config = {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
@@ -32,12 +33,16 @@ struct {
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_IO,
 		},
-		.platform_info.arm = {
-			.gicd_base = 0xe1110000,
-			.gicc_base = 0xe112f000,
-			.gich_base = 0xe1140000,
-			.gicv_base = 0xe116f000,
-			.maintenance_irq = 25,
+		.platform_info = {
+			.pci_mmconfig_base = 0xf0000000,
+			.pci_mmconfig_end_bus = 255,
+			.arm = {
+				.gicd_base = 0xe1110000,
+				.gicc_base = 0xe112f000,
+				.gich_base = 0xe1140000,
+				.gicv_base = 0xe116f000,
+				.maintenance_irq = 25,
+			},
 		},
 		.root_cell = {
 			.name = "amd-seattle",
@@ -45,6 +50,7 @@ struct {
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
+			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
 		},
 	},
 
@@ -151,19 +157,18 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* pcie */ {
-			.phys_start = 0xf0000000,
-			.virt_start = 0xf0000000,
-			.size =	      0x10000000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
 		/* RAM */ {
 			.phys_start = 0x8000000000,
 			.virt_start = 0x8000000000,
 			.size =        0x400000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
+		},
+		/* IVSHMEM shared memory region */ {
+			.phys_start = 0x82fbe00000,
+			.virt_start = 0x82fbe00000,
+			.size =           0x100000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 	},
 	.irqchips = {
@@ -189,5 +194,25 @@ struct {
 			},
 		},
 	},
-
+	.pci_devices = {
+		/* 00:00.0 */ {
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.bdf = 0x0000,
+		},
+		/* 00:02.0 */ {
+			.type = JAILHOUSE_PCI_TYPE_BRIDGE,
+			.bdf = 0x0010,
+		},
+		/* 00:0f.0 */ {
+			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
+			.bdf = 0x0078,
+			.bar_mask = {
+				0xffffff00, 0xffffffff, 0x00000000,
+				0x00000000, 0xffffffe0, 0xffffffff,
+			},
+			.num_msix_vectors = 1,
+			.shmem_region = 15,
+			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
+		},
+	},
 };
