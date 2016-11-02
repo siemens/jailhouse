@@ -95,6 +95,9 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 /* disable the hypervisor on the current CPU */
 void arch_shutdown_self(struct per_cpu *cpu_data)
 {
+	void (*shutdown_func)(struct per_cpu *) =
+		(void (*)(struct per_cpu *))paging_hvirt2phys(shutdown_el2);
+
 	irqchip_cpu_shutdown(cpu_data);
 
 	/* Free the guest */
@@ -110,12 +113,11 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 
 	/* we will restore the root cell state with the MMU turned off,
 	 * so we need to make sure it has been committed to memory */
-	arch_paging_flush_cpu_caches(guest_regs(cpu_data),
-				     sizeof(struct registers));
+	arch_paging_flush_cpu_caches(cpu_data, sizeof(*cpu_data));
 	dsb(ish);
 
 	/* Return to EL1 */
-	shutdown_el2(cpu_data);
+	shutdown_func((struct per_cpu *)paging_hvirt2phys(cpu_data));
 }
 
 void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)

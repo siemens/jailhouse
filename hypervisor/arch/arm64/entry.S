@@ -126,19 +126,13 @@ el2_entry:
 	.globl shutdown_el2
 shutdown_el2:
 	/* x0: struct percpu* */
-	mov	x19, x0
 
 	/*
+	 * Disable the hypervisor MMU.
+	 *
 	 * Note: no data accesses must be done after turning MMU off unless the
 	 * target region has been flushed out of D-cache.
 	 */
-
-	/* hand over control of EL2 back to Linux */
-	add	x1, x19, #PERCPU_SAVED_VECTORS
-	ldr	x2, [x1]
-	msr	vbar_el2, x2
-
-	/* disable the hypervisor MMU */
 	mrs	x1, sctlr_el2
 	ldr	x2, =(SCTLR_M_BIT | SCTLR_C_BIT | SCTLR_I_BIT)
 	bic	x1, x1, x2
@@ -152,8 +146,13 @@ shutdown_el2:
 
 	msr	tpidr_el2, xzr
 
+	/* hand over control of EL2 back to Linux */
+	add	x1, x0, #PERCPU_SAVED_VECTORS
+	ldr	x2, [x1]
+	msr	vbar_el2, x2
+
 	/* Call vmreturn(guest_registers) */
-	add	x0, x19, #(PERCPU_STACK_END - 32 * 8)
+	add	x0, x0, #(PERCPU_STACK_END - 32 * 8)
 	b	vmreturn
 
 
