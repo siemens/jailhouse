@@ -19,6 +19,8 @@
 
 /* For compatibility with older kernel versions */
 #include <linux/version.h>
+#include <linux/gfp.h>
+#include <linux/stat.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
 #define DEVICE_ATTR_RO(_name) \
