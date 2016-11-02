@@ -152,6 +152,10 @@ static void init_late(void)
 	paging_dump_stats("after late setup");
 }
 
+/*
+ * This is the entry point, called by the Linux driver on each CPU
+ * when initializing Jailhouse.
+ */
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 {
 	static volatile bool activate;
@@ -162,6 +166,8 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 	spin_lock(&init_lock);
 
 	if (master_cpu_id == -1) {
+		/* Only the master CPU, the first to enter this
+		 * function, performs system-wide initializations. */
 		master = true;
 		init_early(cpu_id);
 	}

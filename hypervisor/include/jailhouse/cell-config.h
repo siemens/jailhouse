@@ -158,8 +158,13 @@ struct jailhouse_iommu {
 
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JAILSYST"
 
+/**
+ * General descriptor of the system.
+ */
 struct jailhouse_system {
 	char signature[8];
+
+	/** Jailhouse's location in memory */
 	struct jailhouse_memory hypervisor_memory;
 	struct jailhouse_memory debug_console;
 	union {

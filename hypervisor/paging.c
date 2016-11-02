@@ -27,6 +27,8 @@ extern u8 __page_pool[];
 /**
  * Offset between virtual and physical hypervisor addresses.
  *
+ * Jailhouse operates in a physically contiguous memory region,
+ * enabling offset-based address conversion.
  * @note Private, use page_map_hvirt2phys() or page_map_phys2hvirt() instead.
  */
 unsigned long page_offset;

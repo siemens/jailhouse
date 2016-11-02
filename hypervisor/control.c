@@ -72,6 +72,10 @@ bool cpu_id_valid(unsigned long cpu_id)
 		test_bit(cpu_id, system_cpu_set));
 }
 
+/*
+ * Suspend all CPUs assigned to the cell except the one executing
+ * the function (if it is in the cell's CPU set) to prevent races.
+ */
 static void cell_suspend(struct cell *cell, struct per_cpu *cpu_data)
 {
 	unsigned int cpu;
@@ -404,6 +408,10 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_cell_exit;
 
+	/*
+	 * Shrinking: the new cell's CPUs are parked, then removed from the root
+	 * cell, assigned to the new cell and get their stats cleared.
+	 */
 	for_each_cpu(cpu, cell->cpu_set) {
 		arch_park_cpu(cpu);
 

@@ -24,15 +24,22 @@
  */
 typedef int (*jailhouse_entry)(unsigned int);
 
-/** Hypervisor description. */
+/**
+ * Hypervisor description.
+ * Located at the beginning of the hypervisor binary image and loaded by
+ * the driver (which also initializes some fields).
+ */
 struct jailhouse_header {
-	/** Signature "JAILHOUS".
+	/** Signature "JAILHOUS" used for basic validity check of the
+	 * hypervisor image.
 	 * @note Filled at build time. */
 	char signature[8];
-	/** Size of hypervisor core, rounded up to page boundary.
+	/** Size of hypervisor core.
+	 * It starts with the hypervisor's header and ends after its bss
+	 * section. Rounded up to page boundary.
 	 * @note Filled at build time. */
 	unsigned long core_size;
-	/** Size of per-CPU data structure.
+	/** Size of the per-CPU data structure.
 	 * @note Filled at build time. */
 	unsigned long percpu_size;
 	/** Entry point (arch_entry()).
