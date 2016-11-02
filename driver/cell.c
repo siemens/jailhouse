@@ -212,6 +212,8 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		goto error_cell_delete;
 	}
 
+	/* Off-line each CPU assigned to the new cell and remove it from the
+	 * root cell's set. */
 	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (cpu_online(cpu)) {
 			err = cpu_down(cpu);

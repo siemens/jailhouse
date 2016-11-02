@@ -138,6 +138,11 @@ void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 	return vma->addr;
 }
 
+/*
+ * Called for each cpu by the JAILHOUSE_ENABLE ioctl.
+ * It jumps to the entry point set in the header, reports the result and
+ * signals completion to the main thread that invoked it.
+ */
 static void enter_hypervisor(void *info)
 {
 	struct jailhouse_header *header = info;
@@ -177,6 +182,7 @@ static inline const char * jailhouse_fw_name(void)
 #endif
 }
 
+/* See Documentation/bootstrap-interface.txt */
 static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 {
 	const struct firmware *hypervisor;
@@ -228,6 +234,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	if (jailhouse_enabled || !try_module_get(THIS_MODULE))
 		goto error_unlock;
 
+	/* Load hypervisor image */
 	err = request_firmware(&hypervisor, fw_name, jailhouse_dev);
 	if (err) {
 		pr_err("jailhouse: Missing hypervisor image %s\n", fw_name);
@@ -252,6 +259,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 #ifdef JAILHOUSE_BORROW_ROOT_PT
 	remap_addr = JAILHOUSE_BASE;
 #endif
+	/* Map physical memory region reserved for Jailhouse. */
 	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, remap_addr,
 					   hv_mem->size);
 	if (!hypervisor_mem) {
@@ -260,6 +268,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_release_fw;
 	}
 
+	/* Copy hypervisor's binary image at beginning of the memory region
+	 * and clear the rest to zero. */
 	memcpy(hypervisor_mem, hypervisor->data, hypervisor->size);
 	memset(hypervisor_mem + hypervisor->size, 0,
 	       hv_mem->size - hypervisor->size);
@@ -276,6 +286,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	flush_icache_range((unsigned long)hypervisor_mem,
 			   (unsigned long)(hypervisor_mem + header->core_size));
 
+	/* Copy system configuration to its target address in hypervisor memory
+	 * region. */
 	config = (struct jailhouse_system *)
 		(hypervisor_mem + hv_core_and_percpu_size);
 	if (copy_from_user(config, arg, config_size)) {
