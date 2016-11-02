@@ -122,6 +122,7 @@ el2_entry:
 	bl	entry
 	b	.
 
+
 	.globl arch_shutdown_mmu
 arch_shutdown_mmu:
 	/* x0: struct percpu* */
@@ -154,6 +155,7 @@ arch_shutdown_mmu:
 	/* Call vmreturn(guest_registers) */
 	add	x0, x19, #(PERCPU_STACK_END - 32 * 8)
 	b	vmreturn
+
 
 	.globl enable_mmu_el2
 enable_mmu_el2:
@@ -194,6 +196,7 @@ enable_mmu_el2:
 	dsb	nsh
 
 	ret
+
 
 /*
  * macros used by init_bootstrap_pt
@@ -313,6 +316,7 @@ flush:	adr	x0, bootstrap_pt_l0
 	mov	x1, PAGE_SIZE * 3
 	mov	x2, DCACHE_CLEAN_AND_INVALIDATE_ASM
 	b	arm_dcaches_flush	// will ret to caller
+
 
 .macro	ventry	label
 	.align	7
