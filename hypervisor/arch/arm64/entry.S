@@ -2,10 +2,12 @@
  * Jailhouse AArch64 support
  *
  * Copyright (C) 2015-2016 Huawei Technologies Duesseldorf GmbH
+ * Copyright (c) 2016 Siemens AG
  *
  * Authors:
  *  Antonios Motakis <antonios.motakis@huawei.com>
  *  Dmitry Voytik <dmitry.voytik@huawei.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -19,6 +21,16 @@
 #define LINUX_HVC_GET_VECTORS		0
 #define LINUX_HVC_SET_VECTORS		1
 
+/* x11 must contain the virt-to-phys offset */
+.macro virt2phys, register
+	add	\register, \register, x11
+.endm
+
+/* x11 must contain the virt-to-phys offset */
+.macro phys2virt, register
+	sub	\register, \register, x11
+.endm
+
 /* Entry point for Linux loader module on JAILHOUSE_ENABLE */
 	.text
 	.globl arch_entry
@@ -28,7 +40,11 @@ arch_entry:
 	 *
 	 * We don't have access to our own address space yet, so we will
 	 * abuse some caller saved registers to preserve across calls:
-	 * x15: physical UART address
+	 * x11: virtual-to-physical address offset
+	 * x12: physical hypervisor address
+	 * x13: virtual hypervisor address
+	 * x14: physical UART address
+	 * x15: virtual UART address
 	 * x16: saved hyp vectors
 	 * x17: cpuid
 	 * x18: caller lr
@@ -36,14 +52,41 @@ arch_entry:
 	mov	x17, x0
 	mov	x18, x30
 
+	/* keep the Linux stub EL2 vectors for later */
+	mov	x0, #LINUX_HVC_GET_VECTORS
+	hvc	#0
+	mov	x16, x0
+
 	/*
 	 * Access the just updated hypervisor_header prior to turning off the
 	 * MMU. Later, we will only read a stale memory content.
 	 */
-	adr     x15, hypervisor_header
-	ldr     x15, [x15, #DEBUG_CONSOLE_BASE]
+	adr     x0, hypervisor_header
 
-	/* Note 1: After turning MMU off the CPU can start bypassing caches.
+	ldr	x15, =UART_BASE
+
+	adrp	x1, __page_pool
+	ldrh	w2, [x0, #HEADER_MAX_CPUS]
+	lsl	x2, x2, #PERCPU_SIZE_SHIFT_ASM
+	add	x1, x1, x2
+	ldr	x14, [x1, #SYSCONFIG_DEBUG_CONSOLE_PHYS]
+
+	ldr	x13, =JAILHOUSE_BASE
+
+	ldr	x12, [x1, #SYSCONFIG_HYPERVISOR_PHYS]
+
+	sub	x11, x12, x13
+
+	/*
+	 * Set jailhouse_header.debug_console_base to UART_BASE plus the offset
+	 * into the UART's physical 2 MB page.
+	 */
+	and	x1, x14, #0x1fffff
+	add	x15, x15, x1
+	str	x15, [x0, #HEADER_DEBUG_CONSOLE_VIRT]
+
+	/*
+	 * Note 1: After turning MMU off the CPU can start bypassing caches.
 	 * But cached before data is kept in caches either until the CPU turns
 	 * MMU on again or other coherent agents move cached data out. That's
 	 * why there is no need to clean D-cache before turning MMU off.
@@ -56,15 +99,12 @@ arch_entry:
 	 * Invalidate is safe in guests.
 	 */
 
-	/* keep the linux stub EL2 vectors for later */
-	mov	x0, #LINUX_HVC_GET_VECTORS
-	hvc	#0
-	mov	x16, x0
-
 	/* install bootstrap_vectors */
 	mov	x0, #LINUX_HVC_SET_VECTORS
 	ldr	x1, =bootstrap_vectors
+	virt2phys x1
 	hvc	#0
+
 	hvc	#0	/* bootstrap vectors enter EL2 at el2_entry */
 	b	.	/* we don't expect to return here */
 
@@ -75,16 +115,18 @@ el2_entry:
 	cmp	x1, #0x16
 	b.ne	.		/* not hvc */
 
-	/* install jailhouse vectors */
-	adr	x1, hyp_vectors
-	msr	vbar_el2, x1
-
 	/* init bootstrap page tables */
 	bl	init_bootstrap_pt
 
 	/* enable temporary mmu mapings for early initialization */
 	adr	x0, bootstrap_pt_l0
-	bl	enable_mmu_el2
+	adr	x30, 1f		/* set lr manually to ensure... */
+	phys2virt x30		/* ...that we return to a virtual address */
+	b	enable_mmu_el2
+1:
+	/* install the final vectors */
+	adr	x1, hyp_vectors
+	msr	vbar_el2, x1
 
 	mov	x0, x17		/* preserved cpuid, will be passed to entry */
 	adrp	x1, __page_pool
@@ -241,82 +283,41 @@ init_bootstrap_pt:
 	 * initialization process. These tables will be replaced
 	 * during hypervisor initialization.
 	 *
-	 * x0: physical address of hypervisor binary (2mb block)
-	 * x1: physical address of uart to map (2mb block)
+	 * x0: physical address of trampoline page
+	 * x12: physical address of hypervisor binary
+	 * x13: virtual address of hypervisor binary
+	 * x14: physical address of uart to map
+	 * x15: virtual address of uart to map
 	 *
 	 * These are referenced statically for now.
-	 * AARCH64_TODO: remove the build time dependency, and take
-	 * these values as input from the system configuration.
 	 *
 	 * Clobbers x0-x4,x8,x9
 	 */
-	ldr	x0, =JAILHOUSE_BASE
-	mov	x1, x15
+	adrp	x0, __trampoline_start
 
-	/* l0 pt index for firmware and uart */
-	get_index x2, x0, 0
-	get_index x3, x1, 0
+	/* map the l1 table that includes the firmware and the uart */
+	get_index x2, x13, 0
+	set_table bootstrap_pt_l0, x2, bootstrap_pt_l1_hyp_uart
 
-	/* map the l1 table that includes the firmware */
-	set_table bootstrap_pt_l0, x2, bootstrap_pt_l1
+	/* map the l1 table that includes the trampoline */
+	get_index x3, x0, 0
+	set_table bootstrap_pt_l0, x3, bootstrap_pt_l1_trampoline
 
-	cmp	x2, x3
-	b.eq	1f
+	/*  fill the l1 tables */
+	get_index x2, x13, 1
+	set_table bootstrap_pt_l1_hyp_uart, x2, bootstrap_pt_l2_hyp_uart
+	get_index x4, x0, 1
+	set_block bootstrap_pt_l1_trampoline, x4, x0, 1
 
-	/*
-	 * Case 1: firmware and uart reside on sepparate l0 entries
-	 *	   (512gb regions). The wildcard table is used as an
-	 *	   l1 table for the uart.
-	 */
-	get_index x2, x0, 1
-	set_block bootstrap_pt_l1, x2, x0, 1 /* 1gb block for firmware */
+	get_index x2, x13, 2
+	set_block bootstrap_pt_l2_hyp_uart, x2, x12, 2
+	get_index x3, x15, 2
+	set_block_dev bootstrap_pt_l2_hyp_uart, x3, x14, 2
 
-	/* 512gb blocks are not supported by the hardware. Use the
-	 * wildcard table to map a 1gb block for the uart */
-	set_table bootstrap_pt_l0, x3, bootstrap_pt_wildcard
-	get_index x3, x1, 1
-	set_block_dev bootstrap_pt_wildcard, x3, x1, 1
-
-	b	flush
-
-1:	get_index x2, x0, 1
-	get_index x3, x1, 1
-	cmp	x2, x3
-	b.eq	1f
-
-	/*
-	 * Case 2: firwmare and uart reside on sepparate l1 entries.
-	 *	   Just map 1gb blocks, we don't need the wildcard.
-	 */
-	set_block bootstrap_pt_l1, x2, x0, 1
-	set_block_dev bootstrap_pt_l1, x3, x1, 1
-
-	b	flush
-
-	/* l1 granularity not enough; attempt to map on l2 blocks (2mb) */
-1:	set_table bootstrap_pt_l1, x2, bootstrap_pt_wildcard
-	get_index x2, x0, 2
-	get_index x3, x1, 2
-	cmp	x2, x3
-	b.eq	1f
-
-	/*
-	 * Case 3: firmware and uart reside on sepparate l2 entries,
-	 *	   we can still salvage the situation (2mb blocks).
-	 *	   We use the wildcard table for the l2 table for
-	 *	   the firmware and the uart.
-	 */
-	set_block bootstrap_pt_wildcard, x2, x0, 2
-	set_block_dev bootstrap_pt_wildcard, x3, x1, 2
-	b	flush
-
-	/* uart and firmware within same 2MB block; cry now */
-1:	b	.
-
-flush:	adr	x0, bootstrap_pt_l0
-	mov	x1, PAGE_SIZE * 3
+	adrp	x0, bootstrap_pt_l0
+	mov	x1, PAGE_SIZE * 4
 	mov	x2, DCACHE_INVALIDATE_ASM
-	b	arm_dcaches_flush	// will ret to caller
+	b	arm_dcaches_flush	/* will return to our caller */
 
 
 .macro	ventry	label

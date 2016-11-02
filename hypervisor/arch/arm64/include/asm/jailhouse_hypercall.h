@@ -10,8 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/config.h>
-
 #define JAILHOUSE_CALL_INS		"hvc #0x4a48"
 #define JAILHOUSE_CALL_NUM_RESULT	"x0"
 #define JAILHOUSE_CALL_ARG1		"x1"
