@@ -31,7 +31,8 @@ int mmio_cell_init(struct cell *cell)
 	unsigned int n;
 	void *pages;
 
-	cell->max_mmio_regions = arch_mmio_count_regions(cell);
+	cell->max_mmio_regions = arch_mmio_count_regions(cell) +
+		pci_mmio_count_regions(cell);
 
 	for_each_mem_region(mem, cell->config, n)
 		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))

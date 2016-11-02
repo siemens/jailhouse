@@ -214,6 +214,7 @@ void config_commit(struct cell *cell_added_removed)
 		arch_flush_cell_vcpu_caches(cell_added_removed);
 
 	arch_config_commit(cell_added_removed);
+	pci_config_commit(cell_added_removed);
 }
 
 static bool address_in_region(unsigned long addr,
@@ -312,6 +313,7 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 			remap_to_root_cell(mem, WARN_ON_ERROR);
 	}
 
+	pci_cell_exit(cell);
 	arch_cell_destroy(cell);
 
 	config_commit(cell);
@@ -408,6 +410,10 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_cell_exit;
 
+	err = pci_cell_init(cell);
+	if (err)
+		goto err_arch_destroy;
+
 	/*
 	 * Shrinking: the new cell's CPUs are parked, then removed from the root
 	 * cell, assigned to the new cell and get their stats cleared.
@@ -467,8 +473,10 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 err_destroy_cell:
 	cell_destroy_internal(cpu_data, cell);
-	/* cell_destroy_internal already calls cell_exit */
+	/* cell_destroy_internal already calls arch_cell_destroy & cell_exit */
 	goto err_free_cell;
+err_arch_destroy:
+	arch_cell_destroy(cell);
 err_cell_exit:
 	cell_exit(cell);
 err_free_cell:
@@ -663,6 +671,16 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 	return -ENOENT;
 }
 
+/**
+ * Perform all CPU-unrelated hypervisor shutdown steps.
+ */
+void shutdown(void)
+{
+	pci_prepare_handover();
+	arch_shutdown();
+	pci_shutdown();
+}
+
 static int hypervisor_disable(struct per_cpu *cpu_data)
 {
 	unsigned int this_cpu = cpu_data->cpu_id;
@@ -703,7 +721,7 @@ static int hypervisor_disable(struct per_cpu *cpu_data)
 	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
 		if (num_cells == 1) {
 			printk("Shutting down hypervisor\n");
-			arch_shutdown();
+			shutdown();
 			state = SHUTDOWN_STARTED;
 		} else {
 			state = -EBUSY;

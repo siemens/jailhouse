@@ -11,7 +11,6 @@
  */
 
 #include <jailhouse/control.h>
-#include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
@@ -44,13 +43,9 @@ int arch_cell_create(struct cell *cell)
 	if (err)
 		goto error_vm_exit;
 
-	err = pci_cell_init(cell);
-	if (err)
-		goto error_iommu_exit;
-
 	err = ioapic_cell_init(cell);
 	if (err)
-		goto error_pci_exit;
+		goto error_iommu_exit;
 
 	err = cat_cell_init(cell);
 	if (err)
@@ -66,8 +61,6 @@ int arch_cell_create(struct cell *cell)
 
 error_ioapic_exit:
 	ioapic_cell_exit(cell);
-error_pci_exit:
-	pci_cell_exit(cell);
 error_iommu_exit:
 	iommu_cell_exit(cell);
 error_vm_exit:
@@ -122,7 +115,6 @@ void arch_cell_destroy(struct cell *cell)
 {
 	cat_cell_exit(cell);
 	ioapic_cell_exit(cell);
-	pci_cell_exit(cell);
 	iommu_cell_exit(cell);
 	vcpu_cell_exit(cell);
 }
@@ -134,17 +126,14 @@ void arch_cell_reset(struct cell *cell)
 void arch_config_commit(struct cell *cell_added_removed)
 {
 	iommu_config_commit(cell_added_removed);
-	pci_config_commit(cell_added_removed);
 	ioapic_config_commit(cell_added_removed);
 }
 
 void arch_shutdown(void)
 {
-	pci_prepare_handover();
 	ioapic_prepare_handover();
 
 	iommu_shutdown();
-	pci_shutdown();
 	ioapic_shutdown();
 }
 

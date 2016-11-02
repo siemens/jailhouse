@@ -129,6 +129,8 @@ void config_commit(struct cell *cell_added_removed);
 
 long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2);
 
+void shutdown(void);
+
 void __attribute__((noreturn)) panic_stop(void);
 void panic_park(void);
 

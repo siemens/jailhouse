@@ -147,6 +147,10 @@ static void init_late(void)
 	if (error)
 		return;
 
+	error = pci_init();
+	if (error)
+		return;
+
 	config_commit(&root_cell);
 
 	paging_dump_stats("after late setup");
@@ -197,7 +201,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 
 	if (error) {
 		if (master)
-			arch_shutdown();
+			shutdown();
 		arch_cpu_restore(cpu_data, error);
 		return error;
 	}
