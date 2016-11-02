@@ -283,8 +283,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_unmap;
 	}
 
-	if (config->debug_console.flags & JAILHOUSE_MEM_IO) {
 #ifdef JAILHOUSE_BORROW_ROOT_PT
+	if (config->debug_console.flags & JAILHOUSE_MEM_IO) {
 		console = ioremap(config->debug_console.phys_start,
 				  config->debug_console.size);
 		if (!console) {
@@ -297,11 +297,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		/* The hypervisor has no notion of address spaces, so we need
 		 * to enforce conversion. */
 		header->debug_console_base = (void * __force)console;
-#else
-		header->debug_console_base =
-			(void * __force) config->debug_console.phys_start;
-#endif
 	}
+#endif
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
 	if (err)
