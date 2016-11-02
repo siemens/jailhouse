@@ -20,7 +20,6 @@ struct uart_chip {
 	void		*virt_base;
 
 	void (*wait)(struct uart_chip *);
-	void (*busy)(struct uart_chip *);
 	void (*write)(struct uart_chip *, char c);
 
 	void		*clock_reg;

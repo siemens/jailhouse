@@ -42,10 +42,6 @@ static void uart_wait(struct uart_chip *chip)
 		cpu_relax();
 }
 
-static void uart_busy(struct uart_chip *chip)
-{
-}
-
 static void uart_write(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->virt_base + UART_TX, c);

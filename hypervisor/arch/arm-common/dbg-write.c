@@ -42,6 +42,5 @@ void arch_dbg_write(const char *msg)
 		if (panic_in_progress && panic_cpu != phys_processor_id())
 			break;
 		uart.write(&uart, c);
-		uart.busy(&uart);
 	}
 }

@@ -65,10 +65,6 @@ static void uart_wait(struct uart_chip *chip)
 	} while (flags & (UARTFR_TXFF | UARTFR_BUSY)); /* FIFO full or busy */
 }
 
-static void uart_busy(struct uart_chip *chip)
-{
-}
-
 static void uart_write(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->virt_base + UARTDR, c);

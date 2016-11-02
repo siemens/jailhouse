@@ -30,7 +30,6 @@ static void console_write(const char *msg)
 
 		chip.wait(&chip);
 		chip.write(&chip, c);
-		chip.busy(&chip);
 	}
 }
 

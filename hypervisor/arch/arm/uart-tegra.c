@@ -18,7 +18,6 @@
 void uart_chip_init(struct uart_chip *chip)
 {
 	chip->wait = uart_wait;
-	chip->busy = uart_busy;
 	chip->write = uart_write;
 
 	uart_init(chip);

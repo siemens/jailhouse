@@ -19,7 +19,6 @@ void uart_chip_init(struct uart_chip *chip)
 	chip->virt_base = UART_BASE;
 	chip->wait = uart_wait;
 	chip->write = uart_write;
-	chip->busy = uart_busy;
 	chip->clock_reg = UART_CLOCK_REG;
 	chip->gate_nr = UART_GATE_NR;
 	uart_init(chip);
