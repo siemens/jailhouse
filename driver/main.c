@@ -169,7 +169,7 @@ static void enter_hypervisor(void *info)
 	atomic_inc(&call_done);
 }
 
-static inline const char * jailhouse_fw_name(void)
+static inline const char * jailhouse_get_fw_name(void)
 {
 #ifdef CONFIG_X86
 	if (boot_cpu_has(X86_FEATURE_SVM))
@@ -204,7 +204,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 #endif
 
-	fw_name = jailhouse_fw_name();
+	fw_name = jailhouse_get_fw_name();
 	if (!fw_name) {
 		pr_err("jailhouse: Missing or unsupported HVM technology\n");
 		return -ENODEV;
