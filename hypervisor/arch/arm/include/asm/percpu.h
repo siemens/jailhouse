@@ -30,7 +30,10 @@
 	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
 
 struct per_cpu {
+	/** Stack used while in hypervisor mode. */
 	u8 stack[PAGE_SIZE];
+
+	/** Linux stack pointer, used for handover to the hypervisor. */
 	unsigned long linux_sp;
 	unsigned long linux_ret;
 	unsigned long linux_flags;

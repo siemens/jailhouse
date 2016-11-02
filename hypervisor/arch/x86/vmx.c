@@ -78,6 +78,8 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 		[      0/8 ... 0x1fff/8 ] = 0,
 	},
 };
+
+/* Special access page to trap guest's attempts of accessing APIC in xAPIC mode */
 static u8 __attribute__((aligned(PAGE_SIZE))) apic_access_page[PAGE_SIZE];
 static struct paging ept_paging[EPT_PAGE_DIR_LEVELS];
 static u32 secondary_exec_addon;
@@ -339,6 +341,8 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	cell->arch.vmx.ept_structs.root_table =
 		(page_table_t)cell->arch.root_table_page;
 
+	/* Map the special APIC access page into the guest's physical address
+	 * space at the default address (XAPIC_BASE) */
 	err = paging_create(&cell->arch.vmx.ept_structs,
 			    paging_hvirt2phys(apic_access_page),
 			    PAGE_SIZE, XAPIC_BASE,
@@ -511,6 +515,8 @@ static bool vmcs_setup(struct per_cpu *cpu_data)
 
 	ok &= vmcs_write64(HOST_RSP, (unsigned long)cpu_data->stack +
 			   sizeof(cpu_data->stack));
+
+	/* Set function executed when trapping to the hypervisor */
 	ok &= vmcs_write64(HOST_RIP, (unsigned long)vmx_vmexit);
 
 	ok &= vmx_set_guest_cr(CR0_IDX, cpu_data->linux_cr0);

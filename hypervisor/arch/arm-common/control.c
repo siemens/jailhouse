@@ -57,6 +57,12 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	spin_unlock(&target_data->control_lock);
 
 	if (!target_suspended) {
+		/*
+		 * Send a maintenance signal (SGI_EVENT) to the target CPU.
+		 * Then, wait for the target CPU to enter the suspended state.
+		 * The target CPU, in turn, will leave the guest and handle the
+		 * request in the event loop.
+		 */
 		arm_cpu_kick(cpu_id);
 
 		while (!target_data->cpu_suspended)

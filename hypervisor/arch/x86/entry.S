@@ -25,17 +25,24 @@ arch_entry:
 	push %r14
 	push %r15
 
+	/* Locate the per_cpu region for the given CPU ID*/
 	mov %rdi,%rsi
 	shl $PERCPU_SIZE_SHIFT_ASM,%rsi
 	lea __page_pool(%rip),%rax
 	add %rax,%rsi
 
+	/* Save the Linux stack pointer inside the per_cpu region */
 	mov %rsp,PERCPU_LINUX_SP(%rsi)
 
+	/* Set the Jailhouse stack pointer */
 	lea PERCPU_STACK_END-8(%rsi),%rsp
 
 	push %rsi
 
+	/*
+	 * Call the architecture-independent entry(cpuid, struct per_cpu*)
+	 * function.
+	 */
 	call entry
 
 	pop %rsi

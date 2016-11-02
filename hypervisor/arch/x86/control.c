@@ -161,6 +161,12 @@ void arch_suspend_cpu(unsigned int cpu_id)
 	spin_unlock(&target_data->control_lock);
 
 	if (!target_suspended) {
+		/*
+		 * Send a maintenance signal (NMI) to the target CPU.
+		 * Then, wait for the target CPU to enter the suspended state.
+		 * The target CPU, in turn, will leave the guest and handle the
+		 * request in the event loop.
+		 */
 		apic_send_nmi_ipi(target_data);
 
 		while (!target_data->cpu_suspended)

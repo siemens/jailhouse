@@ -137,8 +137,8 @@ void panic_park(void);
  * @param cpu_id	ID of the target CPU.
  *
  * Suspension means that the target CPU is no longer executing cell code or
- * arbitrary hypervisor code. It may actively wait in the hypervisor context,
- * so the suspension time should be kept short.
+ * arbitrary hypervisor code. It may actively busy-wait in the hypervisor
+ * context, so the suspension time should be kept short.
  *
  * The function waits for the target CPU to enter suspended state.
  *
