@@ -26,4 +26,8 @@
 		. = . + PAGE_SIZE;					\
 		bootstrap_pt_wildcard = .;				\
 		. = . + PAGE_SIZE;					\
+	}								\
+	.trampoline : {							\
+		__trampoline_start = .;					\
+		*(.trampoline)						\
 	}

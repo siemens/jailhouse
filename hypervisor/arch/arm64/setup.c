@@ -19,6 +19,8 @@
 #include <asm/irqchip.h>
 #include <asm/setup.h>
 
+extern u8 __trampoline_start[];
+
 static u32 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE / 4] = {
 	0xd503207f, /* 1: wfi  */
 	0x17ffffff, /*    b 1b */
@@ -28,7 +30,20 @@ struct paging_structures parking_mm;
 
 int arch_init_early(void)
 {
+	unsigned long trampoline_page = paging_hvirt2phys(&__trampoline_start);
 	int err;
+
+	/*
+	 * ID-map the trampoline code page.
+	 *
+	 * We will need it for shutting down once the final page table is
+	 * installed. So better do this early while we can still handle errors.
+	 */
+	err = paging_create(&hv_paging_structs, trampoline_page, PAGE_SIZE,
+			    trampoline_page, PAGE_DEFAULT_FLAGS,
+			    PAGING_NON_COHERENT);
+	if (err)
+		return err;
 
 	parking_mm.root_paging = cell_paging;
 	parking_mm.root_table =

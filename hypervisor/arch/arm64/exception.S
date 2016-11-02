@@ -72,6 +72,8 @@ hyp_vectors:
 	ventry	.
 	ventry	.
 
+
+	.pushsection .trampoline, "ax"
 	.globl vmreturn
 vmreturn:
 	/* x0: struct registers* */
@@ -93,3 +95,4 @@ vmreturn:
 	ldp	x27, x28, [sp], #16
 	ldp	x29, x30, [sp], #16
 	eret
+	.popsection

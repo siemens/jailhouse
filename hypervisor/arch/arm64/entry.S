@@ -123,6 +123,7 @@ el2_entry:
 	b	.
 
 
+	.pushsection	.trampoline, "ax"
 	.globl shutdown_el2
 shutdown_el2:
 	/* x0: struct percpu* */
@@ -195,6 +196,7 @@ enable_mmu_el2:
 	dsb	nsh
 
 	ret
+	.popsection
 
 
 /*
