@@ -94,17 +94,11 @@ static void uart_wait(struct uart_chip *chip)
 	do {
 		flags = mmio_read32(chip->virt_base + UARTFR);
 		cpu_relax();
-	} while (flags & UARTFR_TXFF); /* FIFO full */
+	} while (flags & (UARTFR_TXFF | UARTFR_BUSY)); /* FIFO full or busy */
 }
 
 static void uart_busy(struct uart_chip *chip)
 {
-	u32 flags;
-
-	do {
-		flags = mmio_read32(chip->virt_base + UARTFR);
-		cpu_relax();
-	} while (flags & UARTFR_BUSY);
 }
 
 static void uart_write(struct uart_chip *chip, char c)
