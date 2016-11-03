@@ -10,7 +10,7 @@
 # the COPYING file in the top-level directory.
 #
 
-CC = $(CROSS_COMPILE)gcc
+CC ?= $(CROSS_COMPILE)gcc
 
 CFLAGS = -g -O3 -I../driver -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes -Werror \
