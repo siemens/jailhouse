@@ -417,7 +417,7 @@ static int jailhouse_cmd_disable(void)
 	if (num_online_cpus() != cpumask_weight(&root_cell->cpus_assigned)) {
 		/*
 		 * Not all assigned CPUs are currently online. If we disable
-		 * now, we will loose the offlined ones.
+		 * now, we will lose the offlined ones.
 		 */
 
 		preempt_enable();
