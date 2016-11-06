@@ -341,6 +341,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	release_firmware(hypervisor);
 
 	jailhouse_cell_register_root();
+	jailhouse_pci_virtual_root_devices_add();
 
 	jailhouse_enabled = true;
 
@@ -410,6 +411,8 @@ static int jailhouse_cmd_disable(void)
 	err = jailhouse_cmd_cell_destroy_non_root();
 	if (err)
 		goto unlock_out;
+
+	jailhouse_pci_virtual_root_devices_remove();
 
 	error_code = 0;
 

@@ -25,6 +25,8 @@ void jailhouse_pci_do_all_devices(struct cell *cell, unsigned int type,
 int jailhouse_pci_cell_setup(struct cell *cell,
 			     const struct jailhouse_cell_desc *cell_desc);
 void jailhouse_pci_cell_cleanup(struct cell *cell);
+void jailhouse_pci_virtual_root_devices_add(void);
+void jailhouse_pci_virtual_root_devices_remove(void);
 int jailhouse_pci_register(void);
 void jailhouse_pci_unregister(void);
 
@@ -44,6 +46,14 @@ jailhouse_pci_cell_setup(struct cell *cell,
 }
 
 static inline void jailhouse_pci_cell_cleanup(struct cell *cell)
+{
+}
+
+static inline void jailhouse_pci_virtual_root_devices_add(void)
+{
+}
+
+static inline void jailhouse_pci_virtual_root_devices_remove(void)
 {
 }
 

@@ -135,18 +135,12 @@ int jailhouse_cell_prepare_root(const struct jailhouse_cell_desc *cell_desc)
 
 void jailhouse_cell_register_root(void)
 {
-	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
-				     JAILHOUSE_PCI_ACTION_ADD);
-
 	root_cell->id = 0;
 	cell_register(root_cell);
 }
 
 void jailhouse_cell_delete_root(void)
 {
-	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
-				     JAILHOUSE_PCI_ACTION_DEL);
-
 	cell_delete(root_cell);
 }
 

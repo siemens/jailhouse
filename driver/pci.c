@@ -227,3 +227,15 @@ void jailhouse_pci_cell_cleanup(struct cell *cell)
 {
 	vfree(cell->pci_devices);
 }
+
+void jailhouse_pci_virtual_root_devices_add(void)
+{
+	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
+				     JAILHOUSE_PCI_ACTION_ADD);
+}
+
+void jailhouse_pci_virtual_root_devices_remove(void)
+{
+	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
+				     JAILHOUSE_PCI_ACTION_DEL);
+}
