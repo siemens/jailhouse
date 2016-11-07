@@ -23,7 +23,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[12];
+	struct jailhouse_memory mem_regions[20];
 	struct jailhouse_irqchip irqchips[2];
 } __attribute__((packed)) config = {
 	.header = {
@@ -65,6 +65,41 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
+		/*50000000-50033fff : /host1x@0,50000000*/ {
+			.phys_start = 0x50000000,
+			.virt_start = 0x50000000,
+			.size = 0x4000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/*54200000-5423ffff : /host1x@0,50000000/dc@0,54200000*/ {
+			.phys_start = 0x54200000,
+			.virt_start = 0x54200000,
+			.size = 0x4000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/*54240000-5427ffff : /host1x@0,50000000/dc@0,54240000*/ {
+			.phys_start = 0x54240000,
+			.virt_start = 0x54240000,
+			.size = 0x4000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/*54280000-542bffff : /host1x@0,50000000/hdmi@0,54280000 */ {
+			.phys_start = 0x54280000,
+			.virt_start = 0x54280000,
+			.size = 0x4000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* HACK: GPU */ {
+			.phys_start = 0x57000000,
+			.virt_start = 0x57000000,
+			.size = 0x02000000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
 		/* HACK: Legacy Interrupt Controller */ {
 			.phys_start = 0x60004000,
 			.virt_start = 0x60004000,
@@ -82,6 +117,20 @@ struct {
 		/* GPIO */ {
 			.phys_start = 0x6000d000,
 			.virt_start = 0x6000d000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* HACK: CPU_DFLL clock */ {
+			.phys_start = 0x70110000,
+			.virt_start = 0x70110000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* I2C, including HDMI_DDC*/ {
+			.phys_start = 0x7000c000,
+			.virt_start = 0x7000c000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
@@ -120,6 +169,13 @@ struct {
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
+		},
+		/* HACK: apbmisc */ {
+			.phys_start = 0x70000800,
+			.virt_start = 0x70000800,
+			.size = 0x00000100,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+					JAILHOUSE_MEM_IO,
 		},
 		/* USB */ {
 			.phys_start = 0x7d004000,
