@@ -13,7 +13,10 @@
 
 #include <linux/list.h>
 #include <linux/pci.h>
+#include <linux/of.h>
+#include <linux/of_fdt.h>
 #include <linux/vmalloc.h>
+#include <linux/version.h>
 
 #include "pci.h"
 
@@ -228,8 +231,147 @@ void jailhouse_pci_cell_cleanup(struct cell *cell)
 	vfree(cell->pci_devices);
 }
 
-void jailhouse_pci_virtual_root_devices_add(void)
+#ifdef CONFIG_OF
+extern u8 __dtb_vpci_template_begin[], __dtb_vpci_template_end[];
+
+static int overlay_id = -1;
+
+static unsigned int count_ivshmem_devices(struct cell *cell)
 {
+	const struct jailhouse_pci_device *dev = cell->pci_devices;
+	unsigned int n, count = 0;
+
+	for (n = cell->num_pci_devices; n > 0; n--, dev++)
+		if (dev->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
+			count++;
+	return count;
+}
+
+static const struct of_device_id gic_of_match[] = {
+	{ .compatible = "arm,cortex-a15-gic", },
+	{ .compatible = "arm,cortex-a7-gic", },
+	{ .compatible = "arm,gic-400", },
+	{},
+};
+
+static bool create_vpci_of_overlay(struct jailhouse_system *config)
+{
+	const size_t size = __dtb_vpci_template_end - __dtb_vpci_template_begin;
+	struct device_node *overlay = NULL;
+	struct device_node *vpci = NULL;
+	struct device_node *gic = NULL;
+	void *overlay_data = NULL;
+	bool success = false;
+	phandle gic_handle;
+	u32 *prop_val;
+	u64 base_addr;
+	int len;
+
+	overlay_data = kmemdup(__dtb_vpci_template_begin, size, GFP_KERNEL);
+	if (!overlay_data)
+		goto out;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+	of_fdt_unflatten_tree(overlay_data, NULL, &overlay);
+#else
+	of_fdt_unflatten_tree(overlay_data, &overlay);
+#endif
+	if (!overlay)
+		goto out;
+
+	of_node_set_flag(overlay, OF_DETACHED);
+
+	gic = of_find_matching_node(NULL, gic_of_match);
+	if (!gic)
+		goto out;
+
+	gic_handle = cpu_to_be32(gic->phandle);
+
+	vpci = of_find_node_by_name(overlay, "vpci");
+	if (!vpci)
+		goto out;
+
+	prop_val = (u32 *)of_get_property(vpci, "interrupt-map", &len);
+	if (!prop_val || len != 4 * 8 * sizeof(u32))
+		goto out;
+
+	/*
+	 * Inject the GIC handles and the slot's SPI number in the interrupt
+	 * map. We can patch this tree as it's still local in our overlay_data.
+	 */
+	prop_val[4] = gic_handle;
+	prop_val[6] = cpu_to_be32(config->root_cell.vpci_irq_base);
+	prop_val[12] = gic_handle;
+	prop_val[14] = cpu_to_be32(config->root_cell.vpci_irq_base + 1);
+	prop_val[20] = gic_handle;
+	prop_val[22] = cpu_to_be32(config->root_cell.vpci_irq_base + 2);
+	prop_val[28] = gic_handle;
+	prop_val[30] = cpu_to_be32(config->root_cell.vpci_irq_base + 3);
+
+	prop_val = (u32 *)of_get_property(vpci, "reg", &len);
+	if (!prop_val || len != 4 * sizeof(u32))
+		goto out;
+
+	/* Set the MMCONFIG base address of the host controller. */
+	base_addr = config->platform_info.pci_mmconfig_base;
+	prop_val[0] = cpu_to_be32(base_addr >> 32);
+	prop_val[1] = cpu_to_be32(base_addr);
+
+	prop_val = (u32 *)of_get_property(vpci, "ranges", &len);
+	if (!prop_val || len != 7 * sizeof(u32))
+		goto out;
+
+	/*
+	 * Locate the resource window right after MMCONFIG, which is only
+	 * covering one bus. Reserve 2 pages per virtual shared memory device.
+	 */
+	base_addr += 0x100000;
+	prop_val[1] = cpu_to_be32(base_addr >> 32);
+	prop_val[2] = cpu_to_be32(base_addr);
+	prop_val[3] = cpu_to_be32(base_addr >> 32);
+	prop_val[4] = cpu_to_be32(base_addr);
+	prop_val[6] = cpu_to_be32(count_ivshmem_devices(root_cell) * 0x2000);
+
+	overlay_id = of_overlay_create(overlay);
+	if (overlay_id < 0)
+		goto out;
+
+	of_node_put(overlay);
+
+	success = true;
+
+out:
+	of_node_put(vpci);
+	of_node_put(gic);
+	kfree(overlay_data);
+
+	return success;
+}
+
+static void destroy_vpci_of_overlay(void)
+{
+	if (overlay_id >= 0)
+		of_overlay_destroy(overlay_id);
+}
+#else /* !CONFIG_OF */
+static bool create_vpci_of_overlay(struct jailhouse_system *config)
+{
+	return false;
+}
+
+static void destroy_vpci_of_overlay(void)
+{
+}
+#endif
+
+void jailhouse_pci_virtual_root_devices_add(struct jailhouse_system *config)
+{
+	if (config->platform_info.pci_is_virtual &&
+	    !create_vpci_of_overlay(config)) {
+		pr_warn("jailhouse: failed to add virtual host controller\n");
+		return;
+	}
+
 	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
 				     JAILHOUSE_PCI_ACTION_ADD);
 }
@@ -238,4 +380,6 @@ void jailhouse_pci_virtual_root_devices_remove(void)
 {
 	jailhouse_pci_do_all_devices(root_cell, JAILHOUSE_PCI_TYPE_IVSHMEM,
 				     JAILHOUSE_PCI_ACTION_DEL);
+
+	destroy_vpci_of_overlay();
 }

@@ -1,0 +1,26 @@
+/dts-v1/;
+/ {
+	fragment {
+		target-path = "/";
+		__overlay__ {
+			#address-cells = <2>;
+			#size-cells = <2>;
+
+			vpci@0 {
+				compatible = "pci-host-ecam-generic";
+				device_type = "pci";
+				bus-range = <0 0>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 7>;
+				interrupt-map = <0 0 0 1 0xbad 0 0xbad 0>,
+						<0 0 0 2 0xbad 0 0xbad 0>,
+						<0 0 0 3 0xbad 0 0xbad 0>,
+						<0 0 0 4 0xbad 0 0xbad 0>;
+				reg = <0xbad 0xbad 0x0 0x100000>;
+				ranges = <0x02000000 0xbad 0xbad 0xbad 0xbad 0x0 0xbad>;
+			};
+		};
+	};
+};

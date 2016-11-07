@@ -341,7 +341,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	release_firmware(hypervisor);
 
 	jailhouse_cell_register_root();
-	jailhouse_pci_virtual_root_devices_add();
+	jailhouse_pci_virtual_root_devices_add(&config_header);
 
 	jailhouse_enabled = true;
 
