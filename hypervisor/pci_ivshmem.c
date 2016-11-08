@@ -73,9 +73,8 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	/* MSI-X capability */
 	[IVSHMEM_CFG_MSIX_CAP/4] = (IVSHMEM_MSIX_VECTORS - 1) << 16
 				   | (0x00 << 8) | PCI_CAP_MSIX,
-	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = PCI_CFG_BAR/8 + 2,
-	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS |
-					   (PCI_CFG_BAR/8 + 2),
+	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = 4,
+	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 4,
 };
 
 static void ivshmem_write_doorbell(struct pci_ivshmem_endpoint *ive)
