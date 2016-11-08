@@ -326,12 +326,7 @@ static void ivshmem_disconnect_cell(struct pci_ivshmem_data *iv, int cellnum)
 {
 	struct pci_ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
 	struct pci_ivshmem_endpoint *ive = &iv->eps[cellnum];
-	u16 cmd = *(u16 *)&ive->cspace[PCI_CFG_COMMAND / 4];
 
-	if (cmd & PCI_CMD_MEM) {
-		mmio_region_unregister(this_cell(), ive->bar0_address);
-		mmio_region_unregister(this_cell(), ive->bar4_address);
-	}
 	ive->device->ivshmem_endpoint = NULL;
 	ive->device = NULL;
 	ive->remote = NULL;
