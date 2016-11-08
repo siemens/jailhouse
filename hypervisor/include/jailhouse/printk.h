@@ -12,9 +12,9 @@
 
 #include <jailhouse/types.h>
 
-void printk(const char *fmt, ...);
+void __attribute__((format(printf, 1, 2))) printk(const char *fmt, ...);
 
-void panic_printk(const char *fmt, ...);
+void __attribute__((format(printf, 1, 2))) panic_printk(const char *fmt, ...);
 
 #ifdef CONFIG_TRACE_ERROR
 #define trace_error(code) ({						  \
