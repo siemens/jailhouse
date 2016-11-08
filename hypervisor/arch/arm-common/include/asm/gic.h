@@ -65,6 +65,7 @@ enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 void gic_handle_sgir_write(struct sgi *sgi, bool virt_input);
 void gic_handle_irq(struct per_cpu *cpu_data);
 bool gic_targets_in_cell(struct cell *cell, u8 targets);
+void gic_set_irq_pending(u16 irq_id);
 
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

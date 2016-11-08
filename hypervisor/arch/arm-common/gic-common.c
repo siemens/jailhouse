@@ -348,3 +348,9 @@ void gic_handle_irq(struct per_cpu *cpu_data)
 		irqchip_eoi_irq(irq_id, handled);
 	}
 }
+
+void gic_set_irq_pending(u16 irq_id)
+{
+	mmio_write32(gicd_base + GICD_ISPENDR + (irq_id / 32) * 4,
+		     1 << (irq_id % 32));
+}

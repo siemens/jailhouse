@@ -55,6 +55,12 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	bool local_injection = (this_cpu_data() == cpu_data);
 	unsigned int new_tail;
 
+	if (!cpu_data) {
+		/* Injection via GICD */
+		gic_set_irq_pending(irq_id);
+		return;
+	}
+
 	if (local_injection && irqchip.inject_irq(cpu_data, irq_id) != -EBUSY)
 		return;
 
