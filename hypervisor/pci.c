@@ -449,7 +449,7 @@ static enum mmio_result pci_mmconfig_access_handler(void *arg,
 
 invalid_access:
 	panic_printk("FATAL: Invalid PCI MMCONFIG write, device %02x:%02x.%x, "
-		     "reg: %x\n", PCI_BDF_PARAMS(mmio->address >> 12),
+		     "reg: %x\n", PCI_BDF_PARAMS((u32)mmio->address >> 12),
 		     reg_addr);
 	return MMIO_ERROR;
 

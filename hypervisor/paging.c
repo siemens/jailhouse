@@ -625,7 +625,7 @@ int paging_init(void)
  */
 void paging_dump_stats(const char *when)
 {
-	printk("Page pool usage %s: mem %d/%d, remap %d/%d\n", when,
+	printk("Page pool usage %s: mem %ld/%ld, remap %ld/%ld\n", when,
 	       mem_pool.used_pages, mem_pool.pages,
 	       remap_pool.used_pages, remap_pool.pages);
 }

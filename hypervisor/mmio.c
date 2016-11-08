@@ -312,7 +312,7 @@ static enum mmio_result mmio_handle_subpage(void *arg, struct mmio_access *mmio)
 	return MMIO_HANDLED;
 
 invalid_access:
-	panic_printk("FATAL: Invalid MMIO %s, address: %x, size: %x\n",
+	panic_printk("FATAL: Invalid MMIO %s, address: %lx, size: %x\n",
 		     mmio->is_write ? "write" : "read",
 		     (unsigned long)mem->phys_start + mmio->address,
 		     mmio->size);

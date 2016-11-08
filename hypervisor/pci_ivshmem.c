@@ -112,7 +112,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 			mmio->value = 0;
 		return MMIO_HANDLED;
 	}
-	panic_printk("FATAL: Invalid ivshmem register %s, number %02x\n",
+	panic_printk("FATAL: Invalid ivshmem register %s, number %02lx\n",
 		     mmio->is_write ? "write" : "read", mmio->address);
 	return MMIO_ERROR;
 }
