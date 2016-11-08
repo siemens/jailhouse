@@ -64,8 +64,8 @@ static void dump_regs(struct trap_context *ctx)
 	u64 pc;
 
 	arm_read_sysreg(ELR_EL2, pc);
-	panic_printk(" pc: %016lx   lr: %016lx spsr: %08lx     EL%1d\n"
-		     " sp: %016lx  esr: %02x %01x %07lx\n",
+	panic_printk(" pc: %016llx   lr: %016lx spsr: %08llx     EL%lld\n"
+		     " sp: %016llx  esr: %02llx %01llx %07llx\n",
 		     pc, ctx->regs[30], ctx->spsr, SPSR_EL(ctx->spsr),
 		     ctx->sp, ESR_EC(ctx->esr), ESR_IL(ctx->esr),
 		     ESR_ISS(ctx->esr));
@@ -91,7 +91,7 @@ static void dump_mem(unsigned long start, unsigned long stop)
 			if (caddr >= start)
 				printk("%08x ", *(unsigned int *)caddr);
 			else
-				printk("         ", *(unsigned int *)caddr);
+				printk("         ");
 			caddr += 4;
 		} while ((caddr & 0x1f) && caddr < stop);
 		if (caddr >= stop)
