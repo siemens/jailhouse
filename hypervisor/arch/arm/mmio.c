@@ -134,7 +134,7 @@ int arch_handle_dabt(struct trap_context *ctx)
 	return TRAP_HANDLED;
 
 error_unhandled:
-	panic_printk("Unhandled data %s at 0x%x(%d)\n",
+	panic_printk("Unhandled data %s at 0x%lx(%d)\n",
 		(is_write ? "write" : "read"), mmio.address, size);
 
 	return TRAP_UNHANDLED;

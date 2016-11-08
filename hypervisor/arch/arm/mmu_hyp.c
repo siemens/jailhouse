@@ -239,7 +239,7 @@ static void check_mmu_map(unsigned long virt_addr, unsigned long phys_addr)
 	arm_read_sysreg(PAR_EL1, par);
 	phys_base = (unsigned long)(par & PAR_PA_MASK);
 	if ((par & PAR_F_BIT) || (phys_base != phys_addr)) {
-		printk("VA->PA check failed, expected %x, got %x\n",
+		printk("VA->PA check failed, expected %lx, got %lx\n",
 				phys_addr, phys_base);
 		while (1);
 	}

@@ -237,7 +237,7 @@ static void dump_guest_regs(struct trap_context *ctx)
 	panic_printk("pc=0x%08x cpsr=0x%08x hsr=0x%08x\n", pc, cpsr, ctx->hsr);
 	for (reg = 0; reg < 15; reg++) {
 		access_cell_reg(ctx, reg, &reg_val, true);
-		panic_printk("r%d=0x%08x ", reg, reg_val);
+		panic_printk("r%d=0x%08lx ", reg, reg_val);
 		if ((reg + 1) % 4 == 0)
 			panic_printk("\n");
 	}

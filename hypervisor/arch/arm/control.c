@@ -107,7 +107,7 @@ static void arch_dump_exit(struct registers *regs, const char *reason)
 	unsigned int n;
 
 	arm_read_banked_reg(ELR_hyp, pc);
-	panic_printk("Unhandled HYP %s exit at 0x%x\n", reason, pc);
+	panic_printk("Unhandled HYP %s exit at 0x%lx\n", reason, pc);
 	for (n = 0; n < NUM_USR_REGS; n++)
 		panic_printk("r%d:%s 0x%08lx%s", n, n < 10 ? " " : "",
 			     regs->usr[n], n % 4 == 3 ? "\n" : "  ");
@@ -125,7 +125,7 @@ static void arch_dump_abt(bool is_data)
 	else
 		arm_read_sysreg(HIFAR, hxfar);
 
-	panic_printk("Physical address: 0x%08lx ESR: 0x%08x\n", hxfar, esr);
+	panic_printk("Physical address: 0x%08x ESR: 0x%08x\n", hxfar, esr);
 }
 
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
