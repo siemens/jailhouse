@@ -140,7 +140,7 @@ static bool shrink_root_cell_mask(u64 cell_mask)
 		}
 	}
 
-	printk("CAT: Shrunk root cell bitmask to %08x\n",
+	printk("CAT: Shrunk root cell bitmask to %08llx\n",
 	       root_cell.arch.cat_mask);
 	cat_update_cell(&root_cell);
 
@@ -193,7 +193,7 @@ int cat_cell_init(struct cell *cell)
 			BIT_MASK(cbm_max, 0) : root_cell.arch.cat_mask;
 	}
 
-	printk("CAT: Using COS %d with bitmask %08x for cell %s\n",
+	printk("CAT: Using COS %d with bitmask %08llx for cell %s\n",
 	       cell->arch.cos, cell->arch.cat_mask, cell->config->name);
 
 	return 0;
@@ -215,7 +215,7 @@ void cat_cell_exit(struct cell *cell)
 	freed_mask |= cell->arch.cat_mask & orig_root_mask;
 
 	if (merge_freed_mask_to_root()) {
-		printk("CAT: Extended root cell bitmask to %08x\n",
+		printk("CAT: Extended root cell bitmask to %08llx\n",
 		       root_cell.arch.cat_mask);
 		cat_update_cell(&root_cell);
 	}

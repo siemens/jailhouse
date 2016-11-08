@@ -867,18 +867,18 @@ out_err:
 
 static void dump_guest_regs(union registers *guest_regs, struct vmcb *vmcb)
 {
-	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", vmcb->rip,
+	panic_printk("RIP: 0x%016llx RSP: 0x%016llx FLAGS: %llx\n", vmcb->rip,
 		     vmcb->rsp, vmcb->rflags);
-	panic_printk("RAX: %p RBX: %p RCX: %p\n", guest_regs->rax,
-		     guest_regs->rbx, guest_regs->rcx);
-	panic_printk("RDX: %p RSI: %p RDI: %p\n", guest_regs->rdx,
-		     guest_regs->rsi, guest_regs->rdi);
-	panic_printk("CS: %x BASE: %p AR-BYTES: %x EFER.LMA %d\n",
+	panic_printk("RAX: 0x%016lx RBX: 0x%016lx RCX: 0x%016lx\n",
+		     guest_regs->rax, guest_regs->rbx, guest_regs->rcx);
+	panic_printk("RDX: 0x%016lx RSI: 0x%016lx RDI: 0x%016lx\n",
+		     guest_regs->rdx, guest_regs->rsi, guest_regs->rdi);
+	panic_printk("CS: %x BASE: 0x%016llx AR-BYTES: %x EFER.LMA %d\n",
 		     vmcb->cs.selector, vmcb->cs.base, vmcb->cs.access_rights,
 		     !!(vmcb->efer & EFER_LMA));
-	panic_printk("CR0: %p CR3: %p CR4: %p\n", vmcb->cr0,
-		     vmcb->cr3, vmcb->cr4);
-	panic_printk("EFER: %p\n", vmcb->efer);
+	panic_printk("CR0: 0x%016llx CR3: 0x%016llx CR4: 0x%016llx\n",
+		     vmcb->cr0, vmcb->cr3, vmcb->cr4);
+	panic_printk("EFER: 0x%016llx\n", vmcb->efer);
 }
 
 void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)
@@ -926,7 +926,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 
 	switch (vmcb->exitcode) {
 	case VMEXIT_INVALID:
-		panic_printk("FATAL: VM-Entry failure, error %d\n",
+		panic_printk("FATAL: VM-Entry failure, error %lld\n",
 			     vmcb->exitcode);
 		break;
 	case VMEXIT_NMI:
@@ -989,8 +989,8 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		goto vmentry;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:
-		panic_printk("FATAL: Unexpected #VMEXIT, exitcode %x, "
-			     "exitinfo1 %p exitinfo2 %p\n",
+		panic_printk("FATAL: Unexpected #VMEXIT, exitcode %llx, "
+			     "exitinfo1 0x%016llx exitinfo2 0x%016llx\n",
 			     vmcb->exitcode, vmcb->exitinfo1, vmcb->exitinfo2);
 	}
 	dump_guest_regs(&cpu_data->guest_regs, vmcb);

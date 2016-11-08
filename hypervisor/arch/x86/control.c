@@ -293,15 +293,15 @@ void x86_check_events(void)
 void __attribute__((noreturn))
 x86_exception_handler(struct exception_frame *frame)
 {
-	panic_printk("FATAL: Jailhouse triggered exception #%d\n",
+	panic_printk("FATAL: Jailhouse triggered exception #%lld\n",
 		     frame->vector);
 	if (frame->error != -1)
-		panic_printk("Error code: %x\n", frame->error);
+		panic_printk("Error code: %llx\n", frame->error);
 	panic_printk("Physical CPU ID: %lu\n", phys_processor_id());
-	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", frame->rip, frame->rsp,
-		     frame->flags);
+	panic_printk("RIP: 0x%016llx RSP: 0x%016llx FLAGS: %llx\n", frame->rip,
+		     frame->rsp, frame->flags);
 	if (frame->vector == PF_VECTOR)
-		panic_printk("CR2: %p\n", read_cr2());
+		panic_printk("CR2: 0x%016lx\n", read_cr2());
 
 	panic_stop();
 }

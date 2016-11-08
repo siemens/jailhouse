@@ -325,7 +325,7 @@ int iommu_init(void)
 		if (!iommu->amd_bdf)
 			return trace_error(-EINVAL);
 
-		printk("AMD IOMMU @0x%lx/0x%x\n", iommu->base, iommu->size);
+		printk("AMD IOMMU @0x%llx/0x%x\n", iommu->base, iommu->size);
 
 		/* Initialize PCI registers and MMIO space */
 		err = amd_iommu_init_pci(entry, iommu);
@@ -731,7 +731,7 @@ static void amd_iommu_print_event(struct amd_iommu *iommu,
 				  union buf_entry *entry)
 {
 	printk("AMD IOMMU %d reported event\n", iommu->idx);
-	printk(" EventCode: %lx, Operand 1: %lx, Operand 2: %lx\n",
+	printk(" EventCode: %x, Operand 1: %llx, Operand 2: %llx\n",
 	       entry->type, entry->raw64[0], entry->raw64[1]);
 	switch (entry->type) {
 		case EVENT_TYPE_ILL_DEV_TAB_ENTRY...EVENT_TYPE_PAGE_TAB_HW_ERR:
@@ -741,7 +741,8 @@ static void amd_iommu_print_event(struct amd_iommu *iommu,
 			break;
 		case EVENT_TYPE_ILL_CMD_ERR:
 		case EVENT_TYPE_CMD_HW_ERR:
-			panic_printk("FATAL: IOMMU %d command error\n");
+			panic_printk("FATAL: IOMMU %d command error\n",
+				     iommu->idx);
 			panic_stop();
 	}
 }

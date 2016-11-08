@@ -336,7 +336,7 @@ static enum mmio_result ioapic_access_handler(void *arg,
 	}
 
 invalid_access:
-	panic_printk("FATAL: Invalid IOAPIC %s, reg: %x, index: %x\n",
+	panic_printk("FATAL: Invalid IOAPIC %s, reg: %lx, index: %x\n",
 		     mmio->is_write ? "write" : "read", mmio->address,
 		     ioapic->index_reg_val);
 	return MMIO_ERROR;

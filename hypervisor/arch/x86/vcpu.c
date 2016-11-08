@@ -153,7 +153,7 @@ void vcpu_handle_hypercall(void)
 	guest_regs->rax = hypercall(code, guest_regs->rdi & arg_mask,
 				    guest_regs->rsi & arg_mask);
 	if (guest_regs->rax == -ENOSYS)
-		printk("CPU %d: Unknown hypercall %d, RIP: %p\n",
+		printk("CPU %d: Unknown hypercall %ld, RIP: 0x%016llx\n",
 		       this_cpu_id(), code,
 		       x_state.rip - X86_INST_LEN_HYPERCALL);
 
@@ -225,7 +225,7 @@ bool vcpu_handle_mmio_access(void)
 invalid_access:
 	/* report only unhandled access failures */
 	if (result == MMIO_UNHANDLED)
-		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: %p\n",
+		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: 0x%016llx\n",
 			     intercept.is_write ? "write" : "read",
 			     intercept.phys_addr);
 	return false;
@@ -247,7 +247,7 @@ bool vcpu_handle_msr_read(void)
 				cpu_data->mtrr_def_type);
 		break;
 	default:
-		panic_printk("FATAL: Unhandled MSR read: %x\n",
+		panic_printk("FATAL: Unhandled MSR read: %lx\n",
 			     cpu_data->guest_regs.rcx);
 		return false;
 	}
@@ -273,7 +273,7 @@ bool vcpu_handle_msr_write(void)
 			pa = (val >> bit_pos) & 0xff;
 			/* filter out reserved memory types */
 			if (pa == 2 || pa == 3 || pa > 7) {
-				printk("FATAL: Invalid PAT value: %x\n", val);
+				printk("FATAL: Invalid PAT value: %lx\n", val);
 				return false;
 			}
 		}
@@ -294,7 +294,7 @@ bool vcpu_handle_msr_write(void)
 					  cpu_data->pat : 0);
 		break;
 	default:
-		panic_printk("FATAL: Unhandled MSR write: %x\n",
+		panic_printk("FATAL: Unhandled MSR write: %lx\n",
 			     cpu_data->guest_regs.rcx);
 		return false;
 	}

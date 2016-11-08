@@ -981,7 +981,7 @@ static bool vmx_handle_cr(void)
 	default:
 		break;
 	}
-	panic_printk("FATAL: Unhandled CR access, qualification %x\n",
+	panic_printk("FATAL: Unhandled CR access, qualification %llx\n",
 		     exit_qualification);
 	return false;
 }
@@ -1039,7 +1039,7 @@ static bool vmx_handle_apic_access(void)
 		return true;
 	}
 	panic_printk("FATAL: Unhandled APIC access, "
-		     "qualification %x\n", qualification);
+		     "qualification %llx\n", qualification);
 	return false;
 }
 
@@ -1058,40 +1058,43 @@ static bool vmx_handle_xsetbv(void)
 			: "a" (guest_regs->rax), "c" (0), "d" (0));
 		return true;
 	}
-	panic_printk("FATAL: Invalid xsetbv parameters: xcr[%d] = %08x:%08x\n",
+	panic_printk("FATAL: Invalid xsetbv parameters: "
+		     "xcr[%ld] = %08lx:%08lx\n",
 		     guest_regs->rcx, guest_regs->rdx, guest_regs->rax);
 	return false;
 }
 
 static void dump_vm_exit_details(u32 reason)
 {
-	panic_printk("qualification %x\n", vmcs_read64(EXIT_QUALIFICATION));
+	panic_printk("qualification %lx\n", vmcs_read64(EXIT_QUALIFICATION));
 	panic_printk("vectoring info: %x interrupt info: %x\n",
 		     vmcs_read32(IDT_VECTORING_INFO_FIELD),
 		     vmcs_read32(VM_EXIT_INTR_INFO));
 	if (reason == EXIT_REASON_EPT_VIOLATION ||
 	    reason == EXIT_REASON_EPT_MISCONFIG)
-		panic_printk("guest phys addr %p guest linear addr: %p\n",
+		panic_printk("guest phys: 0x%016lx guest linear: 0x%016lx\n",
 			     vmcs_read64(GUEST_PHYSICAL_ADDRESS),
 			     vmcs_read64(GUEST_LINEAR_ADDRESS));
 }
 
 static void dump_guest_regs(union registers *guest_regs)
 {
-	panic_printk("RIP: %p RSP: %p FLAGS: %x\n", vmcs_read64(GUEST_RIP),
-		     vmcs_read64(GUEST_RSP), vmcs_read64(GUEST_RFLAGS));
-	panic_printk("RAX: %p RBX: %p RCX: %p\n", guest_regs->rax,
-		     guest_regs->rbx, guest_regs->rcx);
-	panic_printk("RDX: %p RSI: %p RDI: %p\n", guest_regs->rdx,
-		     guest_regs->rsi, guest_regs->rdi);
-	panic_printk("CS: %x BASE: %p AR-BYTES: %x EFER.LMA %d\n",
+	panic_printk("RIP: 0x%016lx RSP: 0x%016lx FLAGS: %lx\n",
+		     vmcs_read64(GUEST_RIP), vmcs_read64(GUEST_RSP),
+		     vmcs_read64(GUEST_RFLAGS));
+	panic_printk("RAX: 0x%016lx RBX: 0x%016lx RCX: 0x%016lx\n",
+		     guest_regs->rax, guest_regs->rbx, guest_regs->rcx);
+	panic_printk("RDX: 0x%016lx RSI: 0x%016lx RDI: 0x%016lx\n",
+		     guest_regs->rdx, guest_regs->rsi, guest_regs->rdi);
+	panic_printk("CS: %lx BASE: 0x%016lx AR-BYTES: %x EFER.LMA %d\n",
 		     vmcs_read64(GUEST_CS_SELECTOR),
 		     vmcs_read64(GUEST_CS_BASE),
 		     vmcs_read32(GUEST_CS_AR_BYTES),
 		     !!(vmcs_read32(VM_ENTRY_CONTROLS) & VM_ENTRY_IA32E_MODE));
-	panic_printk("CR0: %p CR3: %p CR4: %p\n", vmcs_read64(GUEST_CR0),
-		     vmcs_read64(GUEST_CR3), vmcs_read64(GUEST_CR4));
-	panic_printk("EFER: %p\n", vmcs_read64(GUEST_IA32_EFER));
+	panic_printk("CR0: 0x%016lx CR3: 0x%016lx CR4: 0x%016lx\n",
+		     vmcs_read64(GUEST_CR0), vmcs_read64(GUEST_CR3),
+		     vmcs_read64(GUEST_CR4));
+	panic_printk("EFER: 0x%016lx\n", vmcs_read64(GUEST_IA32_EFER));
 }
 
 void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io)

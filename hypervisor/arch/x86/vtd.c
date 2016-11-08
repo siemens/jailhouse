@@ -492,7 +492,7 @@ static enum mmio_result vtd_unit_access_handler(void *arg,
 		}
 		return MMIO_HANDLED;
 	}
-	panic_printk("FATAL: Unhandled DMAR unit %s access, register %02x\n",
+	panic_printk("FATAL: Unhandled DMAR unit %s access, register %02lx\n",
 		     mmio->is_write ? "write" : "read", mmio->address);
 	return MMIO_ERROR;
 
@@ -633,7 +633,7 @@ int iommu_init(void)
 		if (version < VTD_VER_MIN || version == 0xff)
 			return trace_error(-EIO);
 
-		printk("DMAR unit @0x%lx/0x%x\n", unit->base, unit->size);
+		printk("DMAR unit @0x%llx/0x%x\n", unit->base, unit->size);
 
 		caps = mmio_read64(reg_base + VTD_CAP_REG);
 		if (caps & VTD_CAP_SAGAW39)
