@@ -14,6 +14,7 @@
 #define _JAILHOUSE_ASM_IVSHMEM_H
 
 struct arch_pci_ivshmem {
+	u16 irq_id;
 };
 
 #endif /* !_JAILHOUSE_ASM_IVSHMEM_H */
