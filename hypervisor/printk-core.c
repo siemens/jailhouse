@@ -111,7 +111,7 @@ static void __vprintk(const char *fmt, va_list ap)
 	char c, fill;
 	unsigned long long v;
 	unsigned int width;
-	bool longmode;
+	enum {SZ_NORMAL, SZ_LONG, SZ_LONGLONG} length;
 
 	p = buf;
 
@@ -136,15 +136,21 @@ static void __vprintk(const char *fmt, va_list ap)
 					width = 0;
 			}
 
-			longmode = false;
+			length = SZ_NORMAL;
 			if (c == 'l') {
-				longmode = true;
+				length = SZ_LONG;
 				c = *fmt++;
+				if (c == 'l') {
+					length = SZ_LONGLONG;
+					c = *fmt++;
+				}
 			}
 
 			switch (c) {
 			case 'd':
-				if (longmode)
+				if (length == SZ_LONGLONG)
+					v = va_arg(ap, long long);
+				else if (length == SZ_LONG)
 					v = va_arg(ap, long);
 				else
 					v = va_arg(ap, int);
@@ -161,19 +167,17 @@ static void __vprintk(const char *fmt, va_list ap)
 				console_write(va_arg(ap, const char *));
 				break;
 			case 'u':
-				if (longmode)
-					v = va_arg(ap, unsigned long);
-				else
-					v = va_arg(ap, unsigned int);
-				p = uint2str(v, p);
-				p = align(p, p0, width, fill);
-				break;
 			case 'x':
-				if (longmode)
+				if (length == SZ_LONGLONG)
+					v = va_arg(ap, unsigned long long);
+				else if (length == SZ_LONG)
 					v = va_arg(ap, unsigned long);
 				else
 					v = va_arg(ap, unsigned int);
-				p = hex2str(v, p, 0);
+				if (c == 'u')
+					p = uint2str(v, p);
+				else
+					p = hex2str(v, p, 0);
 				p = align(p, p0, width, fill);
 				break;
 			default:
