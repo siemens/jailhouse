@@ -509,7 +509,7 @@ class MemoryRegion:
 
 
 class Config:
-    _HEADER_FORMAT = '8x32s4xIIIIIIII'
+    _HEADER_FORMAT = '8x32s4xIIIIIIIII'
 
     def __init__(self, config_file):
         self.data = config_file.read()
@@ -522,7 +522,8 @@ class Config:
          self.num_irqchips,
          self.pio_bitmap_size,
          self.num_pci_devices,
-         self.num_pci_caps) = \
+         self.num_pci_caps,
+         self.vpci_irq_base) = \
             struct.unpack_from(Config._HEADER_FORMAT, self.data)
         self.name = str(name.decode())
 

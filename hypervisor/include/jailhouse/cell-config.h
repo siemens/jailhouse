@@ -65,6 +65,8 @@ struct jailhouse_cell_desc {
 	__u32 pio_bitmap_size;
 	__u32 num_pci_devices;
 	__u32 num_pci_caps;
+
+	__u32 vpci_irq_base;
 } __attribute__((packed));
 
 #define JAILHOUSE_MEM_READ		0x0001
