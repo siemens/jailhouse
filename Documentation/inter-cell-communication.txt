@@ -26,6 +26,19 @@ relevant information by accessing custom PCI config space registers. See
 hypervisor/pci_ivshmem.c IVSHMEM_CFG_SHMEM_* or the ivshmem demo in the
 inmates directory.
 
+To facilitate state synchronisation between cells, two additional MMIO
+registers are provided:
+
+    Offset  Size    Access      Reset   Function
+    16      4       read/write  0       Local state (LSTATE)
+    20      4       read-only   0       Remote state (RSTATE)
+
+Local state: Current value is visible as RSTATE in the connected cell.
+Writes trigger the doorbell as by writing to the Doorbell register.
+
+Remote state: Returns the current value of the LSTATE register in the
+connected cell, zero if no peer is connected.
+
 Adding Inter-cell communication to cells
 ----------------------------------------
 

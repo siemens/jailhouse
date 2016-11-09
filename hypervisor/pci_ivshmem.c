@@ -41,6 +41,8 @@
 
 #define IVSHMEM_REG_IVPOS	8
 #define IVSHMEM_REG_DBELL	12
+#define IVSHMEM_REG_LSTATE	16
+#define IVSHMEM_REG_RSTATE	20
 
 #define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
 
@@ -50,6 +52,7 @@
 struct pci_ivshmem_endpoint {
 	u32 cspace[IVSHMEM_CFG_SIZE / sizeof(u32)];
 	u32 ivpos;
+	u32 state;
 	u64 bar0_address;
 	u64 bar4_address;
 	struct pci_device *device;
@@ -111,6 +114,26 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 			mmio->value = 0;
 		return MMIO_HANDLED;
 	}
+
+	if (mmio->address == IVSHMEM_REG_LSTATE) {
+		if (mmio->is_write) {
+			ive->state = mmio->value;
+			memory_barrier();
+			ivshmem_write_doorbell(ive);
+		} else {
+			mmio->value = ive->state;
+		}
+		return MMIO_HANDLED;
+	}
+
+	if (mmio->address == IVSHMEM_REG_RSTATE && !mmio->is_write) {
+		if (ive->remote)
+			mmio->value = ive->remote->state;
+		else
+			mmio->value = 0;
+		return MMIO_HANDLED;
+	}
+
 	panic_printk("FATAL: Invalid ivshmem register %s, number %02lx\n",
 		     mmio->is_write ? "write" : "read", mmio->address);
 	return MMIO_ERROR;
