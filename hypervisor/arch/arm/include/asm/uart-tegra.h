@@ -25,7 +25,6 @@
 
 static void uart_init(struct uart_chip *chip)
 {
-	chip->virt_base += 0x300;
 }
 
 static void uart_wait(struct uart_chip *chip)

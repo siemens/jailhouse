@@ -35,8 +35,8 @@ struct {
 			.size = 0x4000000 - 0x100000, /* -1MB (PSCI) */
 		},
 		.debug_console = {
-			.address = 0x70006000,
-			.size = 0x1000,
+			.address = 0x70006300,
+			.size = 0x40,
 			/* .divider = 0xdd, */
 			.flags = JAILHOUSE_CON_TYPE_UART_ARM |
 				 JAILHOUSE_CON_FLAG_MMIO,

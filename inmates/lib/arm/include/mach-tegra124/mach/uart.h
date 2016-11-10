@@ -10,4 +10,4 @@
  * the COPYING file in the top-level directory.
  */
 
-#define UART_BASE	((void *)0x70006000)
+#define UART_BASE	((void *)0x70006300)
