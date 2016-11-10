@@ -27,10 +27,12 @@
 
 static void uart_init(struct uart_chip *chip)
 {
-	if (chip->clock_reg)
-		mmio_write32(chip->clock_reg,
-			     mmio_read32(chip->clock_reg) |
-			     (1 << chip->gate_nr));
+	void *clock_reg = (void*)(unsigned long)chip->virt_clock_reg;
+	unsigned int gate_nr = chip->debug_console->gate_nr;
+
+	if (clock_reg)
+		mmio_write32(clock_reg,
+			     mmio_read32(clock_reg) | (1 << gate_nr));
 
 	/* only initialise if divider is not zero */
 	if (!chip->debug_console->divider)

@@ -18,13 +18,11 @@
 /* Defines the bare minimum for debug writes */
 struct uart_chip {
 	void		*virt_base;
+	void		*virt_clock_reg;
 	struct jailhouse_debug_console *debug_console;
 
 	void (*wait)(struct uart_chip *);
 	void (*write)(struct uart_chip *, char c);
-
-	void		*clock_reg;
-	unsigned int	gate_nr;
 };
 
 void uart_chip_init(struct uart_chip *chip);

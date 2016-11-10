@@ -191,7 +191,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	struct jailhouse_memory *hv_mem = &config_header.hypervisor_memory;
 	struct jailhouse_header *header;
 	unsigned long remap_addr = 0;
-	void __iomem *console = NULL;
+	void __iomem *console = NULL, *clock_reg = NULL;
 	unsigned long config_size;
 	const char *fw_name;
 	long max_cpus;
@@ -315,6 +315,18 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		 * to enforce conversion. */
 		header->debug_console_base = (void * __force)console;
 	}
+
+	if (config->debug_console.clock_reg) {
+		clock_reg = ioremap(config->debug_console.clock_reg, 1);
+		if (!clock_reg) {
+			err = -EINVAL;
+			pr_err("jailhouse: Unable to map hypervisor debug "
+			       "clock register at %08lx\n",
+			       (unsigned long)config->debug_console.clock_reg);
+			goto error_unmap;
+		}
+		header->debug_clock_reg = (void * __force)clock_reg;
+	}
 #endif
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
@@ -341,6 +353,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	if (console)
 		iounmap(console);
+	if (clock_reg)
+		iounmap(clock_reg);
 
 	release_firmware(hypervisor);
 
@@ -362,6 +376,8 @@ error_unmap:
 	vunmap(hypervisor_mem);
 	if (console)
 		iounmap(console);
+	if (clock_reg)
+		iounmap(clock_reg);
 
 error_release_fw:
 	release_firmware(hypervisor);

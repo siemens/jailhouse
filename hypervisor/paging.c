@@ -611,6 +611,17 @@ int paging_init(void)
 			return err;
 	}
 
+	vaddr = (unsigned long)hypervisor_header.debug_clock_reg;
+	if (vaddr) {
+		err = paging_create(&hv_paging_structs,
+				    system_config->debug_console.clock_reg,
+				    1, vaddr,
+				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
+				    PAGING_NON_COHERENT);
+		if (err)
+			return err;
+	}
+
 	/* Make sure any remappings to the temporary regions can be performed
 	 * without allocations of page table pages. */
 	return paging_create(&hv_paging_structs, 0,

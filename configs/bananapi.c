@@ -34,6 +34,8 @@ struct {
 		.debug_console = {
 			.address = 0x01c28000,
 			.size = 0x1000,
+			/* .clock_reg = 0x01c2006c, */
+			/* .gate_nr = 16 */
 			/* .divider = 0x0d, */
 			.flags = JAILHOUSE_CON_TYPE_UART_ARM |
 				 JAILHOUSE_CON_FLAG_MMIO,
