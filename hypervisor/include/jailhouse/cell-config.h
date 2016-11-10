@@ -117,6 +117,10 @@ struct jailhouse_irqchip {
 #define JAILHOUSE_PCI_TYPE_BRIDGE	0x02
 #define JAILHOUSE_PCI_TYPE_IVSHMEM	0x03
 
+#define JAILHOUSE_SHMEM_PROTO_UNDEFINED	0x0000
+#define JAILHOUSE_SHMEM_PROTO_VETH	0x0100
+#define JAILHOUSE_SHMEM_PROTO_CUSTOM	0x8000	/* 0x80xx..0xffxx */
+
 struct jailhouse_pci_device {
 	__u8 type;
 	__u8 iommu;
@@ -130,8 +134,11 @@ struct jailhouse_pci_device {
 	__u16 num_msix_vectors;
 	__u16 msix_region_size;
 	__u64 msix_address;
-	/** used to refer to memory in virtual PCI devices */
+	/** Memory region index of virtual shared memory device. */
 	__u32 shmem_region;
+	/** PCI subclass and interface ID of virtual shared memory device. */
+	__u16 shmem_protocol;
+	__u8 padding[2];
 } __attribute__((packed));
 
 #define JAILHOUSE_PCI_EXT_CAP		0x8000
