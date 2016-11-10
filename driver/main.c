@@ -301,14 +301,14 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 
 #ifdef JAILHOUSE_BORROW_ROOT_PT
-	if (config->debug_console.flags & JAILHOUSE_MEM_IO) {
-		console = ioremap(config->debug_console.phys_start,
+	if (CON_IS_MMIO(config->debug_console.flags)) {
+		console = ioremap(config->debug_console.address,
 				  config->debug_console.size);
 		if (!console) {
 			err = -EINVAL;
 			pr_err("jailhouse: Unable to map hypervisor debug "
 			       "console at %08lx\n",
-			       (unsigned long)config->debug_console.phys_start);
+			       (unsigned long)config->debug_console.address);
 			goto error_unmap;
 		}
 		/* The hypervisor has no notion of address spaces, so we need

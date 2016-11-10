@@ -18,9 +18,9 @@ Usage
 Add the following to the header section of your root cell's config:
 
 .debug_console = {
-        .phys_start = 0xb8000,
+        .address = 0xb8000,
         .size = 0x1000,
-        .flags = JAILHOUSE_MEM_IO,
+        .flags = JAILHOUSE_CON_TYPE_VGA | JAILHOUSE_CON_FLAG_MMIO,
 },
 
 Boot using the following kernel parameters:

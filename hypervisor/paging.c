@@ -595,7 +595,7 @@ int paging_init(void)
 	if (err)
 		return err;
 
-	if (system_config->debug_console.flags & JAILHOUSE_MEM_IO) {
+	if (CON_IS_MMIO(system_config->debug_console.flags)) {
 		vaddr = (unsigned long)hypervisor_header.debug_console_base;
 		/* check if console overlaps remapping region */
 		if (vaddr + system_config->debug_console.size >= REMAP_BASE &&
@@ -603,7 +603,7 @@ int paging_init(void)
 			return trace_error(-EINVAL);
 
 		err = paging_create(&hv_paging_structs,
-				    system_config->debug_console.phys_start,
+				    system_config->debug_console.address,
 				    system_config->debug_console.size, vaddr,
 				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
 				    PAGING_NON_COHERENT);

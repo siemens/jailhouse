@@ -35,9 +35,10 @@ struct {
 			.size = 0x4000000 - 0x100000, /* -1MB (PSCI) */
 		},
 		.debug_console = {
-			.phys_start = 0x70006000,
+			.address = 0x70006000,
 			.size = 0x1000,
-			.flags = JAILHOUSE_MEM_IO,
+			.flags = JAILHOUSE_CON_TYPE_UART_ARM |
+				 JAILHOUSE_CON_FLAG_MMIO,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0x48000000,

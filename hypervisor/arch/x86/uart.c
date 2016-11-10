@@ -54,20 +54,20 @@ static u8 (*uart_reg_in)(unsigned int) = uart_pio_in;
 
 void uart_init(void)
 {
-	u64 flags = system_config->debug_console.flags;
+	u32 flags = system_config->debug_console.flags;
 
-	if (system_config->debug_console.phys_start == 0)
+	if (system_config->debug_console.address == 0)
 		return;
 
-	if (flags & JAILHOUSE_MEM_IO) {
-		if (system_config->debug_console.phys_start < VGA_LIMIT)
+	if (CON_IS_MMIO(flags)) {
+		if (system_config->debug_console.address < VGA_LIMIT)
 			return; /* VGA memory */
 
 		uart_reg_out = uart_mmio32_out;
 		uart_reg_in = uart_mmio32_in;
 		uart_base = (u64)hypervisor_header.debug_console_base;
 	} else {
-		uart_base = system_config->debug_console.phys_start;
+		uart_base = system_config->debug_console.address;
 	}
 
 	uart_reg_out(UART_LCR, UART_LCR_DLAB);

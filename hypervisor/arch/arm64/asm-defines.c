@@ -23,7 +23,7 @@ void common(void)
 	OFFSET(HEADER_MAX_CPUS, jailhouse_header, max_cpus);
 	OFFSET(HEADER_DEBUG_CONSOLE_VIRT, jailhouse_header, debug_console_base);
 	OFFSET(SYSCONFIG_DEBUG_CONSOLE_PHYS, jailhouse_system,
-	       debug_console.phys_start);
+	       debug_console.address);
 	OFFSET(SYSCONFIG_HYPERVISOR_PHYS, jailhouse_system,
 	       hypervisor_memory.phys_start);
 	BLANK();

@@ -171,6 +171,26 @@ struct jailhouse_iommu {
 	__u32 amd_features;
 } __attribute__((packed));
 
+/* Bits 0..3 are used to select the particular driver */
+#define JAILHOUSE_CON_TYPE_UART_X86	0x0001
+#define JAILHOUSE_CON_TYPE_UART_ARM	0x0002
+#define JAILHOUSE_CON_TYPE_VGA		0x0003
+#define JAILHOUSE_CON_TYPE_MASK		0x000f
+
+#define CON_TYPE(flags) ((flags) & JAILHOUSE_CON_TYPE_MASK)
+
+/* We use bit 4..5 to differentiate between PIO and MMIO access */
+#define JAILHOUSE_CON_FLAG_PIO		0x0010
+#define JAILHOUSE_CON_FLAG_MMIO		0x0020
+
+#define CON_IS_MMIO(flags) ((flags) & JAILHOUSE_CON_FLAG_MMIO)
+
+struct jailhouse_debug_console {
+	__u64 address;
+	__u32 size;
+	__u32 flags;
+} __attribute__((packed));
+
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYST"
 
 /**
@@ -182,7 +202,7 @@ struct jailhouse_system {
 
 	/** Jailhouse's location in memory */
 	struct jailhouse_memory hypervisor_memory;
-	struct jailhouse_memory debug_console;
+	struct jailhouse_debug_console debug_console;
 	struct {
 		__u64 pci_mmconfig_base;
 		__u8 pci_mmconfig_end_bus;
