@@ -27,7 +27,7 @@
 #define UART_LSR		0x5
 #define UART_LSR_THRE		0x20
 
-u64 uart_base;
+static u64 uart_base;
 
 static void uart_pio_out(unsigned int reg, u8 value)
 {
@@ -56,13 +56,7 @@ void uart_init(void)
 {
 	u32 flags = system_config->debug_console.flags;
 
-	if (system_config->debug_console.address == 0)
-		return;
-
 	if (CON_IS_MMIO(flags)) {
-		if (system_config->debug_console.address < VGA_LIMIT)
-			return; /* VGA memory */
-
 		uart_reg_out = uart_mmio32_out;
 		uart_reg_in = uart_mmio32_in;
 		uart_base = (u64)hypervisor_header.debug_console_base;

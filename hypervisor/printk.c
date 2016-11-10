@@ -23,6 +23,12 @@ static DEFINE_SPINLOCK(printk_lock);
 #define console_write(msg)	arch_dbg_write(msg)
 #include "printk-core.c"
 
+static void dbg_write_stub(const char *msg)
+{
+}
+
+void (*arch_dbg_write)(const char *msg) = dbg_write_stub;
+
 void printk(const char *fmt, ...)
 {
 	va_list ap;

@@ -10,7 +10,5 @@
  * the COPYING file in the top-level directory.
  */
 
-extern u64 uart_base;
-
 void uart_init(void);
 void uart_write(const char *msg);

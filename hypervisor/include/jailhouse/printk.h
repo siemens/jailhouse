@@ -26,4 +26,4 @@ void __attribute__((format(printf, 1, 2))) panic_printk(const char *fmt, ...);
 #endif /* !CONFIG_TRACE_ERROR */
 
 void arch_dbg_write_init(void);
-void arch_dbg_write(const char *msg);
+extern void (*arch_dbg_write)(const char *msg);

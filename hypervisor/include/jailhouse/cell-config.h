@@ -172,6 +172,7 @@ struct jailhouse_iommu {
 } __attribute__((packed));
 
 /* Bits 0..3 are used to select the particular driver */
+#define JAILHOUSE_CON_TYPE_NONE		0x0000
 #define JAILHOUSE_CON_TYPE_UART_X86	0x0001
 #define JAILHOUSE_CON_TYPE_UART_ARM	0x0002
 #define JAILHOUSE_CON_TYPE_VGA		0x0003

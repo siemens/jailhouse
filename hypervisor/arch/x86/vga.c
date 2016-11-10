@@ -26,12 +26,11 @@
 #define VGA_U16(c)		((u16)(c) | (u16)VGA_ATTRIBUTE)
 #define ASCII_NONPRINTABLE	'?'
 
-u16 *vga_mem;
+static u16 *vga_mem;
 
 void vga_init(void)
 {
-	if (system_config->debug_console.address < VGA_LIMIT)
-		vga_mem = hypervisor_header.debug_console_base;
+	vga_mem = hypervisor_header.debug_console_base;
 }
 
 static void vga_scroll(void)

@@ -10,9 +10,5 @@
  * the COPYING file in the top-level directory.
  */
 
-#define VGA_LIMIT		0x100000	/* <1M means VGA */
-
-extern u16 *vga_mem;
-
 void vga_init(void);
 void vga_write(const char *msg);
