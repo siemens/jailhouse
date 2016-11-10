@@ -20,11 +20,11 @@ spec would allow for multiple interrupts, Jailhouse supports exactly one per
 virtual device.
 
 The ivshmem device implemented by the jailhouse hypervisor is different to the
-mentioned specification in one regard. The location and the size of the shared
-memory region itself are not encoded in a PCI BAR. Device drivers get the
-relevant information by accessing custom PCI config space registers. See
-hypervisor/pci_ivshmem.c IVSHMEM_CFG_SHMEM_* or the ivshmem demo in the
-inmates directory.
+mentioned specification in several regards. One is that the location and the
+size of the shared memory region itself are not encoded in a PCI BAR. Device
+drivers get the relevant information by accessing custom PCI config space
+registers. See hypervisor/pci_ivshmem.c IVSHMEM_CFG_SHMEM_* or the ivshmem demo
+in the inmates directory.
 
 To facilitate state synchronisation between cells, two additional MMIO
 registers are provided:
@@ -38,6 +38,13 @@ Writes trigger the doorbell as by writing to the Doorbell register.
 
 Remote state: Returns the current value of the LSTATE register in the
 connected cell, zero if no peer is connected.
+
+Moreover, the PCI Class Code field of the Jailhouse ivshmem device differs from
+the one used by the original device. The base class code (top byte) is 0xff.
+The subclass code (middle byte) is tunable via the cell configuration to encode
+the protocol that the connected cells are expected to implement over the shared
+memory. The programming interface code (low byte) is tunable as well and is
+supposed to encode possible revisions of that protocol.
 
 Adding Inter-cell communication to cells
 ----------------------------------------

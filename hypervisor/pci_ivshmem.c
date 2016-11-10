@@ -70,7 +70,7 @@ static struct pci_ivshmem_data *ivshmem_list;
 static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[0x00/4] = (IVSHMEM_DEVICE_ID << 16) | VIRTIO_VENDOR_ID,
 	[0x04/4] = (PCI_STS_CAPS << 16),
-	[0x08/4] = PCI_DEV_CLASS_MEM << 24,
+	[0x08/4] = PCI_DEV_CLASS_OTHER << 24,
 	[0x2c/4] = (IVSHMEM_DEVICE_ID << 16) | VIRTIO_VENDOR_ID,
 	[0x34/4] = IVSHMEM_CFG_MSIX_CAP,
 	/* MSI-X capability */
@@ -325,6 +325,8 @@ static void ivshmem_connect_cell(struct pci_ivshmem_data *iv,
 	d->bar[4] = PCI_BAR_64BIT;
 
 	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
+
+	ive->cspace[0x08/4] |= d->info->shmem_protocol << 8;
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] = (u32)(mem->virt_start >> 32);

@@ -33,7 +33,7 @@
 
 #define PCI_NUM_BARS		6
 
-#define PCI_DEV_CLASS_MEM	0x05
+#define PCI_DEV_CLASS_OTHER	0xff
 
 #define PCI_CAP_MSI		0x05
 #define PCI_CAP_MSIX		0x11
