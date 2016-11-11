@@ -81,6 +81,13 @@ void arm_cpu_reset(unsigned long pc)
 	irqchip_cpu_reset(cpu_data);
 }
 
+#ifdef CONFIG_CRASH_CELL_ON_PANIC
+void arch_panic_park(void)
+{
+	arm_write_sysreg(ELR_EL2, 0);
+}
+#endif
+
 int arch_cell_create(struct cell *cell)
 {
 	unsigned int first = first_cpu(cell->cpu_set);

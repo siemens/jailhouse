@@ -981,6 +981,12 @@ vmentry:
 
 void vcpu_park(void)
 {
+#ifdef CONFIG_CRASH_CELL_ON_PANIC
+	if (this_cpu_data()->failed) {
+		this_cpu_data()->vmcb.rip = 0;
+		return;
+	}
+#endif
 	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
 	/* No need to clear VMCB Clean bit: vcpu_vendor_reset() already does
 	 * this. */

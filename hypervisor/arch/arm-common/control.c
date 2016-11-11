@@ -219,7 +219,9 @@ void __attribute__((noreturn)) arch_panic_stop(void)
 	__builtin_unreachable();
 }
 
+#ifndef CONFIG_CRASH_CELL_ON_PANIC
 void arch_panic_park(void) __attribute__((alias("arm_cpu_park")));
+#endif
 
 void arch_shutdown(void)
 {

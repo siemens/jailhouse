@@ -900,6 +900,12 @@ void vcpu_nmi_handler(void)
 
 void vcpu_park(void)
 {
+#ifdef CONFIG_CRASH_CELL_ON_PANIC
+	if (this_cpu_data()->failed) {
+		vmcs_write64(GUEST_RIP, 0);
+		return;
+	}
+#endif
 	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
 	vmcs_write64(EPT_POINTER, paging_hvirt2phys(parking_pt.root_table) |
 				  EPT_TYPE_WRITEBACK | EPT_PAGE_WALK_LEN);
