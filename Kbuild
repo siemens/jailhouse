@@ -18,3 +18,5 @@ subdir-ccflags-y := -Werror
 # inmates build depends on generated config.mk of the hypervisor,
 # and the driver needs version.h from there
 $(obj)/inmates $(obj)/driver: $(obj)/hypervisor
+
+clean-dirs := Documentation/generated

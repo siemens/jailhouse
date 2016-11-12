@@ -32,20 +32,12 @@ DOXYGEN ?= doxygen
 
 kbuild = -C $(KDIR) M=$$PWD $@
 
-modules:
+modules clean:
 	$(Q)$(MAKE) $(kbuild)
 
 # documentation, build needs to be triggered explicitly
 docs:
 	$(DOXYGEN) Documentation/Doxyfile
-
-# remove generated docs
-docs_clean:
-	rm -rf Documentation/generated
-
-# clean up kernel, tools and generated docs
-clean: docs_clean
-	$(Q)$(MAKE) $(kbuild)
 
 modules_install: modules
 	$(Q)$(MAKE) $(kbuild)
