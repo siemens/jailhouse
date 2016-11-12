@@ -16,7 +16,9 @@
 # Copyright (c) Linux kernel developers, 2014
 #
 
-LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include -I$(src)/include
+LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
+		-I$(src)/arch/$(SRCARCH)/include/generated \
+		-I$(src)/include
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fno-pic -fno-common \
@@ -49,7 +51,7 @@ define filechk_version
 	$(src)/../scripts/gen_version_h $(src)/..
 endef
 
-clean-dirs += include/generated/
+clean-dirs := include/generated arch/$(SRCARCH)/include/generated
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \
@@ -75,7 +77,7 @@ define cmd_defines
 	 echo "#endif" ) > $@
 endef
 
-defines-file := include/generated/asm-defines.h
+defines-file := arch/$(SRCARCH)/include/generated/asm/asm-defines.h
 
 targets := $(defines-file) arch/$(SRCARCH)/asm-defines.s
 

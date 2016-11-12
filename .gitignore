@@ -14,6 +14,7 @@ tools/jailhouse-config-collect
 configs/*.cell
 Documentation/generated
 hypervisor/include/generated
+hypervisor/arch/*/include/generated
 *.s
 ci/out
 ci/*.tar.xz
