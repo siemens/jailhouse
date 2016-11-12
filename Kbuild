@@ -11,7 +11,7 @@
 # the COPYING file in the top-level directory.
 #
 
-subdir-y := driver hypervisor configs inmates
+subdir-y := driver hypervisor configs inmates tools
 
 subdir-ccflags-y := -Werror
 

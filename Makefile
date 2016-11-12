@@ -17,7 +17,7 @@ $(error Too old make version $(MAKE_VERSION), at least $(need) required)
 endif
 
 # no recipes above this one (also no includes)
-all: modules tools
+all: modules
 
 # includes installation-related variables and definitions
 include scripts/include.mk
@@ -35,10 +35,6 @@ kbuild = -C $(KDIR) M=$$PWD $@
 modules:
 	$(Q)$(MAKE) $(kbuild)
 
-# recursive build of tools
-tools:
-	$(Q)$(MAKE) -C tools
-
 # documentation, build needs to be triggered explicitly
 docs:
 	$(DOXYGEN) Documentation/Doxyfile
@@ -48,9 +44,8 @@ docs_clean:
 	rm -rf Documentation/generated
 
 # clean up kernel, tools and generated docs
-clean:	docs_clean
+clean: docs_clean
 	$(Q)$(MAKE) $(kbuild)
-	$(Q)$(MAKE) -C tools $@
 
 modules_install: modules
 	$(Q)$(MAKE) $(kbuild)
@@ -65,7 +60,7 @@ tool_inmates_install: $(DESTDIR)$(libexecdir)/jailhouse
 endif
 
 install: modules_install firmware_install $(TOOL_INMATES_INSTALL)
-	$(Q)$(MAKE) -C tools $@
+	$(Q)$(MAKE) -C tools $@ src=.
 
 .PHONY: modules_install install clean firmware_install modules tools docs \
 	docs_clean

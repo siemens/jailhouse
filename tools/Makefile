@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013, 2014
+# Copyright (c) Siemens AG, 2013-2016
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,15 +10,18 @@
 # the COPYING file in the top-level directory.
 #
 
-CC ?= $(CROSS_COMPILE)gcc
+# includes installation-related variables and definitions
+include $(src)/../scripts/include.mk
 
-CFLAGS = -g -O3 -I../driver -DLIBEXECDIR=\"$(libexecdir)\" \
+LD = $(CC)
+NOSTDINC_FLAGS :=
+LINUXINCLUDE := -I$(src)/../driver
+KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes -Werror \
-	-DJAILHOUSE_VERSION=\"$(shell cat ../VERSION)\" $(EXTRA_CFLAGS)
+	-DJAILHOUSE_VERSION=\"$(shell cat $(src)/../VERSION)\" $(EXTRA_CFLAGS)
+LDFLAGS :=
 
-TARGETS := jailhouse
-
-INST_TARGETS := $(TARGETS)
+BINARIES := jailhouse
 HELPERS := \
 	jailhouse-cell-linux \
 	jailhouse-cell-stats \
@@ -26,35 +29,38 @@ HELPERS := \
 	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
+always := $(BINARIES)
+
 HAS_PYTHON_MAKO := \
 	$(shell python -c "from mako.template import Template" 2>/dev/null \
 	&& echo yes)
 
 ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
-	TARGETS += jailhouse-config-collect
+	always += jailhouse-config-collect
 	HELPERS += jailhouse-config-collect
 else
-	TARGETS += no_python_mako
+	always += no_python_mako
 endif
 
 define patch_dirvar
 	sed -i 's|^$1 = None|$1 = "$($1)"|' $2
 endef
 
-# no recipes above this one (also no includes)
-all: $(TARGETS)
+quiet_cmd_gen_collect = GEN     $@
+define cmd_gen_collect
+	$< -g $@; \
+	chmod +x $@
+endef
 
-# includes installation-related variables and definitions
-include ../scripts/include.mk
+targets += jailhouse.o
 
-jailhouse: jailhouse.c ../driver/jailhouse.h ../VERSION
-	$(CC) $(CFLAGS) -o $@ $<
+$(obj)/jailhouse: $(obj)/jailhouse.o
+	$(call if_changed,ld)
 
-jailhouse-config-collect: jailhouse-config-create jailhouse-config-collect.tmpl
-	./$< -g $@
-	$(Q)chmod +x $@
+$(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse-config-collect.tmpl
+	$(call if_changed,gen_collect)
 
-install-bin: $(INST_TARGETS) $(DESTDIR)$(sbindir)
+install-bin: $(BINARIES) $(DESTDIR)$(sbindir)
 	$(INSTALL_PROGRAM) $^
 
 install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
@@ -67,13 +73,10 @@ install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 
 install: install-bin install-libexec install-data
 
-clean:
-	rm -f $(TARGETS)
-
-no_python_mako:
+$(obj)/no_python_mako:
 	@echo -ne "WARNING: Could not create the helper script to generate" \
 		  "configurations on remote machines" \
 		  "(\"jailhouse-conf-collect\"). You need Python and the" \
 		  "Mako library for it.\n"
 
-.PHONY: install install-bin install-libexec install-data clean no_python_mako
+.PHONY: install install-bin install-libexec install-data no_python_mako
