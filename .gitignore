@@ -4,6 +4,9 @@
 *.cmd
 *.bin
 .tmp_versions
+*.dtb
+*.dtb.S
+*.dtb.*.tmp
 Module.symvers
 modules.order
 driver/jailhouse.ko
