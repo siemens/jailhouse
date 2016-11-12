@@ -55,10 +55,8 @@ static void uart_write(struct uart_chip *chip, char c)
 	mmio_write32(chip->virt_base + UART_TX, c);
 }
 
-void uart_chip_init(struct uart_chip *chip)
-{
-	chip->wait = uart_wait;
-	chip->write = uart_write;
-
-	uart_init(chip);
-}
+struct uart_chip uart_ops = {
+	.wait = uart_wait,
+	.write = uart_write,
+	.init = uart_init,
+};

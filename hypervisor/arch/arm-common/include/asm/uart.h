@@ -21,11 +21,10 @@ struct uart_chip {
 	void		*virt_clock_reg;
 	struct jailhouse_debug_console *debug_console;
 
+	void (*init)(struct uart_chip*);
 	void (*wait)(struct uart_chip *);
 	void (*write)(struct uart_chip *, char c);
 };
-
-void uart_chip_init(struct uart_chip *chip);
 
 #endif /* !__ASSEMBLY__ */
 #endif /* !JAILHOUSE_ASM_UART_H_ */

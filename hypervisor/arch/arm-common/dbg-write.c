@@ -18,7 +18,9 @@
 #include <jailhouse/processor.h>
 #include <asm/uart.h>
 
-static struct uart_chip uart;
+extern struct uart_chip uart_ops;
+
+static struct uart_chip *uart = NULL;
 
 static void arm_uart_write(const char *msg)
 {
@@ -32,10 +34,10 @@ static void arm_uart_write(const char *msg)
 		if (!c)
 			break;
 
-		uart.wait(&uart);
+		uart->wait(uart);
 		if (panic_in_progress && panic_cpu != phys_processor_id())
 			break;
-		uart.write(&uart, c);
+		uart->write(uart, c);
 	}
 }
 
@@ -49,9 +51,13 @@ void arch_dbg_write_init(void)
 	if (con_type != JAILHOUSE_CON_TYPE_UART_ARM)
 		return;
 
-	uart.debug_console = &system_config->debug_console;
-	uart.virt_clock_reg = hypervisor_header.debug_clock_reg;
-	uart.virt_base = hypervisor_header.debug_console_base;
-	uart_chip_init(&uart);
-	arch_dbg_write = arm_uart_write;
+	uart = &uart_ops;
+
+	if (uart) {
+		uart->debug_console = &system_config->debug_console;
+		uart->virt_clock_reg = hypervisor_header.debug_clock_reg;
+		uart->virt_base = hypervisor_header.debug_console_base;
+		uart->init(uart);
+		arch_dbg_write = arm_uart_write;
+	}
 }
