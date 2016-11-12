@@ -174,8 +174,9 @@ struct jailhouse_iommu {
 /* Bits 0..3 are used to select the particular driver */
 #define JAILHOUSE_CON_TYPE_NONE		0x0000
 #define JAILHOUSE_CON_TYPE_UART_X86	0x0001
-#define JAILHOUSE_CON_TYPE_UART_ARM	0x0002
-#define JAILHOUSE_CON_TYPE_VGA		0x0003
+#define JAILHOUSE_CON_TYPE_VGA		0x0002
+#define JAILHOUSE_CON_TYPE_8250		0x0003
+#define JAILHOUSE_CON_TYPE_PL011	0x0004
 #define JAILHOUSE_CON_TYPE_MASK		0x000f
 
 #define CON_TYPE(flags) ((flags) & JAILHOUSE_CON_TYPE_MASK)

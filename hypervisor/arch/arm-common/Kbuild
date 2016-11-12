@@ -13,9 +13,7 @@
 include $(CONFIG_MK)
 
 OBJS-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o
-OBJS-y += irqchip.o gic-common.o pci.o ivshmem.o
+OBJS-y += irqchip.o gic-common.o pci.o ivshmem.o uart-pl011.o uart-8250.o
 OBJS-$(CONFIG_ARM_GIC_V2) += gic-v2.o
-OBJS-$(CONFIG_SERIAL_8250) += uart-8250.o
-OBJS-$(CONFIG_SERIAL_AMBA_PL011) += uart-pl011.o
 
 COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))

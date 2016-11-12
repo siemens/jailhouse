@@ -37,7 +37,7 @@ struct {
 			/* .clock_reg = 0x01c2006c, */
 			/* .gate_nr = 16 */
 			/* .divider = 0x0d, */
-			.flags = JAILHOUSE_CON_TYPE_UART_ARM |
+			.flags = JAILHOUSE_CON_TYPE_8250 |
 				 JAILHOUSE_CON_FLAG_MMIO,
 		},
 		.platform_info = {

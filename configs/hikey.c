@@ -32,7 +32,7 @@ struct {
 		.debug_console = {
 			.address = 0xf7113000,
 			.size = 0x1000,
-			.flags = JAILHOUSE_CON_TYPE_UART_ARM |
+			.flags = JAILHOUSE_CON_TYPE_PL011 |
 				 JAILHOUSE_CON_FLAG_MMIO,
 		},
 		.platform_info = {

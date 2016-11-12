@@ -18,7 +18,7 @@
 #include <jailhouse/processor.h>
 #include <asm/uart.h>
 
-extern struct uart_chip uart_ops;
+extern struct uart_chip uart_8250_ops, uart_pl011_ops;
 
 static struct uart_chip *uart = NULL;
 
@@ -48,10 +48,10 @@ void arch_dbg_write_init(void)
 	if (!CON_IS_MMIO(system_config->debug_console.flags))
 		return;
 
-	if (con_type != JAILHOUSE_CON_TYPE_UART_ARM)
-		return;
-
-	uart = &uart_ops;
+	if (con_type == JAILHOUSE_CON_TYPE_PL011)
+		uart = &uart_pl011_ops;
+	else if (con_type == JAILHOUSE_CON_TYPE_8250)
+		uart = &uart_8250_ops;
 
 	if (uart) {
 		uart->debug_console = &system_config->debug_console;
