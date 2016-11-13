@@ -197,13 +197,6 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	long max_cpus;
 	int err;
 
-#ifdef CONFIG_ARM
-	if (!is_hyp_mode_available()) {
-		pr_err("jailhouse: HYP mode not available\n");
-		return -ENODEV;
-	}
-#endif
-
 	fw_name = jailhouse_get_fw_name();
 	if (!fw_name) {
 		pr_err("jailhouse: Missing or unsupported HVM technology\n");
@@ -233,6 +226,14 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	err = -EBUSY;
 	if (jailhouse_enabled || !try_module_get(THIS_MODULE))
 		goto error_unlock;
+
+#ifdef CONFIG_ARM
+	if (!is_hyp_mode_available()) {
+		pr_err("jailhouse: HYP mode not available\n");
+		err = -ENODEV;
+		goto error_put_module;
+	}
+#endif
 
 	/* Load hypervisor image */
 	err = request_firmware(&hypervisor, fw_name, jailhouse_dev);
