@@ -2,7 +2,7 @@
 
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2015
+# Copyright (c) Siemens AG, 2015-2016
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -19,9 +19,75 @@ import os
 import struct
 import sys
 
-PARAMS_BASE = 0xf5000
-
 libexecdir = None
+
+
+class X86:
+    name = 'x86'
+
+    def setup(self, args, config):
+        self._zero_page = X86ZeroPage(args.kernel, args.initrd, config)
+
+        setup_data = x86_gen_setup_data()
+
+        self._zero_page.setup_header.setup_data = \
+            arch.params_address() + 0x1000
+        self._zero_page.setup_header.cmd_line_ptr = \
+            self._zero_page.setup_header.setup_data + len(setup_data)
+
+        self.params = self._zero_page.get_data() + setup_data + \
+            (args.cmdline.encode() if args.cmdline else b'') + b'\0'
+
+    def write_params(self, args, config):
+        args.write_params.write(arch.params)
+        args.write_params.close()
+
+        print('\
+Boot parameters written. Start Linux with the following commands (adjusting \
+paths as needed):\n\
+\n\
+jailhouse cell create %s\n\
+jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
+              (args.config.name, config.name, self.loader_address(),
+               args.kernel.name, zero_page.kernel_load_addr),
+              end='')
+        if args.initrd:
+            print('%s -a 0x%x ' %
+                  (args.initrd.name, zero_page.setup_header.ramdisk_image),
+                  end='')
+        print('%s -a 0x%x' % (args.write_params.name, arch.params_address()))
+        print('jailhouse cell start %s' % config.name)
+
+    @staticmethod
+    def loader_address():
+        return 0xf0000
+
+    @staticmethod
+    def params_address():
+        return 0xf5000
+
+    def kernel_address(self):
+        return self._zero_page.kernel_load_addr
+
+    def ramdisk_address(self):
+        return self._zero_page.setup_header.ramdisk_image
+
+
+def resolve_arch(defined_arch=None):
+    arch_classes = {'x86': X86, None: None}
+    try:
+        arch_class = arch_classes[defined_arch]
+    except KeyError:
+        print('Unknown architecture', file=sys.stderr)
+        exit(1)
+    if not arch_class:
+        arch_str = os.uname()[4]
+        if arch_str in ('i686', 'x86_64'):
+            arch_class = X86
+        else:
+            print('Unsupported architecture', file=sys.stderr)
+            exit(1)
+    return arch_class()
 
 
 class MemoryRegion:
@@ -95,12 +161,12 @@ class Config:
             memregion_offs += MemoryRegion.SIZE
 
 
-class SetupHeader:
+class X86SetupHeader:
     _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI28xQ'
 
     def __init__(self, kernel):
         kernel.seek(0x1f0)
-        parse_size = struct.calcsize(SetupHeader._HEADER_FORMAT)
+        parse_size = struct.calcsize(X86SetupHeader._HEADER_FORMAT)
         (self.setup_sects,
          self.syssize,
          self.jump,
@@ -110,14 +176,15 @@ class SetupHeader:
          self.cmd_line_ptr,
          self.kernel_alignment,
          self.setup_data) = \
-            struct.unpack(SetupHeader._HEADER_FORMAT, kernel.read(parse_size))
+            struct.unpack(X86SetupHeader._HEADER_FORMAT,
+                          kernel.read(parse_size))
 
         self.size = 0x202 + (self.jump >> 8) - 0x1f0
         kernel.seek(0x1f0)
         self.data = bytearray(kernel.read(self.size))
 
     def get_data(self):
-        struct.pack_into(SetupHeader._HEADER_FORMAT, self.data, 0,
+        struct.pack_into(X86SetupHeader._HEADER_FORMAT, self.data, 0,
                          self.setup_sects, self.syssize, self.jump,
                          self.type_of_loader, self.ramdisk_image,
                          self.ramdisk_size, self.cmd_line_ptr,
@@ -125,9 +192,9 @@ class SetupHeader:
         return self.data
 
 
-class ZeroPage:
+class X86ZeroPage:
     def __init__(self, kernel, initrd, config):
-        self.setup_header = SetupHeader(kernel)
+        self.setup_header = X86SetupHeader(kernel)
 
         prot_image_offs = (self.setup_header.setup_sects + 1) * 512
         prot_image_size = self.setup_header.syssize * 16
@@ -151,7 +218,7 @@ class ZeroPage:
         for region in config.memory_regions:
             if region.is_ram() or region.is_comm_region():
                 if len(self.e820_entries) >= 128:
-                    print("Too many memory regions", file=sys.stderr)
+                    print('Too many memory regions', file=sys.stderr)
                     exit(1)
                 self.e820_entries.append(region)
 
@@ -199,7 +266,7 @@ class JailhouseCell:
         fcntl.ioctl(self.dev, JailhouseCell.JAILHOUSE_CELL_START, start)
 
 
-def gen_setup_data():
+def x86_gen_setup_data():
     MAX_CPUS = 255
     return struct.pack('8x4sI4x', b'JLHS', 4 + MAX_CPUS) + bytearray(MAX_CPUS)
 
@@ -224,6 +291,8 @@ parser.add_argument('--write-params', '-w', metavar='FILE',
                          'parameters into the specified file and print '
                          'required jailhouse cell commands to boot Linux '
                          'to the console')
+parser.add_argument('--arch', '-a', metavar='ARCH',
+                    help='target architecture')
 
 try:
     args = parser.parse_args()
@@ -231,57 +300,25 @@ except IOError as e:
     print(e.strerror, file=sys.stderr)
     exit(1)
 
+arch = resolve_arch(args.arch)
 config = Config(args.config)
 
-zero_page = ZeroPage(args.kernel, args.initrd, config)
-
-setup_data = gen_setup_data()
-
-zero_page.setup_header.setup_data = PARAMS_BASE + 0x1000
-zero_page.setup_header.cmd_line_ptr = \
-    zero_page.setup_header.setup_data + len(setup_data)
-
-params = zero_page.get_data() + setup_data + \
-    (args.cmdline.encode() if args.cmdline else b'') + b'\0'
+arch.setup(args, config)
 
 if args.write_params:
-    args.write_params.write(params)
-    args.write_params.close()
-
-    print("\
-Boot parameters written. Start Linux with the following commands (adjusting \
-paths as needed):\n\
-\n\
-jailhouse cell create %s\n\
-jailhouse cell load %s linux-loader.bin -a 0xf0000 %s -a 0x%x " %
-          (args.config.name, config.name, args.kernel.name,
-           zero_page.kernel_load_addr),
-          end="")
-    if args.initrd:
-        print("%s -a 0x%x " %
-              (args.initrd.name, zero_page.setup_header.ramdisk_image),
-              end="")
-    print("%s -a 0x%x" % (args.write_params.name, PARAMS_BASE))
-    print("jailhouse cell start %s" % config.name)
+    arch.write_params(args, config)
 else:
-    arch_str = os.uname()[4]
-    if arch_str in ('i686', 'x86_64'):
-        srcarch = 'x86'
-    else:
-        print("Unsupported architecture", file=sys.stderr)
-        exit(1)
-
     if libexecdir:
         linux_loader = libexecdir + '/jailhouse/linux-loader.bin'
     else:
         linux_loader = os.path.abspath(os.path.dirname(sys.argv[0])) + \
-            '/../inmates/tools/' + srcarch + '/linux-loader.bin'
+            '/../inmates/tools/' + arch.name + '/linux-loader.bin'
 
     cell = JailhouseCell(config)
-    cell.load(open(linux_loader, mode='rb').read(), 0xf0000)
+    cell.load(open(linux_loader, mode='rb').read(), arch.loader_address())
     args.kernel.seek(0)
-    cell.load(args.kernel.read(), zero_page.kernel_load_addr)
+    cell.load(args.kernel.read(), arch.kernel_address())
     if args.initrd:
-        cell.load(args.initrd.read(), zero_page.setup_header.ramdisk_image)
-    cell.load(params, PARAMS_BASE)
+        cell.load(args.initrd.read(), arch.ramdisk_address())
+    cell.load(arch.params, arch.params_address())
     cell.start()
