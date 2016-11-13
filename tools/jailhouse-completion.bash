@@ -1,7 +1,7 @@
 # bash completion for jailhouse
 #
 # Copyright (c) Benjamin Block, 2014
-# Copyright (c) Siemens AG, 2015
+# Copyright (c) Siemens AG, 2015-2016
 #
 # Authors:
 #  Benjamin Block <bebl@mageta.org>
@@ -52,6 +52,11 @@ function _jailhouse_get_id() {
 
 	cur="${1}"
 	prev="${2}"
+	if [[ ${3} = with_root ]]; then
+		cells=/sys/devices/jailhouse/cells/*
+	else
+		cells=/sys/devices/jailhouse/cells/[1-9]*
+	fi
 
 	ids=""
 	names=""
@@ -66,7 +71,7 @@ function _jailhouse_get_id() {
 
 		# get possible ids and names
 		if [ -d /sys/devices/jailhouse/cells ]; then
-			for i in /sys/devices/jailhouse/cells/*; do
+			for i in ${cells}; do
 				ids="${ids} ${i##*/}"
 				names="${names} $(<${i}/name)"
 			done
@@ -82,7 +87,7 @@ function _jailhouse_get_id() {
 
 		# get possible names
 		if [ -d /sys/devices/jailhouse/cells ]; then
-			for n in /sys/devices/jailhouse/cells/*/name; do
+			for n in ${cells}; do
 				names="${names} $(<${n})"
 			done
 		fi
@@ -160,7 +165,7 @@ function _jailhouse_cell() {
 	load)
 		# first, select the id/name of the cell we want to load a image
 		# for
-		_jailhouse_get_id "${cur}" "${prev}" && return 0
+		_jailhouse_get_id "${cur}" "${prev}" no_root && return 0
 
 		# [image & address] can be repeated
 
@@ -206,15 +211,15 @@ function _jailhouse_cell() {
 		;;
 	start)
 		# takes only one argument (id/name)
-		_jailhouse_get_id "${cur}" "${prev}" || return 1
+		_jailhouse_get_id "${cur}" "${prev}" no_root || return 1
 		;;
 	shutdown)
 		# takes only one argument (id/name)
-		_jailhouse_get_id "${cur}" "${prev}" || return 1
+		_jailhouse_get_id "${cur}" "${prev}" no_root || return 1
 		;;
 	destroy)
 		# takes only one argument (id/name)
-		_jailhouse_get_id "${cur}" "${prev}" || return 1
+		_jailhouse_get_id "${cur}" "${prev}" no_root || return 1
 		;;
 	linux)
 		_jailhouse_cell_linux || return 1
@@ -229,7 +234,7 @@ function _jailhouse_cell() {
 		return 0;;
 	stats)
 		# takes only one argument (id/name)
-		_jailhouse_get_id "${cur}" "${prev}" || return 1
+		_jailhouse_get_id "${cur}" "${prev}" with_root || return 1
 
 		if [ "${COMP_CWORD}" -eq 3 ]; then
 			COMPREPLY=( ${COMPREPLY[@]-} $( compgen -W "-h --help" \
