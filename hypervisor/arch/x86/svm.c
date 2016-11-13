@@ -95,16 +95,6 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msrpm[][0x2000/4] = {
 	}
 };
 
-/* This page is mapped so the code begins at 0x000ffff0 */
-static u8 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE] = {
-	[0xff0] = 0xfa, /* 1: cli */
-	[0xff1] = 0xf4, /*    hlt */
-	[0xff2] = 0xeb,
-	[0xff3] = 0xfc  /*    jmp 1b */
-};
-
-static void *parked_mode_npt;
-
 static void *avic_page;
 
 static int svm_check_features(void)
@@ -283,9 +273,8 @@ static unsigned long npt_iommu_get_phys_l2(pt_entry_t pte, unsigned long virt)
 	return (*pte & BIT_MASK(51, 21)) | (virt & BIT_MASK(20, 0));
 }
 
-int vcpu_vendor_init(void)
+int vcpu_vendor_early_init(void)
 {
-	struct paging_structures parking_pt;
 	unsigned long vm_cr;
 	int err;
 
@@ -310,17 +299,7 @@ int vcpu_vendor_init(void)
 	npt_iommu_paging[1].get_phys = npt_iommu_get_phys_l3;
 	npt_iommu_paging[2].get_phys = npt_iommu_get_phys_l2;
 
-	/* Map guest parking code (shared between cells and CPUs) */
 	parking_pt.root_paging = npt_iommu_paging;
-	parking_pt.root_table = parked_mode_npt = page_alloc(&mem_pool, 1);
-	if (!parked_mode_npt)
-		return -ENOMEM;
-	err = paging_create(&parking_pt, paging_hvirt2phys(parking_code),
-			    PAGE_SIZE, 0x000ff000,
-			    PAGE_READONLY_FLAGS | PAGE_FLAG_US,
-			    PAGING_NON_COHERENT);
-	if (err)
-		return err;
 
 	/* This is always false for AMD now (except in nested SVM);
 	   see Sect. 16.3.1 in APMv2 */
@@ -1005,7 +984,7 @@ void vcpu_park(void)
 	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
 	/* No need to clear VMCB Clean bit: vcpu_vendor_reset() already does
 	 * this. */
-	this_cpu_data()->vmcb.n_cr3 = paging_hvirt2phys(parked_mode_npt);
+	this_cpu_data()->vmcb.n_cr3 = paging_hvirt2phys(parking_pt.root_table);
 
 	vcpu_tlb_flush();
 }

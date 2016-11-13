@@ -75,7 +75,7 @@ int arch_init_early(void)
 	for (vector = IRQ_DESC_START; vector < NUM_IDT_DESC; vector++)
 		set_idt_int_gate(vector, (unsigned long)irq_entry);
 
-	return vcpu_vendor_init();
+	return vcpu_early_init();
 }
 
 /*

@@ -26,6 +26,34 @@
 #include <asm/percpu.h>
 #include <asm/vcpu.h>
 
+/* This page is mapped so the code begins at 0x000ffff0 */
+static u8 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE] = {
+	[0xff0] = 0xfa, /* 1: cli */
+	[0xff1] = 0xf4, /*    hlt */
+	[0xff2] = 0xeb,
+	[0xff3] = 0xfc  /*    jmp 1b */
+};
+
+struct paging_structures parking_pt;
+
+int vcpu_early_init(void)
+{
+	int err;
+
+	err = vcpu_vendor_early_init();
+	if (err)
+		return err;
+
+	/* Map guest parking code (shared between cells and CPUs) */
+	parking_pt.root_table = page_alloc(&mem_pool, 1);
+	if (!parking_pt.root_table)
+		return -ENOMEM;
+	return paging_create(&parking_pt, paging_hvirt2phys(parking_code),
+			     PAGE_SIZE, 0x000ff000,
+			     PAGE_READONLY_FLAGS | PAGE_FLAG_US,
+			     PAGING_NON_COHERENT);
+}
+
 /* Can be overridden in vendor-specific code if needed */
 const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 			      unsigned long pc, unsigned int *size)

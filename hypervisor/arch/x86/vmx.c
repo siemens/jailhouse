@@ -290,7 +290,7 @@ static void ept_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 		EPT_FLAG_EXECUTE;
 }
 
-int vcpu_vendor_init(void)
+int vcpu_vendor_early_init(void)
 {
 	unsigned int n;
 	int err;
@@ -307,6 +307,8 @@ int vcpu_vendor_init(void)
 		ept_paging[1].page_size = 0;
 	if (!(read_msr(MSR_IA32_VMX_EPT_VPID_CAP) & EPT_2M_PAGES))
 		ept_paging[2].page_size = 0;
+
+	parking_pt.root_paging = ept_paging;
 
 	if (using_x2apic) {
 		/* allow direct x2APIC access except for ICR writes */
@@ -898,8 +900,9 @@ void vcpu_nmi_handler(void)
 
 void vcpu_park(void)
 {
-	vcpu_vendor_reset(0);
-	vmcs_write32(GUEST_ACTIVITY_STATE, GUEST_ACTIVITY_HLT);
+	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
+	vmcs_write64(EPT_POINTER, paging_hvirt2phys(parking_pt.root_table) |
+				  EPT_TYPE_WRITEBACK | EPT_PAGE_WALK_LEN);
 }
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len)
