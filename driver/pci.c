@@ -11,16 +11,37 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <linux/list.h>
 #include <linux/pci.h>
 #include <linux/vmalloc.h>
 
 #include "pci.h"
 
+struct claimed_dev {
+	struct list_head list;
+	struct pci_dev *dev;
+};
+
+static LIST_HEAD(claimed_devs);
+static DEFINE_SPINLOCK(claimed_devs_lock);
+
 static int jailhouse_pci_stub_probe(struct pci_dev *dev,
 				    const struct pci_device_id *id)
 {
-	dev_info(&dev->dev, "claimed for use in non-root cell\n");
-	return 0;
+	struct claimed_dev *claimed_dev;
+	int ret = -ENODEV;
+
+	spin_lock(&claimed_devs_lock);
+	list_for_each_entry(claimed_dev, &claimed_devs, list) {
+		if (claimed_dev->dev == dev) {
+			dev_info(&dev->dev,
+				 "claimed for use in non-root cell\n");
+			ret = 0;
+			break;
+		}
+	}
+	spin_unlock(&claimed_devs_lock);
+	return ret;
 }
 
 /**
@@ -81,6 +102,7 @@ static void jailhouse_pci_claim_release(const struct jailhouse_pci_device *dev,
 	struct pci_bus *bus;
 	struct pci_dev *l_dev;
 	struct device_driver *drv;
+	struct claimed_dev *claimed_dev, *tmp_claimed_dev;
 
 	bus = pci_find_bus(dev->domain, PCI_BUS_NUM(dev->bdf));
 	if (!bus)
@@ -93,6 +115,16 @@ static void jailhouse_pci_claim_release(const struct jailhouse_pci_device *dev,
 	if (action == JAILHOUSE_PCI_ACTION_CLAIM) {
 		if (drv == &jailhouse_pci_stub_driver.driver)
 			return;
+		claimed_dev = kmalloc(sizeof(*claimed_dev), GFP_KERNEL);
+		if (!claimed_dev) {
+			dev_warn(&l_dev->dev, "failed to allocate list entry, "
+			         "the driver might not work as expected\n");
+			return;
+		}
+		claimed_dev->dev = l_dev;
+		spin_lock(&claimed_devs_lock);
+		list_add(&(claimed_dev->list), &claimed_devs);
+		spin_unlock(&claimed_devs_lock);
 		device_release_driver(&l_dev->dev);
 		err = pci_add_dynid(&jailhouse_pci_stub_driver, l_dev->vendor,
 				    l_dev->device, l_dev->subsystem_vendor,
@@ -106,6 +138,15 @@ static void jailhouse_pci_claim_release(const struct jailhouse_pci_device *dev,
 		 * request to release all pci devices, so check the driver */
 		if (drv == &jailhouse_pci_stub_driver.driver)
 			device_release_driver(&l_dev->dev);
+		list_for_each_entry_safe(claimed_dev, tmp_claimed_dev,
+					 &claimed_devs, list)
+			if (claimed_dev->dev == l_dev) {
+				spin_lock(&claimed_devs_lock);
+				list_del(&(claimed_dev->list));
+				spin_unlock(&claimed_devs_lock);
+				kfree(claimed_dev);
+				break;
+			}
 	}
 }
 
