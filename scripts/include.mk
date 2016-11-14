@@ -51,5 +51,5 @@ $(sort $(INSTALL_DIRECTORIES:%=$(DESTDIR)%) \
 
 ARCH ?= $(shell uname -m)
 ifeq ($(ARCH),x86_64)
-	ARCH = x86
+override ARCH = x86
 endif
