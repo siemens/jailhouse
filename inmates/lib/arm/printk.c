@@ -15,7 +15,9 @@
 #include <uart.h>
 #include <mach/uart.h>
 
-extern struct uart_chip uart_ops;
+static struct uart_chip *chip = NULL;
+
+extern struct uart_chip uart_8250_ops, uart_pl011_ops;
 
 static void console_write(const char *msg)
 {
@@ -29,9 +31,32 @@ static void console_write(const char *msg)
 		if (!c)
 			break;
 
-		uart_ops.wait(&uart_ops);
-		uart_ops.write(&uart_ops, c);
+		chip->wait(chip);
+		chip->write(chip, c);
 	}
+}
+
+static void console_init(void)
+{
+	char buf[32];
+	const char *type;
+
+	type = cmdline_parse_str("con-type", buf, sizeof(buf), "none");
+	if (!strncmp(type, "8250", 4))
+		chip = &uart_8250_ops;
+	else if (!strncmp(type, "PL011", 5))
+		chip = &uart_pl011_ops;
+
+	if (!chip)
+		return;
+
+	chip->base = (void *)(unsigned long) cmdline_parse_int("con-base", 0);
+	chip->divider = cmdline_parse_int("con-divider", 0);
+	chip->gate_nr = cmdline_parse_int("con-gate_nr", 0);
+	chip->clock_reg = (void *)(unsigned long)
+		cmdline_parse_int("con-clock_reg", 0);
+
+	chip->init(chip);
 }
 
 #include "../../../hypervisor/printk-core.c"
@@ -42,10 +67,12 @@ void printk(const char *fmt, ...)
 	va_list ap;
 
 	if (!inited) {
-		uart_ops.base = UART_BASE;
-		uart_ops.init(&uart_ops);
+		console_init();
 		inited = true;
 	}
+
+	if (!chip)
+		return;
 
 	va_start(ap, fmt);
 
