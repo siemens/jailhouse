@@ -12,18 +12,11 @@
 
 #include <inmate.h>
 
-#ifdef CONFIG_SERIAL_OXPCIE952
-#define UART_BASE		0xe000
-#else
-#define UART_BASE		0x2f8
-#endif
-
 void inmate_main(void)
 {
 	unsigned long long start, now;
 	int n;
 
-	printk_uart_base = UART_BASE;
 	printk("Hello from this tiny cell!\n");
 
 	start = pm_timer_read();

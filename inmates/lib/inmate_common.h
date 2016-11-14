@@ -35,7 +35,6 @@ typedef enum { true = 1, false = 0 } bool;
 
 #define comm_region	((struct jailhouse_comm_region *)COMM_REGION_BASE)
 
-extern unsigned int printk_uart_base;
 void printk(const char *fmt, ...);
 
 void *memset(void *s, int c, unsigned long n);

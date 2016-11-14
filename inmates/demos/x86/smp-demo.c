@@ -12,12 +12,6 @@
 
 #include <inmate.h>
 
-#ifdef CONFIG_SERIAL_OXPCIE952
-#define UART_BASE		0xe000
-#else
-#define UART_BASE		0x2f8
-#endif
-
 #define IPI_VECTOR		40
 
 static volatile bool done;
@@ -38,8 +32,6 @@ static void secondary_main(void)
 void inmate_main(void)
 {
 	unsigned int n;
-
-	printk_uart_base = UART_BASE;
 
 	main_cpu = cpu_id();
 	printk("SMP demo, primary CPU: %d\n", main_cpu);

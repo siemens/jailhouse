@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <inmate.h>
 
+#define UART_BASE		0x3f8
 #define UART_TX			0x0
 #define UART_DLL		0x0
 #define UART_DLM		0x1
@@ -22,11 +23,14 @@
 #define UART_LSR		0x5
 #define UART_LSR_THRE		0x20
 
-unsigned int printk_uart_base;
+static unsigned int printk_uart_base;
 
 static void uart_write(const char *msg)
 {
 	char c = 0;
+
+	if (!printk_uart_base)
+		return;
 
 	while (1) {
 		if (c == '\n')
@@ -44,21 +48,30 @@ static void uart_write(const char *msg)
 #define console_write(msg)	uart_write(msg)
 #include "../../../hypervisor/printk-core.c"
 
+static void console_init(void)
+{
+	unsigned int divider;
+
+	printk_uart_base = cmdline_parse_int("con-base", UART_BASE);
+	divider = cmdline_parse_int("con-divider", 0);
+
+	if (!printk_uart_base || !divider)
+		return;
+
+	outb(UART_LCR_DLAB, printk_uart_base + UART_LCR);
+	outb(divider, printk_uart_base + UART_DLL);
+	outb(0, printk_uart_base + UART_DLM);
+	outb(UART_LCR_8N1, printk_uart_base + UART_LCR);
+}
+
 void printk(const char *fmt, ...)
 {
 	static bool inited;
 	va_list ap;
 
 	if (!inited) {
+		console_init();
 		inited = true;
-		outb(UART_LCR_DLAB, printk_uart_base + UART_LCR);
-#ifdef CONFIG_SERIAL_OXPCIE952
-		outb(0x22, printk_uart_base + UART_DLL);
-#else
-		outb(1, printk_uart_base + UART_DLL);  
-#endif
-		outb(0, printk_uart_base + UART_DLM);
-		outb(UART_LCR_8N1, printk_uart_base + UART_LCR);
 	}
 
 	va_start(ap, fmt);

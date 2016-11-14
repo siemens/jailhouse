@@ -17,12 +17,6 @@
 
 #include <inmate.h>
 
-#ifdef CONFIG_SERIAL_OXPCIE952
-#define UART_BASE		0xe000
-#else
-#define UART_BASE		0x2f8
-#endif
-
 #define IRQ_VECTOR		32
 
 #define HDA_GCTL		0x08
@@ -44,8 +38,6 @@ void inmate_main(void)
 {
 	u64 bar;
 	int bdf;
-
-	printk_uart_base = UART_BASE;
 
 	int_init();
 	int_set_handler(IRQ_VECTOR, irq_handler);

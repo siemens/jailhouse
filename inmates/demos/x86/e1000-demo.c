@@ -17,12 +17,6 @@
 
 #include <inmate.h>
 
-#ifdef CONFIG_SERIAL_OXPCIE952
-#define UART_BASE		0xe000
-#else
-#define UART_BASE		0x2f8
-#endif
-
 #define E1000_REG_CTRL		0x0000
 # define E1000_CTRL_LRST	(1 << 3)
 # define E1000_CTRL_SLU		(1 << 6)
@@ -212,8 +206,6 @@ void inmate_main(void)
 	u8 mac[6];
 	u64 bar;
 	int bdf;
-
-	printk_uart_base = UART_BASE;
 
 	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY, 0);
 	if (bdf < 0) {

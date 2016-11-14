@@ -117,8 +117,6 @@ void inmate_main(void)
 	struct ivshmem_dev_data *d;
 	volatile char *shmem;
 
-	printk_uart_base = UART_BASE;
-
 	int_init();
 
 again:

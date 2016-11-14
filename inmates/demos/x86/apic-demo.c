@@ -14,15 +14,6 @@
 
 #define POLLUTE_CACHE_SIZE	(512 * 1024)
 
-#ifdef CONFIG_SERIAL_OXPCIE952
-#define UART_BASE		0xe010
-#else
-#define UART_BASE		0x3f8
-#endif
-#define UART_LSR		0x5
-#define UART_LSR_THRE		0x20
-#define UART_IDLE_LOOPS		100
-
 #define APIC_TIMER_VECTOR	32
 
 static unsigned long expected_time;
@@ -80,14 +71,6 @@ void inmate_main(void)
 	bool terminate = false;
 	unsigned long tsc_freq;
 	bool cache_pollution;
-	unsigned int n;
-
-	printk_uart_base = UART_BASE;
-	do {
-		for (n = 0; n < UART_IDLE_LOOPS; n++)
-			if (!(inb(UART_BASE + UART_LSR) & UART_LSR_THRE))
-				break;
-	} while (n < UART_IDLE_LOOPS);
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
