@@ -10,4 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#define UART_BASE	((void *)0x1c090000)
+#define CON_TYPE	"PL011"
+
+#define CON_BASE	0xe1010000

@@ -13,7 +13,27 @@
 #include <inmate.h>
 #include <stdarg.h>
 #include <uart.h>
-#include <mach/uart.h>
+#include <mach/console.h>
+
+#ifndef CON_TYPE
+#define CON_TYPE "none"
+#endif
+
+#ifndef CON_BASE
+#define CON_BASE 0
+#endif
+
+#ifndef CON_DIVIDER
+#define CON_DIVIDER 0
+#endif
+
+#ifndef CON_CLOCK_REG
+#define CON_CLOCK_REG 0
+#endif
+
+#ifndef CON_GATE_NR
+#define CON_GATE_NR 0
+#endif
 
 static struct uart_chip *chip = NULL;
 
@@ -41,7 +61,7 @@ static void console_init(void)
 	char buf[32];
 	const char *type;
 
-	type = cmdline_parse_str("con-type", buf, sizeof(buf), "none");
+	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 	if (!strncmp(type, "8250", 4))
 		chip = &uart_8250_ops;
 	else if (!strncmp(type, "PL011", 5))
@@ -50,11 +70,12 @@ static void console_init(void)
 	if (!chip)
 		return;
 
-	chip->base = (void *)(unsigned long) cmdline_parse_int("con-base", 0);
-	chip->divider = cmdline_parse_int("con-divider", 0);
-	chip->gate_nr = cmdline_parse_int("con-gate_nr", 0);
+	chip->base = (void *)(unsigned long)
+		cmdline_parse_int("con-base", CON_BASE);
+	chip->divider = cmdline_parse_int("con-divider", CON_DIVIDER);
+	chip->gate_nr = cmdline_parse_int("con-gate_nr", CON_GATE_NR);
 	chip->clock_reg = (void *)(unsigned long)
-		cmdline_parse_int("con-clock_reg", 0);
+		cmdline_parse_int("con-clock_reg", CON_CLOCK_REG);
 
 	chip->init(chip);
 }
