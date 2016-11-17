@@ -22,6 +22,225 @@ import sys
 libexecdir = None
 
 
+def page_align(value, page_size=0x1000):
+    return (value + page_size - 1) & ~(page_size - 1)
+
+
+def unpack_cstring(blob):
+    string = ''
+    pos = 0
+    (byte,) = struct.unpack_from('B', blob[pos:pos+1])
+    while byte != 0:
+        string += chr(byte)
+        pos += 1
+        (byte,) = struct.unpack_from('B', blob[pos:pos+1])
+    return string
+
+
+class DTBHeader:
+    def __init__(self, blob):
+        (self.total_size, self.off_dt_struct, self.off_dt_strings,
+         self.off_mem_rsvmap, self.version, self.last_comp_version,
+         self.boot_cpuid_phys, self.size_dt_strings, self.size_dt_struct) = \
+            struct.unpack_from('>4x9I', blob)
+        if self.version < 17 or self.last_comp_version > 17:
+            print('Unsupported DTB version %d' % self.version)
+            exit(1)
+        self.header_blob = blob
+
+    def get(self):
+        return struct.pack('>10I', 0xd00dfeed, self.total_size,
+                           self.off_dt_struct, self.off_dt_strings,
+                           self.off_mem_rsvmap, self.version,
+                           self.last_comp_version, self.boot_cpuid_phys,
+                           self.size_dt_strings, self.size_dt_struct)
+
+
+class DTBReserveMap:
+    def __init__(self, blob):
+        self.blob = blob[0:16]
+        pos = 0
+        while struct.unpack_from('>8xQ', self.blob[pos:pos+16]) != (0,):
+            self.blob += blob[pos+16:pos+32]
+            pos += 16
+
+
+class DTBStrings:
+    def __init__(self, blob):
+        self.blob = blob
+
+    def add(self, string):
+        offset = len(self.blob)
+        self.blob += string.encode() + b'\0'
+        return offset
+
+    def get(self, off):
+        strings = str(self.blob.decode())
+        return strings[off:].split('\0', 1)[0]
+
+
+OF_DT_BEGIN_NODE = 0x00000001
+OF_DT_END_NODE = 0x00000002
+OF_DT_PROP = 0x00000003
+OF_DT_END = 0x00000009
+
+
+class DTBProperty:
+    def __init__(self, name_off, value, strings):
+        self.name_off = name_off
+        self.name = strings.get(self.name_off)
+        self.data = value
+
+    @staticmethod
+    def parse(blob, strings):
+        (datasize, name_off) = struct.unpack_from('>II', blob)
+        data = blob[8:8+datasize]
+        prop = DTBProperty(name_off, data, strings)
+        length = 8 + (datasize + 3) & ~3
+        return (prop, length)
+
+    @staticmethod
+    def create(name, value, strings):
+        return DTBProperty(strings.add(name), value, strings)
+
+    def set_value(self, value):
+        self.data = value
+
+    def get(self):
+        datasize = len(self.data)
+        blob = struct.pack('>III', OF_DT_PROP, datasize, self.name_off)
+        blob += self.data
+        if datasize & 3 != 0:
+            blob += bytearray(4 - datasize & 3)
+        return blob
+
+
+class DTBNode:
+    def __init__(self, name, children, properties, strings):
+        self.name = name
+        self.children = children
+        self.properties = properties
+        self.strings = strings
+
+    @staticmethod
+    def parse(blob, strings):
+        name = unpack_cstring(blob)
+        # next field is word-aligned
+        length = ((len(name) + 1) + 3) & ~3
+
+        children = []
+        properties = []
+
+        token = 0
+        while token != OF_DT_END_NODE:
+            (token,) = struct.unpack_from('>I', blob[length:])
+            length += 4
+            if token == OF_DT_BEGIN_NODE:
+                (child, child_length) = DTBNode.parse(blob[length:], strings)
+                length += child_length
+                children.append(child)
+            elif token == OF_DT_PROP:
+                (prop, prop_length) = DTBProperty.parse(blob[length:], strings)
+                length += prop_length
+                properties.append(prop)
+            else:
+                RuntimeError('Invalid DTB')
+
+        return (DTBNode(name, children, properties, strings), length)
+
+    def find(self, path):
+        if path == '':
+            return self
+        if path.find('/') >= 0:
+            (childname, subpath) = path.split('/', 1)
+        else:
+            childname = path
+            subpath = ''
+        matches = [c for c in self.children if c.name == childname]
+        if len(matches) > 1:
+            raise RuntimeError('Invalid DTB')
+        if not matches:
+            return None
+        else:
+            return matches[0].find(subpath)
+
+    def add_node(self, name):
+        child = DTBNode(name, [], [], self.strings)
+        self.children.append(child)
+        return child
+
+    def get_prop(self, name):
+        matches = [p for p in self.properties if p.name == name]
+        if len(matches) > 1:
+            raise RuntimeError('Invalid DTB')
+        return matches[0] if matches else None
+
+    def add_prop(self, name, value):
+        prop = DTBProperty.create(name, value, self.strings)
+        self.properties.append(prop)
+
+    def get(self):
+        namelen = ((len(self.name) + 1) + 3) & ~3
+        blob = struct.pack('>I%ds' % namelen, OF_DT_BEGIN_NODE,
+                           self.name.encode())
+        for prop in self.properties:
+            blob += prop.get()
+        for child in self.children:
+            blob += child.get()
+        return blob + struct.pack('>I', OF_DT_END_NODE)
+
+
+class DTB:
+    def __init__(self, blob):
+        self.header = DTBHeader(blob[0:40])
+
+        self.rsvmap = DTBReserveMap(blob[self.header.off_mem_rsvmap:])
+
+        end_idx = self.header.off_dt_strings + self.header.size_dt_strings
+        self.strings = DTBStrings(blob[self.header.off_dt_strings:end_idx])
+
+        start_idx = self.header.off_dt_struct
+        end_idx = start_idx + self.header.size_dt_struct
+
+        (begin_token,) = struct.unpack_from('>I', blob[start_idx:end_idx])
+        if begin_token != OF_DT_BEGIN_NODE:
+            raise RuntimeError('Invalid DTB')
+        (self.root_node, length) = DTBNode.parse(blob[start_idx+4:end_idx],
+                                                 self.strings)
+
+    def get_prop(self, path, name):
+        node = self.root_node.find(path[path.find('/')+1:])
+        if not node:
+            raise RuntimeError('DTB is missing node %s' % path)
+        prop = node.get_prop(name)
+        return prop.data if prop else None
+
+    def set_prop(self, path, name, value):
+        subpath = path[path.find('/')+1:]
+        node = self.root_node.find(subpath)
+        if not node:
+            (parent_path, new_node) = path.rsplit('/')
+            parent = self.root_node.find(parent_path)
+            node = parent.add_node(new_node)
+        prop = node.get_prop(name)
+        if prop:
+            prop.set_value(value)
+        else:
+            node.add_prop(name, value)
+
+    def get(self):
+        nodes = self.root_node.get() + struct.pack('>I', OF_DT_END)
+        self.header.off_mem_rsvmap = 40
+        self.header.off_dt_struct = 40 + len(self.rsvmap.blob)
+        self.header.size_dt_struct = len(nodes)
+        self.header.off_dt_strings = self.header.off_dt_struct + len(nodes)
+        self.header.size_dt_strings = len(self.strings.blob)
+        self.header.total_size = self.header.off_dt_strings + \
+            len(self.strings.blob)
+
+        return self.header.get() + self.rsvmap.blob + nodes + self.strings.blob
+
+
 class X86:
     name = 'x86'
 
@@ -69,12 +288,163 @@ jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
     def kernel_address(self):
         return self._zero_page.kernel_load_addr
 
+    def dtb_address(self):
+        return None
+
+    def dtb(self):
+        return None
+
     def ramdisk_address(self):
         return self._zero_page.setup_header.ramdisk_image
 
 
+class ARMCommon:
+    def setup(self, args, config):
+        kernel_size = page_align(os.fstat(args.kernel.fileno()).st_size)
+        kernel_load_offset = self.get_kernel_offset(args.kernel)
+        image_size = kernel_load_offset + kernel_size + self.kernel_alignment()
+
+        ramdisk_size = 0
+        if args.initrd:
+            ramdisk_size = page_align(os.fstat(args.initrd.fileno()).st_size)
+            # leave sufficient space between the kernel and the initrd
+            image_size += kernel_size * 4
+            kernel_size *= 5
+
+        if not args.dtb:
+            print('No device tree specified', file=sys.stderr)
+            exit(1)
+        # add one page to the DTB size to be safe when extending it
+        dtb_size = page_align(os.fstat(args.dtb.fileno()).st_size) + 0x1000
+        image_size += dtb_size
+
+        # add some pages in case the region contains the loader
+        image_size += 0x2000
+
+        ram_regions = [region for region in config.memory_regions
+                       if region.is_ram() and region.size >= image_size]
+        if not ram_regions:
+            print('No space found to load all images', file=sys.stderr)
+            exit(1)
+
+        self._dtb_addr = ram_regions[0].virt_start
+        if self._dtb_addr == 0:
+            # leave room for the loader
+            self._dtb_addr += 0x2000
+        self._kernel_addr = page_align(self._dtb_addr + dtb_size,
+                                       self.kernel_alignment())
+        self._kernel_addr += kernel_load_offset
+        self._ramdisk_addr = self._kernel_addr + kernel_size
+
+        self.params = 'kernel=0x%x dtb=0x%x' % (self._kernel_addr,
+                                                self._dtb_addr)
+
+        self.dtb = DTB(args.dtb.read())
+
+        prop = self.dtb.get_prop('/', '#address-cells')
+        if not prop:
+            raise RuntimeError('Invalid DTB')
+        (cells,) = struct.unpack_from('>I', prop)
+        addr_format = '>Q' if cells == 2 else '>I'
+
+        prop = self.dtb.get_prop('/', '#size-cells')
+        if not prop:
+            raise RuntimeError('Invalid DTB')
+        (cells,) = struct.unpack_from('>I', prop)
+        reg_format = addr_format + ('Q' if cells == 2 else 'I')
+
+        self.dtb.set_prop('/memory', 'device_type', 'memory'.encode() + b'\0')
+        reg = bytearray(0)
+        for region in config.memory_regions:
+            # Filter out non-RAM regions and small ones at the start of the
+            # cell address space that is used for the loader.
+            if region.is_ram() and \
+               (region.virt_start > 0 or region.size > 0x10000):
+                reg += struct.pack(reg_format, region.virt_start, region.size)
+        self.dtb.set_prop('/memory', 'reg', reg)
+
+        if args.cmdline:
+            self.dtb.set_prop('/chosen', 'bootargs',
+                              args.cmdline.encode() + b'\0')
+        if args.initrd:
+            self.dtb.set_prop('/chosen', 'linux,initrd-start',
+                              struct.pack(addr_format, arch.ramdisk_address()))
+            end_addr = arch.ramdisk_address() + ramdisk_size
+            self.dtb.set_prop('/chosen', 'linux,initrd-end',
+                              struct.pack(addr_format, end_addr))
+
+    def write_params(self, args, config):
+        args.write_params.write(self.dtb.get())
+        args.write_params.close()
+
+        print('\
+Modified device tree written. Start Linux with the following commands \
+(adjusting paths as needed):\n\
+\n\
+jailhouse cell create %s\n\
+jailhouse cell load %s linux-loader.bin -s "%s" -a 0x%x %s -a 0x%x ' %
+              (args.config.name, config.name, self.params,
+               self.params_address(), args.kernel.name, self._kernel_addr),
+              end='')
+        if args.initrd:
+            print('%s -a 0x%x ' % (args.initrd.name, self._ramdisk_addr),
+                  end='')
+        print('%s -a 0x%x' % (args.write_params.name, self._dtb_addr))
+        print('jailhouse cell start %s' % config.name)
+
+    @staticmethod
+    def loader_address():
+        return 0
+
+    def kernel_address(self):
+        return self._kernel_addr
+
+    def dtb_address(self):
+        return self._dtb_addr
+
+    def dtb(self):
+        return self.dtb.get()
+
+    def ramdisk_address(self):
+        return self._ramdisk_addr
+
+
+class ARM(ARMCommon):
+    name = 'arm'
+
+    @staticmethod
+    def params_address():
+        return 0x100
+
+    @staticmethod
+    def kernel_alignment():
+        return 0x1000
+
+    @staticmethod
+    def get_kernel_offset(kernel):
+        return 0
+
+
+class ARM64(ARMCommon):
+    name = 'arm64'
+
+    @staticmethod
+    def params_address():
+        return 0x1000
+
+    @staticmethod
+    def kernel_alignment():
+        return 0x200000
+
+    @staticmethod
+    def get_kernel_offset(kernel):
+        kernel.seek(8)
+        (text_offset,) = struct.unpack_from('<Q', kernel.read(8))
+        return text_offset
+
+
 def resolve_arch(defined_arch=None):
-    arch_classes = {'x86': X86, None: None}
+    arch_classes = {'x86': X86, 'arm': ARM, 'arm64': ARM64, None: None}
     try:
         arch_class = arch_classes[defined_arch]
     except KeyError:
@@ -84,6 +454,10 @@ def resolve_arch(defined_arch=None):
         arch_str = os.uname()[4]
         if arch_str in ('i686', 'x86_64'):
             arch_class = X86
+        elif arch_str == 'armv7l':
+            arch_class = ARM
+        elif arch_str == 'aarch64':
+            arch_class = ARM64
         else:
             print('Unsupported architecture', file=sys.stderr)
             exit(1)
@@ -280,6 +654,8 @@ parser.add_argument('config', metavar='CELLCONFIG',
                     help='cell configuration file')
 parser.add_argument('kernel', metavar='KERNEL', type=argparse.FileType('rb'),
                     help='image of the kernel to be booted')
+parser.add_argument('--dtb', '-d', metavar='DTB', type=argparse.FileType('rb'),
+                    help='device tree for the kernel [arm/arm64 only]')
 parser.add_argument('--initrd', '-i', metavar='FILE',
                     type=argparse.FileType('rb'),
                     help='initrd/initramfs for the kernel')
@@ -318,6 +694,8 @@ else:
     cell.load(open(linux_loader, mode='rb').read(), arch.loader_address())
     args.kernel.seek(0)
     cell.load(args.kernel.read(), arch.kernel_address())
+    if arch.dtb_address():
+        cell.load(arch.dtb.get(), arch.dtb_address())
     if args.initrd:
         cell.load(args.initrd.read(), arch.ramdisk_address())
     cell.load(arch.params, arch.params_address())

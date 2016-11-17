@@ -116,7 +116,7 @@ function _jailhouse_cell_linux() {
 	else
 		# if the previous was on of the following options
 		case "${prev}" in
-		-i|--initrd|-w|--write-params)
+		-d|--dtb|-i|--initrd|-w|--write-params)
 			# search an existing file
 			_filedir
 			return $?
