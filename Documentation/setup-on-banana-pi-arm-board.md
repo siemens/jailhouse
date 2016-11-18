@@ -160,7 +160,7 @@ $ export PATH=$PATH:$(pwd)/gcc-linaro-5.3-2016.02-x86_64_arm-linux-gnueabihf/bin
 ```bash
 $ cd ~/linux-stable
 $ git checkout v4.3.3
-$ for i in ../bananian/kernel/4.3.3/patches/*; do patch -p1 < ; done
+$ for i in ../bananian/kernel/4.3.3/patches/*; do patch -p1 < $i; done
 
 #Copy config from jailhouse/ci directory
 $ cp -av ../jailhouse/ci/kernel-config-banana-pi .config
