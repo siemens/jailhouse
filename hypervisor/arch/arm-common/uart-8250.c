@@ -14,7 +14,6 @@
 
 #include <asm/uart-8250.h>
 
-/* All the helpers are in the header, to make them re-usable by the inmates */
 void uart_chip_init(struct uart_chip *chip)
 {
 	chip->wait = uart_wait;

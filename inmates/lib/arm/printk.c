@@ -11,10 +11,11 @@
  */
 
 #include <inmate.h>
-#include <asm/uart.h>
 #include <stdarg.h>
+#include <uart.h>
+#include <mach/uart.h>
 
-static struct uart_chip chip;
+extern struct uart_chip uart_ops;
 
 static void console_write(const char *msg)
 {
@@ -28,8 +29,8 @@ static void console_write(const char *msg)
 		if (!c)
 			break;
 
-		chip.wait(&chip);
-		chip.write(&chip, c);
+		uart_ops.wait(&uart_ops);
+		uart_ops.write(&uart_ops, c);
 	}
 }
 
@@ -41,7 +42,8 @@ void printk(const char *fmt, ...)
 	va_list ap;
 
 	if (!inited) {
-		uart_chip_init(&chip);
+		uart_ops.base = UART_BASE;
+		uart_ops.init(&uart_ops);
 		inited = true;
 	}
 

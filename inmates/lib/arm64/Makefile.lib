@@ -15,6 +15,7 @@
 -include $(obj)/../../../hypervisor/include/generated/config.mk
 
 KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include
+KBUILD_CFLAGS				+= -I$(INMATES_LIB)/../arm-common/include
 KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include
 
 define DECLARE_TARGETS =

@@ -17,6 +17,7 @@
 KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
 
 KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include
+KBUILD_CFLAGS				+= -I$(INMATES_LIB)/../arm-common/include
 KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include
 
 define DECLARE_TARGETS =
