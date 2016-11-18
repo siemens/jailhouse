@@ -18,6 +18,7 @@
 /* Defines the bare minimum for debug writes */
 struct uart_chip {
 	void		*virt_base;
+	struct jailhouse_debug_console *debug_console;
 
 	void (*wait)(struct uart_chip *);
 	void (*write)(struct uart_chip *, char c);

@@ -49,6 +49,7 @@ void arch_dbg_write_init(void)
 	if (con_type != JAILHOUSE_CON_TYPE_UART_ARM)
 		return;
 
+	uart.debug_console = &system_config->debug_console;
 	uart.virt_base = hypervisor_header.debug_console_base;
 	uart_chip_init(&uart);
 	arch_dbg_write = arm_uart_write;
