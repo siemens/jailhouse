@@ -28,12 +28,9 @@ datadir     ?= $(datarootdir)
 firmwaredir ?= /lib/firmware
 
 # all directories listed here will be created using a generic rule below
-INSTALL_DIRECTORIES := $(prefix)	\
-		       $(exec_prefix)	\
-		       $(sbindir)	\
-		       $(libexecdir)	\
-		       $(datarootdir)	\
-		       $(datadir)	\
+INSTALL_DIRECTORIES := $(sbindir)		\
+		       $(libexecdir)		\
+		       $(datadir)		\
 		       $(firmwaredir)
 
 INSTALL         ?= install
