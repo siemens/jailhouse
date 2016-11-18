@@ -71,7 +71,10 @@ install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
 install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 	$(INSTALL_DATA) $^
 
-install: install-bin install-libexec install-data
+install-completion: jailhouse-completion.bash $(DESTDIR)$(completionsdir)
+	$(INSTALL_DATA) $< $(DESTDIR)$(completionsdir)/jailhouse
+
+install: install-bin install-libexec install-data install-completion
 
 $(obj)/no_python_mako:
 	@echo -ne "WARNING: Could not create the helper script to generate" \
@@ -79,4 +82,5 @@ $(obj)/no_python_mako:
 		  "(\"jailhouse-conf-collect\"). You need Python and the" \
 		  "Mako library for it.\n"
 
-.PHONY: install install-bin install-libexec install-data no_python_mako
+.PHONY: install install-bin install-libexec install-data install-completion \
+	no_python_mako

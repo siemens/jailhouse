@@ -19,18 +19,20 @@ endif
 
 MAKEFLAGS += --no-print-directory
 
-prefix      ?= /usr/local
-exec_prefix ?= $(prefix)
-sbindir     ?= $(exec_prefix)/sbin
-libexecdir  ?= $(exec_prefix)/libexec
-datarootdir ?= $(prefix)/share
-datadir     ?= $(datarootdir)
+prefix		?= /usr/local
+exec_prefix	?= $(prefix)
+sbindir		?= $(exec_prefix)/sbin
+libexecdir	?= $(exec_prefix)/libexec
+datarootdir	?= $(prefix)/share
+datadir		?= $(datarootdir)
+completionsdir	?= /usr/share/bash-completion/completions
 firmwaredir ?= /lib/firmware
 
 # all directories listed here will be created using a generic rule below
 INSTALL_DIRECTORIES := $(sbindir)		\
 		       $(libexecdir)		\
 		       $(datadir)		\
+		       $(completionsdir)	\
 		       $(firmwaredir)
 
 INSTALL         ?= install
