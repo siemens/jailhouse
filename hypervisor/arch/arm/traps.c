@@ -396,7 +396,7 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
-static const trap_handler trap_handlers[38] =
+static const trap_handler trap_handlers[0x40] =
 {
 	[HSR_EC_CP15_32]	= arch_handle_cp15_32,
 	[HSR_EC_CP15_64]	= arch_handle_cp15_64,
