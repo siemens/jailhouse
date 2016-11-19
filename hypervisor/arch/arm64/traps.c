@@ -127,31 +127,25 @@ static void fill_trap_context(struct trap_context *ctx, struct registers *regs)
 	ctx->regs = regs->usr;
 }
 
+static const trap_handler trap_handlers[0x40] =
+{
+	[ESR_EC_SMC64]		= handle_smc,
+	[ESR_EC_HVC64]		= handle_hvc,
+	[ESR_EC_DABT_LOW]	= arch_handle_dabt,
+};
+
 static void arch_handle_trap(struct per_cpu *cpu_data,
 			     struct registers *guest_regs)
 {
 	struct trap_context ctx;
-	int ret;
+	trap_handler handler;
+	int ret = TRAP_UNHANDLED;
 
 	fill_trap_context(&ctx, guest_regs);
 
-	/* exception class */
-	switch (ESR_EC(ctx.esr)) {
-	case ESR_EC_DABT_LOW:
-		ret = arch_handle_dabt(&ctx);
-		break;
-
-	case ESR_EC_SMC64:
-		ret = handle_smc(&ctx);
-		break;
-
-	case ESR_EC_HVC64:
-		ret = handle_hvc(&ctx);
-		break;
-
-	default:
-		ret = TRAP_UNHANDLED;
-	}
+	handler = trap_handlers[ESR_EC(ctx.esr)];
+	if (handler)
+		ret = handler(&ctx);
 
 	if (ret == TRAP_UNHANDLED || ret == TRAP_FORBIDDEN) {
 		panic_printk("\nFATAL: %s (exception class 0x%02llx)\n",

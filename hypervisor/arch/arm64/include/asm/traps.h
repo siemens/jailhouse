@@ -28,6 +28,8 @@ struct trap_context {
 	u64 sp;
 };
 
+typedef int (*trap_handler)(struct trap_context *ctx);
+
 void arch_skip_instruction(struct trap_context *ctx);
 
 int arch_handle_dabt(struct trap_context *ctx);
