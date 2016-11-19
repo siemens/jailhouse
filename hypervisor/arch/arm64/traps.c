@@ -154,9 +154,10 @@ static void arch_handle_trap(struct per_cpu *cpu_data,
 	}
 
 	if (ret == TRAP_UNHANDLED || ret == TRAP_FORBIDDEN) {
-		panic_printk("\nFATAL: exception %s\n", (ret == TRAP_UNHANDLED ?
-							 "unhandled trap" :
-							 "forbidden access"));
+		panic_printk("\nFATAL: %s (exception class 0x%02llx)\n",
+			     (ret == TRAP_UNHANDLED ? "unhandled trap" :
+						      "forbidden access"),
+			     ESR_EC(ctx.esr));
 		panic_printk("Cell state before exception:\n");
 		dump_regs(&ctx);
 		panic_park();
