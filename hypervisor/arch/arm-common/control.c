@@ -193,6 +193,17 @@ bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn,
 
 void arch_cell_reset(struct cell *cell)
 {
+	unsigned int first = first_cpu(cell->cpu_set);
+	unsigned int cpu;
+
+	/*
+	 * All CPUs but the first are initially suspended.
+	 * The first CPU starts at address 0.
+	 */
+	per_cpu(first)->cpu_on_entry = 0;
+	for_each_cpu_except(cpu, cell->cpu_set, first)
+		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
+
 	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
 }
 

@@ -199,12 +199,8 @@ int arch_cell_create(struct cell *cell)
 	 * Generate a virtual CPU id according to the position of each CPU in
 	 * the cell set
 	 */
-	for_each_cpu(cpu, cell->cpu_set) {
-		per_cpu(cpu)->cpu_on_entry =
-			(virt_id == 0) ? 0 : PSCI_INVALID_ADDRESS;
-		per_cpu(cpu)->virt_id = virt_id;
-		virt_id++;
-	}
+	for_each_cpu(cpu, cell->cpu_set)
+		per_cpu(cpu)->virt_id = virt_id++;
 	cell->arch.last_virt_id = virt_id - 1;
 
 	err = irqchip_cell_init(cell);
