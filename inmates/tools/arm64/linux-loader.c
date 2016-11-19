@@ -39,7 +39,7 @@ void inmate_main(void)
 {
 	struct arm64_linux_header *kernel;
 	unsigned long dtb;
-	void (*entry)(unsigned long);
+	void (*entry)(u64 dtb, u64 x1, u64 x2, u64 x3);
 
 	printk("\nJailhouse ARM64 Linux bootloader\n");
 
@@ -62,5 +62,5 @@ void inmate_main(void)
 		printk("WARNING: wrong Linux Image header magic: 0x%08x\n",
 		       kernel->magic);
 
-	entry(dtb);
+	entry(dtb, 0, 0, 0);
 }
