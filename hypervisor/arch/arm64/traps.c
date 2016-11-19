@@ -58,6 +58,18 @@ static int handle_hvc(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
+static int handle_iabt(struct trap_context *ctx)
+{
+	unsigned long hpfar, hdfar;
+
+	arm_read_sysreg(HPFAR_EL2, hpfar);
+	arm_read_sysreg(FAR_EL2, hdfar);
+
+	panic_printk("FATAL: instruction abort at 0x%lx\n",
+		     (hpfar << 8) | (hdfar & 0xfff));
+	return TRAP_FORBIDDEN;
+}
+
 static void dump_regs(struct trap_context *ctx)
 {
 	unsigned char i;
@@ -131,6 +143,7 @@ static const trap_handler trap_handlers[0x40] =
 {
 	[ESR_EC_SMC64]		= handle_smc,
 	[ESR_EC_HVC64]		= handle_hvc,
+	[ESR_EC_IABT_LOW]	= handle_iabt,
 	[ESR_EC_DABT_LOW]	= arch_handle_dabt,
 };
 

@@ -396,12 +396,25 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
+static int handle_iabt(struct trap_context *ctx)
+{
+	unsigned long hpfar, hdfar;
+
+	arm_read_sysreg(HPFAR, hpfar);
+	arm_read_sysreg(HDFAR, hdfar);
+
+	panic_printk("FATAL: instruction abort at 0x%lx\n",
+		     (hpfar << 8) | (hdfar & 0xfff));
+	return TRAP_FORBIDDEN;
+}
+
 static const trap_handler trap_handlers[0x40] =
 {
 	[HSR_EC_CP15_32]	= arch_handle_cp15_32,
 	[HSR_EC_CP15_64]	= arch_handle_cp15_64,
 	[HSR_EC_HVC]		= arch_handle_hvc,
 	[HSR_EC_SMC]		= arch_handle_smc,
+	[HSR_EC_IABT]		= handle_iabt,
 	[HSR_EC_DABT]		= arch_handle_dabt,
 };
 
