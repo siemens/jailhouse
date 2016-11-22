@@ -11,14 +11,15 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
+#include <asm/uart-8250.h>
+#include <mach/uart.h>
 
-#include <asm/uart-8250-dw.h>
-
-/* All the helpers are in the header, to make them re-usable by the inmates */
 void uart_chip_init(struct uart_chip *chip)
 {
+	chip->virt_base = UART_BASE;
 	chip->wait = uart_wait;
 	chip->write = uart_write;
-
+	chip->clock_reg = UART_CLOCK_REG;
+	chip->gate_nr = UART_GATE_NR;
 	uart_init(chip);
 }

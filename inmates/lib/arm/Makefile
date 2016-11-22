@@ -21,5 +21,5 @@ lib-y				+= ../string.o ../cmdline.o
 lib-$(CONFIG_ARM_GIC_V2)	+= gic-v2.o
 lib-$(CONFIG_ARM_GIC_V3)	+= gic-v3.o
 lib-$(CONFIG_SERIAL_AMBA_PL011)	+= uart-pl011.o
-lib-$(CONFIG_SERIAL_8250_DW)	+= uart-8250-dw.o
+lib-$(CONFIG_SERIAL_8250)	+= uart-8250.o
 lib-$(CONFIG_SERIAL_TEGRA)	+= uart-tegra.o
