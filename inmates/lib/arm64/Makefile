@@ -19,3 +19,4 @@ lib-y				+= ../arm/gic.o ../arm/printk.o ../arm/timer.o
 lib-y				+= ../string.o ../cmdline.o
 lib-$(CONFIG_ARM_GIC_V2)	+= ../arm/gic-v2.o
 lib-$(CONFIG_SERIAL_AMBA_PL011)	+= ../arm/uart-pl011.o
+lib-$(CONFIG_SERIAL_8250)	+= ../arm/uart-8250.o
