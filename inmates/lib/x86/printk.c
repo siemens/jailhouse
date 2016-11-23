@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <inmate.h>
 
+#define CON_TYPE		"PIO"
 #define UART_BASE		0x3f8
 #define UART_TX			0x0
 #define UART_DLL		0x0
@@ -23,7 +24,31 @@
 #define UART_LSR		0x5
 #define UART_LSR_THRE		0x20
 
-static unsigned int printk_uart_base;
+static long unsigned int printk_uart_base;
+
+static void uart_pio_out(unsigned int reg, u8 value)
+{
+	outb(value, printk_uart_base + reg);
+}
+
+static u8 uart_pio_in(unsigned int reg)
+{
+	return inb(printk_uart_base + reg);
+}
+
+static void uart_mmio32_out(unsigned int reg, u8 value)
+{
+	mmio_write32((void *)printk_uart_base + reg * 4, value);
+}
+
+static u8 uart_mmio32_in(unsigned int reg)
+{
+	return mmio_read32((void *)printk_uart_base + reg * 4);
+}
+
+/* choose 8 bit PIO by default */
+static void (*uart_reg_out)(unsigned int, u8) = uart_pio_out;
+static u8 (*uart_reg_in)(unsigned int) = uart_pio_in;
 
 static void uart_write(const char *msg)
 {
@@ -39,9 +64,9 @@ static void uart_write(const char *msg)
 			c = *msg++;
 		if (!c)
 			break;
-		while (!(inb(printk_uart_base + UART_LSR) & UART_LSR_THRE))
+		while (!(uart_reg_in(UART_LSR) & UART_LSR_THRE))
 			cpu_relax();
-		outb(c, printk_uart_base + UART_TX);
+		uart_reg_out(UART_TX, c);
 	}
 }
 
@@ -50,18 +75,31 @@ static void uart_write(const char *msg)
 
 static void console_init(void)
 {
+	const char *type;
+	char buf[32];
 	unsigned int divider;
 
 	printk_uart_base = cmdline_parse_int("con-base", UART_BASE);
 	divider = cmdline_parse_int("con-divider", 0);
+	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
+
+	if (strncmp(type, "MMIO", 4) == 0) {
+		uart_reg_out = uart_mmio32_out;
+		uart_reg_in = uart_mmio32_in;
+#ifdef __x86_64__
+		map_range((void *)printk_uart_base, 0x1000, MAP_UNCACHED);
+#endif
+	} else if (strncmp(type, "none", 4) == 0) {
+		printk_uart_base = 0;
+	}
 
 	if (!printk_uart_base || !divider)
 		return;
 
-	outb(UART_LCR_DLAB, printk_uart_base + UART_LCR);
-	outb(divider, printk_uart_base + UART_DLL);
-	outb(0, printk_uart_base + UART_DLM);
-	outb(UART_LCR_8N1, printk_uart_base + UART_LCR);
+	uart_reg_out(UART_LCR, UART_LCR_DLAB);
+	uart_reg_out(UART_DLL, divider);
+	uart_reg_out(UART_DLM, 0);
+	uart_reg_out(UART_LCR, UART_LCR_8N1);
 }
 
 void printk(const char *fmt, ...)
@@ -73,6 +111,9 @@ void printk(const char *fmt, ...)
 		console_init();
 		inited = true;
 	}
+
+	if (!printk_uart_base)
+		return;
 
 	va_start(ap, fmt);
 
