@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo or uart-demo inmate on Jetson TK1:
+ * Configuration for gic-demo or uart-demo inmate on Jetson TK1 and TX1:
  * 1 CPU, 64K RAM, serial port 0
  *
  * Copyright (c) Siemens AG, 2015
@@ -26,7 +26,7 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "jetson-tk1-demo",
+		.name = "jetson-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
