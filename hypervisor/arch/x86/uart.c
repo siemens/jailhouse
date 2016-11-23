@@ -39,16 +39,6 @@ static u8 uart_pio_in(unsigned int reg)
 	return inb(uart_base + reg);
 }
 
-static void uart_mmio8_out(unsigned int reg, u8 value)
-{
-	mmio_write8((void *)(uart_base + reg), value);
-}
-
-static u8 uart_mmio8_in(unsigned int reg)
-{
-	return mmio_read8((void *)(uart_base + reg));
-}
-
 static void uart_mmio32_out(unsigned int reg, u8 value)
 {
 	mmio_write32((void *)(uart_base + reg * 4), value);
@@ -73,13 +63,8 @@ void uart_init(void)
 		if (system_config->debug_console.phys_start < VGA_LIMIT)
 			return; /* VGA memory */
 
-		if (flags & JAILHOUSE_MEM_IO_32) {
-			uart_reg_out = uart_mmio32_out;
-			uart_reg_in = uart_mmio32_in;
-		} else {
-			uart_reg_out = uart_mmio8_out;
-			uart_reg_in = uart_mmio8_in;
-		}
+		uart_reg_out = uart_mmio32_out;
+		uart_reg_in = uart_mmio32_in;
 		uart_base = (u64)hypervisor_header.debug_console_base;
 	} else {
 		uart_base = system_config->debug_console.phys_start;
