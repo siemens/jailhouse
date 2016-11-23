@@ -39,4 +39,13 @@
 #define GICC_V2_BASE	((void *)0xf6802000)
 
 #define TIMER_IRQ	27
+
+#elif defined(MACH_TEGRA_TX1)
+#define CON_TYPE	"8250"
+#define CON_BASE	0x70006000
+
+#define GICD_V2_BASE	((void *)0x50041000)
+#define GICC_V2_BASE	((void *)0x50042000)
+
+#define TIMER_IRQ	27
 #endif
