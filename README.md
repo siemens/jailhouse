@@ -120,6 +120,7 @@ Hardware requirements (preliminary)
 
     - LeMaker HiKey
 
+    - NVIDIA Jetson TX1
 
 Software requirements
 ---------------------
