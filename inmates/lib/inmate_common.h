@@ -50,7 +50,7 @@ long long cmdline_parse_int(const char *param, long long default_value);
 bool cmdline_parse_bool(const char *param);
 
 #define CMDLINE_BUFFER(size) \
-	const char cmdline[size] __attribute__((section(".cmdline")));
+	const char cmdline[size] __attribute__((section(".cmdline")))
 
 void inmate_main(void);
 

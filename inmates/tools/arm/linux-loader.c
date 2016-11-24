@@ -14,9 +14,6 @@
 
 #include <inmate.h>
 
-#define CMDLINE_BUFFER_SIZE	256
-CMDLINE_BUFFER(CMDLINE_BUFFER_SIZE);
-
 void inmate_main(void)
 {
 	void register (*entry)(unsigned long, unsigned long, unsigned long);

@@ -12,7 +12,8 @@
 
 #include <inmate.h>
 
-extern const char cmdline[];
+#define CMDLINE_BUFFER_SIZE 256
+CMDLINE_BUFFER(CMDLINE_BUFFER_SIZE) __attribute__((weak));
 
 static bool get_param(const char *param, char *value_buffer,
 		      unsigned long buffer_size)

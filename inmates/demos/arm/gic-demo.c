@@ -15,9 +15,6 @@
 #include <mach/timer.h>
 #include <inmate.h>
 
-#define CMDLINE_BUFFER_SIZE	256
-CMDLINE_BUFFER(CMDLINE_BUFFER_SIZE);
-
 #define BEATS_PER_SEC		10
 
 static u64 ticks_per_beat;
