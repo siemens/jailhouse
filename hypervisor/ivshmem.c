@@ -39,6 +39,7 @@
 
 #define IVSHMEM_MSIX_VECTORS	1
 
+#define IVSHMEM_REG_INTX_CTRL	0
 #define IVSHMEM_REG_IVPOS	8
 #define IVSHMEM_REG_DBELL	12
 #define IVSHMEM_REG_LSTATE	16
@@ -71,6 +72,16 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
 	struct ivshmem_endpoint *ive = arg;
+
+	if (mmio->address == IVSHMEM_REG_INTX_CTRL) {
+		if (mmio->is_write) {
+			ive->intx_ctrl_reg = mmio->value & IVSHMEM_INTX_ENABLE;
+			arch_ivshmem_update_intx(ive);
+		} else {
+			mmio->value = ive->intx_ctrl_reg;
+		}
+		return MMIO_HANDLED;
+	}
 
 	/* read-only IVPosition */
 	if (mmio->address == IVSHMEM_REG_IVPOS && !mmio->is_write) {
@@ -267,6 +278,14 @@ static void ivshmem_connect_cell(struct ivshmem_data *iv,
 
 	ive->cspace[0x08/4] |= d->info->shmem_protocol << 8;
 
+	if (d->info->num_msix_vectors == 0) {
+		/* let the PIN rotate based on the device number */
+		ive->cspace[PCI_CFG_INT/4] =
+			(((d->info->bdf >> 3) & 0x3) + 1) << 8;
+		/* disable MSI-X capability */
+		ive->cspace[PCI_CFG_CAPS/4] = 0;
+	}
+
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] = (u32)(mem->virt_start >> 32);
 	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4] = (u32)mem->size;
@@ -363,9 +382,6 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	const struct jailhouse_memory *mem, *mem0;
 	struct ivshmem_data **ivp;
 	struct pci_device *dev0;
-
-	if (device->info->num_msix_vectors != 1)
-		return trace_error(-EINVAL);
 
 	if (device->info->shmem_region >= cell->config->num_memory_regions)
 		return trace_error(-EINVAL);

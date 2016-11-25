@@ -20,6 +20,8 @@
 #define IVSHMEM_CFG_MSIX_CAP	0x50
 #define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
 
+#define IVSHMEM_INTX_ENABLE	0x1
+
 /**
  * @defgroup IVSHMEM ivshmem
  * @{
@@ -34,6 +36,7 @@ struct ivshmem_endpoint {
 	struct pci_device *device;
 	struct ivshmem_endpoint *remote;
 	struct arch_pci_ivshmem arch;
+	u32 intx_ctrl_reg;
 };
 
 int ivshmem_init(struct cell *cell, struct pci_device *device);
@@ -59,6 +62,12 @@ void arch_ivshmem_write_doorbell(struct ivshmem_endpoint *ive);
  * @return 0 on success, negative error code otherwise.
  */
 int arch_ivshmem_update_msix(struct pci_device *device);
+
+/**
+ * Update cached INTx state (if any) of the given ivshmem device.
+ * @param ive		Ivshmem endpoint to be updated.
+ */
+void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive);
 
 /** @} IVSHMEM */
 #endif /* !_JAILHOUSE_IVSHMEM_H */
