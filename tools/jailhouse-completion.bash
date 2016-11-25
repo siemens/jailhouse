@@ -68,13 +68,19 @@ function _jailhouse_get_id() {
 	# if we are at position 3 of the commnadline we can either input a
 	# concrete `ID`/`NAME` or the option `--name`
 	if [ "${COMP_CWORD}" -eq 3 ]; then
+		shopt -q nullglob && nullglob_set=true
+		shopt -s nullglob
 
 		# get possible ids and names
-		if [ -d /sys/devices/jailhouse/cells ]; then
-			for i in ${cells}; do
-				ids="${ids} ${i##*/}"
-				names="${names} $(<${i}/name)"
-			done
+		for i in ${cells}; do
+			ids="${ids} ${i##*/}"
+			names="${names} $(<${i}/name)"
+		done
+
+		[ ! $nullglob_set ] && shopt -u nullglob
+
+		if [ "${ids}" == "" ]; then
+			return 1;
 		fi
 
 		COMPREPLY=( $( compgen -W "--name ${ids} ${names}" -- \
@@ -85,12 +91,15 @@ function _jailhouse_get_id() {
 	elif [ "${COMP_CWORD}" -eq 4 ]; then
 		[ "${prev}" = "--name" ] || return 1
 
+		shopt -q nullglob && nullglob_set=true
+		shopt -s nullglob
+
 		# get possible names
-		if [ -d /sys/devices/jailhouse/cells ]; then
-			for n in ${cells}; do
-				names="${names} $(<${n})"
-			done
-		fi
+		for n in ${cells}; do
+			names="${names} $(<${n})"
+		done
+
+		[ ! $nullglob_set ] && shopt -u nullglob
 
 		COMPREPLY=( $( compgen -W "${names}" -- ${quoted_cur} ) )
 
