@@ -131,8 +131,7 @@ class DTBNode:
         children = []
         properties = []
 
-        token = 0
-        while token != OF_DT_END_NODE:
+        while True:
             (token,) = struct.unpack_from('>I', blob[length:])
             length += 4
             if token == OF_DT_BEGIN_NODE:
@@ -143,8 +142,10 @@ class DTBNode:
                 (prop, prop_length) = DTBProperty.parse(blob[length:], strings)
                 length += prop_length
                 properties.append(prop)
+            elif token == OF_DT_END_NODE:
+                break
             else:
-                RuntimeError('Invalid DTB')
+                raise RuntimeError('Invalid DTB')
 
         return (DTBNode(name, children, properties, strings), length)
 
