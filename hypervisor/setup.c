@@ -139,7 +139,7 @@ static void init_late(void)
 	for_each_cpu(cpu, root_cell.cpu_set)
 		expected_cpus++;
 	if (hypervisor_header.online_cpus != expected_cpus) {
-		error = -EINVAL;
+		error = trace_error(-EINVAL);
 		return;
 	}
 
