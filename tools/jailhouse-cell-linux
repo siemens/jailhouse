@@ -509,12 +509,13 @@ class MemoryRegion:
 
 
 class Config:
-    _HEADER_FORMAT = '8x32s4xIIIIIIIII'
+    _HEADER_FORMAT = '8s32s4xIIIIIIIII'
 
     def __init__(self, config_file):
         self.data = config_file.read()
 
-        (name,
+        (signature,
+         name,
          self.flags,
          self.cpu_set_size,
          self.num_memory_regions,
@@ -525,6 +526,10 @@ class Config:
          self.num_pci_caps,
          self.vpci_irq_base) = \
             struct.unpack_from(Config._HEADER_FORMAT, self.data)
+        if str(signature.decode()) != 'JAILCELL':
+            print('Not a cell configuration: %s' % config_file.name,
+                  file=sys.stderr)
+            exit(1)
         self.name = str(name.decode())
 
         memregion_offs = struct.calcsize(Config._HEADER_FORMAT) + \
