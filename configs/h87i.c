@@ -40,6 +40,7 @@ struct {
 			.pci_mmconfig_end_bus = 0x3f,
 			.x86 = {
 				.pm_timer_address = 0x1808,
+				.vtd_interrupt_limit = 256,
 				.iommu_units = {
 					{
 						.base = 0xfed90000,
@@ -52,7 +53,6 @@ struct {
 				},
 			},
 		},
-		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "H87I-PLUS",
 

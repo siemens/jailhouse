@@ -57,7 +57,6 @@ struct {
 				},
 			},
 		},
-		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "F2A88XM-HD3",
 			.cpu_set_size = sizeof(config.cpus),

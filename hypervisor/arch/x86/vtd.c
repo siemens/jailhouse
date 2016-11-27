@@ -25,6 +25,9 @@
 #include <asm/ioapic.h>
 #include <asm/spinlock.h>
 
+#define VTD_INTERRUPT_LIMIT()	\
+	system_config->platform_info.x86.vtd_interrupt_limit
+
 #define VTD_ROOT_PRESENT		0x00000001
 
 #define VTD_CTX_PRESENT			0x00000001
@@ -593,8 +596,8 @@ int iommu_init(void)
 	void *reg_base;
 	int err;
 
-	/* n = roundup(log2(system_config->interrupt_limit)) */
-	for (n = 0; (1UL << n) < (system_config->interrupt_limit); n++)
+	/* n = roundup(log2(VTD_INTERRUPT_LIMIT())) */
+	for (n = 0; (1UL << n) < VTD_INTERRUPT_LIMIT(); n++)
 		; /* empty loop */
 	if (n >= 16)
 		return trace_error(-EINVAL);
@@ -731,8 +734,8 @@ static int vtd_find_int_remap_region(u16 device_id)
 {
 	int n;
 
-	/* interrupt_limit is < 2^16, see vtd_init */
-	for (n = 0; n < system_config->interrupt_limit; n++)
+	/* VTD_INTERRUPT_LIMIT() is < 2^16, see vtd_init */
+	for (n = 0; n < VTD_INTERRUPT_LIMIT(); n++)
 		if (int_remap_table[n].field.assigned &&
 		    int_remap_table[n].field.sid == device_id)
 			return n;
@@ -747,7 +750,7 @@ static int vtd_reserve_int_remap_region(u16 device_id, unsigned int length)
 	if (length == 0 || vtd_find_int_remap_region(device_id) >= 0)
 		return 0;
 
-	for (n = 0; n < system_config->interrupt_limit; n++) {
+	for (n = 0; n < VTD_INTERRUPT_LIMIT(); n++) {
 		if (int_remap_table[n].field.assigned) {
 			start = -E2BIG;
 			continue;
@@ -960,8 +963,8 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 	if (base_index < 0)
 		return base_index;
 
-	if (vector >= system_config->interrupt_limit ||
-	    base_index >= system_config->interrupt_limit - vector)
+	if (vector >= VTD_INTERRUPT_LIMIT() ||
+	    base_index >= VTD_INTERRUPT_LIMIT() - vector)
 		return -ERANGE;
 
 	irte = int_remap_table[base_index + vector];

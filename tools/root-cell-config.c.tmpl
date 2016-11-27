@@ -67,6 +67,7 @@ struct {
 			.pci_mmconfig_end_bus = ${hex(mmconfig.end_bus)},
 			.x86 = {
 				.pm_timer_address = ${hex(pm_timer_base)},
+				.vtd_interrupt_limit = 256,
 				% if iommu_units:
 				.iommu_units = {
 					% for unit in iommu_units:
@@ -85,7 +86,6 @@ struct {
 				% endif
 			},
 		},
-		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "RootCell",
 			.cpu_set_size = sizeof(config.cpus),

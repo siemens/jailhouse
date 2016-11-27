@@ -54,6 +54,7 @@ struct {
 			.pci_mmconfig_end_bus = 0xff,
 			.x86 = {
 				.pm_timer_address = 0x608,
+				.vtd_interrupt_limit = 256,
 				.iommu_units = {
 					{
 						.base = 0xfed90000,
@@ -62,7 +63,6 @@ struct {
 				},
 			},
 		},
-		.interrupt_limit = 256,
 		.root_cell = {
 			.name = "QEMU-VM",
 

@@ -184,7 +184,7 @@ struct jailhouse_system {
 		union {
 			struct {
 				__u16 pm_timer_address;
-				__u8 padding[4];
+				__u32 vtd_interrupt_limit;
 				struct jailhouse_iommu
 					iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 			} __attribute__((packed)) x86;
@@ -199,7 +199,6 @@ struct jailhouse_system {
 			} __attribute__((packed)) arm;
 		} __attribute__((packed));
 	} __attribute__((packed)) platform_info;
-	__u32 interrupt_limit;
 	struct jailhouse_cell_desc root_cell;
 } __attribute__((packed));
 
