@@ -268,11 +268,11 @@ paths as needed):\n\
 jailhouse cell create %s\n\
 jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
               (args.config.name, config.name, self.loader_address(),
-               args.kernel.name, zero_page.kernel_load_addr),
+               args.kernel.name, self._zero_page.kernel_load_addr),
               end='')
         if args.initrd:
-            print('%s -a 0x%x ' %
-                  (args.initrd.name, zero_page.setup_header.ramdisk_image),
+            print('%s -a 0x%x ' % (args.initrd.name,
+                                   self._zero_page.setup_header.ramdisk_image),
                   end='')
         print('%s -a 0x%x' % (args.write_params.name, arch.params_address()))
         print('jailhouse cell start %s' % config.name)
