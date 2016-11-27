@@ -317,7 +317,8 @@ bool vcpu_handle_msr_write(void)
 		 * host-controlled MTRRs define the guest's memory types.
 		 */
 		val = get_wrmsr_value(&cpu_data->guest_regs);
-		cpu_data->mtrr_def_type = val;
+		cpu_data->mtrr_def_type &= ~MTRR_ENABLE;
+		cpu_data->mtrr_def_type |= val & MTRR_ENABLE;
 		vcpu_vendor_set_guest_pat((val & MTRR_ENABLE) ?
 					  cpu_data->pat : 0);
 		break;
@@ -385,7 +386,7 @@ void vcpu_reset(unsigned int sipi_vector)
 
 	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
 		cpu_data->pat = PAT_RESET_VALUE;
-		cpu_data->mtrr_def_type = 0;
+		cpu_data->mtrr_def_type &= ~MTRR_ENABLE;
 		vcpu_vendor_set_guest_pat(0);
 	}
 }
