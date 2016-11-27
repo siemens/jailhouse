@@ -509,12 +509,14 @@ class MemoryRegion:
 
 
 class Config:
-    _HEADER_FORMAT = '8s32s4xIIIIIIIII'
+    _HEADER_FORMAT = '6sH32s4xIIIIIIIII'
+    _HEADER_REVISION = 1
 
     def __init__(self, config_file):
         self.data = config_file.read()
 
         (signature,
+         revision,
          name,
          self.flags,
          self.cpu_set_size,
@@ -526,9 +528,12 @@ class Config:
          self.num_pci_caps,
          self.vpci_irq_base) = \
             struct.unpack_from(Config._HEADER_FORMAT, self.data)
-        if str(signature.decode()) != 'JAILCELL':
+        if str(signature.decode()) != 'JHCELL':
             print('Not a cell configuration: %s' % config_file.name,
                   file=sys.stderr)
+            exit(1)
+        if revision != Config._HEADER_REVISION:
+            print('Configuration file revision mismatch', file=sys.stderr)
             exit(1)
         self.name = str(name.decode())
 

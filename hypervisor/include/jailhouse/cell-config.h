@@ -39,12 +39,15 @@
 #ifndef _JAILHOUSE_CELL_CONFIG_H
 #define _JAILHOUSE_CELL_CONFIG_H
 
+/* Incremented on any layout or semantic change of system or cell config. */
+#define JAILHOUSE_CONFIG_REVISION	1
+
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
 #define JAILHOUSE_CELL_PASSIVE_COMMREG	0x00000001
 #define JAILHOUSE_CELL_DEBUG_CONSOLE	0x00000002
 
-#define JAILHOUSE_CELL_DESC_SIGNATURE	"JAILCELL"
+#define JAILHOUSE_CELL_DESC_SIGNATURE	"JHCELL"
 
 /**
  * The jailhouse cell configuration.
@@ -53,7 +56,9 @@
  * structure.
  */
 struct jailhouse_cell_desc {
-	char signature[8];
+	char signature[6];
+	__u16 revision;
+
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
 	__u32 id; /* set by the driver */
 	__u32 flags;
@@ -166,13 +171,14 @@ struct jailhouse_iommu {
 	__u32 amd_features;
 } __attribute__((packed));
 
-#define JAILHOUSE_SYSTEM_SIGNATURE	"JAILSYST"
+#define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYST"
 
 /**
  * General descriptor of the system.
  */
 struct jailhouse_system {
-	char signature[8];
+	char signature[6];
+	__u16 revision;
 
 	/** Jailhouse's location in memory */
 	struct jailhouse_memory hypervisor_memory;

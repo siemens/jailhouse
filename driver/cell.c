@@ -173,6 +173,11 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		err = -EINVAL;
 		goto kfree_config_out;
 	}
+	if (config->revision != JAILHOUSE_CONFIG_REVISION) {
+		pr_err("jailhouse: Configuration revision mismatch\n");
+		err = -EINVAL;
+		goto kfree_config_out;
+	}
 
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 

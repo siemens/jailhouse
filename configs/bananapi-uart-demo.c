@@ -25,6 +25,7 @@ struct {
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
+		.revision = JAILHOUSE_CONFIG_REVISION,
 		.name = "bananapi-uart-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

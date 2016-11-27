@@ -211,6 +211,10 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		pr_err("jailhouse: Not a system configuration\n");
 		return -EINVAL;
 	}
+	if (config_header.revision != JAILHOUSE_CONFIG_REVISION) {
+		pr_err("jailhouse: Configuration revision mismatch\n");
+		return -EINVAL;
+	}
 
 	config_header.root_cell.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 

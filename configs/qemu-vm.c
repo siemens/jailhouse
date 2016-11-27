@@ -42,6 +42,7 @@ struct {
 } __attribute__((packed)) config = {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
+		.revision = JAILHOUSE_CONFIG_REVISION,
 		.hypervisor_memory = {
 			.phys_start = 0x3b000000,
 			.size = 0x600000,
