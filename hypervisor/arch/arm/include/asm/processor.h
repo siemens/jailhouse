@@ -178,10 +178,6 @@ struct registers {
 #define dsb(domain)	asm volatile("dsb " #domain ::: "memory")
 #define isb()		asm volatile("isb")
 
-#define wfe()		asm volatile("wfe")
-#define wfi()		asm volatile("wfi")
-#define sev()		asm volatile("sev")
-
 #define arm_read_banked_reg(reg, val) \
 	asm volatile ("mrs %0, " #reg "\n" : "=r" (val))
 
@@ -196,7 +192,6 @@ struct registers {
 			arm_write_banked_reg(reg, val);	\
 	} while (0)
 
-unsigned int smc(unsigned int r0, ...);
 unsigned int hvc(unsigned int r0, ...);
 
 static inline void cpu_relax(void)

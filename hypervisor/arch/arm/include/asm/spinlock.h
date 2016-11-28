@@ -72,7 +72,7 @@ static inline void spin_unlock(spinlock_t *lock)
 
 	/* Ensure the spinlock is updated before notifying other CPUs */
 	dsb(ishst);
-	sev();
+	asm volatile("sev");
 }
 
 #endif /* !__ASSEMBLY__ */

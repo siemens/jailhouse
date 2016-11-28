@@ -164,12 +164,6 @@ struct registers {
 #define dsb(domain)	asm volatile("dsb " #domain "\n" : : : "memory")
 #define isb()		asm volatile("isb\n")
 
-#define wfe()		asm volatile("wfe\n")
-#define wfi()		asm volatile("wfi\n")
-#define sev()		asm volatile("sev\n")
-
-unsigned int smc(unsigned int r0, ...);
-
 static inline void cpu_relax(void)
 {
 	asm volatile("" : : : "memory");
