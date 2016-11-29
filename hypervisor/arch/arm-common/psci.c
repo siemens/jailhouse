@@ -79,6 +79,14 @@ long psci_dispatch(struct trap_context *ctx)
 		/* Major[31:16], minor[15:0] */
 		return 2;
 
+	case PSCI_CPU_SUSPEND_32:
+	case PSCI_CPU_SUSPEND_64:
+		if (!irqchip_has_pending_irqs()) {
+			asm volatile("wfi" : : : "memory");
+			irqchip_handle_irq(cpu_data);
+		}
+		return 0;
+
 	case PSCI_CPU_OFF:
 	case PSCI_CPU_OFF_V0_1_UBOOT:
 		arm_cpu_park();
