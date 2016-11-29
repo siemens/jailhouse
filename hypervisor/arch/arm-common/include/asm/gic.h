@@ -14,7 +14,6 @@
 #define _JAILHOUSE_ASM_GIC_COMMON_H
 
 #include <jailhouse/mmio.h>
-#include <jailhouse/types.h>
 #if defined(CONFIG_ARM_GIC_V2)
 # include <asm/gic_v2.h>
 #elif defined(CONFIG_ARM_GIC_V3)
@@ -48,12 +47,6 @@
 #define is_spi(irqn)			((irqn) > 31 && (irqn) < 1020)
 
 #ifndef __ASSEMBLY__
-
-struct cell;
-struct arm_mmio_access;
-struct per_cpu;
-struct sgi;
-
 extern u8 target_cpu_map[];
 
 extern void *gicd_base;
