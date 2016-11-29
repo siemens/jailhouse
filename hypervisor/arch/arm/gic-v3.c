@@ -260,8 +260,6 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 
 static int gic_cell_init(struct cell *cell)
 {
-	mmio_region_register(cell, system_config->platform_info.arm.gicd_base,
-			     GICD_SIZE, gic_handle_dist_access, NULL);
 	mmio_region_register(cell, system_config->platform_info.arm.gicr_base,
 			     GICR_SIZE, gic_handle_redist_access, NULL);
 

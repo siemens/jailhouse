@@ -165,8 +165,6 @@ static void gic_eoi_irq(u32 irq_id, bool deactivate)
 
 static int gic_cell_init(struct cell *cell)
 {
-	int err;
-
 	/*
 	 * Let the guest access the virtual CPU interface instead of the
 	 * physical one.
@@ -176,19 +174,13 @@ static int gic_cell_init(struct cell *cell)
 	 * here.
 	 * As for now, none of them seem to have virtualization extensions.
 	 */
-	err = paging_create(&cell->arch.mm,
-			    system_config->platform_info.arm.gicv_base,
-			    GICC_SIZE,
-			    system_config->platform_info.arm.gicc_base,
-			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
-			     S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
-			    PAGING_COHERENT);
-	if (err)
-		return err;
-
-	mmio_region_register(cell, system_config->platform_info.arm.gicd_base,
-			     GICD_SIZE, gic_handle_dist_access, NULL);
-	return 0;
+	return paging_create(&cell->arch.mm,
+			     system_config->platform_info.arm.gicv_base,
+			     GICC_SIZE,
+			     system_config->platform_info.arm.gicc_base,
+			     (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
+			      S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
+			     PAGING_COHERENT);
 }
 
 static void gic_cell_exit(struct cell *cell)
