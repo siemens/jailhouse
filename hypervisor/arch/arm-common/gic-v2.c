@@ -146,8 +146,23 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	 */
 	gic_clear_pending_irqs();
 
-	/* Register ourselves into the CPU itf map */
-	gic_probe_cpu_id(cpu_data->cpu_id);
+	/*
+	 * Get the CPU interface ID for this cpu. It can be discovered by
+	 * reading the banked value of the PPI and IPI TARGET registers
+	 * Patch 2bb3135 in Linux explains why the probe may need to scans the
+	 * first 8 registers: some early implementation returned 0 for the first
+	 * ITARGETSR registers.
+	 * Since those didn't have virtualization extensions, we can safely
+	 * ignore that case.
+	 */
+	if (cpu_data->cpu_id >= ARRAY_SIZE(gicv2_target_cpu_map))
+		return -EINVAL;
+
+	gicv2_target_cpu_map[cpu_data->cpu_id] =
+		mmio_read32(gicd_base + GICD_ITARGETSR);
+
+	if (gicv2_target_cpu_map[cpu_data->cpu_id] == 0)
+		return -ENODEV;
 
 	return 0;
 }

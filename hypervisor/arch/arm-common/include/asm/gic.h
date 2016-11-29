@@ -54,7 +54,6 @@ extern u8 gicv2_target_cpu_map[8];
 extern void *gicd_base;
 extern spinlock_t dist_lock;
 
-int gic_probe_cpu_id(unsigned int cpu);
 enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio);
 enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 				      unsigned int irq);

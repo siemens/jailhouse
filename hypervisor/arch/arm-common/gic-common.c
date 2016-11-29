@@ -122,28 +122,6 @@ static enum mmio_result handle_sgir_access(struct mmio_access *mmio)
 	return MMIO_HANDLED;
 }
 
-/*
- * Get the CPU interface ID for this cpu. It can be discovered by reading
- * the banked value of the PPI and IPI TARGET registers
- * Patch 2bb3135 in Linux explains why the probe may need to scans the first 8
- * registers: some early implementation returned 0 for the first ITARGETSR
- * registers.
- * Since those didn't have virtualization extensions, we can safely ignore that
- * case.
- */
-int gic_probe_cpu_id(unsigned int cpu)
-{
-	if (cpu >= ARRAY_SIZE(gicv2_target_cpu_map))
-		return -EINVAL;
-
-	gicv2_target_cpu_map[cpu] = mmio_read32(gicd_base + GICD_ITARGETSR);
-
-	if (gicv2_target_cpu_map[cpu] == 0)
-		return -ENODEV;
-
-	return 0;
-}
-
 void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
