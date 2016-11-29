@@ -21,6 +21,19 @@ static unsigned int gic_num_lr;
 void *gicc_base;
 void *gich_base;
 
+/* Check that the targeted interface belongs to the cell */
+static bool gic_targets_in_cell(struct cell *cell, u8 targets)
+{
+	unsigned int cpu;
+
+	for (cpu = 0; cpu < ARRAY_SIZE(gicv2_target_cpu_map); cpu++)
+		if (targets & gicv2_target_cpu_map[cpu] &&
+		    per_cpu(cpu)->cell != cell)
+			return false;
+
+	return true;
+}
+
 static int gic_init(void)
 {
 	gicc_base = paging_map_device(
