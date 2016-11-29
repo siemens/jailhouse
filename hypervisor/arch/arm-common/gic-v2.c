@@ -200,7 +200,7 @@ static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 		return;
 
 	targets &= ~(0xff << shift);
-	targets |= target_cpu_map[first_cpu(cell->cpu_set)] << shift;
+	targets |= gicv2_target_cpu_map[first_cpu(cell->cpu_set)] << shift;
 
 	mmio_write32(itargetsr, targets);
 }

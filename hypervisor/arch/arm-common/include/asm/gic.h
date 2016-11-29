@@ -47,7 +47,7 @@
 #define is_spi(irqn)			((irqn) > 31 && (irqn) < 1020)
 
 #ifndef __ASSEMBLY__
-extern u8 target_cpu_map[];
+extern u8 gicv2_target_cpu_map[8];
 
 extern void *gicd_base;
 

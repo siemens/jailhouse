@@ -26,16 +26,16 @@
 
 static DEFINE_SPINLOCK(dist_lock);
 
-/* The GIC interface numbering does not necessarily match the logical map */
-u8 target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+/* The GICv2 interface numbering does not necessarily match the logical map */
+u8 gicv2_target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /* Check that the targeted interface belongs to the cell */
 bool gic_targets_in_cell(struct cell *cell, u8 targets)
 {
 	unsigned int cpu;
 
-	for (cpu = 0; cpu < ARRAY_SIZE(target_cpu_map); cpu++)
-		if (targets & target_cpu_map[cpu] &&
+	for (cpu = 0; cpu < ARRAY_SIZE(gicv2_target_cpu_map); cpu++)
+		if (targets & gicv2_target_cpu_map[cpu] &&
 		    per_cpu(cpu)->cell != cell)
 			return false;
 
@@ -203,12 +203,12 @@ static enum mmio_result handle_sgir_access(struct mmio_access *mmio)
  */
 int gic_probe_cpu_id(unsigned int cpu)
 {
-	if (cpu >= ARRAY_SIZE(target_cpu_map))
+	if (cpu >= ARRAY_SIZE(gicv2_target_cpu_map))
 		return -EINVAL;
 
-	target_cpu_map[cpu] = mmio_read32(gicd_base + GICD_ITARGETSR);
+	gicv2_target_cpu_map[cpu] = mmio_read32(gicd_base + GICD_ITARGETSR);
 
-	if (target_cpu_map[cpu] == 0)
+	if (gicv2_target_cpu_map[cpu] == 0)
 		return -ENODEV;
 
 	return 0;
@@ -244,7 +244,7 @@ void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 				 * translate them to the hypervisor's virtual
 				 * IDs.
 				 */
-				if (!(targets & target_cpu_map[cpu]))
+				if (!(targets & gicv2_target_cpu_map[cpu]))
 					continue;
 			}
 
