@@ -423,6 +423,17 @@ static void gicv3_enable_maint_irq(bool enable)
 	arm_write_sysreg(ICH_HCR_EL2, hcr);
 }
 
+static bool gicv3_has_pending_irqs(void)
+{
+	unsigned int n;
+
+	for (n = 0; n < gic_num_lr; n++)
+		if (gic_read_lr(n) & ICH_LR_PENDING)
+			return true;
+
+	return false;
+}
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	return 2;
@@ -438,5 +449,6 @@ struct irqchip_ops irqchip = {
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
 	.enable_maint_irq = gicv3_enable_maint_irq,
+	.has_pending_irqs = gicv3_has_pending_irqs,
 	.eoi_irq = gic_eoi_irq,
 };

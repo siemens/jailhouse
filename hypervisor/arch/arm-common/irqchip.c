@@ -50,6 +50,11 @@ bool irqchip_irq_in_cell(struct cell *cell, unsigned int irq_id)
 	return (cell->arch.irq_bitmap[irq_id / 32] & (1 << (irq_id % 32))) != 0;
 }
 
+bool irqchip_has_pending_irqs(void)
+{
+	return irqchip.has_pending_irqs();
+}
+
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 {
 	bool local_injection = (this_cpu_data() == cpu_data);

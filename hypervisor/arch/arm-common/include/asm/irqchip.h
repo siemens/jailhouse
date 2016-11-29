@@ -52,6 +52,7 @@ struct irqchip_ops {
 	void	(*eoi_irq)(u32 irqn, bool deactivate);
 	int	(*inject_irq)(struct per_cpu *cpu_data, u16 irq_id);
 	void	(*enable_maint_irq)(bool enable);
+	bool	(*has_pending_irqs)(void);
 
 	int	(*mmio_access)(struct mmio_access *access);
 };
@@ -71,6 +72,8 @@ void irqchip_config_commit(struct cell *cell_added_removed);
 int irqchip_send_sgi(struct sgi *sgi);
 void irqchip_handle_irq(struct per_cpu *cpu_data);
 void irqchip_eoi_irq(u32 irqn, bool deactivate);
+
+bool irqchip_has_pending_irqs(void);
 
 void irqchip_inject_pending(struct per_cpu *cpu_data);
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id);

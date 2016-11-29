@@ -281,6 +281,17 @@ static void gic_enable_maint_irq(bool enable)
 	mmio_write32(gich_base + GICH_HCR, hcr);
 }
 
+static bool gic_has_pending_irqs(void)
+{
+	unsigned int n;
+
+	for (n = 0; n < gic_num_lr; n++)
+		if (gic_read_lr(n) & GICH_LR_PENDING_BIT)
+			return true;
+
+	return false;
+}
+
 enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 				      unsigned int irq)
 {
@@ -305,5 +316,6 @@ struct irqchip_ops irqchip = {
 	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
 	.enable_maint_irq = gic_enable_maint_irq,
+	.has_pending_irqs = gic_has_pending_irqs,
 	.eoi_irq = gic_eoi_irq,
 };
