@@ -432,6 +432,13 @@ static bool gicv3_has_pending_irqs(void)
 	return false;
 }
 
+static enum mmio_result gicv3_handle_irq_target(struct mmio_access *mmio,
+						unsigned int irq)
+{
+	/* ignore writes, we are in affinity routing mode */
+	return MMIO_HANDLED;
+}
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	return 2;
@@ -448,4 +455,5 @@ struct irqchip_ops irqchip = {
 	.enable_maint_irq = gicv3_enable_maint_irq,
 	.has_pending_irqs = gicv3_has_pending_irqs,
 	.eoi_irq = gic_eoi_irq,
+	.handle_irq_target = gicv3_handle_irq_target,
 };

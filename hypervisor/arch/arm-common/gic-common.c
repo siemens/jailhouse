@@ -24,7 +24,7 @@
 #define REG_RANGE(base, n, size)		\
 		(base) ... ((base) + (n - 1) * (size))
 
-static DEFINE_SPINLOCK(dist_lock);
+DEFINE_SPINLOCK(dist_lock);
 
 /* The GICv2 interface numbering does not necessarily match the logical map */
 u8 gicv2_target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -100,76 +100,6 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 		mmio->value &= access_mask;
 		mmio_perform_access(gicd_base, mmio);
 	}
-	return MMIO_HANDLED;
-}
-
-/*
- * GICv2 uses 8bit values for each IRQ in the ITARGETRs registers
- */
-static enum mmio_result handle_irq_target(struct mmio_access *mmio,
-					  unsigned int irq)
-{
-	/*
-	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
-	 * access corresponds to the reg index
-	 */
-	unsigned int irq_base = irq & ~0x3;
-	struct cell *cell = this_cell();
-	unsigned int offset;
-	u32 access_mask = 0;
-	unsigned int n;
-	u8 targets;
-
-	/*
-	 * Let the guest freely access its SGIs and PPIs, which may be used to
-	 * fill its CPU interface map.
-	 */
-	if (!is_spi(irq)) {
-		mmio_perform_access(gicd_base, mmio);
-		return MMIO_HANDLED;
-	}
-
-	/*
-	 * The registers are byte-accessible, but we always do word accesses.
-	 */
-	offset = irq % 4;
-	mmio->address &= ~0x3;
-	mmio->value <<= 8 * offset;
-	mmio->size = 4;
-
-	for (n = 0; n < 4; n++) {
-		if (irqchip_irq_in_cell(cell, irq_base + n))
-			access_mask |= 0xff << (8 * n);
-		else
-			continue;
-
-		if (!mmio->is_write)
-			continue;
-
-		targets = (mmio->value >> (8 * n)) & 0xff;
-
-		if (!gic_targets_in_cell(cell, targets)) {
-			printk("Attempt to route IRQ%d outside of cell\n",
-			       irq_base + n);
-			return MMIO_ERROR;
-		}
-	}
-
-	if (mmio->is_write) {
-		spin_lock(&dist_lock);
-		u32 itargetsr =
-			mmio_read32(gicd_base + GICD_ITARGETSR + irq_base);
-		mmio->value &= access_mask;
-		/* Combine with external SPIs */
-		mmio->value |= (itargetsr & ~access_mask);
-		/* And do the access */
-		mmio_perform_access(gicd_base, mmio);
-		spin_unlock(&dist_lock);
-	} else {
-		mmio_perform_access(gicd_base, mmio);
-		mmio->value &= access_mask;
-	}
-
 	return MMIO_HANDLED;
 }
 
@@ -269,7 +199,7 @@ enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio)
 		break;
 
 	case REG_RANGE(GICD_ITARGETSR, 1024, 1):
-		ret = handle_irq_target(mmio, reg - GICD_ITARGETSR);
+		ret = irqchip.handle_irq_target(mmio, reg - GICD_ITARGETSR);
 		break;
 
 	case REG_RANGE(GICD_ICENABLER, 32, 4):

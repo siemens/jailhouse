@@ -11,7 +11,7 @@
  */
 
 #include <jailhouse/control.h>
-#include <jailhouse/mmio.h>
+#include <jailhouse/printk.h>
 #include <asm/gic.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
@@ -291,6 +291,76 @@ enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 	return MMIO_HANDLED;
 }
 
+/*
+ * GICv2 uses 8bit values for each IRQ in the ITARGETSR registers
+ */
+static enum mmio_result gic_handle_irq_target(struct mmio_access *mmio,
+					      unsigned int irq)
+{
+	/*
+	 * ITARGETSR contain one byte per IRQ, so the first one affected by this
+	 * access corresponds to the reg index
+	 */
+	unsigned int irq_base = irq & ~0x3;
+	struct cell *cell = this_cell();
+	unsigned int offset;
+	u32 access_mask = 0;
+	unsigned int n;
+	u8 targets;
+
+	/*
+	 * Let the guest freely access its SGIs and PPIs, which may be used to
+	 * fill its CPU interface map.
+	 */
+	if (!is_spi(irq)) {
+		mmio_perform_access(gicd_base, mmio);
+		return MMIO_HANDLED;
+	}
+
+	/*
+	 * The registers are byte-accessible, but we always do word accesses.
+	 */
+	offset = irq % 4;
+	mmio->address &= ~0x3;
+	mmio->value <<= 8 * offset;
+	mmio->size = 4;
+
+	for (n = 0; n < 4; n++) {
+		if (irqchip_irq_in_cell(cell, irq_base + n))
+			access_mask |= 0xff << (8 * n);
+		else
+			continue;
+
+		if (!mmio->is_write)
+			continue;
+
+		targets = (mmio->value >> (8 * n)) & 0xff;
+
+		if (!gic_targets_in_cell(cell, targets)) {
+			printk("Attempt to route IRQ%d outside of cell\n",
+			       irq_base + n);
+			return MMIO_ERROR;
+		}
+	}
+
+	if (mmio->is_write) {
+		spin_lock(&dist_lock);
+		u32 itargetsr =
+			mmio_read32(gicd_base + GICD_ITARGETSR + irq_base);
+		mmio->value &= access_mask;
+		/* Combine with external SPIs */
+		mmio->value |= (itargetsr & ~access_mask);
+		/* And do the access */
+		mmio_perform_access(gicd_base, mmio);
+		spin_unlock(&dist_lock);
+	} else {
+		mmio_perform_access(gicd_base, mmio);
+		mmio->value &= access_mask;
+	}
+
+	return MMIO_HANDLED;
+}
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	return 1;
@@ -309,4 +379,6 @@ struct irqchip_ops irqchip = {
 	.enable_maint_irq = gic_enable_maint_irq,
 	.has_pending_irqs = gic_has_pending_irqs,
 	.eoi_irq = gic_eoi_irq,
+
+	.handle_irq_target = gic_handle_irq_target,
 };

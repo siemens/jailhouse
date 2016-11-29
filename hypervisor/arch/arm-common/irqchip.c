@@ -32,8 +32,6 @@
 	     (counter) < (config)->num_irqchips;			\
 	     (chip)++, (counter)++)
 
-extern struct irqchip_ops irqchip;
-
 void *gicd_base;
 
 /*

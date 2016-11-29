@@ -52,6 +52,9 @@ struct irqchip_ops {
 	int	(*inject_irq)(struct per_cpu *cpu_data, u16 irq_id);
 	void	(*enable_maint_irq)(bool enable);
 	bool	(*has_pending_irqs)(void);
+
+	enum mmio_result (*handle_irq_target)(struct mmio_access *mmio,
+					      unsigned int irq);
 };
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell);
