@@ -316,7 +316,7 @@ enum mmio_result gic_handle_dist_access(void *arg, struct mmio_access *mmio)
 	return ret;
 }
 
-void gic_handle_irq(struct per_cpu *cpu_data)
+void irqchip_handle_irq(struct per_cpu *cpu_data)
 {
 	unsigned int count_event = 1;
 	bool handled = false;

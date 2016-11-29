@@ -122,11 +122,6 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 	irqchip.enable_maint_irq(false);
 }
 
-void irqchip_handle_irq(struct per_cpu *cpu_data)
-{
-	irqchip.handle_irq(cpu_data);
-}
-
 void irqchip_eoi_irq(u32 irqn, bool deactivate)
 {
 	irqchip.eoi_irq(irqn, deactivate);

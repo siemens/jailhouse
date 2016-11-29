@@ -48,7 +48,6 @@ struct irqchip_ops {
 	void	(*adjust_irq_target)(struct cell *cell, u16 irq_id);
 
 	int	(*send_sgi)(struct sgi *sgi);
-	void	(*handle_irq)(struct per_cpu *cpu_data);
 	void	(*eoi_irq)(u32 irqn, bool deactivate);
 	int	(*inject_irq)(struct per_cpu *cpu_data, u16 irq_id);
 	void	(*enable_maint_irq)(bool enable);

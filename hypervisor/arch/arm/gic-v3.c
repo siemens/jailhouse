@@ -446,7 +446,6 @@ struct irqchip_ops irqchip = {
 	.cell_init = gic_cell_init,
 	.adjust_irq_target = gic_adjust_irq_target,
 	.send_sgi = gic_send_sgi,
-	.handle_irq = gic_handle_irq,
 	.inject_irq = gic_inject_irq,
 	.enable_maint_irq = gicv3_enable_maint_irq,
 	.has_pending_irqs = gicv3_has_pending_irqs,
