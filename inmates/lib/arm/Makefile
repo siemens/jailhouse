@@ -11,13 +11,12 @@
 #
 
 include $(INMATES_LIB)/Makefile.lib
+include $(INMATES_LIB)/../arm-common/Makefile.lib
 
 always := lib.a
 
 ccflags-y := -ffunction-sections
 
-lib-y				:= header.o gic.o printk.o timer.o \
-				   uart-pl011.o uart-8250.o
-lib-y				+= ../string.o ../cmdline.o
-lib-$(CONFIG_ARM_GIC_V2)	+= gic-v2.o
+lib-y				:= $(COMMON_OBJECTS)
+lib-y				+= header.o
 lib-$(CONFIG_ARM_GIC_V3)	+= gic-v3.o

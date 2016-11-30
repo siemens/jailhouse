@@ -1,0 +1,18 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) OTH Regensburg, 2016
+#
+# Authors:
+#  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+OBJS-y                          := ../string.o ../cmdline.o
+OBJS-y                          += printk.o gic.o timer.o
+OBJS-y                          += uart-pl011.o uart-8250.o
+OBJS-$(CONFIG_ARM_GIC_V2)       += gic-v2.o
+
+COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))

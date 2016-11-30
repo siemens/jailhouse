@@ -11,11 +11,9 @@
 #
 
 include $(INMATES_LIB)/Makefile.lib
+include $(INMATES_LIB)/../arm-common/Makefile.lib
 
 always := lib.a
 
-lib-y				:= header.o
-lib-y				+= ../arm/gic.o ../arm/printk.o ../arm/timer.o
-lib-y				+= ../string.o ../cmdline.o
-lib-y				+= ../arm/uart-pl011.o ../arm/uart-8250.o
-lib-$(CONFIG_ARM_GIC_V2)	+= ../arm/gic-v2.o
+lib-y				:= $(COMMON_OBJECTS)
+lib-y				+= header.o
