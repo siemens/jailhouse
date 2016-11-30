@@ -61,7 +61,8 @@ cell config you should make sure that "iommu" is set to the correct value,
  try using the same value that works for the other pci devices.
 The link between two such virtual PCI devices is established by using the same
 "bdf". The size and location of the shared memory can be configured freely but
-you have to make sure that the values match on both sides.
+you have to make sure that the values match on both sides. The "shmem_protocol"
+has to match as well.
 For an example have a look at the cell configuration files of qemu and the
 ivshmem-demo.
 
