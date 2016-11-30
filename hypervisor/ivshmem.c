@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2019
  *
  * Authors:
  *  Henning Schild <henning.schild@siemens.com>
@@ -32,11 +32,13 @@
 #define PCI_VENDOR_ID_SIEMENS		0x110a
 #define IVSHMEM_DEVICE_ID		0x4106
 
-/* in jailhouse we can not allow dynamic remapping of the actual shared memory
- * the location and the size are stored here. A memory-BAR size of 0 will tell
- * device drivers that they are dealing with a special ivshmem device */
-#define IVSHMEM_CFG_SHMEM_PTR	0x40
-#define IVSHMEM_CFG_SHMEM_SZ	0x48
+#define IVSHMEM_CFG_VNDR_CAP		0x40
+#define IVSHMEM_CFG_MSIX_CAP		(IVSHMEM_CFG_VNDR_CAP + \
+					 IVSHMEM_CFG_VNDR_LEN)
+
+#define IVSHMEM_CFG_SHMEM_RW_SZ		(IVSHMEM_CFG_VNDR_CAP + 0x08)
+#define IVSHMEM_CFG_SHMEM_ADDR		(IVSHMEM_CFG_VNDR_CAP + 0x18)
+#define IVSHMEM_CFG_VNDR_LEN		0x20
 
 #define IVSHMEM_MSIX_VECTORS	1
 
@@ -65,10 +67,11 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[0x04/4] = (PCI_STS_CAPS << 16),
 	[0x08/4] = PCI_DEV_CLASS_OTHER << 24,
 	[0x2c/4] = (IVSHMEM_DEVICE_ID << 16) | PCI_VENDOR_ID_SIEMENS,
-	[0x34/4] = IVSHMEM_CFG_MSIX_CAP,
-	/* MSI-X capability */
-	[IVSHMEM_CFG_MSIX_CAP/4] = (IVSHMEM_MSIX_VECTORS - 1) << 16
-				   | (0x00 << 8) | PCI_CAP_ID_MSIX,
+	[PCI_CFG_CAPS/4] = IVSHMEM_CFG_VNDR_CAP,
+	[IVSHMEM_CFG_VNDR_CAP/4] = (IVSHMEM_CFG_VNDR_LEN << 16) |
+				(IVSHMEM_CFG_MSIX_CAP << 8) | PCI_CAP_ID_VNDR,
+	[IVSHMEM_CFG_MSIX_CAP/4] = (IVSHMEM_MSIX_VECTORS - 1) << 16 |
+				   (0x00 << 8) | PCI_CAP_ID_MSIX,
 	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = 1,
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 1,
 };
@@ -397,14 +400,15 @@ void ivshmem_reset(struct pci_device *device)
 		ive->cspace[PCI_CFG_INT/4] =
 			(((device->info->bdf >> 3) & 0x3) + 1) << 8;
 		/* disable MSI-X capability */
-		ive->cspace[PCI_CFG_CAPS/4] = 0;
+		ive->cspace[IVSHMEM_CFG_VNDR_CAP/4] &= 0xffff00ff;
 	}
 
-	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)ive->shmem->virt_start;
-	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] =
+	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4] = (u32)ive->shmem->size;
+	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4 + 1] =
+		(u32)(ive->shmem->size >> 32);
+	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4] = (u32)ive->shmem->virt_start;
+	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4 + 1] =
 		(u32)(ive->shmem->virt_start >> 32);
-	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4] = (u32)ive->shmem->size;
-	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4 + 1] = (u32)(ive->shmem->size >> 32);
 
 	ive->state = 0;
 }

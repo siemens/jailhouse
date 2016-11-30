@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2019
  *
  * Authors:
  *  Henning Schild <henning.schild@siemens.com>
@@ -18,8 +18,7 @@
 #include <asm/ivshmem.h>
 #include <asm/spinlock.h>
 
-#define IVSHMEM_CFG_MSIX_CAP	0x50
-#define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
+#define IVSHMEM_CFG_SIZE	0x80
 
 #define IVSHMEM_INTX_ENABLE	0x1
 
