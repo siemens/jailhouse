@@ -40,7 +40,7 @@
 #define _JAILHOUSE_CELL_CONFIG_H
 
 /* Incremented on any layout or semantic change of system or cell config. */
-#define JAILHOUSE_CONFIG_REVISION	1
+#define JAILHOUSE_CONFIG_REVISION	2
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 

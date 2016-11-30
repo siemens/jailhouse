@@ -511,7 +511,7 @@ class MemoryRegion:
 
 class Config:
     _HEADER_FORMAT = '6sH32s4xIIIIIIIII'
-    _HEADER_REVISION = 1
+    _HEADER_REVISION = 2
 
     def __init__(self, config_file):
         self.data = config_file.read()
