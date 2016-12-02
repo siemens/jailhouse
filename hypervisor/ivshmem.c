@@ -46,7 +46,6 @@
 #define IVSHMEM_REG_LSTATE	16
 #define IVSHMEM_REG_RSTATE	20
 
-#define IVSHMEM_BAR0_SIZE	256
 /*
  * Make the region two times as large as the MSI-X table to guarantee a
  * power-of-2 size (encoding constraint of a BAR).
@@ -221,8 +220,13 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 		}
 		if (val & PCI_CMD_MEM) {
 			ive->bar0_address = (*(u64 *)&device->bar[0]) & ~0xfL;
+			/*
+			 * Derive the size of region 0 from its BAR mask.
+			 * This reasonably assumes that all unmodifiable bits
+			 * of the BAR, i.e. all zeros, are in the lower dword.
+			 */
 			mmio_region_register(device->cell, ive->bar0_address,
-					     IVSHMEM_BAR0_SIZE,
+					     ~device->info->bar_mask[0] + 1,
 					     ivshmem_register_mmio, ive);
 
 			ive->bar4_address = (*(u64 *)&device->bar[4]) & ~0xfL;
