@@ -309,10 +309,13 @@ static void ivshmem_disconnect_cell(struct ivshmem_data *iv, int cellnum)
 	struct ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
 	struct ivshmem_endpoint *ive = &iv->eps[cellnum];
 
+	remote->remote = NULL;
+	memory_barrier();
+	arch_ivshmem_write_doorbell(ive);
+
 	ive->device->ivshmem_endpoint = NULL;
 	ive->device = NULL;
 	ive->remote = NULL;
-	remote->remote = NULL;
 }
 
 /**
