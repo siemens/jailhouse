@@ -13,15 +13,10 @@
 #include <jailhouse/ivshmem.h>
 #include <asm/irqchip.h>
 
-void arch_ivshmem_write_doorbell(struct ivshmem_endpoint *ive)
+void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 {
-	struct ivshmem_endpoint *remote = ive->remote;
-	unsigned int irq_id;
+	unsigned int irq_id = ive->arch.irq_id;
 
-	if (!remote)
-		return;
-
-	irq_id = remote->arch.irq_id;
 	if (irq_id)
 		irqchip_set_pending(NULL, irq_id);
 }

@@ -16,17 +16,12 @@
 #include <jailhouse/printk.h>
 #include <asm/pci.h>
 
-void arch_ivshmem_write_doorbell(struct ivshmem_endpoint *ive)
+void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 {
-	struct ivshmem_endpoint *remote = ive->remote;
-	struct apic_irq_message irq_msg;
+	/* Get a copy of the struct before using it. */
+	struct apic_irq_message irq_msg = ive->arch.irq_msg;
 
-	if (!remote)
-		return;
-
-	/* get a copy of the struct before using it, the read barrier makes
-	 * sure the copy is consistent */
-	irq_msg = remote->arch.irq_msg;
+	/* The read barrier makes sure the copy is consistent. */
 	memory_load_barrier();
 	if (irq_msg.valid)
 		apic_send_irq(irq_msg);

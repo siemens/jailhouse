@@ -70,6 +70,14 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 4,
 };
 
+static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
+{
+	struct ivshmem_endpoint *remote = ive->remote;
+
+	if (remote)
+		arch_ivshmem_trigger_interrupt(ive->remote);
+}
+
 static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
@@ -93,7 +101,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 
 	if (mmio->address == IVSHMEM_REG_DBELL) {
 		if (mmio->is_write)
-			arch_ivshmem_write_doorbell(ive);
+			ivshmem_remote_interrupt(ive);
 		else
 			mmio->value = 0;
 		return MMIO_HANDLED;
@@ -103,7 +111,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		if (mmio->is_write) {
 			ive->state = mmio->value;
 			memory_barrier();
-			arch_ivshmem_write_doorbell(ive);
+			ivshmem_remote_interrupt(ive);
 		} else {
 			mmio->value = ive->state;
 		}
@@ -395,7 +403,7 @@ void ivshmem_exit(struct pci_device *device)
 	if (ive->remote) {
 		ive->remote->remote = NULL;
 		memory_barrier();
-		arch_ivshmem_write_doorbell(ive);
+		ivshmem_remote_interrupt(ive);
 
 		ive->device = NULL;
 	} else {
