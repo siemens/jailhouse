@@ -50,6 +50,7 @@
 
 struct ivshmem_data {
 	struct ivshmem_endpoint eps[2];
+	u16 bdf;
 	struct ivshmem_data *next;
 };
 
@@ -239,12 +240,10 @@ static int ivshmem_write_msix_control(struct ivshmem_endpoint *ive, u32 val)
 static struct ivshmem_data **ivshmem_find(struct pci_device *d, int *cellnum)
 {
 	struct ivshmem_data **ivp, *iv;
-	u16 bdf2;
 
 	for (ivp = &ivshmem_list; *ivp; ivp = &((*ivp)->next)) {
 		iv = *ivp;
-		bdf2 = iv->eps[0].device->info->bdf;
-		if (d->info->bdf == bdf2) {
+		if (d->info->bdf == iv->bdf) {
 			if (iv->eps[0].device == d) {
 				if (cellnum)
 					*cellnum = 0;
@@ -419,6 +418,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	*ivp = page_alloc(&mem_pool, 1);
 	if (!(*ivp))
 		return -ENOMEM;
+	(*ivp)->bdf = device->info->bdf;
 	ivshmem_connect_cell(*ivp, device, mem, 0);
 
 connected:
