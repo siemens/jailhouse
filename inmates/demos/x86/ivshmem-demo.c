@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2016
  *
  * Authors:
  *  Henning Schild <henning.schild@siemens.com>
@@ -16,6 +16,8 @@
 
 #define IVSHMEM_CFG_SHMEM_PTR	0x40
 #define IVSHMEM_CFG_SHMEM_SZ	0x48
+
+#define JAILHOUSE_SHMEM_PROTO_UNDEFINED	0x0000
 
 #define IRQ_VECTOR	32
 
@@ -114,19 +116,26 @@ void inmate_main(void)
 {
 	int i;
 	int bdf = 0;
+	unsigned int class_rev;
 	struct ivshmem_dev_data *d;
 	volatile char *shmem;
 
 	int_init();
 
-again:
-	bdf = pci_find_device(VENDORID, DEVICEID, bdf);
-	if (bdf != -1) {
+	while ((ndevices < MAX_NDEV) &&
+	       (-1 != (bdf = pci_find_device(VENDORID, DEVICEID, bdf)))) {
 		printk("IVSHMEM: Found %04x:%04x at %02x:%02x.%x\n",
 		       pci_read_config(bdf, PCI_CFG_VENDOR_ID, 2),
 		       pci_read_config(bdf, PCI_CFG_DEVICE_ID, 2),
 		       bdf >> 8, (bdf >> 3) & 0x1f, bdf & 0x3);
-
+		class_rev = pci_read_config(bdf, 0x8, 4);
+		if (class_rev != (PCI_DEV_CLASS_OTHER << 24 |
+				  JAILHOUSE_SHMEM_PROTO_UNDEFINED << 8)) {
+			printk("IVSHMEM: class/revision %08x, not supported "
+			       "skipping device\n", class_rev);
+			bdf++;
+			continue;
+		}
 		ndevices++;
 		d = devs + ndevices - 1;
 		d->bdf = bdf;
@@ -139,8 +148,6 @@ again:
 		int_set_handler(IRQ_VECTOR + ndevices - 1, irq_handler);
 		pci_msix_set_vector(bdf, IRQ_VECTOR + ndevices - 1, 0);
 		bdf++;
-		if (ndevices < MAX_NDEV)
-			goto again;
 	}
 
 	if (!ndevices) {

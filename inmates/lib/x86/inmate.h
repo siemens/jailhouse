@@ -53,6 +53,8 @@
 
 #define PCI_ID_ANY		0xffff
 
+#define PCI_DEV_CLASS_OTHER	0xff
+
 #define PCI_CAP_MSI		0x05
 #define PCI_CAP_MSIX		0x11
 
