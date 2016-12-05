@@ -393,21 +393,24 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		+ device->info->shmem_region;
 	ivp = ivshmem_find(device, NULL);
 	if (ivp) {
+		if ((*ivp)->eps[1].device)
+			return trace_error(-EBUSY);
+
 		dev0 = (*ivp)->eps[0].device;
 		mem0 = jailhouse_cell_mem_regions(dev0->cell->config) +
 			dev0->info->shmem_region;
 
+		/* check that the regions of both peers match */
+		if (mem0->phys_start != mem->phys_start ||
+		    mem0->size != mem->size)
+			return trace_error(-EINVAL);
+
 		/* we already have a datastructure, connect second endpoint */
-		if ((mem0->phys_start == mem->phys_start) &&
-		    (mem0->size == mem->size)) {
-			if ((*ivp)->eps[1].device)
-				return trace_error(-EBUSY);
-			ivshmem_connect_cell(*ivp, device, mem, 1);
-			printk("Virtual PCI connection established "
-				"\"%s\" <--> \"%s\"\n",
-				cell->config->name, dev0->cell->config->name);
-			goto connected;
-		}
+		ivshmem_connect_cell(*ivp, device, mem, 1);
+		printk("Virtual PCI connection established "
+			"\"%s\" <--> \"%s\"\n",
+			cell->config->name, dev0->cell->config->name);
+		goto connected;
 	}
 
 	/* this is the first endpoint, allocate a new datastructure */
