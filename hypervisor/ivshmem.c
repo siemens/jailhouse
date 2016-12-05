@@ -1,10 +1,11 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014, 2015
+ * Copyright (c) Siemens AG, 2014-2016
  *
- * Author:
+ * Authors:
  *  Henning Schild <henning.schild@siemens.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -237,86 +238,6 @@ static int ivshmem_write_msix_control(struct ivshmem_endpoint *ive, u32 val)
 	return 0;
 }
 
-static struct ivshmem_data **ivshmem_find(struct pci_device *d, int *cellnum)
-{
-	struct ivshmem_data **ivp, *iv;
-
-	for (ivp = &ivshmem_list; *ivp; ivp = &((*ivp)->next)) {
-		iv = *ivp;
-		if (d->info->bdf == iv->bdf) {
-			if (iv->eps[0].device == d) {
-				if (cellnum)
-					*cellnum = 0;
-				return ivp;
-			}
-			if (iv->eps[1].device == d) {
-				if (cellnum)
-					*cellnum = 1;
-				return ivp;
-			}
-			if (!cellnum)
-				return ivp;
-		}
-	}
-
-	return NULL;
-}
-
-static void ivshmem_connect_cell(struct ivshmem_data *iv,
-				 struct pci_device *d,
-				 const struct jailhouse_memory *mem,
-				 int cellnum)
-{
-	struct ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
-	struct ivshmem_endpoint *ive = &iv->eps[cellnum];
-
-	d->bar[0] = PCI_BAR_64BIT;
-	d->bar[4] = PCI_BAR_64BIT;
-
-	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
-
-	ive->cspace[0x08/4] |= d->info->shmem_protocol << 8;
-
-	if (d->info->num_msix_vectors == 0) {
-		/* let the PIN rotate based on the device number */
-		ive->cspace[PCI_CFG_INT/4] =
-			(((d->info->bdf >> 3) & 0x3) + 1) << 8;
-		/* disable MSI-X capability */
-		ive->cspace[PCI_CFG_CAPS/4] = 0;
-	}
-
-	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;
-	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] = (u32)(mem->virt_start >> 32);
-	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4] = (u32)mem->size;
-	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4 + 1] = (u32)(mem->size >> 32);
-
-	ive->device = d;
-	if (remote->device) {
-		ive->remote = remote;
-		remote->remote = ive;
-		ive->ivpos = (remote->ivpos + 1) % 2;
-	} else {
-		ive->ivpos = cellnum;
-		ive->remote = NULL;
-		remote->remote = NULL;
-	}
-	d->ivshmem_endpoint = ive;
-}
-
-static void ivshmem_disconnect_cell(struct ivshmem_data *iv, int cellnum)
-{
-	struct ivshmem_endpoint *remote = &iv->eps[(cellnum + 1) % 2];
-	struct ivshmem_endpoint *ive = &iv->eps[cellnum];
-
-	remote->remote = NULL;
-	memory_barrier();
-	arch_ivshmem_write_doorbell(ive);
-
-	ive->device->ivshmem_endpoint = NULL;
-	ive->device = NULL;
-	ive->remote = NULL;
-}
-
 /**
  * Handler for MMIO-write-accesses to PCI config space of this virtual device.
  * @param device	The device that access should be performed on.
@@ -381,47 +302,80 @@ enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
  */
 int ivshmem_init(struct cell *cell, struct pci_device *device)
 {
-	const struct jailhouse_memory *mem, *mem0;
-	struct ivshmem_data **ivp;
-	struct pci_device *dev0;
+	const struct jailhouse_memory *mem, *peer_mem;
+	struct ivshmem_endpoint *ive, *remote;
+	struct pci_device *peer_dev;
+	struct ivshmem_data *iv;
+	unsigned int id = 0;
 
 	if (device->info->shmem_region >= cell->config->num_memory_regions)
 		return trace_error(-EINVAL);
 
 	mem = jailhouse_cell_mem_regions(cell->config)
 		+ device->info->shmem_region;
-	ivp = ivshmem_find(device, NULL);
-	if (ivp) {
-		if ((*ivp)->eps[1].device)
+
+	for (iv = ivshmem_list; iv; iv = iv->next)
+		if (iv->bdf == device->info->bdf)
+			break;
+
+	if (iv) {
+		id = iv->eps[0].device ? 1 : 0;
+		if (iv->eps[id].device)
 			return trace_error(-EBUSY);
 
-		dev0 = (*ivp)->eps[0].device;
-		mem0 = jailhouse_cell_mem_regions(dev0->cell->config) +
-			dev0->info->shmem_region;
+		peer_dev = iv->eps[id ^ 1].device;
+		peer_mem = jailhouse_cell_mem_regions(peer_dev->cell->config) +
+			peer_dev->info->shmem_region;
 
 		/* check that the regions of both peers match */
-		if (mem0->phys_start != mem->phys_start ||
-		    mem0->size != mem->size)
+		if (peer_mem->phys_start != mem->phys_start ||
+		    peer_mem->size != mem->size)
 			return trace_error(-EINVAL);
 
-		/* we already have a datastructure, connect second endpoint */
-		ivshmem_connect_cell(*ivp, device, mem, 1);
-		printk("Virtual PCI connection established "
-			"\"%s\" <--> \"%s\"\n",
-			cell->config->name, dev0->cell->config->name);
-		goto connected;
+		printk("Shared memory connection established: "
+		       "\"%s\" <--> \"%s\"\n",
+		       cell->config->name, peer_dev->cell->config->name);
+	} else {
+		iv = page_alloc(&mem_pool, 1);
+		if (!iv)
+			return -ENOMEM;
+
+		iv->bdf = device->info->bdf;
+		iv->next = ivshmem_list;
+		ivshmem_list = iv;
 	}
 
-	/* this is the first endpoint, allocate a new datastructure */
-	for (ivp = &ivshmem_list; *ivp; ivp = &((*ivp)->next))
-		; /* empty loop */
-	*ivp = page_alloc(&mem_pool, 1);
-	if (!(*ivp))
-		return -ENOMEM;
-	(*ivp)->bdf = device->info->bdf;
-	ivshmem_connect_cell(*ivp, device, mem, 0);
+	ive = &iv->eps[id];
+	remote = &iv->eps[id ^ 1];
 
-connected:
+	device->bar[0] = PCI_BAR_64BIT;
+	device->bar[4] = PCI_BAR_64BIT;
+
+	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
+
+	ive->cspace[0x08/4] |= device->info->shmem_protocol << 8;
+
+	if (device->info->num_msix_vectors == 0) {
+		/* let the PIN rotate based on the device number */
+		ive->cspace[PCI_CFG_INT/4] =
+			(((device->info->bdf >> 3) & 0x3) + 1) << 8;
+		/* disable MSI-X capability */
+		ive->cspace[PCI_CFG_CAPS/4] = 0;
+	}
+
+	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;
+	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] = (u32)(mem->virt_start >> 32);
+	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4] = (u32)mem->size;
+	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4 + 1] = (u32)(mem->size >> 32);
+
+	ive->device = device;
+	ive->ivpos = id;
+	device->ivshmem_endpoint = ive;
+	if (remote->device) {
+		ive->remote = remote;
+		remote->remote = ive;
+	}
+
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
 
@@ -435,23 +389,23 @@ connected:
  */
 void ivshmem_exit(struct pci_device *device)
 {
+	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	struct ivshmem_data **ivp, *iv;
-	int cellnum;
 
-	ivp = ivshmem_find(device, &cellnum);
-	if (!ivp || !(*ivp))
-		return;
+	if (ive->remote) {
+		ive->remote->remote = NULL;
+		memory_barrier();
+		arch_ivshmem_write_doorbell(ive);
 
-	iv = *ivp;
-
-	ivshmem_disconnect_cell(iv, cellnum);
-
-	if (cellnum == 0) {
-		if (!iv->eps[1].device) {
-			*ivp = iv->next;
-			page_free(&mem_pool, iv, 1);
-			return;
+		ive->device = NULL;
+	} else {
+		for (ivp = &ivshmem_list; *ivp; ivp = &(*ivp)->next) {
+			iv = *ivp;
+			if (&iv->eps[ive->ivpos] == ive) {
+				*ivp = iv->next;
+				page_free(&mem_pool, iv, 1);
+				break;
+			}
 		}
-		iv->eps[0] = iv->eps[1];
 	}
 }
