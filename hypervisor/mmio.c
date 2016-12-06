@@ -171,7 +171,7 @@ void mmio_region_unregister(struct cell *cell, unsigned long start)
 
 	spin_lock(&cell->mmio_region_lock);
 
-	index = find_region(cell, start, 0);
+	index = find_region(cell, start, 1);
 	if (index >= 0) {
 		for (/* empty */; index < cell->num_mmio_regions; index++)
 			copy_region(cell, index + 1, index);
