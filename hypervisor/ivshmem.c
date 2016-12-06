@@ -312,20 +312,20 @@ enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
  */
 int ivshmem_init(struct cell *cell, struct pci_device *device)
 {
+	const struct jailhouse_pci_device *dev_info = device->info;
 	const struct jailhouse_memory *mem, *peer_mem;
 	struct ivshmem_endpoint *ive, *remote;
 	struct pci_device *peer_dev;
 	struct ivshmem_data *iv;
 	unsigned int id = 0;
 
-	if (device->info->shmem_region >= cell->config->num_memory_regions)
+	if (dev_info->shmem_region >= cell->config->num_memory_regions)
 		return trace_error(-EINVAL);
 
-	mem = jailhouse_cell_mem_regions(cell->config)
-		+ device->info->shmem_region;
+	mem = jailhouse_cell_mem_regions(cell->config) + dev_info->shmem_region;
 
 	for (iv = ivshmem_list; iv; iv = iv->next)
-		if (iv->bdf == device->info->bdf)
+		if (iv->bdf == dev_info->bdf)
 			break;
 
 	if (iv) {
@@ -350,7 +350,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		if (!iv)
 			return -ENOMEM;
 
-		iv->bdf = device->info->bdf;
+		iv->bdf = dev_info->bdf;
 		iv->next = ivshmem_list;
 		ivshmem_list = iv;
 	}
@@ -363,12 +363,12 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 
 	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
 
-	ive->cspace[0x08/4] |= device->info->shmem_protocol << 8;
+	ive->cspace[0x08/4] |= dev_info->shmem_protocol << 8;
 
-	if (device->info->num_msix_vectors == 0) {
+	if (dev_info->num_msix_vectors == 0) {
 		/* let the PIN rotate based on the device number */
 		ive->cspace[PCI_CFG_INT/4] =
-			(((device->info->bdf >> 3) & 0x3) + 1) << 8;
+			(((dev_info->bdf >> 3) & 0x3) + 1) << 8;
 		/* disable MSI-X capability */
 		ive->cspace[PCI_CFG_CAPS/4] = 0;
 	}
@@ -387,7 +387,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	}
 
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
-	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
+	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
 
 	return 0;
 }
