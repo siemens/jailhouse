@@ -72,10 +72,14 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 
 static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
 {
-	struct ivshmem_endpoint *remote = ive->remote;
-
-	if (remote)
+	/*
+	 * Hold the remote lock while sending the interrupt so that
+	 * ivshmem_exit can synchronize on the completion of the delivery.
+	 */
+	spin_lock(&ive->remote_lock);
+	if (ive->remote)
 		arch_ivshmem_trigger_interrupt(ive->remote);
+	spin_unlock(&ive->remote_lock);
 }
 
 static enum mmio_result ivshmem_register_mmio(void *arg,
@@ -110,7 +114,6 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	if (mmio->address == IVSHMEM_REG_LSTATE) {
 		if (mmio->is_write) {
 			ive->state = mmio->value;
-			memory_barrier();
 			ivshmem_remote_interrupt(ive);
 		} else {
 			mmio->value = ive->state;
@@ -119,10 +122,9 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	}
 
 	if (mmio->address == IVSHMEM_REG_RSTATE && !mmio->is_write) {
-		if (ive->remote)
-			mmio->value = ive->remote->state;
-		else
-			mmio->value = 0;
+		spin_lock(&ive->remote_lock);
+		mmio->value = ive->remote ? ive->remote->state : 0;
+		spin_unlock(&ive->remote_lock);
 		return MMIO_HANDLED;
 	}
 
@@ -398,11 +400,19 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 void ivshmem_exit(struct pci_device *device)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
+	struct ivshmem_endpoint *remote = ive->remote;
 	struct ivshmem_data **ivp, *iv;
 
-	if (ive->remote) {
-		ive->remote->remote = NULL;
-		memory_barrier();
+	if (remote) {
+		/*
+		 * The spinlock synchronizes the disconnection of the remote
+		 * device with any in-flight interrupts targeting the device
+		 * to be destroyed.
+		 */
+		spin_lock(&remote->remote_lock);
+		remote->remote = NULL;
+		spin_unlock(&remote->remote_lock);
+
 		ivshmem_remote_interrupt(ive);
 
 		ive->device = NULL;

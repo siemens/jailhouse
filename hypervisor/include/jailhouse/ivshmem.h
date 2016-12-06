@@ -16,6 +16,7 @@
 
 #include <jailhouse/pci.h>
 #include <asm/ivshmem.h>
+#include <asm/spinlock.h>
 
 #define IVSHMEM_CFG_MSIX_CAP	0x50
 #define IVSHMEM_CFG_SIZE	(IVSHMEM_CFG_MSIX_CAP + 12)
@@ -35,6 +36,7 @@ struct ivshmem_endpoint {
 	u64 bar4_address;
 	struct pci_device *device;
 	struct ivshmem_endpoint *remote;
+	spinlock_t remote_lock;
 	struct arch_pci_ivshmem arch;
 	u32 intx_ctrl_reg;
 };
