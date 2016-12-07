@@ -28,13 +28,13 @@ define DECLARE_TARGETS =
             $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)
 endef
 
-mach-$(CONFIG_MACH_VEXPRESS)		:= vexpress
-mach-$(CONFIG_MACH_SUN7I)		:= sun7i
-mach-$(CONFIG_MACH_TEGRA124)		:= tegra124
+mach-$(CONFIG_MACH_VEXPRESS)		:= VEXPRESS
+mach-$(CONFIG_MACH_SUN7I)		:= SUN7I
+mach-$(CONFIG_MACH_TEGRA124)		:= TEGRA124
 
-MACHINE					:= mach-$(mach-y)
-KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
-KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
+MACHINE					:= MACH_$(mach-y)
+KBUILD_CFLAGS				+= -D$(MACHINE)
+KBUILD_AFLAGS				+= -D$(MACHINE)
 
 # prevent deleting intermediate files which would cause rebuilds
 .SECONDARY: $(addprefix $(obj)/,$(targets))

@@ -12,7 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <mach/timer.h>
+#include <mach.h>
 #include <inmate.h>
 
 #define BEATS_PER_SEC		10

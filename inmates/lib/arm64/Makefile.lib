@@ -26,13 +26,13 @@ define DECLARE_TARGETS =
             $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)
 endef
 
-mach-$(CONFIG_MACH_FOUNDATION_V8)	:= foundation-v8
-mach-$(CONFIG_MACH_AMD_SEATTLE)         := amd-seattle
-mach-$(CONFIG_MACH_HI6220)		:= hi6220
+mach-$(CONFIG_MACH_FOUNDATION_V8)	:= FOUNDATION_V8
+mach-$(CONFIG_MACH_AMD_SEATTLE)         := AMD_SEATTLE
+mach-$(CONFIG_MACH_HI6220)		:= HI6220
 
-MACHINE					:= mach-$(mach-y)
-KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
-KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include/$(MACHINE)
+MACHINE					:= MACH_$(mach-y)
+KBUILD_CFLAGS				+= -D$(MACHINE)
+KBUILD_AFLAGS				+= -D$(MACHINE)
 
 # prevent deleting intermediate files which would cause rebuilds
 .SECONDARY: $(addprefix $(obj)/,$(targets))

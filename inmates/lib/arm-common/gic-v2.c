@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <mach/gic_v2.h>
+#include <mach.h>
 #include <gic.h>
 
 #define GICC_CTLR		0x0000
@@ -24,24 +24,24 @@
 
 void gic_enable(unsigned int irqn)
 {
-	mmio_write32(GICD_BASE + GICD_ISENABLER + ((irqn >> 3) & ~0x3),
+	mmio_write32(GICD_V2_BASE + GICD_ISENABLER + ((irqn >> 3) & ~0x3),
 		     1 << (irqn & 0x1f));
 }
 
 int gic_init(void)
 {
-	mmio_write32(GICC_BASE + GICC_CTLR, GICC_CTLR_GRPEN1);
-	mmio_write32(GICC_BASE + GICC_PMR, GICC_PMR_DEFAULT);
+	mmio_write32(GICC_V2_BASE + GICC_CTLR, GICC_CTLR_GRPEN1);
+	mmio_write32(GICC_V2_BASE + GICC_PMR, GICC_PMR_DEFAULT);
 
 	return 0;
 }
 
 void gic_write_eoi(u32 irqn)
 {
-	mmio_write32(GICC_BASE + GICC_EOIR, irqn);
+	mmio_write32(GICC_V2_BASE + GICC_EOIR, irqn);
 }
 
 u32 gic_read_ack(void)
 {
-	return mmio_read32(GICC_BASE + GICC_IAR);
+	return mmio_read32(GICC_V2_BASE + GICC_IAR);
 }

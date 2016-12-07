@@ -13,7 +13,7 @@
 #include <inmate.h>
 #include <stdarg.h>
 #include <uart.h>
-#include <mach/console.h>
+#include <mach.h>
 
 #ifndef CON_TYPE
 #define CON_TYPE "none"
