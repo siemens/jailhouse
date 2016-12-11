@@ -48,4 +48,14 @@
 #define GICC_V2_BASE	((void *)0x50042000)
 
 #define TIMER_IRQ	27
+
+#elif defined(MACH_ZYNQMP_ZCU102)
+#define CON_TYPE	"XUARTPS"
+#define CON_BASE	0xff010000
+
+#define GICD_V2_BASE	((void *)0xf9010000)
+#define GICC_V2_BASE	((void *)0xf902f000)
+
+#define TIMER_IRQ	27
+
 #endif
