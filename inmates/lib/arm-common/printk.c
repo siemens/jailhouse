@@ -37,8 +37,6 @@
 
 static struct uart_chip *chip = NULL;
 
-extern struct uart_chip uart_8250_ops, uart_pl011_ops;
-
 static void console_write(const char *msg)
 {
 	char c = 0;

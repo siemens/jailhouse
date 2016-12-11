@@ -18,8 +18,6 @@
 #include <jailhouse/processor.h>
 #include <asm/uart.h>
 
-extern struct uart_chip uart_8250_ops, uart_pl011_ops;
-
 static struct uart_chip *uart = NULL;
 
 static void arm_uart_write(const char *msg)
