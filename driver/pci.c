@@ -231,7 +231,7 @@ void jailhouse_pci_cell_cleanup(struct cell *cell)
 	vfree(cell->pci_devices);
 }
 
-#ifdef CONFIG_OF
+#ifdef CONFIG_OF_OVERLAY
 extern u8 __dtb_vpci_template_begin[], __dtb_vpci_template_end[];
 
 static int overlay_id = -1;
@@ -353,9 +353,10 @@ static void destroy_vpci_of_overlay(void)
 	if (overlay_id >= 0)
 		of_overlay_destroy(overlay_id);
 }
-#else /* !CONFIG_OF */
+#else /* !CONFIG_OF_OVERLAY */
 static bool create_vpci_of_overlay(struct jailhouse_system *config)
 {
+	pr_warn("jailhouse: CONFIG_OF_OVERLAY disabled\n");
 	return false;
 }
 
