@@ -36,6 +36,11 @@ static inline void mmio_write32(void *address, u32 value)
 	*(volatile u32 *)address = value;
 }
 
+static inline void cpu_relax(void)
+{
+	asm volatile("" : : : "memory");
+}
+
 /*
  * To ease the debugging, we can send a spurious hypercall, which should return
  * -ENOSYS, but appear in the hypervisor stats for this cell.
