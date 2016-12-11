@@ -56,7 +56,9 @@ static void console_init(void)
 	unsigned int n;
 
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
-	if (!strcmp(type, "8250"))
+	if (!strcmp(type, "JAILHOUSE"))
+		chip = &uart_jailhouse_ops;
+	else if (!strcmp(type, "8250"))
 		chip = &uart_8250_ops;
 	else if (!strcmp(type, "PL011"))
 		chip = &uart_pl011_ops;

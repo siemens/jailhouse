@@ -10,9 +10,9 @@
 # the COPYING file in the top-level directory.
 #
 
-OBJS-y                          := ../string.o ../cmdline.o
-OBJS-y                          += printk.o gic.o timer.o
-OBJS-y                          += uart-pl011.o uart-8250.o
-OBJS-$(CONFIG_ARM_GIC_V2)       += gic-v2.o
+OBJS-y := ../string.o ../cmdline.o
+OBJS-y += printk.o gic.o timer.o
+OBJS-y += uart-jailhouse.o uart-pl011.o uart-8250.o
+OBJS-$(CONFIG_ARM_GIC_V2) += gic-v2.o
 
 COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))

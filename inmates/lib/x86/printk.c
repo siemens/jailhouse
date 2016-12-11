@@ -57,6 +57,11 @@ static void uart_putc(char c)
 	uart_reg_out(UART_TX, c);
 }
 
+static void jailhouse_putc(char c)
+{
+	jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
+}
+
 static void console_write(const char *msg)
 {
 	char c = 0;
@@ -87,7 +92,11 @@ static void console_init(void)
 	printk_uart_base = cmdline_parse_int("con-base", UART_BASE);
 	divider = cmdline_parse_int("con-divider", 0);
 
-	if (strcmp(type, "PIO") == 0) {
+	if (strcmp(type, "JAILHOUSE") == 0) {
+		hypercall_init();
+		console_putc = jailhouse_putc;
+		return;
+	} else if (strcmp(type, "PIO") == 0) {
 		console_putc = uart_putc;
 		uart_reg_out = uart_pio_out;
 		uart_reg_in = uart_pio_in;
