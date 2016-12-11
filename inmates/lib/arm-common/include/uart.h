@@ -26,3 +26,4 @@ struct uart_chip {
 extern struct uart_chip uart_jailhouse_ops;
 extern struct uart_chip uart_8250_ops;
 extern struct uart_chip uart_pl011_ops;
+extern struct uart_chip uart_xuartps_ops;
