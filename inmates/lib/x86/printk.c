@@ -23,6 +23,7 @@
 #define UART_LCR_DLAB		0x80
 #define UART_LSR		0x5
 #define UART_LSR_THRE		0x20
+#define UART_IDLE_LOOPS		100
 
 static long unsigned int printk_uart_base;
 static void (*uart_reg_out)(unsigned int, u8);
@@ -80,7 +81,7 @@ static void console_init(void)
 {
 	const char *type;
 	char buf[32];
-	unsigned int divider;
+	unsigned int divider, n;
 
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 	printk_uart_base = cmdline_parse_int("con-base", UART_BASE);
@@ -101,13 +102,22 @@ static void console_init(void)
 		return;
 	}
 
-	if (!divider)
-		return;
-
-	uart_reg_out(UART_LCR, UART_LCR_DLAB);
-	uart_reg_out(UART_DLL, divider);
-	uart_reg_out(UART_DLM, 0);
-	uart_reg_out(UART_LCR, UART_LCR_8N1);
+	if (divider > 0) {
+		uart_reg_out(UART_LCR, UART_LCR_DLAB);
+		uart_reg_out(UART_DLL, divider);
+		uart_reg_out(UART_DLM, 0);
+		uart_reg_out(UART_LCR, UART_LCR_8N1);
+	} else {
+		/*
+		 * We share the UART with the hypervisor. Make sure all
+		 * its outputs are done before starting.
+		 */
+		do {
+			for (n = 0; n < UART_IDLE_LOOPS; n++)
+				if (!(uart_reg_in(UART_LSR) & UART_LSR_THRE))
+					break;
+		} while (n < UART_IDLE_LOOPS);
+	}
 }
 
 void printk(const char *fmt, ...)

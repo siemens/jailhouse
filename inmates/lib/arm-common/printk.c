@@ -27,6 +27,8 @@
 #define CON_GATE_NR 0
 #endif
 
+#define UART_IDLE_LOOPS		100
+
 static struct uart_chip *chip = NULL;
 
 static void console_write(const char *msg)
@@ -51,6 +53,7 @@ static void console_init(void)
 {
 	char buf[32];
 	const char *type;
+	unsigned int n;
 
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 	if (!strcmp(type, "8250"))
@@ -69,6 +72,18 @@ static void console_init(void)
 		cmdline_parse_int("con-clock_reg", CON_CLOCK_REG);
 
 	chip->init(chip);
+
+	if (chip->divider == 0) {
+		/*
+		 * We share the UART with the hypervisor. Make sure all
+		 * its outputs are done before starting.
+		 */
+		do {
+			for (n = 0; n < UART_IDLE_LOOPS; n++)
+				if (chip->is_busy(chip))
+					break;
+		} while (n < UART_IDLE_LOOPS);
+	}
 }
 
 #include "../../../hypervisor/printk-core.c"
