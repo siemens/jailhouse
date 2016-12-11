@@ -15,14 +15,6 @@
 #include <uart.h>
 #include <mach.h>
 
-#ifndef CON_TYPE
-#define CON_TYPE "none"
-#endif
-
-#ifndef CON_BASE
-#define CON_BASE 0
-#endif
-
 #ifndef CON_DIVIDER
 #define CON_DIVIDER 0
 #endif
