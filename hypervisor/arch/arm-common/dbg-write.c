@@ -51,6 +51,8 @@ void arch_dbg_write_init(void)
 		uart = &uart_pl011_ops;
 	else if (con_type == JAILHOUSE_CON_TYPE_8250)
 		uart = &uart_8250_ops;
+	else if (con_type == JAILHOUSE_CON_TYPE_XUARTPS)
+		uart = &uart_xuartps_ops;
 
 	if (uart) {
 		uart->debug_console = &system_config->debug_console;
