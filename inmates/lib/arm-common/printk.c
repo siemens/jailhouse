@@ -41,7 +41,8 @@ static void console_write(const char *msg)
 		if (!c)
 			break;
 
-		chip->wait(chip);
+		while (chip->is_busy(chip))
+			cpu_relax();
 		chip->write(chip, c);
 	}
 }

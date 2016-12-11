@@ -39,10 +39,9 @@ static void uart_init(struct uart_chip *chip)
 	}
 }
 
-static void uart_wait(struct uart_chip *chip)
+static bool uart_is_busy(struct uart_chip *chip)
 {
-	while (!(mmio_read32(chip->base + UART_LSR) & UART_LSR_THRE))
-		cpu_relax();
+	return !(mmio_read32(chip->base + UART_LSR) & UART_LSR_THRE);
 }
 
 static void uart_write(struct uart_chip *chip, char c)
@@ -52,6 +51,6 @@ static void uart_write(struct uart_chip *chip, char c)
 
 struct uart_chip uart_8250_ops = {
 	.init = uart_init,
-	.wait = uart_wait,
+	.is_busy = uart_is_busy,
 	.write = uart_write,
 };

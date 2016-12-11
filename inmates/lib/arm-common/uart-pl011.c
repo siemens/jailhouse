@@ -50,14 +50,11 @@ static void uart_init(struct uart_chip *chip)
 #endif
 }
 
-static void uart_wait(struct uart_chip *chip)
+static bool uart_is_busy(struct uart_chip *chip)
 {
-	u32 flags;
-
-	do {
-		flags = mmio_read32(chip->base + UARTFR);
-		cpu_relax();
-	} while (flags & (UARTFR_TXFF | UARTFR_BUSY)); /* FIFO full or busy */
+	/* FIFO full or busy */
+	return (mmio_read32(chip->base + UARTFR) &
+		(UARTFR_TXFF | UARTFR_BUSY)) != 0;
 }
 
 static void uart_write(struct uart_chip *chip, char c)
@@ -67,6 +64,6 @@ static void uart_write(struct uart_chip *chip, char c)
 
 struct uart_chip uart_pl011_ops = {
 	.init = uart_init,
-	.wait = uart_wait,
+	.is_busy = uart_is_busy,
 	.write = uart_write,
 };

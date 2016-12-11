@@ -19,7 +19,7 @@ struct uart_chip {
 	unsigned int divider;
 
 	void (*init)(struct uart_chip*);
-	void (*wait)(struct uart_chip*);
+	bool (*is_busy)(struct uart_chip*);
 	void (*write)(struct uart_chip*, char c);
 };
 
