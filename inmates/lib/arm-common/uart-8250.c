@@ -12,8 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/mmio.h>
-#include <jailhouse/processor.h>
+#include <inmate.h>
 #include <uart.h>
 
 #define UART_TX			0x0

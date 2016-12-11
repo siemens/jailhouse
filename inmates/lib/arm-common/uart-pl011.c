@@ -10,9 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <inmate.h>
 #include <uart.h>
-#include <jailhouse/mmio.h>
-#include <asm/processor.h>
 
 #define UART_CLK	24000000
 
