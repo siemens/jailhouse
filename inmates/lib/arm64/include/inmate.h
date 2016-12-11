@@ -26,6 +26,21 @@ typedef unsigned int u32;
 typedef signed long long s64;
 typedef unsigned long long u64;
 
+static inline u8 mmio_read8(void *address)
+{
+	return *(volatile u8 *)address;
+}
+
+static inline void mmio_write8(void *address, u8 value)
+{
+	*(volatile u8 *)address = value;
+}
+
+static inline void mmio_write16(void *address, u16 value)
+{
+	*(volatile u16 *)address = value;
+}
+
 static inline u32 mmio_read32(void *address)
 {
 	return *(volatile u32 *)address;
