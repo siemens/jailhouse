@@ -83,13 +83,13 @@ static void console_init(void)
 	divider = cmdline_parse_int("con-divider", 0);
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 
-	if (strncmp(type, "MMIO", 4) == 0) {
+	if (strcmp(type, "MMIO") == 0) {
 		uart_reg_out = uart_mmio32_out;
 		uart_reg_in = uart_mmio32_in;
 #ifdef __x86_64__
 		map_range((void *)printk_uart_base, 0x1000, MAP_UNCACHED);
 #endif
-	} else if (strncmp(type, "none", 4) == 0) {
+	} else if (strcmp(type, "none", 4) == 0) {
 		printk_uart_base = 0;
 	}
 

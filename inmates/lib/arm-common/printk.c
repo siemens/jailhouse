@@ -60,9 +60,9 @@ static void console_init(void)
 	const char *type;
 
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
-	if (!strncmp(type, "8250", 4))
+	if (!strcmp(type, "8250"))
 		chip = &uart_8250_ops;
-	else if (!strncmp(type, "PL011", 5))
+	else if (!strcmp(type, "PL011"))
 		chip = &uart_pl011_ops;
 
 	if (!chip)
