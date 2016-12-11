@@ -32,7 +32,8 @@ static void arm_uart_write(const char *msg)
 		if (!c)
 			break;
 
-		uart->wait(uart);
+		while (uart->is_busy(uart))
+			cpu_relax();
 		if (panic_in_progress && panic_cpu != phys_processor_id())
 			break;
 		uart->write(uart, c);

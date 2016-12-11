@@ -21,9 +21,9 @@ struct uart_chip {
 	void		*virt_clock_reg;
 	struct jailhouse_debug_console *debug_console;
 
-	void (*init)(struct uart_chip*);
-	void (*wait)(struct uart_chip *);
-	void (*write)(struct uart_chip *, char c);
+	void (*init)(struct uart_chip *chip);
+	bool (*is_busy)(struct uart_chip *chip);
+	void (*write)(struct uart_chip *chip, char c);
 };
 
 extern struct uart_chip uart_8250_ops, uart_pl011_ops;
