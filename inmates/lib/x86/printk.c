@@ -25,6 +25,9 @@
 #define UART_LSR_THRE		0x20
 
 static long unsigned int printk_uart_base;
+static void (*uart_reg_out)(unsigned int, u8);
+static u8 (*uart_reg_in)(unsigned int);
+static void (*console_putc)(char c);
 
 static void uart_pio_out(unsigned int reg, u8 value)
 {
@@ -46,15 +49,18 @@ static u8 uart_mmio32_in(unsigned int reg)
 	return mmio_read32((void *)printk_uart_base + reg * 4);
 }
 
-/* choose 8 bit PIO by default */
-static void (*uart_reg_out)(unsigned int, u8) = uart_pio_out;
-static u8 (*uart_reg_in)(unsigned int) = uart_pio_in;
+static void uart_putc(char c)
+{
+	while (!(uart_reg_in(UART_LSR) & UART_LSR_THRE))
+		cpu_relax();
+	uart_reg_out(UART_TX, c);
+}
 
-static void uart_write(const char *msg)
+static void console_write(const char *msg)
 {
 	char c = 0;
 
-	if (!printk_uart_base)
+	if (!console_putc)
 		return;
 
 	while (1) {
@@ -64,13 +70,10 @@ static void uart_write(const char *msg)
 			c = *msg++;
 		if (!c)
 			break;
-		while (!(uart_reg_in(UART_LSR) & UART_LSR_THRE))
-			cpu_relax();
-		uart_reg_out(UART_TX, c);
+		console_putc(c);
 	}
 }
 
-#define console_write(msg)	uart_write(msg)
 #include "../../../hypervisor/printk-core.c"
 
 static void console_init(void)
@@ -79,21 +82,26 @@ static void console_init(void)
 	char buf[32];
 	unsigned int divider;
 
+	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 	printk_uart_base = cmdline_parse_int("con-base", UART_BASE);
 	divider = cmdline_parse_int("con-divider", 0);
-	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 
-	if (strcmp(type, "MMIO") == 0) {
+	if (strcmp(type, "PIO") == 0) {
+		console_putc = uart_putc;
+		uart_reg_out = uart_pio_out;
+		uart_reg_in = uart_pio_in;
+	} else if (strcmp(type, "MMIO") == 0) {
+		console_putc = uart_putc;
 		uart_reg_out = uart_mmio32_out;
 		uart_reg_in = uart_mmio32_in;
 #ifdef __x86_64__
 		map_range((void *)printk_uart_base, 0x1000, MAP_UNCACHED);
 #endif
-	} else if (strcmp(type, "none", 4) == 0) {
-		printk_uart_base = 0;
+	} else {
+		return;
 	}
 
-	if (!printk_uart_base || !divider)
+	if (!divider)
 		return;
 
 	uart_reg_out(UART_LCR, UART_LCR_DLAB);
@@ -112,7 +120,7 @@ void printk(const char *fmt, ...)
 		inited = true;
 	}
 
-	if (!printk_uart_base)
+	if (!console_putc)
 		return;
 
 	va_start(ap, fmt);
