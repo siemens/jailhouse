@@ -32,6 +32,9 @@
 #define X86_FEATURE_INVPCID				(1 << 10)
 #define X86_FEATURE_CAT					(1 << 15)
 
+/* leaf 0x0d, subleaf 1, EAX */
+#define X86_FEATURE_XSAVES				(1 << 3)
+
 /* leaf 0x80000001, ECX */
 #define X86_FEATURE_SVM					(1 << 2)
 
