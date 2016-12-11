@@ -46,3 +46,8 @@ int strncmp(const char *s1, const char *s2, unsigned long n)
 	}
 	return 0;
 }
+
+int strcmp(const char *s1, const char *s2)
+{
+	return strncmp(s1, s2, -1);
+}

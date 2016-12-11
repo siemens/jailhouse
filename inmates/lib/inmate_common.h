@@ -41,6 +41,7 @@ void *memset(void *s, int c, unsigned long n);
 void *memcpy(void *d, const void *s, unsigned long n);
 unsigned long strlen(const char *s);
 int strncmp(const char *s1, const char *s2, unsigned long n);
+int strcmp(const char *s1, const char *s2);
 
 const char *cmdline_parse_str(const char *param, char *value_buffer,
 			      unsigned long buffer_size,
