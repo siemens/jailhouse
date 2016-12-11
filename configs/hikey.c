@@ -37,7 +37,7 @@ struct {
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0xf6000000,
-			.pci_mmconfig_end_bus = 1,
+			.pci_mmconfig_end_bus = 0,
 			.pci_is_virtual = 1,
 			.arm = {
 				.gicd_base = 0xf6801000,
