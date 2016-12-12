@@ -247,7 +247,7 @@ class PCICapability:
                 len = 20
                 (cap_reg,) = struct.unpack('<H', f.read(2))
                 if (cap_reg & 0xf) >= 2:  # v2 capability
-                    len = 44
+                    len = 60
                 # access side effects still need to be analyzed
                 flags = PCICapability.RD
                 has_extended_caps = True
