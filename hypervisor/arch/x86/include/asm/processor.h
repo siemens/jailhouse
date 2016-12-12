@@ -141,6 +141,7 @@
 
 #define X86_OP_MOVZX_OPC1				0x0f
 #define X86_OP_MOVZX_OPC2				0xb6
+#define X86_OP_MOVB_TO_MEM				0x88
 #define X86_OP_MOV_TO_MEM				0x89
 #define X86_OP_MOV_FROM_MEM				0x8b
 

@@ -112,6 +112,11 @@ restart:
 		inst.inst_len += 3;
 		inst.access_size = has_rex_w ? 2 : 1;
 		break;
+	case X86_OP_MOVB_TO_MEM:
+		inst.inst_len += 2;
+		inst.access_size = 1;
+		does_write = true;
+		break;
 	case X86_OP_MOV_TO_MEM:
 		inst.inst_len += 2;
 		inst.access_size = 4;
