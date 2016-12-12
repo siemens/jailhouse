@@ -221,8 +221,8 @@ bool vcpu_handle_mmio_access(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	enum mmio_result result = MMIO_UNHANDLED;
-	struct mmio_access mmio = {.size = 4};
 	struct guest_paging_structures pg_structs;
+	struct mmio_access mmio = {.size = 0};
 	struct vcpu_mmio_intercept intercept;
 	struct vcpu_execution_state x_state;
 	struct mmio_instruction inst;
@@ -234,7 +234,7 @@ bool vcpu_handle_mmio_access(void)
 		goto invalid_access;
 
 	inst = x86_mmio_parse(x_state.rip, &pg_structs, intercept.is_write);
-	if (!inst.inst_len || inst.access_size != 4)
+	if (!inst.inst_len)
 		goto invalid_access;
 
 	mmio.is_write = intercept.is_write;
@@ -242,6 +242,8 @@ bool vcpu_handle_mmio_access(void)
 		mmio.value = guest_regs->by_index[inst.reg_num];
 
 	mmio.address = intercept.phys_addr;
+	mmio.size = inst.access_size;
+
 	result = mmio_handle_access(&mmio);
 	if (result == MMIO_HANDLED) {
 		if (!mmio.is_write)
@@ -253,9 +255,10 @@ bool vcpu_handle_mmio_access(void)
 invalid_access:
 	/* report only unhandled access failures */
 	if (result == MMIO_UNHANDLED)
-		panic_printk("FATAL: Invalid MMIO/RAM %s, addr: 0x%016llx\n",
+		panic_printk("FATAL: Invalid MMIO/RAM %s, "
+			     "addr: 0x%016llx size: %d\n",
 			     intercept.is_write ? "write" : "read",
-			     intercept.phys_addr);
+			     intercept.phys_addr, mmio.size);
 	return false;
 }
 
