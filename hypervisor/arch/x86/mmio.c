@@ -79,7 +79,7 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 {
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
 	struct mmio_instruction inst = { .inst_len = 0 };
-	union opcode op[3] = { };
+	union opcode op[4] = { };
 	bool has_rex_r = false;
 	bool does_write;
 
@@ -119,13 +119,13 @@ restart:
 	if (!ctx_advance(&ctx, &pc, pg_structs))
 		goto error_noinst;
 
-	op[1].raw = *(ctx.inst);
-	switch (op[1].modrm.mod) {
+	op[2].raw = *(ctx.inst);
+	switch (op[2].modrm.mod) {
 	case 0:
-		if (op[1].modrm.rm == 5) { /* 32-bit displacement */
+		if (op[2].modrm.rm == 5) { /* 32-bit displacement */
 			inst.inst_len += 4;
 			break;
-		} else if (op[1].modrm.rm != 4) { /* no SIB */
+		} else if (op[2].modrm.rm != 4) { /* no SIB */
 			break;
 		}
 
@@ -134,25 +134,25 @@ restart:
 		if (!ctx_advance(&ctx, &pc, pg_structs))
 			goto error_noinst;
 
-		op[2].raw = *(ctx.inst);
-		if (op[2].sib.base == 5)
+		op[3].raw = *(ctx.inst);
+		if (op[3].sib.base == 5)
 			inst.inst_len += 4;
 		break;
 	case 1:
 	case 2:
-		if (op[1].modrm.rm == 4) /* SIB */
+		if (op[2].modrm.rm == 4) /* SIB */
 			goto error_unsupported;
-		inst.inst_len += op[1].modrm.mod == 1 ? 1 : 4;
+		inst.inst_len += op[2].modrm.mod == 1 ? 1 : 4;
 		break;
 	default:
 		goto error_unsupported;
 	}
 	if (has_rex_r)
-		inst.reg_num = 7 - op[1].modrm.reg;
-	else if (op[1].modrm.reg == 4)
+		inst.reg_num = 7 - op[2].modrm.reg;
+	else if (op[2].modrm.reg == 4)
 		goto error_unsupported;
 	else
-		inst.reg_num = 15 - op[1].modrm.reg;
+		inst.reg_num = 15 - op[2].modrm.reg;
 
 	if (does_write != is_write)
 		goto error_inconsitent;
@@ -164,8 +164,9 @@ error_noinst:
 	goto error;
 
 error_unsupported:
-	panic_printk("FATAL: unsupported instruction (0x%02x 0x%02x 0x%02x)\n",
-		     op[0].raw, op[1].raw, op[2].raw);
+	panic_printk("FATAL: unsupported instruction "
+		     "(0x%02x [0x%02x] 0x%02x 0x%02x)\n",
+		     op[0].raw, op[1].raw, op[2].raw, op[3].raw);
 	goto error;
 
 error_inconsitent:
