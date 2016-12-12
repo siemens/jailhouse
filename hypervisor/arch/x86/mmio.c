@@ -80,8 +80,9 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
 	struct mmio_instruction inst = { .inst_len = 0 };
 	union opcode op[4] = { };
+	bool does_write = false;
+	bool has_rex_w = false;
 	bool has_rex_r = false;
-	bool does_write;
 
 restart:
 	if (!ctx_maybe_get_bytes(&ctx, &pc, pg_structs))
@@ -89,9 +90,8 @@ restart:
 
 	op[0].raw = *(ctx.inst);
 	if (op[0].rex.code == X86_REX_CODE) {
-		/* REX.W is simply over-read since it is only affects the
-		 * memory address in our supported modes which we get from the
-		 * virtualization support. */
+		if (op[0].rex.w)
+			has_rex_w = true;
 		if (op[0].rex.r)
 			has_rex_r = true;
 		if (op[0].rex.x)
@@ -102,6 +102,16 @@ restart:
 		goto restart;
 	}
 	switch (op[0].raw) {
+	case X86_OP_MOVZX_OPC1:
+		if (!ctx_advance(&ctx, &pc, pg_structs))
+			goto error_noinst;
+		op[1].raw = *(ctx.inst);
+		if (op[1].raw != X86_OP_MOVZX_OPC2)
+			goto error_unsupported;
+
+		inst.inst_len += 3;
+		inst.access_size = has_rex_w ? 2 : 1;
+		break;
 	case X86_OP_MOV_TO_MEM:
 		inst.inst_len += 2;
 		inst.access_size = 4;
@@ -110,7 +120,6 @@ restart:
 	case X86_OP_MOV_FROM_MEM:
 		inst.inst_len += 2;
 		inst.access_size = 4;
-		does_write = false;
 		break;
 	default:
 		goto error_unsupported;
