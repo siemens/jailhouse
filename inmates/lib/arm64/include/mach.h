@@ -13,7 +13,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifdef MACH_AMD_SEATTLE
+#ifdef CONFIG_MACH_AMD_SEATTLE
 #define CON_TYPE	"PL011"
 #define CON_BASE	0xe1010000
 
@@ -22,7 +22,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(MACH_FOUNDATION_V8)
+#elif defined(CONFIG_MACH_FOUNDATION_V8)
 #define CON_TYPE	"PL011"
 #define CON_BASE	0x1c090000
 
@@ -31,7 +31,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(MACH_HI6220)
+#elif defined(CONFIG_MACH_HI6220)
 #define CON_TYPE	"PL011"
 #define CON_BASE	0xf7113000
 
@@ -40,7 +40,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(MACH_TEGRA_TX1)
+#elif defined(CONFIG_MACH_TEGRA_TX1)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x70006000
 
@@ -49,7 +49,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(MACH_ZYNQMP_ZCU102)
+#elif defined(CONFIG_MACH_ZYNQMP_ZCU102)
 #define CON_TYPE	"XUARTPS"
 #define CON_BASE	0xff010000
 

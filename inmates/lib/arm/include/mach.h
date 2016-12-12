@@ -12,7 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifdef MACH_TEGRA124
+#ifdef CONFIG_MACH_TEGRA124
 #define CON_TYPE	"8250"
 #define CON_BASE	0x70006300 /* UART D on tegra124, exposed to the DB9
 				      connector of the Jetson TK1 */
@@ -26,7 +26,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(MACH_SUN7I)
+#elif defined(CONFIG_MACH_SUN7I)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c29c00
 
@@ -38,7 +38,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(MACH_VEXPRESS)
+#elif defined(CONFIG_MACH_VEXPRESS)
 #define CON_TYPE	"PL011"
 #define CON_BASE	0x1c090000
 
