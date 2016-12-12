@@ -122,6 +122,8 @@ Hardware requirements (preliminary)
 
     - NVIDIA Jetson TX1
 
+    - Xilinx ZCU102 (ZynqMP evaluation board)
+
 Software requirements
 ---------------------
 
