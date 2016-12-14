@@ -166,7 +166,7 @@ struct {
 		/* XUSB */ {
 			.phys_start = 0x70090000,
 			.virt_start = 0x70090000,
-			.size = 0x8000,
+			.size = 0xa000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
