@@ -339,7 +339,7 @@ class ARMCommon:
 
         self.params = 'kernel=0x%x dtb=0x%x' % (self._kernel_addr,
                                                 self._dtb_addr)
-        self.params = self.params.encode('utf-8')
+        self.params = self.params.encode()
 
         self.dtb = DTB(args.dtb.read())
 
@@ -627,7 +627,7 @@ class JailhouseCell:
     JAILHOUSE_CELL_ID_UNUSED = -1
 
     def __init__(self, config):
-        self.name = config.name.encode('utf-8')
+        self.name = config.name.encode()
 
         self.dev = open('/dev/jailhouse')
 
