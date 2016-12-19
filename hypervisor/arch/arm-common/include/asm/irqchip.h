@@ -65,6 +65,7 @@ void irqchip_cpu_reset(struct per_cpu *cpu_data);
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data);
 
 int irqchip_cell_init(struct cell *cell);
+void irqchip_cell_reset(struct cell *cell);
 void irqchip_cell_exit(struct cell *cell);
 
 void irqchip_config_commit(struct cell *cell_added_removed);

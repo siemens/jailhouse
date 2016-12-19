@@ -421,6 +421,19 @@ int irqchip_cell_init(struct cell *cell)
 	return 0;
 }
 
+void irqchip_cell_reset(struct cell *cell)
+{
+	unsigned int n;
+	u32 mask;
+
+	/* mask and deactivate all SPIs belonging to the cell */
+	for (n = 1; n < ARRAY_SIZE(cell->arch.irq_bitmap); n++) {
+		mask = cell->arch.irq_bitmap[n];
+		mmio_write32(gicd_base + GICD_ICENABLER + n * 4, mask);
+		mmio_write32(gicd_base + GICD_ICACTIVER + n * 4, mask);
+	}
+}
+
 void irqchip_cell_exit(struct cell *cell)
 {
 	const struct jailhouse_irqchip *chip;
@@ -430,6 +443,9 @@ void irqchip_cell_exit(struct cell *cell)
 	 * a failed setup */
 	if (!irqchip_is_init)
 		return;
+
+	/* ensure all SPIs of the cell are masked and deactivated */
+	irqchip_cell_reset(cell);
 
 	/* set all pins of the old cell in the root cell */
 	for_each_irqchip(chip, cell->config, n) {

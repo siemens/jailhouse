@@ -205,6 +205,8 @@ void arch_cell_reset(struct cell *cell)
 		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
 	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
+
+	irqchip_cell_reset(cell);
 }
 
 /* Note: only supports synchronous flushing as triggered by config_commit! */
