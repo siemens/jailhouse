@@ -72,23 +72,17 @@ static void gic_cpu_reset(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	void *gicr = cpu_data->gicr_base + GICR_SGI_BASE;
-	unsigned int i;
-	unsigned long active;
 
 	gic_clear_pending_irqs();
-
-	active = mmio_read32(gicr + GICR_ICACTIVER);
-	/* Deactivate all active PPIs */
-	for (i = 16; i < 32; i++) {
-		if (test_bit(i, &active))
-			arm_write_sysreg(ICC_DIR_EL1, i);
-	}
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
 	/* Disable PPIs, except for the maintenance interrupt. */
 	mmio_write32(gicr + GICR_ICENABLER, 0xffff0000 & ~(1 << mnt_irq));
+
+	/* Deactivate all active PPIs */
+	mmio_write32(gicr + GICR_ICACTIVER, 0xffff0000);
 
 	arm_write_sysreg(ICH_VMCR_EL2, 0);
 }
