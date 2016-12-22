@@ -90,50 +90,45 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 {
 	struct ivshmem_endpoint *ive = arg;
 
-	if (mmio->address == IVSHMEM_REG_INTX_CTRL) {
+	switch (mmio->address) {
+	case IVSHMEM_REG_INTX_CTRL:
 		if (mmio->is_write) {
 			ive->intx_ctrl_reg = mmio->value & IVSHMEM_INTX_ENABLE;
 			arch_ivshmem_update_intx(ive);
 		} else {
 			mmio->value = ive->intx_ctrl_reg;
 		}
-		return MMIO_HANDLED;
-	}
-
-	/* read-only IVPosition */
-	if (mmio->address == IVSHMEM_REG_IVPOS && !mmio->is_write) {
+		break;
+	case IVSHMEM_REG_IVPOS:
+		/* read-only IVPosition */
 		mmio->value = ive->ivpos;
-		return MMIO_HANDLED;
-	}
-
-	if (mmio->address == IVSHMEM_REG_DBELL) {
+		break;
+	case IVSHMEM_REG_DBELL:
 		if (mmio->is_write)
 			ivshmem_remote_interrupt(ive);
 		else
 			mmio->value = 0;
-		return MMIO_HANDLED;
-	}
-
-	if (mmio->address == IVSHMEM_REG_LSTATE) {
+		break;
+	case IVSHMEM_REG_LSTATE:
 		if (mmio->is_write) {
 			ive->state = mmio->value;
 			ivshmem_remote_interrupt(ive);
 		} else {
 			mmio->value = ive->state;
 		}
-		return MMIO_HANDLED;
-	}
-
-	if (mmio->address == IVSHMEM_REG_RSTATE && !mmio->is_write) {
+		break;
+	case IVSHMEM_REG_RSTATE:
+		/* read-only remote state */
 		spin_lock(&ive->remote_lock);
 		mmio->value = ive->remote ? ive->remote->state : 0;
 		spin_unlock(&ive->remote_lock);
-		return MMIO_HANDLED;
+		break;
+	default:
+		/* ignore any other access */
+		mmio->value = 0;
+		break;
 	}
-
-	panic_printk("FATAL: Invalid ivshmem register %s, number %02lx\n",
-		     mmio->is_write ? "write" : "read", mmio->address);
-	return MMIO_ERROR;
+	return MMIO_HANDLED;
 }
 
 /**
