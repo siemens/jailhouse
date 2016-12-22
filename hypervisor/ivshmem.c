@@ -214,12 +214,8 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 			mmio_region_unregister(device->cell, ive->bar4_address);
 		}
 		if (val & PCI_CMD_MEM) {
-			ive->bar0_address = (*(u64 *)&device->bar[0]) & ~0xfL;
-			/*
-			 * Derive the size of region 0 from its BAR mask.
-			 * This reasonably assumes that all unmodifiable bits
-			 * of the BAR, i.e. all zeros, are in the lower dword.
-			 */
+			ive->bar0_address = device->bar[0] & ~0xf;
+			/* Derive the size of region 0 from its BAR mask. */
 			mmio_region_register(device->cell, ive->bar0_address,
 					     ~device->info->bar_mask[0] + 1,
 					     ivshmem_register_mmio, ive);
@@ -391,8 +387,6 @@ void ivshmem_reset(struct pci_device *device)
 
 	memset(device->bar, 0, sizeof(device->bar));
 	device->msix_registers.raw = 0;
-
-	device->bar[0] = PCI_BAR_64BIT;
 
 	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
 

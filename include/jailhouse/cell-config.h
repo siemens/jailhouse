@@ -185,13 +185,13 @@ struct jailhouse_pci_device {
 
 #define JAILHOUSE_IVSHMEM_BAR_MASK_INTX			\
 	{						\
-		0xffffff00, 0xffffffff, 0x00000000,	\
+		0xfffff000, 0x00000000, 0x00000000,	\
 		0x00000000, 0x00000000, 0x00000000,	\
 	}
 
 #define JAILHOUSE_IVSHMEM_BAR_MASK_MSIX			\
 	{						\
-		0xffffff00, 0xffffffff, 0x00000000,	\
+		0xfffff000, 0x00000000, 0x00000000,	\
 		0x00000000, 0xffffffe0, 0xffffffff,	\
 	}
 
