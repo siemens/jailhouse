@@ -67,8 +67,9 @@ int arch_ivshmem_update_msix(struct pci_device *device);
 /**
  * Update cached INTx state (if any) of the given ivshmem device.
  * @param ive		Ivshmem endpoint to be updated.
+ * @param enabled	True if INTx is enabled and unmasked.
  */
-void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive);
+void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive, bool enabled);
 
 /** @} IVSHMEM */
 #endif /* !_JAILHOUSE_IVSHMEM_H */

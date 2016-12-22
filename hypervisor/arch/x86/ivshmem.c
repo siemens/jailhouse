@@ -65,6 +65,6 @@ int arch_ivshmem_update_msix(struct pci_device *device)
 	return 0;
 }
 
-void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive)
+void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive, bool enabled)
 {
 }

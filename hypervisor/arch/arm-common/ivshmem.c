@@ -41,14 +41,11 @@ int arch_ivshmem_update_msix(struct pci_device *device)
 	return 0;
 }
 
-void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive)
+void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive, bool enabled)
 {
 	u8 pin = ive->cspace[PCI_CFG_INT/4] >> 8;
 	struct pci_device *device = ive->device;
 
-	if (device->info->num_msix_vectors != 0)
-		return;
-
-	ive->arch.irq_id = (ive->intx_ctrl_reg & IVSHMEM_INTX_ENABLE) ?
+	ive->arch.irq_id = enabled ?
 		(32 + device->cell->config->vpci_irq_base + pin - 1) : 0;
 }

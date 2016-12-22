@@ -91,6 +91,15 @@ static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
 	spin_unlock(&ive->remote_lock);
 }
 
+static void ivshmem_update_intx(struct ivshmem_endpoint *ive)
+{
+	bool enabled = ive->intx_ctrl_reg & IVSHMEM_INTX_ENABLE;
+	bool masked = ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_INTX_OFF;
+
+	if (ive->device->info->num_msix_vectors == 0)
+		arch_ivshmem_update_intx(ive, enabled && !masked);
+}
+
 static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
@@ -108,7 +117,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	case IVSHMEM_REG_INTX_CTRL:
 		if (mmio->is_write) {
 			ive->intx_ctrl_reg = mmio->value & IVSHMEM_INTX_ENABLE;
-			arch_ivshmem_update_intx(ive);
+			ivshmem_update_intx(ive);
 		} else {
 			mmio->value = ive->intx_ctrl_reg;
 		}
@@ -236,6 +245,11 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 					     ivshmem_msix_mmio, ive);
 		}
 		*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
+	}
+
+	if ((val & PCI_CMD_INTX_OFF) != (*cmd & PCI_CMD_INTX_OFF)) {
+		*cmd = (*cmd & ~PCI_CMD_INTX_OFF) | (val & PCI_CMD_INTX_OFF);
+		ivshmem_update_intx(ive);
 	}
 
 	return 0;
