@@ -135,10 +135,17 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* HACK: CPU_DFLL clock */ {
-			.phys_start = 0x70110000,
-			.virt_start = 0x70110000,
-			.size = 0x00001000,
+		/* HACK: apbmisc "Chip Revision" */ {
+			.phys_start = 0x70000800,
+			.virt_start = 0x70000800,
+			.size = 0x00000100,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+					JAILHOUSE_MEM_IO,
+		},
+		/* UART */ {
+			.phys_start = 0x70006000,
+			.virt_start = 0x70006000,
+			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
@@ -152,6 +159,13 @@ struct {
 		/* I2C5/6, SPI */ {
 			.phys_start = 0x7000d000,
 			.virt_start = 0x7000d000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* RTC + PMC + apbmisc "Strapping Options" */ {
+			.phys_start = 0x7000e000,
+			.virt_start = 0x7000e000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
@@ -177,31 +191,17 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* RTC + PMC */ {
-			.phys_start = 0x7000e000,
-			.virt_start = 0x7000e000,
+		/* HACK: CPU_DFLL clock */ {
+			.phys_start = 0x70110000,
+			.virt_start = 0x70110000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
-		},
-		/* HACK: apbmisc */ {
-			.phys_start = 0x70000800,
-			.virt_start = 0x70000800,
-			.size = 0x00000100,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-					JAILHOUSE_MEM_IO,
 		},
 		/* USB */ {
 			.phys_start = 0x7d004000,
 			.virt_start = 0x7d004000,
 			.size = 0x00008000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* UART */ {
-			.phys_start = 0x70006000,
-			.virt_start = 0x70006000,
-			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
