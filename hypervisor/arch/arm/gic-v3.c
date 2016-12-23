@@ -166,7 +166,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 
 static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 {
-	u32 icc_ctlr, ich_vmcr;
+	u32 ich_vmcr, icc_ctlr, cell_icc_igrpen1;
 
 	if (!cpu_data->gicr_base)
 		return;
@@ -184,6 +184,11 @@ static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 		arm_read_sysreg(ICC_CTLR_EL1, icc_ctlr);
 		icc_ctlr &= ~ICC_CTLR_EOImode;
 		arm_write_sysreg(ICC_CTLR_EL1, icc_ctlr);
+	}
+	if (!(ich_vmcr & ICH_VMCR_VENG1)) {
+		arm_read_sysreg(ICC_IGRPEN1_EL1, cell_icc_igrpen1);
+		cell_icc_igrpen1 &= ~ICC_IGRPEN1_EN;
+		arm_write_sysreg(ICC_IGRPEN1_EL1, cell_icc_igrpen1);
 	}
 }
 
