@@ -64,11 +64,9 @@ static void gic_clear_pending_irqs(void)
 static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
+	u32 gicc_ctlr, gicc_pmr, gich_vmcr;
 	unsigned int i;
-	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
 	unsigned long active;
-	u32 gich_vmcr = 0;
-	u32 gicc_ctlr, gicc_pmr;
 
 	gic_clear_pending_irqs();
 
@@ -87,13 +85,11 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	 * enabled - except for the maintenance interrupt we used.
 	 */
 	mmio_write32(gicd_base + GICD_ICENABLER,
-		     root_shutdown ? 1 << mnt_irq :
-				     0xffff0000 & ~(1 << mnt_irq));
+		     is_shutdown ? 1 << mnt_irq : 0xffff0000 & ~(1 << mnt_irq));
 
-	if (is_shutdown)
+	if (is_shutdown) {
 		mmio_write32(gich_base + GICH_HCR, 0);
 
-	if (root_shutdown) {
 		gich_vmcr = mmio_read32(gich_base + GICH_VMCR);
 		gicc_ctlr = 0;
 		gicc_pmr = (gich_vmcr >> GICH_VMCR_PMR_SHIFT) << GICV_PMR_SHIFT;
@@ -105,10 +101,8 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 
 		mmio_write32(gicc_base + GICC_CTLR, gicc_ctlr);
 		mmio_write32(gicc_base + GICC_PMR, gicc_pmr);
-
-		gich_vmcr = 0;
 	}
-	mmio_write32(gich_base + GICH_VMCR, gich_vmcr);
+	mmio_write32(gich_base + GICH_VMCR, 0);
 }
 
 static int gic_cpu_init(struct per_cpu *cpu_data)

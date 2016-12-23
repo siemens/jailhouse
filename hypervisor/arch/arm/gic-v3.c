@@ -74,7 +74,6 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	unsigned int i;
 	void *gicr = cpu_data->gicr_base;
 	unsigned long active;
-	bool root_shutdown = is_shutdown && (cpu_data->cell == &root_cell);
 	u32 ich_vmcr;
 
 	if (!gicr)
@@ -99,10 +98,9 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	 * enabled - except for the maintenance interrupt we used.
 	 */
 	mmio_write32(gicr + GICR_ICENABLER,
-		     root_shutdown ? 1 << mnt_irq :
-				     0xffff0000 & ~(1 << mnt_irq));
+		     is_shutdown ? 1 << mnt_irq : 0xffff0000 & ~(1 << mnt_irq));
 
-	if (root_shutdown) {
+	if (is_shutdown) {
 		/* Restore the root config */
 		arm_read_sysreg(ICH_VMCR_EL2, ich_vmcr);
 
