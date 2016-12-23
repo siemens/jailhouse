@@ -68,6 +68,9 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	unsigned int i;
 	unsigned long active;
 
+	if (!cpu_data->gicc_initialized)
+		return;
+
 	gic_clear_pending_irqs();
 
 	/* Deactivate all PPIs */
@@ -152,6 +155,8 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	 * enable interrupts for the hypervisor.
 	 */
 	gic_clear_pending_irqs();
+
+	cpu_data->gicc_initialized = true;
 
 	/*
 	 * Get the CPU interface ID for this cpu. It can be discovered by

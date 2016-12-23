@@ -42,8 +42,14 @@ struct per_cpu {
 	unsigned int pending_irqs_head;
 	/* removal from the ring happens lockless, thus tail is volatile */
 	volatile unsigned int pending_irqs_tail;
-	/* Only GICv3: redistributor base */
-	void *gicr_base;
+
+	union {
+		/** Only GICv2: per-cpu initialization completed. */
+		bool gicc_initialized;
+		/** Only GICv3: physical redistributor base. When non-NULL,
+		 * per-cpu initialization completed. */
+		void *gicr_base;
+	};
 
 	unsigned long mpidr;
 
