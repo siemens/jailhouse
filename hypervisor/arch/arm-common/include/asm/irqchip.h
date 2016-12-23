@@ -42,9 +42,10 @@ struct sgi {
 struct irqchip_ops {
 	int	(*init)(void);
 	int	(*cpu_init)(struct per_cpu *cpu_data);
+	void	(*cpu_reset)(struct per_cpu *cpu_data);
+	void	(*cpu_shutdown)(struct per_cpu *cpu_data);
 	int	(*cell_init)(struct cell *cell);
 	void	(*cell_exit)(struct cell *cell);
-	void	(*cpu_reset)(struct per_cpu *cpu_data, bool is_shutdown);
 	void	(*adjust_irq_target)(struct cell *cell, u16 irq_id);
 
 	int	(*send_sgi)(struct sgi *sgi);

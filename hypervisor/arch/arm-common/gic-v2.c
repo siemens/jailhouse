@@ -61,15 +61,11 @@ static void gic_clear_pending_irqs(void)
 	mmio_write32(gich_base + GICH_APR, 0);
 }
 
-static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
+static void gic_cpu_reset(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
-	u32 gicc_ctlr, gicc_pmr, gich_vmcr;
 	unsigned int i;
 	unsigned long active;
-
-	if (!cpu_data->gicc_initialized)
-		return;
 
 	gic_clear_pending_irqs();
 
@@ -82,29 +78,9 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	/* Ensure all IPIs and the maintenance PPI are enabled */
 	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
-	/*
-	 * Disable PPIs, except for the maintenance interrupt.
-	 * On shutdown, the root cell expects to find all its PPIs still
-	 * enabled - except for the maintenance interrupt we used.
-	 */
-	mmio_write32(gicd_base + GICD_ICENABLER,
-		     is_shutdown ? 1 << mnt_irq : 0xffff0000 & ~(1 << mnt_irq));
+	/* Disable PPIs, except for the maintenance interrupt. */
+	mmio_write32(gicd_base + GICD_ICENABLER, 0xffff0000 & ~(1 << mnt_irq));
 
-	if (is_shutdown) {
-		mmio_write32(gich_base + GICH_HCR, 0);
-
-		gich_vmcr = mmio_read32(gich_base + GICH_VMCR);
-		gicc_ctlr = 0;
-		gicc_pmr = (gich_vmcr >> GICH_VMCR_PMR_SHIFT) << GICV_PMR_SHIFT;
-
-		if (gich_vmcr & GICH_VMCR_EN0)
-			gicc_ctlr |= GICC_CTLR_GRPEN1;
-		if (gich_vmcr & GICH_VMCR_EOImode)
-			gicc_ctlr |= GICC_CTLR_EOImode;
-
-		mmio_write32(gicc_base + GICC_CTLR, gicc_ctlr);
-		mmio_write32(gicc_base + GICC_PMR, gicc_pmr);
-	}
 	mmio_write32(gich_base + GICH_VMCR, 0);
 }
 
@@ -177,6 +153,30 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 		return -ENODEV;
 
 	return 0;
+}
+
+static void gic_cpu_shutdown(struct per_cpu *cpu_data)
+{
+	u32 gich_vmcr = mmio_read32(gich_base + GICH_VMCR);
+	u32 gicc_ctlr = 0;
+
+	if (!cpu_data->gicc_initialized)
+		return;
+
+	mmio_write32(gich_base + GICH_HCR, 0);
+
+	/* Disable the maintenance interrupt - not used by Linux. */
+	mmio_write32(gicd_base + GICD_ICENABLER,
+		     1 << system_config->platform_info.arm.maintenance_irq);
+
+	if (gich_vmcr & GICH_VMCR_EN0)
+		gicc_ctlr |= GICC_CTLR_GRPEN1;
+	if (gich_vmcr & GICH_VMCR_EOImode)
+		gicc_ctlr |= GICC_CTLR_EOImode;
+
+	mmio_write32(gicc_base + GICC_CTLR, gicc_ctlr);
+	mmio_write32(gicc_base + GICC_PMR,
+		     (gich_vmcr >> GICH_VMCR_PMR_SHIFT) << GICV_PMR_SHIFT);
 }
 
 static void gic_eoi_irq(u32 irq_id, bool deactivate)
@@ -397,6 +397,7 @@ struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
+	.cpu_shutdown = gic_cpu_shutdown,
 	.cell_init = gic_cell_init,
 	.cell_exit = gic_cell_exit,
 	.adjust_irq_target = gic_adjust_irq_target,

@@ -363,7 +363,7 @@ void irqchip_cpu_reset(struct per_cpu *cpu_data)
 {
 	cpu_data->pending_irqs_head = cpu_data->pending_irqs_tail = 0;
 
-	irqchip.cpu_reset(cpu_data, false);
+	irqchip.cpu_reset(cpu_data);
 }
 
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
@@ -373,7 +373,7 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	 * it has been initialised: this function may be executed during the
 	 * setup phase.
 	 */
-	irqchip.cpu_reset(cpu_data, true);
+	irqchip.cpu_shutdown(cpu_data);
 }
 
 int irqchip_cell_init(struct cell *cell)

@@ -68,20 +68,15 @@ static void gic_clear_pending_irqs(void)
 	}
 }
 
-static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
+static void gic_cpu_reset(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
+	void *gicr = cpu_data->gicr_base + GICR_SGI_BASE;
 	unsigned int i;
-	void *gicr = cpu_data->gicr_base;
 	unsigned long active;
-	u32 ich_vmcr;
-
-	if (!gicr)
-		return;
 
 	gic_clear_pending_irqs();
 
-	gicr += GICR_SGI_BASE;
 	active = mmio_read32(gicr + GICR_ICACTIVER);
 	/* Deactivate all active PPIs */
 	for (i = 16; i < 32; i++) {
@@ -92,27 +87,8 @@ static void gic_cpu_reset(struct per_cpu *cpu_data, bool is_shutdown)
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
-	/*
-	 * Disable PPIs, except for the maintenance interrupt.
-	 * On shutdown, the root cell expects to find all its PPIs still
-	 * enabled - except for the maintenance interrupt we used.
-	 */
-	mmio_write32(gicr + GICR_ICENABLER,
-		     is_shutdown ? 1 << mnt_irq : 0xffff0000 & ~(1 << mnt_irq));
-
-	if (is_shutdown) {
-		/* Restore the root config */
-		arm_read_sysreg(ICH_VMCR_EL2, ich_vmcr);
-
-		if (!(ich_vmcr & ICH_VMCR_VEOIM)) {
-			u32 icc_ctlr;
-			arm_read_sysreg(ICC_CTLR_EL1, icc_ctlr);
-			icc_ctlr &= ~ICC_CTLR_EOImode;
-			arm_write_sysreg(ICC_CTLR_EL1, icc_ctlr);
-		}
-
-		arm_write_sysreg(ICH_HCR_EL2, 0);
-	}
+	/* Disable PPIs, except for the maintenance interrupt. */
+	mmio_write32(gicr + GICR_ICENABLER, 0xffff0000 & ~(1 << mnt_irq));
 
 	arm_write_sysreg(ICH_VMCR_EL2, 0);
 }
@@ -192,6 +168,29 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	arm_write_sysreg(ICH_HCR_EL2, ICH_HCR_EN);
 
 	return 0;
+}
+
+static void gic_cpu_shutdown(struct per_cpu *cpu_data)
+{
+	u32 icc_ctlr, ich_vmcr;
+
+	if (!cpu_data->gicr_base)
+		return;
+
+	arm_write_sysreg(ICH_HCR_EL2, 0);
+
+	/* Disable the maintenance interrupt - not used by Linux. */
+	mmio_write32(cpu_data->gicr_base + GICR_SGI_BASE + GICR_ICENABLER,
+		     1 << system_config->platform_info.arm.maintenance_irq);
+
+	/* Restore the root config */
+	arm_read_sysreg(ICH_VMCR_EL2, ich_vmcr);
+
+	if (!(ich_vmcr & ICH_VMCR_VEOIM)) {
+		arm_read_sysreg(ICC_CTLR_EL1, icc_ctlr);
+		icc_ctlr &= ~ICC_CTLR_EOImode;
+		arm_write_sysreg(ICC_CTLR_EL1, icc_ctlr);
+	}
 }
 
 static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
@@ -446,6 +445,7 @@ struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
+	.cpu_shutdown = gic_cpu_shutdown,
 	.cell_init = gic_cell_init,
 	.adjust_irq_target = gic_adjust_irq_target,
 	.send_sgi = gic_send_sgi,
