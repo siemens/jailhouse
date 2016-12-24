@@ -364,7 +364,6 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	remote = &iv->eps[id ^ 1];
 
 	device->bar[0] = PCI_BAR_64BIT;
-	device->bar[4] = PCI_BAR_64BIT;
 
 	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
 
@@ -376,6 +375,8 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 			(((dev_info->bdf >> 3) & 0x3) + 1) << 8;
 		/* disable MSI-X capability */
 		ive->cspace[PCI_CFG_CAPS/4] = 0;
+	} else {
+		device->bar[4] = PCI_BAR_64BIT;
 	}
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;

@@ -101,7 +101,7 @@ struct {
 			.bdf = 0 << 3,
 			.bar_mask = {
 				0xffffff00, 0xffffffff, 0x00000000,
-				0x00000000, 0xffffffe0, 0xffffffff,
+				0x00000000, 0x00000000, 0x00000000,
 			},
 			.shmem_region = 3,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
@@ -111,7 +111,7 @@ struct {
 			.bdf = 2 << 3,
 			.bar_mask = {
 				0xffffff00, 0xffffffff, 0x00000000,
-				0x00000000, 0xffffffe0, 0xffffffff,
+				0x00000000, 0x00000000, 0x00000000,
 			},
 			.shmem_region = 4,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
