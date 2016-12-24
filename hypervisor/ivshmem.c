@@ -47,7 +47,11 @@
 #define IVSHMEM_REG_RSTATE	20
 
 #define IVSHMEM_BAR0_SIZE	256
-#define IVSHMEM_BAR4_SIZE	((0x18 * IVSHMEM_MSIX_VECTORS + 0xf) & ~0xf)
+/*
+ * Make the region two times as large as the MSI-X table to guarantee a
+ * power-of-2 size (encoding constraint of a BAR).
+ */
+#define IVSHMEM_BAR4_SIZE	(0x10 * IVSHMEM_MSIX_VECTORS * 2)
 
 struct ivshmem_data {
 	struct ivshmem_endpoint eps[2];
