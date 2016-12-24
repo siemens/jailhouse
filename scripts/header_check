@@ -42,6 +42,12 @@ test_compile()
 		prepend="#define __ASSEMBLY__
 			 #include <jailhouse/types.h>"
 		;;
+	ivshmem.h)
+		if [ "$1" == "asm" ]; then
+			# must be included by jailhouse/ivshmem.h only
+			return
+		fi
+		;;
 	traps.h)
 		if [ "$2" == "hypervisor/arch/arm-common/include/asm/traps.h" ]; then
 			# must be included by arm{,64}/include/asm/traps.h only
