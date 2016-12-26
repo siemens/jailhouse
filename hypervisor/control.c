@@ -558,6 +558,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_RUNNING;
 	cell->comm_page.comm_region.msg_to_cell = JAILHOUSE_MSG_NONE;
 
+	pci_cell_reset(cell);
 	arch_cell_reset(cell);
 
 	for_each_cpu(cpu, cell->cpu_set) {

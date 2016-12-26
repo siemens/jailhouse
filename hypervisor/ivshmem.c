@@ -366,28 +366,8 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	ive = &iv->eps[id];
 	remote = &iv->eps[id ^ 1];
 
-	device->bar[0] = PCI_BAR_64BIT;
-
-	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
-
-	ive->cspace[0x08/4] |= dev_info->shmem_protocol << 8;
-
-	if (dev_info->num_msix_vectors == 0) {
-		/* let the PIN rotate based on the device number */
-		ive->cspace[PCI_CFG_INT/4] =
-			(((dev_info->bdf >> 3) & 0x3) + 1) << 8;
-		/* disable MSI-X capability */
-		ive->cspace[PCI_CFG_CAPS/4] = 0;
-	} else {
-		device->bar[4] = PCI_BAR_64BIT;
-	}
-
-	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)mem->virt_start;
-	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] = (u32)(mem->virt_start >> 32);
-	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4] = (u32)mem->size;
-	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4 + 1] = (u32)(mem->size >> 32);
-
 	ive->device = device;
+	ive->shmem = mem;
 	ive->ivpos = id;
 	device->ivshmem_endpoint = ive;
 	if (remote->device) {
@@ -396,8 +376,46 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	}
 
 	device->cell = cell;
+	pci_reset_device(device);
 
 	return 0;
+}
+
+void ivshmem_reset(struct pci_device *device)
+{
+	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
+
+	if (ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MEM) {
+		mmio_region_unregister(device->cell, ive->bar0_address);
+		mmio_region_unregister(device->cell, ive->bar4_address);
+	}
+
+	memset(device->bar, 0, sizeof(device->bar));
+	device->msix_registers.raw = 0;
+
+	device->bar[0] = PCI_BAR_64BIT;
+
+	memcpy(ive->cspace, &default_cspace, sizeof(default_cspace));
+
+	ive->cspace[0x08/4] |= device->info->shmem_protocol << 8;
+
+	if (device->info->num_msix_vectors == 0) {
+		/* let the PIN rotate based on the device number */
+		ive->cspace[PCI_CFG_INT/4] =
+			(((device->info->bdf >> 3) & 0x3) + 1) << 8;
+		/* disable MSI-X capability */
+		ive->cspace[PCI_CFG_CAPS/4] = 0;
+	} else {
+		device->bar[4] = PCI_BAR_64BIT;
+	}
+
+	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)ive->shmem->virt_start;
+	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4 + 1] =
+		(u32)(ive->shmem->virt_start >> 32);
+	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4] = (u32)ive->shmem->size;
+	ive->cspace[IVSHMEM_CFG_SHMEM_SZ/4 + 1] = (u32)(ive->shmem->size >> 32);
+
+	ive->state = 0;
 }
 
 /**

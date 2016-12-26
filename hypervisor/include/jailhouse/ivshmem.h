@@ -35,6 +35,7 @@ struct ivshmem_endpoint {
 	u64 bar0_address;
 	u64 bar4_address;
 	struct pci_device *device;
+	const struct jailhouse_memory *shmem;
 	struct ivshmem_endpoint *remote;
 	spinlock_t remote_lock;
 	struct arch_pci_ivshmem arch;
@@ -42,6 +43,7 @@ struct ivshmem_endpoint {
 };
 
 int ivshmem_init(struct cell *cell, struct pci_device *device);
+void ivshmem_reset(struct pci_device *device);
 void ivshmem_exit(struct pci_device *device);
 int ivshmem_update_msix(struct pci_device *device);
 enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,

@@ -16,6 +16,7 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/string.h>
 #include <jailhouse/utils.h>
 
 #define MSIX_VECTOR_CTRL_DWORD		3
@@ -552,6 +553,36 @@ void pci_prepare_handover(void)
 	}
 }
 
+void pci_reset_device(struct pci_device *device)
+{
+	const struct jailhouse_pci_capability *cap;
+	unsigned int n;
+
+	memset(&device->msi_registers, 0, sizeof(device->msi_registers));
+	for (n = 0; n < device->info->num_msix_vectors; n++) {
+		device->msix_vectors[n].address = 0;
+		device->msix_vectors[n].data = 0;
+		device->msix_vectors[n].masked = 1;
+	}
+
+	if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
+		ivshmem_reset(device);
+		return;
+	}
+
+	/*
+	 * Silence INTx of the physical device by setting the mask bit.
+	 * This is a deviation from the specified reset state.
+	 */
+	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
+			 PCI_CMD_INTX_OFF, 2);
+
+	for_each_pci_cap(cap, device, n)
+		if (cap->id == PCI_CAP_MSI || cap->id == PCI_CAP_MSIX)
+			/* Disable MSI/MSI-X by clearing the control word. */
+			pci_write_config(device->info->bdf, cap->start+2, 0, 2);
+}
+
 static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 {
 	unsigned int n, pages, size = device->info->msix_region_size;
@@ -591,6 +622,8 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 	}
 
 	device->cell = cell;
+	if (cell != &root_cell)
+		pci_reset_device(device);
 
 	return 0;
 
@@ -609,9 +642,8 @@ static void pci_remove_physical_device(struct pci_device *device)
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
 	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
 
+	pci_reset_device(device);
 	arch_pci_remove_physical_device(device);
-	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
-			 PCI_CMD_INTX_OFF, 2);
 
 	device->cell = NULL;
 
@@ -701,6 +733,15 @@ int pci_cell_init(struct cell *cell)
 error:
 	pci_cell_exit(cell);
 	return err;
+}
+
+void pci_cell_reset(struct cell *cell)
+{
+	struct pci_device *device;
+
+	for_each_configured_pci_device(device, cell)
+		if (device->cell)
+			pci_reset_device(device);
 }
 
 static void pci_return_device_to_root_cell(struct pci_device *device)
