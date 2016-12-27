@@ -40,7 +40,7 @@
 #define _JAILHOUSE_CELL_CONFIG_H
 
 /* Incremented on any layout or semantic change of system or cell config. */
-#define JAILHOUSE_CONFIG_REVISION	2
+#define JAILHOUSE_CONFIG_REVISION	3
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -160,6 +160,10 @@ struct jailhouse_pci_capability {
 	__u16 flags;
 } __attribute__((packed));
 
+#define JAILHOUSE_APIC_MODE_AUTO	0
+#define JAILHOUSE_APIC_MODE_XAPIC	1
+#define JAILHOUSE_APIC_MODE_X2APIC	2
+
 #define JAILHOUSE_MAX_IOMMU_UNITS	8
 
 struct jailhouse_iommu {
@@ -217,6 +221,8 @@ struct jailhouse_system {
 			struct {
 				__u16 pm_timer_address;
 				__u32 vtd_interrupt_limit;
+				__u8 apic_mode;
+				__u8 padding[3];
 				struct jailhouse_iommu
 					iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 			} __attribute__((packed)) x86;

@@ -171,15 +171,18 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 int apic_init(void)
 {
 	unsigned long apicbase = read_msr(MSR_IA32_APICBASE);
+	u8 apic_mode = system_config->platform_info.x86.apic_mode;
 
-	if (apicbase & APIC_BASE_EXTD) {
+	if (apicbase & APIC_BASE_EXTD &&
+	    apic_mode != JAILHOUSE_APIC_MODE_XAPIC) {
 		/* x2APIC mode */
 		apic_ops.read = read_x2apic;
 		apic_ops.read_id = read_x2apic_id;
 		apic_ops.write = write_x2apic;
 		apic_ops.send_ipi = send_x2apic_ipi;
 		using_x2apic = true;
-	} else if (apicbase & APIC_BASE_EN) {
+	} else if (apicbase & APIC_BASE_EN &&
+		   apic_mode != JAILHOUSE_APIC_MODE_X2APIC) {
 		/* xAPIC mode */
 		xapic_page = paging_map_device(XAPIC_BASE, PAGE_SIZE);
 		if (!xapic_page)
