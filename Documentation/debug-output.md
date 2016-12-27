@@ -103,7 +103,12 @@ their output driver according to their settings in mach/debug.h.
 | con-clock_reg | Clock Register             |            |                 |
 | con-gate_nr   | Clock Gate Nr              |            |                 |
 
-All architectures support the empty con-type "none".
+All architectures support the empty con-type "none" and "JAILHOUSE".  The
+"JAILHOUSE" console type uses the hypervisor's debug output via hypercalls.
+Only invocations from cells which have the explicit permission via the
+configuration flag JAILHOUSE_CELL_DEBUG_CONSOLE are executed.  The default
+remains off, and the administrator is expected to grant this permission only
+temporarily while debugging a specific cell.
 
 Similar to the hypervisor configuration, a zero value for con-divider will skip
 initialisation of the UART interface.
