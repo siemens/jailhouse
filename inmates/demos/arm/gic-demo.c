@@ -63,7 +63,7 @@ void inmate_main(void)
 	expected_ticks = timer_get_ticks() + ticks_per_beat;
 	timer_start(ticks_per_beat);
 
-	blinking_led = cmdline_parse_bool("blinking_led");
+	blinking_led = cmdline_parse_bool("blinking-led");
 
 	while (1)
 		asm volatile("wfi" : : : "memory");

@@ -71,9 +71,9 @@ static void console_init(void)
 	chip->base = (void *)(unsigned long)
 		cmdline_parse_int("con-base", CON_BASE);
 	chip->divider = cmdline_parse_int("con-divider", CON_DIVIDER);
-	chip->gate_nr = cmdline_parse_int("con-gate_nr", CON_GATE_NR);
+	chip->gate_nr = cmdline_parse_int("con-gate-nr", CON_GATE_NR);
 	chip->clock_reg = (void *)(unsigned long)
-		cmdline_parse_int("con-clock_reg", CON_CLOCK_REG);
+		cmdline_parse_int("con-clock-reg", CON_CLOCK_REG);
 
 	chip->init(chip);
 

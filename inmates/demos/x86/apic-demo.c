@@ -74,7 +74,7 @@ void inmate_main(void)
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
-	cache_pollution = cmdline_parse_bool("pollute_cache");
+	cache_pollution = cmdline_parse_bool("pollute-cache");
 	if (cache_pollution)
 		printk("Cache pollution enabled\n");
 

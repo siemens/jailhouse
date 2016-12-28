@@ -100,8 +100,8 @@ their output driver according to their settings in mach/debug.h.
 | con-type      | Debug Output Driver        | PIO, MMIO  | 8250, PL011     |
 | con-base      | Base Address (PIO or MMIO) | e.g. 0x3f8 | e.g. 0x70006000 |
 | con-divider   | UART divider               | 0x1        | 0x0d            |
-| con-clock_reg | Clock Register             |            |                 |
-| con-gate_nr   | Clock Gate Nr              |            |                 |
+| con-clock-reg | Clock Register             |            |                 |
+| con-gate-nr   | Clock Gate Nr              |            |                 |
 
 All architectures support the empty con-type "none" and "JAILHOUSE".  The
 "JAILHOUSE" console type uses the hypervisor's debug output via hypercalls.
@@ -113,7 +113,7 @@ temporarily while debugging a specific cell.
 Similar to the hypervisor configuration, a zero value for con-divider will skip
 initialisation of the UART interface.
 
-con-clock_reg and con-gate_nr are currently only available on ARM 8250 only.
+con-clock-reg and con-gate-nr are currently only available on ARM 8250.
 
 On X86, VGA output is not available for inmates.
 
