@@ -29,6 +29,7 @@
 #elif defined(CONFIG_MACH_SUN7I)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c29c00
+#define CON_DIVIDER	0x0d
 
 #define CON_CLOCK_REG	0x01c2006c
 #define CON_GATE_NR	23
