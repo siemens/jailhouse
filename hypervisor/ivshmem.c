@@ -246,22 +246,6 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 	return 0;
 }
 
-static int ivshmem_write_msix_control(struct ivshmem_endpoint *ive, u32 val)
-{
-	union pci_msix_registers *p = (union pci_msix_registers *)&val;
-	union pci_msix_registers newval = {
-		.raw = ive->cspace[IVSHMEM_CFG_MSIX_CAP/4]
-	};
-
-	newval.enable = p->enable;
-	newval.fmask = p->fmask;
-	if (ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] != newval.raw) {
-		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] = newval.raw;
-		return ivshmem_update_msix(ive->device);
-	}
-	return 0;
-}
-
 /**
  * Handler for MMIO-write-accesses to PCI config space of this virtual device.
  * @param device	The device that access should be performed on.
@@ -289,7 +273,10 @@ enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,
 			return PCI_ACCESS_REJECT;
 		break;
 	case IVSHMEM_CFG_MSIX_CAP / 4:
-		if (ivshmem_write_msix_control(ive, value))
+		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] &= ~PCI_MSIX_CTRL_RW_MASK;
+		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] |=
+			value & PCI_MSIX_CTRL_RW_MASK;
+		if (ivshmem_update_msix(device))
 			return PCI_ACCESS_REJECT;
 	}
 	return PCI_ACCESS_DONE;
