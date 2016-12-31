@@ -395,6 +395,8 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		remote->remote = ive;
 	}
 
+	device->cell = cell;
+
 	return 0;
 }
 

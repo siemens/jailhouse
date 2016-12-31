@@ -565,8 +565,10 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 						 PCI_CFG_BAR + n * 4, 4);
 
 	err = arch_pci_add_physical_device(cell, device);
+	if (err)
+		return err;
 
-	if (!err && device->info->msix_address) {
+	if (device->info->msix_address) {
 		device->msix_table =
 			paging_map_device(device->info->msix_address, size);
 		if (!device->msix_table) {
@@ -587,7 +589,10 @@ static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
 		mmio_region_register(cell, device->info->msix_address, size,
 				     pci_msix_access_handler, device);
 	}
-	return err;
+
+	device->cell = cell;
+
+	return 0;
 
 error_unmap_table:
 	paging_unmap_device(device->info->msix_address, device->msix_table,
@@ -599,11 +604,16 @@ error_remove_dev:
 
 static void pci_remove_physical_device(struct pci_device *device)
 {
+	struct cell *cell = device->cell;
+
 	printk("Removing PCI device %02x:%02x.%x from cell \"%s\"\n",
-	       PCI_BDF_PARAMS(device->info->bdf), device->cell->config->name);
+	       PCI_BDF_PARAMS(device->info->bdf), cell->config->name);
+
 	arch_pci_remove_physical_device(device);
 	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
 			 PCI_CMD_INTX_OFF, 2);
+
+	device->cell = NULL;
 
 	if (!device->msix_table)
 		return;
@@ -616,7 +626,7 @@ static void pci_remove_physical_device(struct pci_device *device)
 			  PAGES(sizeof(union pci_msix_vector) *
 				device->info->num_msix_vectors));
 
-	mmio_region_unregister(device->cell, device->info->msix_address);
+	mmio_region_unregister(cell, device->info->msix_address);
 }
 
 /**
@@ -665,23 +675,17 @@ int pci_cell_init(struct cell *cell)
 			if (err)
 				goto error;
 
-			device->cell = cell;
-
 			continue;
 		}
 
 		root_device = pci_get_assigned_device(&root_cell,
 						      dev_infos[ndev].bdf);
-		if (root_device) {
+		if (root_device)
 			pci_remove_physical_device(root_device);
-			root_device->cell = NULL;
-		}
 
 		err = pci_add_physical_device(cell, device);
 		if (err)
 			goto error;
-
-		device->cell = cell;
 
 		for_each_pci_cap(cap, device, ncap)
 			if (cap->id == PCI_CAP_MSI)
@@ -710,8 +714,6 @@ static void pci_return_device_to_root_cell(struct pci_device *device)
 						    root_device) < 0)
 				printk("WARNING: Failed to re-assign PCI "
 				       "device to root cell\n");
-			else
-				root_device->cell = &root_cell;
 			break;
 		}
 }
