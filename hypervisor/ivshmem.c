@@ -91,6 +91,23 @@ static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
 	spin_unlock(&ive->remote_lock);
 }
 
+int ivshmem_update_msix(struct pci_device *device)
+{
+	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
+	union pci_msix_registers cap;
+	bool enabled;
+
+	if (device->info->num_msix_vectors == 0)
+		return 0;
+
+	cap.raw = ive->cspace[IVSHMEM_CFG_MSIX_CAP/4];
+	enabled = cap.enable && !cap.fmask &&
+		!ive->device->msix_vectors[0].masked &&
+		ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MASTER;
+
+	return arch_ivshmem_update_msix(device, enabled);
+}
+
 static void ivshmem_update_intx(struct ivshmem_endpoint *ive)
 {
 	bool enabled = ive->intx_ctrl_reg & IVSHMEM_INTX_ENABLE;
@@ -150,32 +167,6 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	return MMIO_HANDLED;
 }
 
-/**
- * Check if MSI-X doorbell interrupt is masked.
- * @param ive		Ivshmem endpoint the mask should be checked for.
- *
- * @return True if MSI-X interrupt is masked.
- */
-bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive)
-{
-	union pci_msix_registers c;
-
-	/* global mask */
-	c.raw = ive->cspace[IVSHMEM_CFG_MSIX_CAP/4];
-	if (!c.enable || c.fmask)
-		return true;
-
-	/* local mask */
-	if (ive->device->msix_vectors[0].masked)
-		return true;
-
-	/* PCI Bus Master */
-	if (!(ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MASTER))
-		return true;
-
-	return false;
-}
-
 static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 {
 	struct ivshmem_endpoint *ive = arg;
@@ -196,7 +187,7 @@ static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 	} else {
 		if (mmio->is_write) {
 			msix_table[mmio->address / 4] = mmio->value;
-			if (arch_ivshmem_update_msix(ive->device))
+			if (ivshmem_update_msix(ive->device))
 				return MMIO_ERROR;
 		} else {
 			mmio->value = msix_table[mmio->address / 4];
@@ -222,7 +213,7 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 
 	if ((val & PCI_CMD_MASTER) != (*cmd & PCI_CMD_MASTER)) {
 		*cmd = (*cmd & ~PCI_CMD_MASTER) | (val & PCI_CMD_MASTER);
-		err = arch_ivshmem_update_msix(device);
+		err = ivshmem_update_msix(device);
 		if (err)
 			return err;
 	}
@@ -266,7 +257,7 @@ static int ivshmem_write_msix_control(struct ivshmem_endpoint *ive, u32 val)
 	newval.fmask = p->fmask;
 	if (ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] != newval.raw) {
 		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] = newval.raw;
-		return arch_ivshmem_update_msix(ive->device);
+		return ivshmem_update_msix(ive->device);
 	}
 	return 0;
 }

@@ -819,7 +819,7 @@ void pci_config_commit(struct cell *cell_added_removed)
 				goto error;
 		}
 		if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
-			err = arch_ivshmem_update_msix(device);
+			err = ivshmem_update_msix(device);
 			if (err) {
 				cap = NULL;
 				goto error;

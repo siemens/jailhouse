@@ -48,8 +48,6 @@ enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,
 enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
 				     u32 *value);
 
-bool ivshmem_is_msix_masked(struct ivshmem_endpoint *ive);
-
 /**
  * Trigger interrupt on ivshmem endpoint.
  * @param ive		Ivshmem endpoint the interrupt should be raised at.
@@ -59,10 +57,11 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive);
 /**
  * Update cached MSI-X state (if any) of the given ivshmem device.
  * @param device	The device to be updated.
+ * @param enabled	True if MSI-X is enabled and unmasked.
  *
  * @return 0 on success, negative error code otherwise.
  */
-int arch_ivshmem_update_msix(struct pci_device *device);
+int arch_ivshmem_update_msix(struct pci_device *device, bool enabled);
 
 /**
  * Update cached INTx state (if any) of the given ivshmem device.

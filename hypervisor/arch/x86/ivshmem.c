@@ -27,7 +27,7 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 		apic_send_irq(irq_msg);
 }
 
-int arch_ivshmem_update_msix(struct pci_device *device)
+int arch_ivshmem_update_msix(struct pci_device *device, bool enabled)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	union x86_msi_vector msi = {
@@ -41,7 +41,7 @@ int arch_ivshmem_update_msix(struct pci_device *device)
 	ive->arch.irq_msg.valid = 0;
 	memory_barrier();
 
-	if (ivshmem_is_msix_masked(ive))
+	if (!enabled)
 		return 0;
 
 	irq_msg = x86_pci_translate_msi(device, 0, 0, msi);
