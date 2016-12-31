@@ -57,13 +57,13 @@
 #define IVSHMEM_REG_LSTATE		0x10
 #define IVSHMEM_REG_RSTATE		0x14
 
-struct ivshmem_data {
+struct ivshmem_link {
 	struct ivshmem_endpoint eps[IVSHMEM_MAX_PEERS];
 	u16 bdf;
-	struct ivshmem_data *next;
+	struct ivshmem_link *next;
 };
 
-static struct ivshmem_data *ivshmem_list;
+static struct ivshmem_link *ivshmem_links;
 
 static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[0x00/4] = (IVSHMEM_DEVICE_ID << 16) | PCI_VENDOR_ID_SIEMENS,
@@ -317,7 +317,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	const struct jailhouse_memory *mem, *peer_mem;
 	struct ivshmem_endpoint *ive, *remote;
 	struct pci_device *peer_dev;
-	struct ivshmem_data *iv;
+	struct ivshmem_link *link;
 	unsigned int id;
 
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
@@ -328,20 +328,20 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 
 	mem = jailhouse_cell_mem_regions(cell->config) + dev_info->shmem_region;
 
-	for (iv = ivshmem_list; iv; iv = iv->next)
-		if (iv->bdf == dev_info->bdf)
+	for (link = ivshmem_links; link; link = link->next)
+		if (link->bdf == dev_info->bdf)
 			break;
 
 	id = dev_info->shmem_dev_id;
 
-	if (iv) {
+	if (link) {
 		if (id >= IVSHMEM_MAX_PEERS)
 			return trace_error(-EINVAL);
 
-		if (iv->eps[id].device)
+		if (link->eps[id].device)
 			return trace_error(-EBUSY);
 
-		peer_dev = iv->eps[id ^ 1].device;
+		peer_dev = link->eps[id ^ 1].device;
 		peer_mem = jailhouse_cell_mem_regions(peer_dev->cell->config) +
 			peer_dev->info->shmem_region;
 
@@ -355,17 +355,17 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		       "\"%s\" <--> \"%s\"\n",
 		       cell->config->name, peer_dev->cell->config->name);
 	} else {
-		iv = page_alloc(&mem_pool, 1);
-		if (!iv)
+		link = page_alloc(&mem_pool, 1);
+		if (!link)
 			return -ENOMEM;
 
-		iv->bdf = dev_info->bdf;
-		iv->next = ivshmem_list;
-		ivshmem_list = iv;
+		link->bdf = dev_info->bdf;
+		link->next = ivshmem_links;
+		ivshmem_links = link;
 	}
 
-	ive = &iv->eps[id];
-	remote = &iv->eps[id ^ 1];
+	ive = &link->eps[id];
+	remote = &link->eps[id ^ 1];
 
 	ive->device = device;
 	ive->shmem = mem;
@@ -426,7 +426,7 @@ void ivshmem_exit(struct pci_device *device)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	struct ivshmem_endpoint *remote = ive->remote;
-	struct ivshmem_data **ivp, *iv;
+	struct ivshmem_link **linkp, *link;
 
 	if (remote) {
 		/*
@@ -442,11 +442,11 @@ void ivshmem_exit(struct pci_device *device)
 
 		ive->device = NULL;
 	} else {
-		for (ivp = &ivshmem_list; *ivp; ivp = &(*ivp)->next) {
-			iv = *ivp;
-			if (&iv->eps[ive->device->info->shmem_dev_id] == ive) {
-				*ivp = iv->next;
-				page_free(&mem_pool, iv, 1);
+		for (linkp = &ivshmem_links; *linkp; linkp = &(*linkp)->next) {
+			link = *linkp;
+			if (&link->eps[ive->device->info->shmem_dev_id] == ive) {
+				*linkp = link->next;
+				page_free(&mem_pool, link, 1);
 				break;
 			}
 		}
