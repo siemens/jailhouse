@@ -368,6 +368,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	remote = &link->eps[id ^ 1];
 
 	ive->device = device;
+	ive->link = link;
 	ive->shmem = mem;
 	device->ivshmem_endpoint = ive;
 	if (remote->device) {
@@ -426,7 +427,7 @@ void ivshmem_exit(struct pci_device *device)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	struct ivshmem_endpoint *remote = ive->remote;
-	struct ivshmem_link **linkp, *link;
+	struct ivshmem_link **linkp;
 
 	if (remote) {
 		/*
@@ -443,10 +444,9 @@ void ivshmem_exit(struct pci_device *device)
 		ive->device = NULL;
 	} else {
 		for (linkp = &ivshmem_links; *linkp; linkp = &(*linkp)->next) {
-			link = *linkp;
-			if (&link->eps[ive->device->info->shmem_dev_id] == ive) {
-				*linkp = link->next;
-				page_free(&mem_pool, link, 1);
+			if (*linkp == ive->link) {
+				*linkp = ive->link->next;
+				page_free(&mem_pool, ive->link, 1);
 				break;
 			}
 		}
