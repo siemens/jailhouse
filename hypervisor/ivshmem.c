@@ -323,6 +323,9 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	struct ivshmem_data *iv;
 	unsigned int id = 0;
 
+	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
+	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
+
 	if (dev_info->shmem_region >= cell->config->num_memory_regions)
 		return trace_error(-EINVAL);
 
@@ -391,9 +394,6 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		ive->remote = remote;
 		remote->remote = ive;
 	}
-
-	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
-	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
 
 	return 0;
 }
