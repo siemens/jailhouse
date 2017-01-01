@@ -102,27 +102,37 @@ class MMIO:
 
 
 class Sysconfig:
-    SIGNATURE_SIZE = 8
+    HEADER_SIGNATURE_SIZE = 6
+    HEADER_REVISION_SIZE = 2
     HVMEM_SIZE = 32
     DBGCON_SIZE = 32
-    X86_MMCFGBASE_SIZE = 8
-    X86_MMCFGENDBUS_SIZE = 1
-    X86_PADDING = 5
-    X86_PMTMR_SIZE = 2
+    MMCFGBASE_SIZE = 8
+    MMCFGENDBUS_SIZE = 1
+    PCIISVIRT_SIZE = 1
+    X86_PADDING = 10
     X86_MAX_IOMMU_UNITS = 8
     X86_IOMMU_SIZE = 20
 
+    HEADER_REVISION = 3
+    HEADER_FORMAT = '6sH'
+
     def __init__(self, path):
         self.config = open(path, 'rb')
-        if self.config.read(Sysconfig.SIGNATURE_SIZE).decode() != 'JAILSYST':
+        data = self.config.read()
+        signature, revision = struct.unpack_from(Sysconfig.HEADER_FORMAT, data)
+        if signature.decode() != 'JHSYST':
             print('Not a system configuration', file=sys.stderr)
+            sys.exit(1)
+        if revision != Sysconfig.HEADER_REVISION:
+            print('Configuration file revision mismatch', file=sys.stderr)
             sys.exit(1)
 
     def parse_iommus(self):
-        self.config.seek(Sysconfig.SIGNATURE_SIZE + Sysconfig.HVMEM_SIZE +
-                         Sysconfig.DBGCON_SIZE + Sysconfig.X86_MMCFGBASE_SIZE +
-                         Sysconfig.X86_MMCFGENDBUS_SIZE +
-                         Sysconfig.X86_PADDING + Sysconfig.X86_PMTMR_SIZE)
+        self.config.seek(Sysconfig.HEADER_SIGNATURE_SIZE +
+                         Sysconfig.HEADER_REVISION_SIZE + Sysconfig.HVMEM_SIZE +
+                         Sysconfig.DBGCON_SIZE + Sysconfig.MMCFGBASE_SIZE +
+                         Sysconfig.MMCFGENDBUS_SIZE + Sysconfig.PCIISVIRT_SIZE +
+                         Sysconfig.X86_PADDING)
 
         keys = 'base size amd_bdf amd_base_cap amd_features'
         IOMMU = collections.namedtuple('IOMMU', keys)
