@@ -48,7 +48,7 @@
  */
 #define IVSHMEM_MSIX_SIZE		(0x10 * IVSHMEM_MSIX_VECTORS * 2)
 
-#define IVSHMEM_REG_IVPOS		0x00
+#define IVSHMEM_REG_ID			0x00
 #define IVSHMEM_REG_INTX_CTRL		0x08
 #define IVSHMEM_REG_DOORBELL		0x0c
 #define IVSHMEM_REG_LSTATE		0x10
@@ -94,6 +94,10 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	struct ivshmem_endpoint *ive = arg;
 
 	switch (mmio->address) {
+	case IVSHMEM_REG_ID:
+		/* read-only ID */
+		mmio->value = ive->id;
+		break;
 	case IVSHMEM_REG_INTX_CTRL:
 		if (mmio->is_write) {
 			ive->intx_ctrl_reg = mmio->value & IVSHMEM_INTX_ENABLE;
@@ -101,10 +105,6 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		} else {
 			mmio->value = ive->intx_ctrl_reg;
 		}
-		break;
-	case IVSHMEM_REG_IVPOS:
-		/* read-only IVPosition */
-		mmio->value = ive->ivpos;
 		break;
 	case IVSHMEM_REG_DOORBELL:
 		if (mmio->is_write)
@@ -366,7 +366,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 
 	ive->device = device;
 	ive->shmem = mem;
-	ive->ivpos = id;
+	ive->id = id;
 	device->ivshmem_endpoint = ive;
 	if (remote->device) {
 		ive->remote = remote;
@@ -440,7 +440,7 @@ void ivshmem_exit(struct pci_device *device)
 	} else {
 		for (ivp = &ivshmem_list; *ivp; ivp = &(*ivp)->next) {
 			iv = *ivp;
-			if (&iv->eps[ive->ivpos] == ive) {
+			if (&iv->eps[ive->id] == ive) {
 				*ivp = iv->next;
 				page_free(&mem_pool, iv, 1);
 				break;
