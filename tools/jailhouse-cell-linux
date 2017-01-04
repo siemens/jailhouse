@@ -549,7 +549,7 @@ class Config:
 
 
 class X86SetupHeader:
-    _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI28xQ'
+    _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI28xQQ'
 
     def __init__(self, kernel):
         kernel.seek(0x1f0)
@@ -562,7 +562,8 @@ class X86SetupHeader:
          self.ramdisk_size,
          self.cmd_line_ptr,
          self.kernel_alignment,
-         self.setup_data) = \
+         self.setup_data,
+         self.pref_address) = \
             struct.unpack(X86SetupHeader._HEADER_FORMAT,
                           kernel.read(parse_size))
 
@@ -575,7 +576,8 @@ class X86SetupHeader:
                          self.setup_sects, self.syssize, self.jump,
                          self.type_of_loader, self.ramdisk_image,
                          self.ramdisk_size, self.cmd_line_ptr,
-                         self.kernel_alignment, self.setup_data)
+                         self.kernel_alignment, self.setup_data,
+                         self.pref_address)
         return self.data
 
 
@@ -586,9 +588,10 @@ class X86ZeroPage:
         prot_image_offs = (self.setup_header.setup_sects + 1) * 512
         prot_image_size = self.setup_header.syssize * 16
 
-        self.kernel_load_addr = self.setup_header.kernel_alignment - \
+        self.kernel_load_addr = self.setup_header.pref_address - \
             prot_image_offs
 
+        self.setup_header.kernel_alignment = self.setup_header.pref_address
         self.setup_header.type_of_loader = 0xff
 
         if initrd:
