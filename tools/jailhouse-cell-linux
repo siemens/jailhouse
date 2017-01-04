@@ -597,9 +597,9 @@ class X86ZeroPage:
         if initrd:
             kernel_size = os.fstat(kernel.fileno()).st_size
             self.setup_header.ramdisk_size = os.fstat(initrd.fileno()).st_size
+            # same as arm, magic factor 5 works, anything below does not
             self.setup_header.ramdisk_image = \
-                (self.kernel_load_addr - self.setup_header.ramdisk_size) & \
-                ~0xfff
+                page_align(self.kernel_load_addr + 5 * kernel_size)
         else:
             self.setup_header.ramdisk_image = 0
             self.setup_header.ramdisk_size = 0
