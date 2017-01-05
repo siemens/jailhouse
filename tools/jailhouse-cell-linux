@@ -250,10 +250,10 @@ class X86:
 
         setup_data = x86_gen_setup_data()
 
-        self._zero_page.setup_header.setup_data = \
-            arch.params_address() + 0x1000
-        self._zero_page.setup_header.cmd_line_ptr = \
-            self._zero_page.setup_header.setup_data + len(setup_data)
+        self._zero_page.setup_header.set_setup_data(
+            arch.params_address() + 0x1000)
+        self._zero_page.setup_header.set_cmd_line_ptr(
+            self._zero_page.setup_header.setup_data + len(setup_data))
 
         self.params = self._zero_page.get_data() + setup_data + \
             (args.cmdline.encode() if args.cmdline else b'') + b'\0'
@@ -548,11 +548,13 @@ class Config:
             memregion_offs += MemoryRegion.SIZE
 
 
+# see linux/Documentation/x86/boot.txt
 class X86SetupHeader:
+    BASE_OFFSET = 0x1f0
     _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI28xQQ'
 
     def __init__(self, kernel):
-        kernel.seek(0x1f0)
+        kernel.seek(X86SetupHeader.BASE_OFFSET)
         parse_size = struct.calcsize(X86SetupHeader._HEADER_FORMAT)
         (self.setup_sects,
          self.syssize,
@@ -567,20 +569,47 @@ class X86SetupHeader:
             struct.unpack(X86SetupHeader._HEADER_FORMAT,
                           kernel.read(parse_size))
 
-        self.size = 0x202 + (self.jump >> 8) - 0x1f0
-        kernel.seek(0x1f0)
+        self.size = 0x202 + (self.jump >> 8) - X86SetupHeader.BASE_OFFSET
+        kernel.seek(X86SetupHeader.BASE_OFFSET)
         self.data = bytearray(kernel.read(self.size))
 
+    def set_value_in_data(self, fmt, offset, value):
+        struct.pack_into(fmt, self.data, offset - X86SetupHeader.BASE_OFFSET,
+                         value)
+
+    def set_type_of_loader(self, value):
+        self.type_of_loader = value
+        self.set_value_in_data('B', 0x210, value)
+
+    def set_ramdisk_image(self, value):
+        self.ramdisk_image = value
+        self.set_value_in_data('I', 0x218, value)
+
+    def set_ramdisk_size(self, value):
+        self.ramdisk_size = value
+        self.set_value_in_data('I', 0x21c, value)
+
+    def set_cmd_line_ptr(self, value):
+        self.cmd_line_ptr = value
+        self.set_value_in_data('I', 0x228, value)
+
+    def set_kernel_alignment(self, value):
+        self.kernel_alignment = value
+        self.set_value_in_data('Q', 0x230, value)
+
+    def set_setup_data(self, value):
+        self.setup_data = value
+        self.set_value_in_data('Q', 0x250, value)
+
+    def set_pref_address(self, value):
+        self.pref_address = value
+        self.set_value_in_data('Q', 0x258, value)
+
     def get_data(self):
-        struct.pack_into(X86SetupHeader._HEADER_FORMAT, self.data, 0,
-                         self.setup_sects, self.syssize, self.jump,
-                         self.type_of_loader, self.ramdisk_image,
-                         self.ramdisk_size, self.cmd_line_ptr,
-                         self.kernel_alignment, self.setup_data,
-                         self.pref_address)
         return self.data
 
 
+# see linux/Documentation/x86/zero-page.txt
 class X86ZeroPage:
     def __init__(self, kernel, initrd, config):
         self.setup_header = X86SetupHeader(kernel)
@@ -591,18 +620,20 @@ class X86ZeroPage:
         self.kernel_load_addr = self.setup_header.pref_address - \
             prot_image_offs
 
-        self.setup_header.kernel_alignment = self.setup_header.pref_address
-        self.setup_header.type_of_loader = 0xff
+        self.setup_header.set_kernel_alignment(self.setup_header.pref_address)
+        self.setup_header.set_type_of_loader(0xff)
 
+        ramdisk_size = 0
+        ramdisk_load_addr = 0
         if initrd:
             kernel_size = os.fstat(kernel.fileno()).st_size
-            self.setup_header.ramdisk_size = os.fstat(initrd.fileno()).st_size
+            ramdisk_size = os.fstat(initrd.fileno()).st_size
             # same as arm, magic factor 5 works, anything below does not
-            self.setup_header.ramdisk_image = \
-                page_align(self.kernel_load_addr + 5 * kernel_size)
-        else:
-            self.setup_header.ramdisk_image = 0
-            self.setup_header.ramdisk_size = 0
+            ramdisk_load_addr = page_align(self.kernel_load_addr +
+                                           5 * kernel_size)
+
+        self.setup_header.set_ramdisk_image(ramdisk_load_addr)
+        self.setup_header.set_ramdisk_size(ramdisk_size)
 
         self.e820_entries = []
         for region in config.memory_regions:
@@ -615,8 +646,10 @@ class X86ZeroPage:
     def get_data(self):
         data = bytearray(0x1e8) + \
             struct.pack('B', len(self.e820_entries)) + \
-            bytearray(0x1f0 - 0x1e9) + self.setup_header.get_data() + \
-            bytearray(0x2d0 - 0x1f0 - self.setup_header.size)
+            bytearray(X86SetupHeader.BASE_OFFSET - 0x1e9) + \
+            self.setup_header.get_data() + \
+            bytearray(0x2d0 - X86SetupHeader.BASE_OFFSET -
+                      self.setup_header.size)
         for region in self.e820_entries:
             data += region.as_e820()
         return data + bytearray(0x1000 - len(data))
