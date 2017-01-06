@@ -94,8 +94,8 @@ ioapic_translate_redir_entry(struct cell_ioapic *ioapic, unsigned int pin,
 	irq_msg.delivery_mode = entry.native.delivery_mode;
 	irq_msg.level_triggered = entry.native.level_triggered;
 	irq_msg.dest_logical = entry.native.dest_logical;
-	/* align redir_hint and dest_logical - required by iommu_map_interrupt */
-	irq_msg.redir_hint = irq_msg.dest_logical;
+	/* allow dest_logical under VT-d by enabling redirection */
+	irq_msg.redir_hint = 1;
 	irq_msg.valid = 1;
 	irq_msg.destination = entry.native.destination;
 
