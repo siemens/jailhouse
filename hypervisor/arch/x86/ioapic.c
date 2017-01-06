@@ -442,10 +442,11 @@ void ioapic_config_commit(struct cell *cell_added_removed)
 			entry = ioapic->phys_ioapic->shadow_redir_table[pin];
 			reg = IOAPIC_REDIR_TBL_START + pin * 2;
 
-			/* write high word first to preserve mask initially */
-			if (ioapic_virt_redir_write(ioapic, reg + 1,
-						    entry.raw[1]) < 0 ||
-			    ioapic_virt_redir_write(ioapic, reg,
+			/*
+			 * Writing the lower half will unmask the pin and
+			 * update the upper one as well.
+			 */
+			if (ioapic_virt_redir_write(ioapic, reg,
 						    entry.raw[0]) < 0) {
 				panic_printk("FATAL: Unsupported IOAPIC "
 					     "state, pin %d\n", pin);
