@@ -240,7 +240,7 @@ For Intel CPUs: Make sure the kvm-intel module was loaded with nested=1 to
 enable nested VMX support. Start the virtual machine as follows:
 
     qemu-system-x86_64 -machine q35,kernel_irqchip=split -m 1G -enable-kvm \
-        -smp 4 -device intel-iommu,intremap=on \
+        -smp 4 -device intel-iommu,intremap=on,x-buggy-eim=on \
         -cpu kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx \
         -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device ide-hd,drive=disk -serial stdio -serial vc \
