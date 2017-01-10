@@ -385,7 +385,7 @@ Modified device tree written. Start Linux with the following commands \
 \n\
 jailhouse cell create %s\n\
 jailhouse cell load %s linux-loader.bin -s "%s" -a 0x%x %s -a 0x%x ' %
-              (args.config.name, config.name, self.params,
+              (args.config.name, config.name, self.params.decode(),
                self.params_address(), args.kernel.name, self._kernel_addr),
               end='')
         if args.initrd:
