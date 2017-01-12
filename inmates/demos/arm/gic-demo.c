@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2017
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
@@ -19,7 +19,14 @@
 
 static u64 ticks_per_beat;
 static volatile u64 expected_ticks;
-static bool blinking_led;
+
+/*
+ * Enables blinking LED
+ * Banana Pi:           register 0x1c2090c, pin 24
+ * Orange Pi Zero:      register 0x1c20810, pin 17
+ */
+static void *led_reg;
+static unsigned int led_pin;
 
 static void handle_IRQ(unsigned int irqn)
 {
@@ -40,13 +47,8 @@ static void handle_IRQ(unsigned int irqn)
 	       (long)timer_ticks_to_ns(min_delta),
 	       (long)timer_ticks_to_ns(max_delta));
 
-	if (blinking_led) {
-#ifdef CONFIG_MACH_SUN7I
-		/* let green LED on Banana Pi blink */
-		#define LED_REG (void *)(0x1c20800 + 7*0x24 + 0x10)
-		mmio_write32(LED_REG, mmio_read32(LED_REG) ^ (1<<24));
-#endif
-	}
+	if (led_reg)
+		mmio_write32(led_reg, mmio_read32(led_reg) ^ (1 << led_pin));
 
 	expected_ticks = timer_get_ticks() + ticks_per_beat;
 	timer_start(ticks_per_beat);
@@ -63,7 +65,8 @@ void inmate_main(void)
 	expected_ticks = timer_get_ticks() + ticks_per_beat;
 	timer_start(ticks_per_beat);
 
-	blinking_led = cmdline_parse_bool("blinking-led");
+	led_reg = (void *)(unsigned long)cmdline_parse_int("led-reg", 0);
+	led_pin = cmdline_parse_int("led-pin", 0);
 
 	while (1)
 		asm volatile("wfi" : : : "memory");
