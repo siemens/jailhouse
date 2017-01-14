@@ -577,10 +577,16 @@ void pci_reset_device(struct pci_device *device)
 	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
 			 PCI_CMD_INTX_OFF, 2);
 
-	for_each_pci_cap(cap, device, n)
+	for_each_pci_cap(cap, device, n) {
 		if (cap->id == PCI_CAP_MSI || cap->id == PCI_CAP_MSIX)
 			/* Disable MSI/MSI-X by clearing the control word. */
 			pci_write_config(device->info->bdf, cap->start+2, 0, 2);
+		if (cap->id == PCI_CAP_MSIX)
+			/* Mask each MSI-X vector also physically. */
+			for (n = 0; n < device->info->num_msix_vectors; n++)
+				mmio_write32(&device->msix_table[n].raw[3],
+					     device->msix_vectors[n].raw[3]);
+	}
 }
 
 static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
