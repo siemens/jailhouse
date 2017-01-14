@@ -109,6 +109,8 @@ Hardware requirements (preliminary)
 
     - Banana Pi ([see more](Documentation/setup-on-banana-pi-arm-board.md))
 
+    - Orange Pi Zero (256 MB version)
+
     - NVIDIA Jetson TK1
 
     - ARM Versatile Express with Cortex-A15 or A7 cores

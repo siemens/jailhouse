@@ -39,6 +39,15 @@
 
 #define TIMER_IRQ	27
 
+#elif defined(CONFIG_MACH_ORANGEPI0)
+#define CON_TYPE	"8250"
+#define CON_BASE	0x01c28000
+
+#define GICD_V2_BASE	((void *)0x01c81000)
+#define GICC_V2_BASE	((void *)0x01c82000)
+
+#define TIMER_IRQ	27
+
 #elif defined(CONFIG_MACH_VEXPRESS)
 #define CON_TYPE	"PL011"
 #define CON_BASE	0x1c090000
