@@ -2,8 +2,7 @@
  * Jailhouse AArch64 support
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
- * Copyright (c) Siemens AG, 2016
- * 
+ * Copyright (c) Siemens AG, 2016-2017
  *
  * Authors:
  *  Antonios Motakis <antonios.motakis@huawei.com>
@@ -31,7 +30,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(CONFIG_MACH_HI6220)
+#elif defined(CONFIG_MACH_HIKEY)
 #define CON_TYPE	"PL011"
 #define CON_BASE	0xf7113000
 
@@ -40,7 +39,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(CONFIG_MACH_TEGRA_TX1)
+#elif defined(CONFIG_MACH_JETSON_TX1)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x70006000
 

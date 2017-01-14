@@ -1,8 +1,8 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2015
  * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2015-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -12,7 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifdef CONFIG_MACH_TEGRA124
+#ifdef CONFIG_MACH_JETSON_TK1
 #define CON_TYPE	"8250"
 #define CON_BASE	0x70006300 /* UART D on tegra124, exposed to the DB9
 				      connector of the Jetson TK1 */
@@ -26,7 +26,7 @@
 
 #define TIMER_IRQ	27
 
-#elif defined(CONFIG_MACH_SUN7I)
+#elif defined(CONFIG_MACH_BANANAPI)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c29c00
 #define CON_DIVIDER	0x0d
