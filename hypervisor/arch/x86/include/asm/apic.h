@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -103,13 +103,12 @@
 
 union x86_msi_vector {
 	struct {
-		u32 unused:2,
+		u64 unused:2,
 		    dest_logical:1,
 		    redir_hint:1,
 		    reserved1:8,
 		    destination:8,
-		    address:12;
-		u32 reserved2;
+		    address:44;
 		u32 vector:8,
 		    delivery_mode:3,
 		    reserved:21;

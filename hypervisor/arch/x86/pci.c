@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2017
  *
  * Authors:
  *  Ivan Kolchin <ivan.kolchin@siemens.com>
@@ -310,7 +310,7 @@ void arch_pci_suppress_msi(struct pci_device *device,
 	}
 }
 
-static u32 pci_get_x86_msi_remap_address(unsigned int index)
+static u64 pci_get_x86_msi_remap_address(unsigned int index)
 {
 	union x86_msi_vector msi = {
 		.remap.int_index15 = index >> 15,
@@ -320,7 +320,7 @@ static u32 pci_get_x86_msi_remap_address(unsigned int index)
 		.remap.address = MSI_ADDRESS_VALUE,
 	};
 
-	return (u32)msi.raw.address;
+	return msi.raw.address;
 }
 
 int arch_pci_update_msi(struct pci_device *device,
@@ -358,7 +358,7 @@ int arch_pci_update_msi(struct pci_device *device,
 	if (info->msi_64bits)
 		pci_write_config(bdf, cap->start + 8, 0, 4);
 	pci_write_config(bdf, cap->start + 4,
-			 pci_get_x86_msi_remap_address(result), 4);
+			 (u32)pci_get_x86_msi_remap_address(result), 4);
 
 	return 0;
 }
