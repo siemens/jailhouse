@@ -248,6 +248,13 @@ x86_pci_translate_msi(struct pci_device *device, unsigned int vector,
 	struct apic_irq_message irq_msg = { .valid = 0 };
 	unsigned int idx;
 
+	/*
+	 * Ignore invalid target addresses, e.g. if the cell programmed the
+	 * register to all-zero.
+	 */
+	if (msi.native.address != MSI_ADDRESS_VALUE)
+		return irq_msg;
+
 	if (iommu_cell_emulates_ir(device->cell)) {
 		if (!msi.remap.remapped)
 			return irq_msg;
