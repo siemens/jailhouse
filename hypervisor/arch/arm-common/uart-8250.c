@@ -39,8 +39,10 @@ static void uart_init(struct uart_chip *chip)
 		return;
 
 	mmio_write32(chip->virt_base + UART_LCR, UART_LCR_DLAB);
-	mmio_write32(chip->virt_base + UART_DLL, chip->debug_console->divider);
-	mmio_write32(chip->virt_base + UART_DLM, 0);
+	mmio_write32(chip->virt_base + UART_DLL,
+		     chip->debug_console->divider & 0xff);
+	mmio_write32(chip->virt_base + UART_DLM,
+		     (chip->debug_console->divider >> 8) & 0xff);
 	mmio_write32(chip->virt_base + UART_LCR, UART_LCR_8N1);
 }
 
