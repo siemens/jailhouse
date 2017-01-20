@@ -69,8 +69,8 @@ void uart_init(void)
 		return;
 
 	uart_reg_out(UART_LCR, UART_LCR_DLAB);
-	uart_reg_out(UART_DLL, divider);
-	uart_reg_out(UART_DLM, 0);
+	uart_reg_out(UART_DLL, divider & 0xff);
+	uart_reg_out(UART_DLM, (divider >> 8) & 0xff);
 	uart_reg_out(UART_LCR, UART_LCR_8N1);
 }
 
