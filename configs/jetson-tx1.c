@@ -35,7 +35,8 @@ struct {
 			.address = 0x70006000,
 			.size = 0x0040,
 			.flags = JAILHOUSE_CON1_TYPE_8250 |
-				 JAILHOUSE_CON1_FLAG_MMIO,
+				 JAILHOUSE_CON1_FLAG_MMIO |
+				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info.arm = {
 			.gicd_base = 0x50041000,

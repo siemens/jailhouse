@@ -35,7 +35,8 @@ struct {
 			.address = 0xff000000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_CON1_TYPE_XUARTPS |
-				 JAILHOUSE_CON1_FLAG_MMIO,
+				 JAILHOUSE_CON1_FLAG_MMIO |
+				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0xfc000000,

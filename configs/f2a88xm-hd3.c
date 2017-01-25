@@ -42,7 +42,8 @@ struct {
 			.address = 0x3f8,
 			/* .divider = 0x1, */
 			.flags = JAILHOUSE_CON1_TYPE_UART_X86 |
-				 JAILHOUSE_CON1_FLAG_PIO,
+				 JAILHOUSE_CON1_FLAG_PIO |
+				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0xe0000000,

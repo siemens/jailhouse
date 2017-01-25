@@ -32,7 +32,8 @@ struct {
 			.address = 0x1c090000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_CON1_TYPE_PL011 |
-				 JAILHOUSE_CON1_FLAG_MMIO,
+				 JAILHOUSE_CON1_FLAG_MMIO |
+				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info.arm = {
 #ifdef CONFIG_ARM_GIC_V3

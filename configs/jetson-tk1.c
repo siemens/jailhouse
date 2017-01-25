@@ -41,7 +41,8 @@ struct {
 			/* .gate_nr = (65 % 32), */
 			/* .divider = 0xdd, */
 			.flags = JAILHOUSE_CON1_TYPE_8250 |
-				 JAILHOUSE_CON1_FLAG_MMIO,
+				 JAILHOUSE_CON1_FLAG_MMIO |
+				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0x48000000,
