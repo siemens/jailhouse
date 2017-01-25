@@ -89,7 +89,6 @@ Hardware error handling
 
 Monitoring
   - report error-triggering devices behind IOMMUs via sysfs
-  - hypervisor console via debugfs?
   - cell software watchdog via comm region messages
     -> time out pending comm region messages and kill failing cells
        (includes timeouts of unanswered shutdown requests)
