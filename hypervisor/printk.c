@@ -23,7 +23,26 @@ volatile struct jailhouse_console console __attribute__((section(".console")));
 
 static DEFINE_SPINLOCK(printk_lock);
 
-#define console_write(msg)	arch_dbg_write(msg)
+static void console_write(const char *msg)
+{
+	arch_dbg_write(msg);
+
+	if (!virtual_console)
+		return;
+
+	console.busy = true;
+	/* ensure the busy flag is visible prior to updates of the content */
+	memory_barrier();
+	while (*msg) {
+		console.content[console.tail % sizeof(console.content)] =
+			*msg++;
+		console.tail++;
+	}
+	/* ensure that all updates are committed before clearing busy */
+	memory_barrier();
+	console.busy = false;
+}
+
 #include "printk-core.c"
 
 static void dbg_write_stub(const char *msg)
