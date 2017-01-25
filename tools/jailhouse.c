@@ -228,8 +228,10 @@ static int enable(int argc, char *argv[])
 	fd = open_dev();
 
 	err = ioctl(fd, JAILHOUSE_ENABLE, config);
-	if (err)
+	if (err) {
 		perror("JAILHOUSE_ENABLE");
+		dump_console(fd, true);
+	}
 
 	close(fd);
 	free(config);
