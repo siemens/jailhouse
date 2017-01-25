@@ -24,6 +24,14 @@
  */
 typedef int (*jailhouse_entry)(unsigned int);
 
+struct jailhouse_console {
+	unsigned int busy;
+	unsigned int tail;
+	/* current implementation requires the size of the content to be a
+	 * power of two */
+	char content[2048];
+};
+
 /**
  * Hypervisor description.
  * Located at the beginning of the hypervisor binary image and loaded by

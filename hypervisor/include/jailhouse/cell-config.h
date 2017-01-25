@@ -192,6 +192,12 @@ struct jailhouse_iommu {
 
 #define CON1_IS_MMIO(flags) ((flags) & JAILHOUSE_CON1_FLAG_MMIO)
 
+/* Bits 16..19 are used to select the second console driver */
+#define JAILHOUSE_CON2_TYPE_ROOTPAGE	0x0100
+#define JAILHOUSE_CON2_TYPE_MASK	0x0f00
+
+#define CON2_TYPE(flags) ((flags) & JAILHOUSE_CON2_TYPE_MASK)
+
 struct jailhouse_debug_console {
 	__u64 address;
 	__u32 size;

@@ -18,6 +18,8 @@
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
 
+volatile struct jailhouse_console console __attribute__((section(".console")));
+
 static DEFINE_SPINLOCK(printk_lock);
 
 #define console_write(msg)	arch_dbg_write(msg)
