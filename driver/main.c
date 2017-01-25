@@ -73,6 +73,7 @@ MODULE_VERSION(JAILHOUSE_VERSION);
 
 struct console_state {
 	unsigned int head;
+	unsigned int last_console_id;
 };
 
 DEFINE_MUTEX(jailhouse_lock);
@@ -85,6 +86,24 @@ static atomic_t call_done;
 static int error_code;
 static struct jailhouse_console* volatile console_page;
 static bool console_available;
+
+/* last_console contains three members:
+ *   - valid: indicates if content in the page member is present
+ *   - id:    hint for the consumer if it already consumed the content
+ *   - page:  actual content
+ *
+ * Those members are updated in following cases:
+ *   - on disabling the hypervisor to print last messages
+ *   - on failures when enabling the hypervisor
+ *
+ * We need this structure, as in those cases the hypervisor memory gets
+ * unmapped.
+ */
+static struct {
+	bool valid;
+	unsigned int id;
+	struct jailhouse_console page;
+} last_console;
 
 #ifdef CONFIG_X86
 bool jailhouse_use_vmcall;
@@ -114,6 +133,16 @@ static void copy_console_page(struct jailhouse_console *dst)
 		memcpy(dst, console_page, sizeof(struct jailhouse_console));
 		rmb();
 	} while (console_page->tail != tail || console_page->busy);
+}
+
+static inline void update_last_console(void)
+{
+	if (!console_available)
+		return;
+
+	copy_console_page(&last_console.page);
+	last_console.id++;
+	last_console.valid = true;
 }
 
 static long get_max_cpus(u32 cpu_set_size,
@@ -367,6 +396,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	console_page = (struct jailhouse_console*)
 		(hypervisor_mem + header->console_page);
+	last_console.valid = false;
 
 	/* Copy hypervisor's binary image at beginning of the memory region
 	 * and clear the rest to zero. */
@@ -468,6 +498,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	return 0;
 
 error_free_cell:
+	update_last_console();
 	jailhouse_cell_delete_root();
 
 error_unmap:
@@ -567,6 +598,8 @@ static int jailhouse_cmd_disable(void)
 	if (err)
 		goto unlock_out;
 
+	update_last_console();
+
 	vunmap(hypervisor_mem);
 
 	jailhouse_cell_delete_root();
@@ -657,7 +690,19 @@ static ssize_t jailhouse_console_read(struct file *file, char __user *out,
 			goto console_free_out;
 		}
 
-		ret = jailhouse_console_dump_delta(content, user->head, &miss);
+		if (last_console.id != user->last_console_id &&
+		    last_console.valid) {
+			ret = __jailhouse_console_dump_delta(&last_console.page,
+							     content,
+							     user->head,
+							     &miss);
+			if (!ret)
+				user->last_console_id =
+					last_console.id;
+		} else {
+			ret = jailhouse_console_dump_delta(content, user->head,
+							   &miss);
+		}
 
 		mutex_unlock(&jailhouse_lock);
 
