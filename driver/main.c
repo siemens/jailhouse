@@ -71,6 +71,10 @@ MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
 #endif
 MODULE_VERSION(JAILHOUSE_VERSION);
 
+struct console_state {
+	unsigned int head;
+};
+
 DEFINE_MUTEX(jailhouse_lock);
 bool jailhouse_enabled;
 
@@ -612,11 +616,104 @@ static long jailhouse_ioctl(struct file *file, unsigned int ioctl,
 	return err;
 }
 
+static int jailhouse_console_open(struct inode *inode, struct file *file)
+{
+	struct console_state *user;
+
+	user = kzalloc(sizeof(struct console_state), GFP_KERNEL);
+	if (!user)
+		return -ENOMEM;
+
+	file->private_data = user;
+
+	return 0;
+}
+
+static int jailhouse_console_release(struct inode *inode, struct file *file)
+{
+	struct console_state *user = file->private_data;
+
+	kfree(user);
+
+	return 0;
+}
+
+static ssize_t jailhouse_console_read(struct file *file, char __user *out,
+				      size_t size, loff_t *off)
+{
+	struct console_state *user = file->private_data;
+	char *content;
+	unsigned int miss;
+	int ret;
+
+	content = kmalloc(sizeof(console_page->content), GFP_KERNEL);
+	if (content == NULL)
+		return -ENOMEM;
+
+	/* wait for new data */
+	while (1) {
+		if (mutex_lock_interruptible(&jailhouse_lock) != 0) {
+			ret = -EINTR;
+			goto console_free_out;
+		}
+
+		ret = jailhouse_console_dump_delta(content, user->head, &miss);
+
+		mutex_unlock(&jailhouse_lock);
+
+		if ((!ret || ret == -EAGAIN) && file->f_flags & O_NONBLOCK)
+			goto console_free_out;
+
+		if (ret == -EAGAIN)
+			/* Reset the user head, if jailhouse is not enabled. We
+			 * have to do this, as jailhouse might be reenabled and
+			 * the file handle was kept open in the meanwhile */
+			user->head = 0;
+		else if (ret < 0)
+			goto console_free_out;
+		else if (ret)
+			break;
+
+		schedule_timeout_uninterruptible(HZ / 10);
+		if (signal_pending(current)) {
+			ret = -EINTR;
+			goto console_free_out;
+		}
+	}
+
+	if (miss) {
+		/* If we missed anything, warn user. We will dump the actual
+		 * content in the next call. */
+		ret = snprintf(content, sizeof(console_page->content),
+			       "<missed %u bytes of console log>\n",
+			       miss);
+		user->head += miss;
+		if (size < ret)
+			ret = size;
+	} else {
+		if (size < ret)
+			ret = size;
+		user->head += ret;
+	}
+
+	if (copy_to_user(out, content, ret))
+		ret = -EFAULT;
+
+console_free_out:
+	set_current_state(TASK_RUNNING);
+	kfree(content);
+	return ret;
+}
+
+
 static const struct file_operations jailhouse_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = jailhouse_ioctl,
 	.compat_ioctl = jailhouse_ioctl,
 	.llseek = noop_llseek,
+	.open = jailhouse_console_open,
+	.release = jailhouse_console_release,
+	.read = jailhouse_console_read,
 };
 
 static struct miscdevice jailhouse_misc_dev = {
