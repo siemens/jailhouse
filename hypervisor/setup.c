@@ -41,6 +41,10 @@ static void init_early(unsigned int cpu_id)
 	system_config = (struct jailhouse_system *)
 		(JAILHOUSE_BASE + core_and_percpu_size);
 
+	if (CON2_TYPE(system_config->debug_console.flags) ==
+	    JAILHOUSE_CON2_TYPE_ROOTPAGE)
+		virtual_console = true;
+
 	arch_dbg_write_init();
 
 	printk("\nInitializing Jailhouse hypervisor %s on CPU %d\n",
@@ -65,6 +69,9 @@ static void init_early(unsigned int cpu_id)
 	 * Back the region of the hypervisor core and per-CPU page with empty
 	 * pages for Linux. This allows to fault-in the hypervisor region into
 	 * Linux' page table before shutdown without triggering violations.
+	 *
+	 * Allow read access to the console page, if the hypervisor has the
+	 * debug console flag JAILHOUSE_CON2_TYPE_ROOTPAGE set.
 	 */
 	hyp_phys_start = system_config->hypervisor_memory.phys_start;
 	hyp_phys_end = hyp_phys_start + system_config->hypervisor_memory.size;
@@ -74,6 +81,11 @@ static void init_early(unsigned int cpu_id)
 	hv_page.size = PAGE_SIZE;
 	hv_page.flags = JAILHOUSE_MEM_READ;
 	while (hv_page.virt_start < hyp_phys_end) {
+		if (virtual_console &&
+		    hv_page.virt_start == paging_hvirt2phys(&console))
+			hv_page.phys_start = paging_hvirt2phys(&console);
+		else
+			hv_page.phys_start = paging_hvirt2phys(empty_page);
 		error = arch_map_memory_region(&root_cell, &hv_page);
 		if (error)
 			return;

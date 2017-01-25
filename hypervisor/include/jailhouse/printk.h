@@ -28,4 +28,5 @@ void __attribute__((format(printf, 1, 2))) panic_printk(const char *fmt, ...);
 void arch_dbg_write_init(void);
 extern void (*arch_dbg_write)(const char *msg);
 
+extern bool virtual_console;
 extern volatile struct jailhouse_console console;
