@@ -17,13 +17,13 @@
 
 void arch_dbg_write_init(void)
 {
-	unsigned char dbg_type = CON_TYPE(system_config->debug_console.flags);
+	unsigned char dbg_type = CON1_TYPE(system_config->debug_console.flags);
 
 	/* PIO / MMIO differentiation is done inside the driver code */
-	if (dbg_type == JAILHOUSE_CON_TYPE_UART_X86) {
+	if (dbg_type == JAILHOUSE_CON1_TYPE_UART_X86) {
 		uart_init();
 		arch_dbg_write = uart_write;
-	} else if (dbg_type == JAILHOUSE_CON_TYPE_VGA) {
+	} else if (dbg_type == JAILHOUSE_CON1_TYPE_VGA) {
 		vga_init();
 		arch_dbg_write = vga_write;
 	}

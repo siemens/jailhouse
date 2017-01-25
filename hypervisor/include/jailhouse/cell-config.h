@@ -176,21 +176,21 @@ struct jailhouse_iommu {
 } __attribute__((packed));
 
 /* Bits 0..3 are used to select the particular driver */
-#define JAILHOUSE_CON_TYPE_NONE		0x0000
-#define JAILHOUSE_CON_TYPE_UART_X86	0x0001
-#define JAILHOUSE_CON_TYPE_VGA		0x0002
-#define JAILHOUSE_CON_TYPE_8250		0x0003
-#define JAILHOUSE_CON_TYPE_PL011	0x0004
-#define JAILHOUSE_CON_TYPE_XUARTPS	0x0005
-#define JAILHOUSE_CON_TYPE_MASK		0x000f
+#define JAILHOUSE_CON1_TYPE_NONE	0x0000
+#define JAILHOUSE_CON1_TYPE_UART_X86	0x0001
+#define JAILHOUSE_CON1_TYPE_VGA		0x0002
+#define JAILHOUSE_CON1_TYPE_8250	0x0003
+#define JAILHOUSE_CON1_TYPE_PL011	0x0004
+#define JAILHOUSE_CON1_TYPE_XUARTPS	0x0005
+#define JAILHOUSE_CON1_TYPE_MASK	0x000f
 
-#define CON_TYPE(flags) ((flags) & JAILHOUSE_CON_TYPE_MASK)
+#define CON1_TYPE(flags) ((flags) & JAILHOUSE_CON1_TYPE_MASK)
 
 /* We use bit 4..5 to differentiate between PIO and MMIO access */
-#define JAILHOUSE_CON_FLAG_PIO		0x0010
-#define JAILHOUSE_CON_FLAG_MMIO		0x0020
+#define JAILHOUSE_CON1_FLAG_PIO		0x0010
+#define JAILHOUSE_CON1_FLAG_MMIO	0x0020
 
-#define CON_IS_MMIO(flags) ((flags) & JAILHOUSE_CON_FLAG_MMIO)
+#define CON1_IS_MMIO(flags) ((flags) & JAILHOUSE_CON1_FLAG_MMIO)
 
 struct jailhouse_debug_console {
 	__u64 address;

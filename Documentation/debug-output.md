@@ -12,22 +12,22 @@ options.
 ### .flags
 All architectures support the empty debug output driver, which is selected by
 default if nothing else is chosen:
-  - JAILHOUSE_CON_TYPE_NONE
+  - JAILHOUSE_CON1_TYPE_NONE
 
 Possible debug outputs for x86:
-  - JAILHOUSE_CON_TYPE_UART_X86  /* generic X86 PIO/MMIO UART driver */
-  - JAILHOUSE_CON_TYPE_VGA       /* VGA console */
+  - JAILHOUSE_CON1_TYPE_UART_X86  /* generic X86 PIO/MMIO UART driver */
+  - JAILHOUSE_CON1_TYPE_VGA       /* VGA console */
 
 VGA output is only available for x86. For further documentation on VGA output
 see [vga-console.txt](vga-console.txt).
 
 Possible debug outputs for arm and arm64:
-  - JAILHOUSE_CON_TYPE_8250      /* 8250 compatible UART */
-  - JAILHOUSE_CON_TYPE_PL011     /* AMBA PL011 UART */
+  - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART */
+  - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
 
 Additional flags that can be or'ed:
-  - JAILHOUSE_CON_FLAG_PIO   /* x86 only */
-  - JAILHOUSE_CON_FLAG_MMIO  /* x86 and ARM. Should always be selected for
+  - JAILHOUSE_CON1_FLAG_PIO   /* x86 only */
+  - JAILHOUSE_CON1_FLAG_MMIO  /* x86 and ARM. Should always be selected for
                               * ARM. */
 
 ### .address and .size
@@ -59,8 +59,8 @@ Example configuration for PIO based debug output on x86:
 .debug_console = {
 	.address = 0x3f8, /* PIO address */
 	.divider = 0x1, /* 115200 Baud */
-	.flags = JAILHOUSE_CON_TYPE_UART_X86 | /* generic x86 UART driver */
-		     JAILHOUSE_CON_FLAG_PIO, /* use PIO instead of MMIO */
+	.flags = JAILHOUSE_CON1_TYPE_UART_X86 | /* generic x86 UART driver */
+		     JAILHOUSE_CON1_FLAG_PIO, /* use PIO instead of MMIO */
 },
 ```
 
@@ -72,15 +72,15 @@ Example configuration for MMIO based debug output on ARM (8250 UART):
 	.clock_reg = 0x60006000 + 0x330, /* Optional: Debug Clock Register */
 	.gate_nr = (65 % 32), /* Optional: Debug Clock Gate Nr */
 	.divider = 0xdd, /* 115200 */
-	.flags = JAILHOUSE_CON_TYPE_8250 | /* choose the 8250 driver */
-		     JAILHOUSE_CON_FLAG_MMIO,  /* choose MMIO register access */
+	.flags = JAILHOUSE_CON1_TYPE_8250 | /* choose the 8250 driver */
+		     JAILHOUSE_CON1_FLAG_MMIO,  /* choose MMIO register access */
 },
 ```
 
 Example configuration for disabled debug output (architecture independent):
 ```
 .debug_console = {
-	.flags = JAILHOUSE_CON_TYPE_NONE,
+	.flags = JAILHOUSE_CON1_TYPE_NONE,
 }
 ```
 

@@ -57,7 +57,7 @@ void uart_init(void)
 	u32 flags = system_config->debug_console.flags;
 	u32 divider = system_config->debug_console.divider;
 
-	if (CON_IS_MMIO(flags)) {
+	if (CON1_IS_MMIO(flags)) {
 		uart_reg_out = uart_mmio32_out;
 		uart_reg_in = uart_mmio32_in;
 		uart_base = (u64)hypervisor_header.debug_console_base;

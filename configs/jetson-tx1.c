@@ -34,8 +34,8 @@ struct {
 		.debug_console = {
 			.address = 0x70006000,
 			.size = 0x0040,
-			.flags = JAILHOUSE_CON_TYPE_8250 |
-				 JAILHOUSE_CON_FLAG_MMIO,
+			.flags = JAILHOUSE_CON1_TYPE_8250 |
+				 JAILHOUSE_CON1_FLAG_MMIO,
 		},
 		.platform_info.arm = {
 			.gicd_base = 0x50041000,

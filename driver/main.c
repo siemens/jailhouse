@@ -301,7 +301,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 
 #ifdef JAILHOUSE_BORROW_ROOT_PT
-	if (CON_IS_MMIO(config->debug_console.flags)) {
+	if (CON1_IS_MMIO(config->debug_console.flags)) {
 		console = ioremap(config->debug_console.address,
 				  config->debug_console.size);
 		if (!console) {

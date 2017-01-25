@@ -20,7 +20,7 @@ Add the following to the header section of your root cell's config:
 .debug_console = {
         .address = 0xb8000,
         .size = 0x1000,
-        .flags = JAILHOUSE_CON_TYPE_VGA | JAILHOUSE_CON_FLAG_MMIO,
+        .flags = JAILHOUSE_CON1_TYPE_VGA | JAILHOUSE_CON1_FLAG_MMIO,
 },
 
 Boot using the following kernel parameters:

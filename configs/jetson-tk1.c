@@ -40,8 +40,8 @@ struct {
 			/* .clock_reg = 0x60006000 + 0x330, */
 			/* .gate_nr = (65 % 32), */
 			/* .divider = 0xdd, */
-			.flags = JAILHOUSE_CON_TYPE_8250 |
-				 JAILHOUSE_CON_FLAG_MMIO,
+			.flags = JAILHOUSE_CON1_TYPE_8250 |
+				 JAILHOUSE_CON1_FLAG_MMIO,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0x48000000,

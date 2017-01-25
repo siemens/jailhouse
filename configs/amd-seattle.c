@@ -32,8 +32,8 @@ struct {
 		.debug_console = {
 			.address = 0xe1010000,
 			.size = 0x1000,
-			.flags = JAILHOUSE_CON_TYPE_PL011 |
-				 JAILHOUSE_CON_FLAG_MMIO,
+			.flags = JAILHOUSE_CON1_TYPE_PL011 |
+				 JAILHOUSE_CON1_FLAG_MMIO,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0xf0000000,

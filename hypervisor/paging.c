@@ -595,7 +595,7 @@ int paging_init(void)
 	if (err)
 		return err;
 
-	if (CON_IS_MMIO(system_config->debug_console.flags)) {
+	if (CON1_IS_MMIO(system_config->debug_console.flags)) {
 		vaddr = (unsigned long)hypervisor_header.debug_console_base;
 		/* check if console overlaps remapping region */
 		if (vaddr + system_config->debug_console.size >= REMAP_BASE &&
