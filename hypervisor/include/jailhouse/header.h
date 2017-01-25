@@ -53,6 +53,9 @@ struct jailhouse_header {
 	/** Entry point (arch_entry()).
 	 * @note Filled at build time. */
 	int (*entry)(unsigned int);
+	/** Offset of the console page inside the hypervisor memory
+	 * @note Filled at build time. */
+	unsigned long console_page;
 
 	/** Configured maximum logical CPU ID + 1.
 	 * @note Filled by Linux loader driver before entry. */
