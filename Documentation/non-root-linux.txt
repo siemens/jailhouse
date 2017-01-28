@@ -20,9 +20,13 @@ recent kernel version or to cleanup and adjust the patches. The plan is to
 push those patches upstream once their usefulness and correctness have been
 confirmed.
 
+Booting a Linux kernel on an ARM/ARM64 target is significantly simpler than on
+x86, so in this case we do not need a specially modified Linux kernel for the
+non-root cell.
 
-Kernel configuration
---------------------
+
+x86 Kernel configuration
+------------------------
 
 After checking out the above kernel branch, create a configuration that
 contains at least the following adjustments:
@@ -54,10 +58,15 @@ Non-root Linux start
 
 The easiest way to start a non-root Linux inmate is via the jailhouse tool:
 
-    jailhouse cell linux CELLCONFIG KERNEL [-i | --initrd FILE]
+    jailhouse cell linux CELLCONFIG KERNEL [-d | --dtb DTB] [-i | --initrd FILE]
                          [-c | --cmdline "STRING"] [-w | --write-params FILE]
 
-To create, load and start a Linxu cell and use the first UART as console, issue
+A device tree (DTB) is only required on ARM and ARM64 systems. You can find
+templates for the supported targets under configs/dts/inmate-<target>.dts.
+Those device tree source files are compiled to their binary representations
+(*.dtb) during the build.
+
+To create, load and start a Linux cell and use the first UART as console, issue
 
     jailhouse cell linux /path/to/linux.cell /path/to/bzImage \
         -i /path/to/initrd -c "console=ttyS0,1152000"
