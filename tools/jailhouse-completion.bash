@@ -300,7 +300,7 @@ function _jailhouse() {
 	local command command_cell command_config cur prev subcommand
 
 	# first level
-	command="enable disable cell config hardware --help"
+	command="enable disable console cell config hardware --help"
 
 	# second level
 	command_cell="create load start shutdown destroy linux list stats"
@@ -330,6 +330,12 @@ function _jailhouse() {
 		enable)
 			# a root-cell configuration
 			_filedir "cell"
+			;;
+		console)
+			if [[ "$cur" == -* ]]; then
+				COMPREPLY=( $( compgen -W "-f --follow" -- \
+					"${cur}") )
+			fi
 			;;
 		cell)
 			# one of the following subcommands
