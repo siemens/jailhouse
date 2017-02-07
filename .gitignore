@@ -3,6 +3,7 @@
 *.mod.[co]
 *.cmd
 *.bin
+*.gcno
 .tmp_versions
 *.dtb
 *.dtb.S
