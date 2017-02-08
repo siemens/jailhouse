@@ -11,6 +11,7 @@
 #
 
 KBUILD_CFLAGS += -m64
+GCOV_PROFILE := n
 
 define DECLARE_TARGETS =
  _TARGETS = $(1)

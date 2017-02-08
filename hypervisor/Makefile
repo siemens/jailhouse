@@ -30,6 +30,8 @@ ifneq ($(wildcard $(obj)/include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(obj)/include/jailhouse/config.h
 endif
 
+GCOV_PROFILE := n
+
 CORE_OBJECTS = setup.o printk.o paging.o control.o lib.o mmio.o pci.o ivshmem.o
 
 define filechk_config_mk

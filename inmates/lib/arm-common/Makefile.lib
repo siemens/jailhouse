@@ -10,6 +10,8 @@
 # the COPYING file in the top-level directory.
 #
 
+GCOV_PROFILE := n
+
 OBJS-y := ../string.o ../cmdline.o
 OBJS-y += printk.o gic.o timer.o
 OBJS-y += uart-jailhouse.o uart-pl011.o uart-8250.o uart-xuartps.o

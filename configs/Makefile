@@ -22,6 +22,8 @@ endif
 
 OBJCOPYFLAGS := -O binary
 
+GCOV_PROFILE := n
+
 CONFIGS = $(shell cd $(src); ls *.c)
 
 always := $(CONFIGS:.c=.cell)

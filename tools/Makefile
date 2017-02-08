@@ -20,6 +20,7 @@ KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes -Werror \
 	-DJAILHOUSE_VERSION=\"$(shell cat $(src)/../VERSION)\" $(EXTRA_CFLAGS)
 LDFLAGS :=
+GCOV_PROFILE := n
 
 BINARIES := jailhouse
 HELPERS := \
