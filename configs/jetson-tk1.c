@@ -23,7 +23,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[21];
+	struct jailhouse_memory mem_regions[20];
 	struct jailhouse_irqchip irqchips[2];
 	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
@@ -115,17 +115,14 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* HACK: Legacy Interrupt Controller */ {
+		/*
+		 * HACK: 0x0500@0x60004000: Legacy Interrupt Controller,
+		 * HACK: 0x0400@0x60005000: Nvidia Timers (TMR + WDT),
+		 * HACK: 0x1000@0x60006000: Clock and Reset Controller
+		 */ {
 			.phys_start = 0x60004000,
 			.virt_start = 0x60004000,
-			.size = 0x00001000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* HACK: Clock and Reset Controller */ {
-			.phys_start = 0x60006000,
-			.virt_start = 0x60006000,
-			.size = 0x00001000,
+			.size = 0x3000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
@@ -246,7 +243,7 @@ struct {
 				0xffffff00, 0xffffffff, 0x00000000,
 				0x00000000, 0x00000000, 0x00000000,
 			},
-			.shmem_region = 20,
+			.shmem_region = 19,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
 	},
