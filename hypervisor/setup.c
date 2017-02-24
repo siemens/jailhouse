@@ -76,7 +76,6 @@ static void init_early(unsigned int cpu_id)
 	hyp_phys_start = system_config->hypervisor_memory.phys_start;
 	hyp_phys_end = hyp_phys_start + system_config->hypervisor_memory.size;
 
-	hv_page.phys_start = paging_hvirt2phys(empty_page);
 	hv_page.virt_start = hyp_phys_start;
 	hv_page.size = PAGE_SIZE;
 	hv_page.flags = JAILHOUSE_MEM_READ;
