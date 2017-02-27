@@ -10,6 +10,8 @@
 # the COPYING file in the top-level directory.
 #
 
+include $(INMATES_LIB)/Makefile.lib
+
 always := lib.a lib32.a
 
 TARGETS := header.o hypercall.o ioapic.o printk.o smp.o
