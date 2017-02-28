@@ -1,0 +1,63 @@
+Hypervisor Configuration
+========================
+
+Jailhouse supports various static compile-time configuration
+parameters, such as platform specific settings and debugging options.
+Those settings can optionally be defined in
+'hypervisor/include/jailhouse/config.h'.
+
+Available configuration options
+-------------------------------
+
+General configuration parameters
+/* Print error sources with filename and line number to debug console */
+#define CONFIG_TRACE_ERROR
+/*
+ * Set instruction pointer to 0 if cell CPU has caused an access violation.
+ * Linux inmates will dump a stack trace in this case.
+ */
+#define CONFIG_CRASH_CELL_ON_PANIC
+
+### Example board specific configurations
+
+#### ARM
+
+/* BananaPi M1 */
+#define CONFIG_MACH_BANANAPI
+#define CONFIG_ARM_GIC_V2
+
+/* Nvidia Jetson TK1 */
+#define CONFIG_MACH_JETSON_TK1
+#define CONFIG_ARM_GIC_V2
+
+/* Xunlong Orange Pi Zero, 256 MiB */
+#define CONFIG_MACH_ORANGEPI0
+#define CONFIG_ARM_GIC_V2
+
+/* ARM Fast Model */
+#define CONFIG_MACH_VEXPRESS
+/* Fast Model supports both, GICv2 and GICv3 */
+#define CONFIG_ARM_GIC_V2
+/* #define CONFIG_ARM_GIC_V3 */
+
+#### ARM64
+
+/* Nvidia Jetson TK1 */
+#define CONFIG_MACH_JETSON_TX1
+#define CONFIG_ARM_GIC_V2
+
+/* Xilinx Zynq UltraScale+ MPSoC ZCU102 */
+#define CONFIG_MACH_ZYNQMP_ZCU102
+#define CONFIG_ARM_GIC_V2
+
+/* HiKey LeMaker 2 GiB */
+#define CONFIG_MACH_HIKEY
+#define CONFIG_ARM_GIC_V2
+
+/* ARMv8 Foundation Model */
+#define CONFIG_MACH_FOUNDATION_V8
+#define CONFIG_ARM_GIC_V2
+
+/* AMD ARM-Opteron A1100 */
+#define CONFIG_MACH_AMD_SEATTLE
+#define CONFIG_ARM_GIC_V2
