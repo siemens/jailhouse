@@ -11,7 +11,7 @@
  */
 
 #include <jailhouse/mmio.h>
-#include <asm/uart.h>
+#include <jailhouse/uart.h>
 
 #define UART_SR			0x2c
 #define  UART_SR_TXEMPTY	0x8
