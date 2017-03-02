@@ -24,6 +24,10 @@ struct uart_chip {
 	void (*init)(struct uart_chip *chip);
 	bool (*is_busy)(struct uart_chip *chip);
 	void (*write_char)(struct uart_chip *chip, char c);
+
+	void (*reg_out)(void *address, u32 value);
+	u32 (*reg_in)(void *address);
+	unsigned int reg_dist;
 };
 
 extern struct uart_chip uart_8250_ops, uart_pl011_ops, uart_xuartps_ops;
