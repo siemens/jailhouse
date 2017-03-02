@@ -27,4 +27,7 @@ struct uart_chip {
 	void (*write_char)(struct uart_chip *chip, char c);
 };
 
+void uart_write(const char *msg);
+
+extern struct uart_chip *uart;
 extern struct uart_chip uart_8250_ops;

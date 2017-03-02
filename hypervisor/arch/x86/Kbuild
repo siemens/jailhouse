@@ -16,7 +16,7 @@ GCOV_PROFILE := n
 
 BUILT_IN_OBJECTS := built-in-amd.o built-in-intel.o
 COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
-		  paging.o pci.o ioapic.o i8042.o vcpu.o uart.o vga.o ivshmem.o
+		  paging.o pci.o ioapic.o i8042.o vcpu.o vga.o ivshmem.o
 
 always := $(BUILT_IN_OBJECTS)
 
