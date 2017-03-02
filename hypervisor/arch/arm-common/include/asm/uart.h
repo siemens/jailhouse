@@ -23,7 +23,7 @@ struct uart_chip {
 
 	void (*init)(struct uart_chip *chip);
 	bool (*is_busy)(struct uart_chip *chip);
-	void (*write)(struct uart_chip *chip, char c);
+	void (*write_char)(struct uart_chip *chip, char c);
 };
 
 extern struct uart_chip uart_8250_ops, uart_pl011_ops, uart_xuartps_ops;

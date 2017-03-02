@@ -36,7 +36,7 @@ static void arm_uart_write(const char *msg)
 			cpu_relax();
 		if (panic_in_progress && panic_cpu != phys_processor_id())
 			break;
-		uart->write(uart, c);
+		uart->write_char(uart, c);
 	}
 }
 

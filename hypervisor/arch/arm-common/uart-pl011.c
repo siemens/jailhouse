@@ -59,7 +59,7 @@ static bool uart_is_busy(struct uart_chip *chip)
 		(UARTFR_TXFF | UARTFR_BUSY)) != 0;
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_write_char(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->virt_base + UARTDR, c);
 }
@@ -67,5 +67,5 @@ static void uart_write(struct uart_chip *chip, char c)
 struct uart_chip uart_pl011_ops = {
 	.init = uart_init,
 	.is_busy = uart_is_busy,
-	.write = uart_write,
+	.write_char = uart_write_char,
 };
