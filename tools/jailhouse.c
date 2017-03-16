@@ -201,13 +201,14 @@ static char *read_sysfs_cell_string(const unsigned int id, const char *entry)
 
 	/* entries in /sys/devices/jailhouse/cells must not be empty */
 	if (size == 0) {
-		snprintf(buffer, sizeof(buffer), "reading " JAILHOUSE_CELLS "%u/%s",
-			 id, entry);
+		snprintf(buffer, sizeof(buffer),
+			 "reading " JAILHOUSE_CELLS "%u/%s", id, entry);
 		perror(buffer);
 		exit(1);
 	}
 
-	/* chop trailing linefeeds and enforce the string to be null-terminated */
+	/* chop trailing linefeeds and enforce the string to be
+	 * null-terminated */
 	if (ret[size-1] != '\n')
 		ret = realloc(ret, ++size);
 	ret[size-1] = 0;
