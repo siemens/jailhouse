@@ -54,7 +54,7 @@ loop_ways:
 	orr	r10, r9, r8, lsl r5	@ Factor in the way and cache numbers
 	orr	r10, r10, r7, lsl r2	@ Factor in the index number
 
-	mcr	p15, 0, r10, c7, c10, 2	@ DCCSW
+	arm_write_sysreg(DCCSW, r10)
 
 	subs	r7, r7, #1		@ decrement index
 	bge	loop_ways

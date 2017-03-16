@@ -11,6 +11,9 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
+
+#include <asm/sysregs.h>
+
 	.arm
 
 	.section ".boot", "ax"
@@ -41,7 +44,7 @@ vectors:
 	.globl __reset_entry
 __reset_entry:
 	ldr	r0, =vectors
-	mcr	p15, 0, r0, c12, c0, 0	@ VBAR
+	arm_write_sysreg(VBAR, r0)
 
 	mov	r0, #0
 	ldr	r1, =bss_start
