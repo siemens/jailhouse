@@ -209,8 +209,13 @@ static char *read_sysfs_cell_string(const unsigned int id, const char *entry)
 
 	/* chop trailing linefeeds and enforce the string to be
 	 * null-terminated */
-	if (ret[size-1] != '\n')
+	if (ret[size-1] != '\n') {
 		ret = realloc(ret, ++size);
+		if (ret == NULL) {
+			fprintf(stderr, "insufficient memory\n");
+			exit(1);
+		}
+	}
 	ret[size-1] = 0;
 
 	return ret;
