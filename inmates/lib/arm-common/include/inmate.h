@@ -13,7 +13,6 @@
 #ifndef _JAILHOUSE_INMATE_H
 #define _JAILHOUSE_INMATE_H
 
-#ifndef __ASSEMBLY__
 typedef signed char s8;
 typedef unsigned char u8;
 
@@ -56,20 +55,6 @@ static inline void cpu_relax(void)
 	asm volatile("" : : : "memory");
 }
 
-/*
- * To ease the debugging, we can send a spurious hypercall, which should return
- * -ENOSYS, but appear in the hypervisor stats for this cell.
- */
-static inline void heartbeat(void)
-{
-	asm volatile (
-	"mov	x0, %0\n"
-	"hvc	#0\n"
-	: : "r" (0xbea7) : "x0");
-}
-
-void __attribute__((used)) vector_irq(void);
-
 typedef void (*irq_handler_t)(unsigned int);
 void gic_setup(irq_handler_t handler);
 void gic_enable_irq(unsigned int irq);
@@ -79,7 +64,7 @@ u64 timer_get_ticks(void);
 u64 timer_ticks_to_ns(u64 ticks);
 void timer_start(u64 timeout);
 
-#endif /* !__ASSEMBLY__ */
+#include <arch/inmate.h>
 
 #include "../inmate_common.h"
 
