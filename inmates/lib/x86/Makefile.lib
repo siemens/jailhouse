@@ -10,7 +10,7 @@
 # the COPYING file in the top-level directory.
 #
 
-KBUILD_CFLAGS += -m64
+KBUILD_CFLAGS += -m64 -mno-red-zone
 GCOV_PROFILE := n
 
 define DECLARE_TARGETS =

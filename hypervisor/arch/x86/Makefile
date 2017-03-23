@@ -13,6 +13,7 @@
 #
 
 KBUILD_CFLAGS += -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
+KBUILD_CFLAGS += -mno-red-zone
 KBUILD_CFLAGS += $(call cc-option,-mno-avx,)
 
 KBUILD_CPPFLAGS += -m64
