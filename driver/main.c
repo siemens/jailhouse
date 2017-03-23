@@ -12,6 +12,9 @@
  * the COPYING file in the top-level directory.
  */
 
+/* For compatibility with older kernel versions */
+#include <linux/version.h>
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/device.h>
@@ -19,6 +22,9 @@
 #include <linux/miscdevice.h>
 #include <linux/firmware.h>
 #include <linux/mm.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
+#include <linux/sched/signal.h>
+#endif
 #include <linux/slab.h>
 #include <linux/smp.h>
 #include <linux/uaccess.h>
@@ -50,9 +56,6 @@
 #if JAILHOUSE_CELL_ID_NAMELEN != JAILHOUSE_CELL_NAME_MAXLEN
 # warning JAILHOUSE_CELL_ID_NAMELEN and JAILHOUSE_CELL_NAME_MAXLEN out of sync!
 #endif
-
-/* For compatibility with older kernel versions */
-#include <linux/version.h>
 
 #ifdef CONFIG_X86
 #define JAILHOUSE_AMD_FW_NAME	"jailhouse-amd.bin"
