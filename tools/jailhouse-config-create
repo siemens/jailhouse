@@ -656,14 +656,17 @@ def parse_pcidevices():
 
 def parse_kernel_cmdline():
     line = input_readline('/proc/cmdline')
-    m = re.match(r'.*memmap=([0-9a-fA-FxX]+)([KMG]?)\$'
-                 '([0-9a-fA-FxX]+)([KMG]?).*',
-                 line)
-    if m is not None:
-        size = kmg_multiply(int(m.group(1), 0), m.group(2))
-        start = kmg_multiply(int(m.group(3), 0), m.group(4))
-        return [start, size]
-    return None
+    ma = re.findall(r'memmap=([0-9a-fA-FxX]+)([KMG]?)\$'
+                    '([0-9a-fA-FxX]+)([KMG]?)', line)
+    if (len(ma) == 0):
+        return None
+    size = kmg_multiply(int(ma[0][0], 0), ma[0][1])
+    start = kmg_multiply(int(ma[0][2], 0), ma[0][3])
+    if (len(ma) > 1):
+        print('WARNING: Multiple "memmap" reservations in /proc/cmdline. '
+              'Picking the first for jailhouse!', file=sys.stderr)
+
+    return [start, size]
 
 
 def alloc_mem(regions, size):
