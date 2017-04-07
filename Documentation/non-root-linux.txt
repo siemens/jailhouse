@@ -69,12 +69,12 @@ Those device tree source files are compiled to their binary representations
 To create, load and start a Linux cell and use the first UART as console, issue
 
     jailhouse cell linux /path/to/linux.cell /path/to/bzImage \
-        -i /path/to/initrd -c "console=ttyS0,1152000"
+        -i /path/to/initrd -c "console=ttyS0,115200"
 
 Alternatively, you can prepare the required configuration image in advance via
 
     jailhouse cell linux /path/to/linux.cell /path/to/bzImage \
-        -i /path/to/initrd -c "console=ttyS0,1152000" -w /path/to/linux-params
+        -i /path/to/initrd -c "console=ttyS0,115200" -w /path/to/linux-params
 
 and then issue the basic tool commands on the target as printed by the command
 above.
