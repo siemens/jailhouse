@@ -176,11 +176,11 @@ Simply run `make`, optionally specifying the target kernel directory:
 
     make [KDIR=/path/to/kernel/objects]
 
-Except for the hypervisor image `jailhouse*.bin` that has to be available in the
-firmware search path (invoke `make firmware_install` for this), you can run
-Jailhouse from the build directory.
 
-Alternatively, install everything on the target machine by calling
+#### Installation
+
+It is recommended to install all of Jailhouse on your target machine. That will
+take care of a kernel module, the firmware, tools etc. Just call
 
     make install
 
@@ -188,6 +188,17 @@ from the top-level directory.
 
 The traditional Linux cross-compilation (i.e. `ARCH=` and `CROSS_COMPILE=`) and
 installation (i.e. `DESTDIR=`) flags are supported as well.
+
+#### Running without Installation
+
+Except for the hypervisor image `jailhouse*.bin`, that has to be available in
+the firmware search path, you can run Jailhouse from the build directory.
+If you cannot or do not want to use `make install`, you can either install just
+the firmware using `make firmware_install` or customize the firmware search
+path:
+
+    echo -n /path/to/jailhouse/hypervisor/ \
+        > /sys/module/firmware_class/parameters/path
 
 
 Configuration
