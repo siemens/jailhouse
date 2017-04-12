@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -36,7 +36,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define JAILHOUSE_BASE			0xf0000000
 #define JAILHOUSE_BORROW_ROOT_PT	1
 
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \

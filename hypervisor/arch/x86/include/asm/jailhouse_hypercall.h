@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2015
+ * Copyright (c) Siemens AG, 2013-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -36,7 +36,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define JAILHOUSE_BASE			__MAKE_UL(0xfffffffff0000000)
 #define JAILHOUSE_BORROW_ROOT_PT	1
 
 /*
@@ -70,14 +69,6 @@
 /* CPUID interface */
 #define JAILHOUSE_CPUID_SIGNATURE		0x40000000
 #define JAILHOUSE_CPUID_FEATURES		0x40000001
-
-#ifdef __ASSEMBLY__
-
-#define __MAKE_UL(x)	x
-
-#else /* !__ASSEMBLY__ */
-
-#define __MAKE_UL(x)	x ## UL
 
 /**
  * @defgroup Hypercalls Hypercall Subsystem
@@ -203,5 +194,3 @@ jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
 }
 
 /** @} **/
-
-#endif /* !__ASSEMBLY__ */

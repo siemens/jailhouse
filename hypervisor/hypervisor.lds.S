@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -13,7 +13,7 @@
 #include <asm/paging.h>
 #include <asm/sections.h>
 
-#include <asm/jailhouse_hypercall.h>
+#include <asm/jailhouse_header.h>
 
 SECTIONS
 {
