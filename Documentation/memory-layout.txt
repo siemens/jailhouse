@@ -77,5 +77,5 @@ Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
 References
 ----------
 
-[1] Documentation/configuration-format.txt
+[1] Documentation/configuration-format.md
 [2] Documentation/bootstrap-interface.txt
