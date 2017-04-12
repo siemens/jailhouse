@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2016
+ * Copyright (c) Siemens AG, 2013-2017
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -277,6 +277,12 @@ static int __jailhouse_console_dump_delta(struct jailhouse_console *console,
 	return ret;
 }
 
+static void jailhouse_firmware_free(void)
+{
+	vunmap(hypervisor_mem);
+	hypervisor_mem = NULL;
+}
+
 int jailhouse_console_dump_delta(char *dst, unsigned int head,
 				 unsigned int *miss)
 {
@@ -505,7 +511,7 @@ error_free_cell:
 	jailhouse_cell_delete_root();
 
 error_unmap:
-	vunmap(hypervisor_mem);
+	jailhouse_firmware_free();
 	if (console)
 		iounmap(console);
 	if (clock_reg)
@@ -603,7 +609,7 @@ static int jailhouse_cmd_disable(void)
 
 	update_last_console();
 
-	vunmap(hypervisor_mem);
+	jailhouse_firmware_free();
 
 	jailhouse_cell_delete_root();
 	jailhouse_enabled = false;
