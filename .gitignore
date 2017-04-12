@@ -4,6 +4,7 @@
 *.cmd
 *.bin
 *.gcno
+*.gcda
 .tmp_versions
 *.dtb
 *.dtb.S
@@ -14,6 +15,7 @@ driver/jailhouse.ko
 hypervisor/include/jailhouse/config.h
 hypervisor/hypervisor.lds
 tools/jailhouse
+tools/jailhouse-gcov-extract
 tools/jailhouse-config-collect
 configs/*.cell
 Documentation/generated

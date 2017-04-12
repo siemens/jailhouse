@@ -41,6 +41,7 @@ ifdef CONFIG_JAILHOUSE_GCOV
 CORE_OBJECTS += gcov.o
 endif
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
+clean-files += *.gcda arch/*/.*.gcda
 
 clean-dirs := arch/$(SRCARCH)/include/generated
 
