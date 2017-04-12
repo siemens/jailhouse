@@ -84,7 +84,7 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x800600000,
 			.virt_start = 0x800600000,
-			.size = 0x7ffb0000,
+			.size = 0x7fa00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
