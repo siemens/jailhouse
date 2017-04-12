@@ -58,6 +58,9 @@ struct jailhouse_header {
 	/** Offset of the console page inside the hypervisor memory
 	 * @note Filled at build time. */
 	unsigned long console_page;
+	/** Pointer to the first struct gcov_info
+	 * @note Filled at build time */
+	void *gcov_info_head;
 
 	/** Configured maximum logical CPU ID + 1.
 	 * @note Filled by Linux loader driver before entry. */

@@ -30,6 +30,11 @@ SECTIONS
 	. = ALIGN(16);
 	.data		: { *(.data) }
 
+	. = ALIGN(8);
+	__init_array_start = .;
+	.init_array	: { *(SORT(.init_array.*)) *(.init_array) }
+	__init_array_end = .;
+
 	ARCH_SECTIONS
 
 	. = ALIGN(16);

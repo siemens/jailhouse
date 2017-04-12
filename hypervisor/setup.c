@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2016
+ * Copyright (c) Siemens AG, 2013-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -13,6 +13,7 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/entry.h>
+#include <jailhouse/gcov.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/control.h>
@@ -50,6 +51,8 @@ static void init_early(unsigned int cpu_id)
 	printk("\nInitializing Jailhouse hypervisor %s on CPU %d\n",
 	       JAILHOUSE_VERSION, cpu_id);
 	printk("Code location: %p\n", __text_start);
+
+	gcov_init();
 
 	error = paging_init();
 	if (error)

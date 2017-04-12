@@ -20,5 +20,11 @@ obj-y := $(COMMON_OBJECTS)
 obj-y += entry.o exception.o setup.o control.o traps.o mmio.o lib.o
 obj-y += mmu_hyp.o caches.o mach-stubs.o
 
+# in here we switch of the MMU and stuff, cant profile such code
+# NOTE
+#  gcc7 will bring a new function attribute "no_profile_instrument_function"
+#  should switch to that for higher granularity, but gcc7 is not even there
+CFLAGS_mmu_hyp.o += -fno-profile-arcs -fno-test-coverage
+
 obj-$(CONFIG_ARM_GIC_V3) += gic-v3.o
 obj-$(CONFIG_MACH_VEXPRESS) += mach-vexpress.o

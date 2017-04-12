@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013
+# Copyright (c) Siemens AG, 2013-2017
 # Copyright (c) Valentine Sinitsyn, 2014
 #
 # Authors:
@@ -13,6 +13,7 @@
 #
 
 GCOV_PROFILE := n
+ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
 BUILT_IN_OBJECTS := built-in-amd.o built-in-intel.o
 COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \

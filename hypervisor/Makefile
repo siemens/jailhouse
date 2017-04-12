@@ -37,6 +37,11 @@ GCOV_PROFILE := n
 CORE_OBJECTS = setup.o printk.o paging.o control.o lib.o mmio.o pci.o ivshmem.o
 CORE_OBJECTS += uart.o uart-8250.o
 
+ifdef CONFIG_JAILHOUSE_GCOV
+CORE_OBJECTS += gcov.o
+endif
+ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
+
 clean-dirs := arch/$(SRCARCH)/include/generated
 
 define sed-y
