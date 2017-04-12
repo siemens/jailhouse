@@ -394,6 +394,9 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 #ifdef JAILHOUSE_BORROW_ROOT_PT
 	remap_addr = JAILHOUSE_BASE;
 #endif
+	/* Unmap hypervisor_mem from a previous "enable". The mapping has to be
+	 * redone since the root-cell config might have changed. */
+	jailhouse_firmware_free();
 	/* Map physical memory region reserved for Jailhouse. */
 	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, remap_addr,
 					   hv_mem->size);
@@ -608,8 +611,6 @@ static int jailhouse_cmd_disable(void)
 		goto unlock_out;
 
 	update_last_console();
-
-	jailhouse_firmware_free();
 
 	jailhouse_cell_delete_root();
 	jailhouse_enabled = false;
@@ -833,6 +834,7 @@ static void __exit jailhouse_exit(void)
 	unregister_reboot_notifier(&jailhouse_shutdown_nb);
 	misc_deregister(&jailhouse_misc_dev);
 	jailhouse_sysfs_exit(jailhouse_dev);
+	jailhouse_firmware_free();
 	jailhouse_pci_unregister();
 	root_device_unregister(jailhouse_dev);
 }
