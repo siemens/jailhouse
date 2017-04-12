@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013-2016
+# Copyright (c) Siemens AG, 2013-2017
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,7 +10,7 @@
 # the COPYING file in the top-level directory.
 #
 
-include $(CONFIG_MK)
+include $(GEN_CONFIG_MK)
 
 GCOV_PROFILE := n
 

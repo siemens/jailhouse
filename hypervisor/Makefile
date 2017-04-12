@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013-2016
+# Copyright (c) Siemens AG, 2013-2017
 # Copyright (c) Valentine Sinitsyn, 2014
 #
 # Authors:
@@ -35,26 +35,7 @@ GCOV_PROFILE := n
 CORE_OBJECTS = setup.o printk.o paging.o control.o lib.o mmio.o pci.o ivshmem.o
 CORE_OBJECTS += uart.o uart-8250.o
 
-define filechk_config_mk
-(									\
-	echo "\$$(foreach config,\$$(filter CONFIG_%,		\
-		\$$(.VARIABLES)), \$$(eval undefine \$$(config)))";	\
-	if [ -f $(src)/include/jailhouse/config.h ]; then		\
-		sed -e "/^#define \([^[:space:]]*\)[[:space:]]*1/!d"	\
-		    -e "s/^#define \([^[:space:]]*\)[[:space:]]*1/\1=y/" \
-			$(src)/include/jailhouse/config.h;		\
-	fi								\
-)
-endef
-
-$(obj)/include/generated/config.mk: Makefile FORCE
-	$(call filechk,config_mk)
-
-define filechk_version
-	$(src)/../scripts/gen_version_h $(src)/..
-endef
-
-clean-dirs := include/generated arch/$(SRCARCH)/include/generated
+clean-dirs := arch/$(SRCARCH)/include/generated
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \
@@ -91,17 +72,13 @@ $(obj)/$(defines-file): $(obj)/arch/$(SRCARCH)/asm-defines.s
 	$(Q)mkdir -p $(dir $@)
 	$(call cmd,defines)
 
-$(obj)/include/generated/version.h: $(src)/Makefile FORCE
-	$(call filechk,version)
-
 $(foreach co,$(CORE_OBJECTS),\
 	$(eval $(obj)/$(co): $(obj)/$(defines-file)))
 
-$(obj)/setup.o: $(obj)/include/generated/version.h
+$(obj)/setup.o: $(GEN_VERSION_H)
 
-arch-builtin: $(obj)/$(defines-file) $(obj)/include/generated/config.mk FORCE
-	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH) \
-		CONFIG_MK=$(obj)/include/generated/config.mk
+arch-builtin: $(obj)/$(defines-file) FORCE
+	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
 
 always :=
 
