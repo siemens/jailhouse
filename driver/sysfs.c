@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2015
+ * Copyright (c) Siemens AG, 2014-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -379,6 +379,14 @@ static ssize_t remap_pool_used_show(struct device *dev,
 	return info_show(dev, buffer, JAILHOUSE_INFO_REMAP_POOL_USED);
 }
 
+static ssize_t core_show(struct file *filp, struct kobject *kobj,
+			 struct bin_attribute *attr, char *buf, loff_t off,
+			 size_t count)
+{
+	return memory_read_from_buffer(buf, count, &off, hypervisor_mem,
+				       attr->size);
+}
+
 static DEVICE_ATTR_RO(console);
 static DEVICE_ATTR_RO(enabled);
 static DEVICE_ATTR_RO(mem_pool_size);
@@ -400,6 +408,23 @@ static struct attribute_group jailhouse_attribute_group = {
 	.name = NULL,
 	.attrs = jailhouse_sysfs_entries,
 };
+
+static struct bin_attribute bin_attr_core = {
+	.attr.name = "core",
+	.attr.mode = S_IRUSR,
+	.read = core_show,
+};
+
+int jailhouse_sysfs_core_init(struct device *dev, size_t hypervisor_size)
+{
+	bin_attr_core.size = hypervisor_size;
+	return sysfs_create_bin_file(&dev->kobj, &bin_attr_core);
+}
+
+void jailhouse_sysfs_core_exit(struct device *dev)
+{
+	sysfs_remove_bin_file(&dev->kobj, &bin_attr_core);
+}
 
 int jailhouse_sysfs_init(struct device *dev)
 {

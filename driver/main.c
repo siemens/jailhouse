@@ -81,9 +81,9 @@ struct console_state {
 
 DEFINE_MUTEX(jailhouse_lock);
 bool jailhouse_enabled;
+void *hypervisor_mem;
 
 static struct device *jailhouse_dev;
-static void *hypervisor_mem;
 static unsigned long hv_core_and_percpu_size;
 static atomic_t call_done;
 static int error_code;
@@ -279,6 +279,7 @@ static int __jailhouse_console_dump_delta(struct jailhouse_console *console,
 
 static void jailhouse_firmware_free(void)
 {
+	jailhouse_sysfs_core_exit(jailhouse_dev);
 	vunmap(hypervisor_mem);
 	hypervisor_mem = NULL;
 }
@@ -418,6 +419,10 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	header = (struct jailhouse_header *)hypervisor_mem;
 	header->max_cpus = max_cpus;
+
+	err = jailhouse_sysfs_core_init(jailhouse_dev, header->core_size);
+	if (err)
+		goto error_unmap;
 
 	/*
 	 * ARMv8 requires to clean D-cache and invalidate I-cache for memory
