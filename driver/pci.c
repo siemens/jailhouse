@@ -336,8 +336,6 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	if (overlay_id < 0)
 		goto out;
 
-	of_node_put(overlay);
-
 	success = true;
 
 out:
