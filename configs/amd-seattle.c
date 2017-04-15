@@ -33,7 +33,8 @@ struct {
 			.address = 0xe1010000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_CON1_TYPE_PL011 |
-				 JAILHOUSE_CON1_FLAG_MMIO |
+				 JAILHOUSE_CON1_ACCESS_MMIO |
+				 JAILHOUSE_CON1_REGDIST_4 |
 				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info = {

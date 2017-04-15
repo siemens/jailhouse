@@ -63,7 +63,7 @@ struct {
 		.debug_console = {
 			.address = 0x3f8,
 			.flags = JAILHOUSE_CON1_TYPE_8250 |
-				 JAILHOUSE_CON1_FLAG_PIO |
+				 JAILHOUSE_CON1_ACCESS_PIO |
 				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
 		.platform_info = {

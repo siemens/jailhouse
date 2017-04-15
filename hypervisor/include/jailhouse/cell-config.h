@@ -40,7 +40,7 @@
 #define _JAILHOUSE_CELL_CONFIG_H
 
 /* Incremented on any layout or semantic change of system or cell config. */
-#define JAILHOUSE_CONFIG_REVISION	3
+#define JAILHOUSE_CONFIG_REVISION	4
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -185,13 +185,20 @@ struct jailhouse_iommu {
 
 #define CON1_TYPE(flags) ((flags) & JAILHOUSE_CON1_TYPE_MASK)
 
-/* We use bit 4..5 to differentiate between PIO and MMIO access */
-#define JAILHOUSE_CON1_FLAG_PIO		0x0010
-#define JAILHOUSE_CON1_FLAG_MMIO	0x0020
+/* Bits 4 is used to select PIO (cleared) or MMIO (set) access */
+#define JAILHOUSE_CON1_ACCESS_PIO	0x0000
+#define JAILHOUSE_CON1_ACCESS_MMIO	0x0010
 
-#define CON1_IS_MMIO(flags) ((flags) & JAILHOUSE_CON1_FLAG_MMIO)
+#define CON1_IS_MMIO(flags) ((flags) & JAILHOUSE_CON1_ACCESS_MMIO)
 
-/* Bits 16..19 are used to select the second console driver */
+/* Bits 5 is used to select 1 (cleared) or 4-bytes (set) register distance.
+ * 1 byte implied 8-bit access, 4 bytes 32-bit access. */
+#define JAILHOUSE_CON1_REGDIST_1	0x0000
+#define JAILHOUSE_CON1_REGDIST_4	0x0020
+
+#define CON1_USES_REGDIST_1(flags) (((flags) & JAILHOUSE_CON1_REGDIST_4) == 0)
+
+/* Bits 8..11 are used to select the second console driver */
 #define JAILHOUSE_CON2_TYPE_ROOTPAGE	0x0100
 #define JAILHOUSE_CON2_TYPE_MASK	0x0f00
 
