@@ -25,9 +25,13 @@ Possible debug outputs for arm and arm64:
   - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART*/
   - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
 
-Additional flags that can be or'ed:
-  - JAILHOUSE_CON1_FLAG_PIO   /* x86 only */
-  - JAILHOUSE_CON1_FLAG_MMIO  /* x86 and ARM. Should always be set on ARM. */
+Possible access modes, to be or'ed:
+  - JAILHOUSE_CON1_ACCESS_PIO     /* PIO, x86 only */
+  - JAILHOUSE_CON1_ACCESS_MMIO    /* MMIO, x86 and ARM */
+
+Possible register distances (MMIO only, PIO is implicitly 1-byte), to be or'ed:
+  - JAILHOUSE_CON1_REGDIST_1      /* 1-byte distance, x86 only */
+  - JAILHOUSE_CON1_REGDIST_4      /* 4-bytes distance, x86 and ARM */
 
 ### .address and .size
 The address member denotes the base address of the Debug console (PIO or MMIO
@@ -103,17 +107,17 @@ As well as the hypervisor, inmates choose their output driver during runtime.
 The particular Driver is chosen by command line arguments.  If no arguments
 are provided, inmates choose a default output driver.
 
-On X86, default output driver is PIO UART on port 0x3f8, ARM devices choose
+On x86, default output driver is PIO UART on port 0x3f8, ARM devices choose
 their output driver according to their settings in mach/debug.h.
 
 ### Parameter list
-| Parameter     | Description                | X86        | ARM and ARM64   |
-|---------------|:--------------------------:|-----------:|----------------:|
-| con-type      | Debug Output Driver        | PIO, MMIO  | 8250, PL011     |
-| con-base      | Base Address (PIO or MMIO) | e.g. 0x3f8 | e.g. 0x70006000 |
-| con-divider   | UART divider               | 0x1        | 0x0d            |
-| con-clock-reg | Clock Register             |            |                 |
-| con-gate-nr   | Clock Gate Nr              |            |                 |
+| Parameter     | Description           | x86                | ARM and ARM64   |
+|:--------------|:----------------------|:-------------------|:----------------|
+| con-type      | Debug Output Driver   | PIO, MMIO8, MMIO32 | 8250, PL011     |
+| con-base      | PIO/MMIO Base Address | e.g. 0x3f8         | e.g. 0x70006000 |
+| con-divider   | UART divider          | 0x1                | 0x0d            |
+| con-clock-reg | Clock Register        | not supported      |                 |
+| con-gate-nr   | Clock Gate Nr         | not supported      |                 |
 
 All architectures support the empty con-type "none" and "JAILHOUSE".  The
 "JAILHOUSE" console type uses the hypervisor's debug output via hypercalls.
