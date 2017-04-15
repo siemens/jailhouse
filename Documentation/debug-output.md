@@ -12,26 +12,31 @@ options.
 ### .flags
 All architectures support the empty debug output driver, which is selected by
 default if nothing else is chosen:
-  - JAILHOUSE_CON1_TYPE_NONE
+
+    - JAILHOUSE_CON1_TYPE_NONE
 
 Possible debug outputs for x86:
-  - JAILHOUSE_CON1_TYPE_8250      /* 8250-compatible UART (PIO or MMIO) */
-  - JAILHOUSE_CON1_TYPE_VGA       /* VGA console */
+
+    - JAILHOUSE_CON1_TYPE_8250      /* 8250-compatible UART (PIO or MMIO) */
+    - JAILHOUSE_CON1_TYPE_VGA       /* VGA console */
 
 VGA output is only available for x86. For further documentation on VGA output
 see [vga-console.txt](vga-console.txt).
 
 Possible debug outputs for arm and arm64:
-  - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART*/
-  - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
+
+    - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART*/
+    - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
 
 Possible access modes, to be or'ed:
-  - JAILHOUSE_CON1_ACCESS_PIO     /* PIO, x86 only */
-  - JAILHOUSE_CON1_ACCESS_MMIO    /* MMIO, x86 and ARM */
+
+    - JAILHOUSE_CON1_ACCESS_PIO     /* PIO, x86 only */
+    - JAILHOUSE_CON1_ACCESS_MMIO    /* MMIO, x86 and ARM */
 
 Possible register distances (MMIO only, PIO is implicitly 1-byte), to be or'ed:
-  - JAILHOUSE_CON1_REGDIST_1      /* 1-byte distance, x86 only */
-  - JAILHOUSE_CON1_REGDIST_4      /* 4-bytes distance, x86 and ARM */
+
+    - JAILHOUSE_CON1_REGDIST_1      /* 1-byte distance, x86 only */
+    - JAILHOUSE_CON1_REGDIST_4      /* 4-bytes distance, x86 and ARM */
 
 ### .address and .size
 The address member denotes the base address of the Debug console (PIO or MMIO
@@ -58,34 +63,32 @@ Both default to 0.
 
 ### Examples
 Example configuration for PIO based debug output on x86:
-```
-.debug_console = {
-	.address = 0x3f8, /* PIO address */
-	.divider = 0x1, /* 115200 Baud */
-	.flags = JAILHOUSE_CON1_TYPE_8250 | /* choose the 8250 driver */
-		     JAILHOUSE_CON1_FLAG_PIO, /* use PIO instead of MMIO */
-},
-```
+
+    .debug_console = {
+        .address = 0x3f8, /* PIO address */
+        .divider = 0x1, /* 115200 Baud */
+        .flags = JAILHOUSE_CON1_TYPE_8250 | /* choose the 8250 driver */
+                 JAILHOUSE_CON1_PIO,        /* chose PIO register access */
+    },
 
 Example configuration for MMIO based debug output on ARM (8250 UART):
-```
-.debug_console = {
-	.address = 0x70006300, /* MMIO base address */
-	.size = 0x40, /* size */
-	.clock_reg = 0x60006000 + 0x330, /* Optional: Debug Clock Register */
-	.gate_nr = (65 % 32), /* Optional: Debug Clock Gate Nr */
-	.divider = 0xdd, /* 115200 */
-	.flags = JAILHOUSE_CON1_TYPE_8250 | /* choose the 8250 driver */
-		     JAILHOUSE_CON1_FLAG_MMIO,  /* choose MMIO register access */
-},
-```
+
+    .debug_console = {
+        .address = 0x70006300, /* MMIO base address */
+        .size = 0x40, /* size */
+        .clock_reg = 0x60006000 + 0x330, /* Optional: Debug Clock Register */
+        .gate_nr = (65 % 32), /* Optional: Debug Clock Gate Nr */
+        .divider = 0xdd, /* 115200 */
+        .flags = JAILHOUSE_CON1_TYPE_8250 | /* choose the 8250 driver */
+                 JAILHOUSE_CON1_MMIO_32,    /* choose 32-bit MMIO access */
+    },
 
 Example configuration for disabled debug output (architecture independent):
-```
-.debug_console = {
-	.flags = JAILHOUSE_CON1_TYPE_NONE,
-}
-```
+
+    .debug_console = {
+        .flags = JAILHOUSE_CON1_TYPE_NONE,
+    }
+
 
 Hypervisor Console via sysfs
 ----------------------------
@@ -96,9 +99,9 @@ set, the hypervisor console is available through
 is available through /dev/jailhouse.
 
 Example
-```
-cat /dev/jailhouse
-```
+
+    cat /dev/jailhouse
+
 
 Inmates
 -------
@@ -131,24 +134,21 @@ initialisation of the UART interface.
 
 con-clock-reg and con-gate-nr are currently only available on ARM 8250.
 
-On X86, VGA output is not available for inmates.
+On x86, VGA output is not available for inmates.
 
 ### Examples
 Example command line parameters for PIO based debug output on x86, where the
 inmate will initialise UART:
-```
-  jailhouse cell load foocell inmate.bin -a 0xf0000 \
-    -s "con-base=0x3f8 con-divider=1" -a 0xf0000
-```
+
+    jailhouse cell load foocell inmate.bin -a 0xf0000 \
+        -s "con-base=0x3f8 con-divider=1" -a 0xf0000
 
 Example configuration for MMIO based debug output on ARM using the 8250 driver:
-```
-  jailhouse cell load foocell inmate.bin -a 0x0 \
-    -s "con-type=8250 con-base=0x70006000 con-divider=0xdd" -a 0x100
-```
+
+    jailhouse cell load foocell inmate.bin -a 0x0 \
+        -s "con-type=8250 con-base=0x70006000 con-divider=0xdd" -a 0x100
 
 Example configuration for MMIO based debug output on ARM64 using the PL011 driver:
-```
-  jailhouse cell load foocell inmate.bin -a 0x0 \
-    -s "con-type=PL011 con-base=0xf7113000" -a 0x1000
-```
+
+    jailhouse cell load foocell inmate.bin -a 0x0 \
+        -s "con-type=PL011 con-base=0xf7113000" -a 0x1000
