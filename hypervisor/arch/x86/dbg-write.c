@@ -28,6 +28,16 @@ static u32 reg_in_pio(struct uart_chip *chip, unsigned int reg)
 	return inb((u16)(unsigned long long)chip->virt_base + reg);
 }
 
+static void reg_out_mmio8(struct uart_chip *chip, unsigned int reg, u32 value)
+{
+	mmio_write8(chip->virt_base + reg, value);
+}
+
+static u32 reg_in_mmio8(struct uart_chip *chip, unsigned int reg)
+{
+	return mmio_read8(chip->virt_base + reg);
+}
+
 void arch_dbg_write_init(void)
 {
 	const u32 flags = system_config->debug_console.flags;
@@ -39,6 +49,10 @@ void arch_dbg_write_init(void)
 		uart->debug_console = &system_config->debug_console;
 		if (CON1_IS_MMIO(flags)) {
 			uart->virt_base = hypervisor_header.debug_console_base;
+			if (CON1_USES_REGDIST_1(flags)) {
+				uart->reg_out = reg_out_mmio8;
+				uart->reg_in = reg_in_mmio8;
+			}
 		} else {
 			uart->virt_base =
 				(void *)system_config->debug_console.address;
