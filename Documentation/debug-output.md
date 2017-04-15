@@ -15,20 +15,19 @@ default if nothing else is chosen:
   - JAILHOUSE_CON1_TYPE_NONE
 
 Possible debug outputs for x86:
-  - JAILHOUSE_CON1_TYPE_UART_X86  /* generic X86 PIO/MMIO UART driver */
+  - JAILHOUSE_CON1_TYPE_8250      /* 8250-compatible UART (PIO or MMIO) */
   - JAILHOUSE_CON1_TYPE_VGA       /* VGA console */
 
 VGA output is only available for x86. For further documentation on VGA output
 see [vga-console.txt](vga-console.txt).
 
 Possible debug outputs for arm and arm64:
-  - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART */
+  - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART*/
   - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
 
 Additional flags that can be or'ed:
   - JAILHOUSE_CON1_FLAG_PIO   /* x86 only */
-  - JAILHOUSE_CON1_FLAG_MMIO  /* x86 and ARM. Should always be selected for
-                              * ARM. */
+  - JAILHOUSE_CON1_FLAG_MMIO  /* x86 and ARM. Should always be set on ARM. */
 
 ### .address and .size
 The address member denotes the base address of the Debug console (PIO or MMIO
@@ -36,7 +35,7 @@ base address). The .size parameter is only required for MMIO.
 
 ### .divider
 An optional UART divider parameter that can be passed to the driver. This is
-supported by the generic X86 UART driver and the 8250 driver.
+supported by the 8250 driver.
 
 A zero value means that the hypervisor will skip the initialisation of the UART
 console.  This is the case in most scenarios, as the hypervisor's UART console
@@ -59,7 +58,7 @@ Example configuration for PIO based debug output on x86:
 .debug_console = {
 	.address = 0x3f8, /* PIO address */
 	.divider = 0x1, /* 115200 Baud */
-	.flags = JAILHOUSE_CON1_TYPE_UART_X86 | /* generic x86 UART driver */
+	.flags = JAILHOUSE_CON1_TYPE_8250 | /* choose the 8250 driver */
 		     JAILHOUSE_CON1_FLAG_PIO, /* use PIO instead of MMIO */
 },
 ```

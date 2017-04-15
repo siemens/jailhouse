@@ -33,7 +33,7 @@ void arch_dbg_write_init(void)
 	const u32 flags = system_config->debug_console.flags;
 	unsigned char dbg_type = CON1_TYPE(flags);
 
-	if (dbg_type == JAILHOUSE_CON1_TYPE_UART_X86) {
+	if (dbg_type == JAILHOUSE_CON1_TYPE_8250) {
 		uart = &uart_8250_ops;
 
 		uart->debug_console = &system_config->debug_console;
