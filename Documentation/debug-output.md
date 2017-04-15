@@ -21,7 +21,7 @@ Possible debug outputs for x86:
     - JAILHOUSE_CON1_TYPE_VGA       /* VGA console */
 
 VGA output is only available for x86. For further documentation on VGA output
-see [vga-console.txt](vga-console.txt).
+see [vga-console.md](vga-console.md).
 
 Possible debug outputs for arm and arm64:
 
