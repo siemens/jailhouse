@@ -40,6 +40,16 @@ static u8 uart_pio_in(unsigned int reg)
 	return inb(printk_uart_base + reg);
 }
 
+static void uart_mmio8_out(unsigned int reg, u8 value)
+{
+	mmio_write8((void *)printk_uart_base + reg, value);
+}
+
+static u8 uart_mmio8_in(unsigned int reg)
+{
+	return mmio_read8((void *)printk_uart_base + reg);
+}
+
 static void uart_mmio32_out(unsigned int reg, u8 value)
 {
 	mmio_write32((void *)printk_uart_base + reg * 4, value);
@@ -100,16 +110,22 @@ static void console_init(void)
 		console_putc = uart_putc;
 		uart_reg_out = uart_pio_out;
 		uart_reg_in = uart_pio_in;
-	} else if (strcmp(type, "MMIO") == 0) {
+	} else if (strcmp(type, "MMIO8") == 0) {
+		console_putc = uart_putc;
+		uart_reg_out = uart_mmio8_out;
+		uart_reg_in = uart_mmio8_in;
+	} else if (strcmp(type, "MMIO32") == 0) {
 		console_putc = uart_putc;
 		uart_reg_out = uart_mmio32_out;
 		uart_reg_in = uart_mmio32_in;
-#ifdef __x86_64__
-		map_range((void *)printk_uart_base, 0x1000, MAP_UNCACHED);
-#endif
 	} else {
 		return;
 	}
+
+#ifdef __x86_64__
+	if (strncmp(type, "MMIO", 4) == 0)
+		map_range((void *)printk_uart_base, 0x1000, MAP_UNCACHED);
+#endif
 
 	if (divider > 0) {
 		uart_reg_out(UART_LCR, UART_LCR_DLAB);
