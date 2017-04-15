@@ -24,15 +24,14 @@
 #define UART_LSR		0x5
 #define  UART_LSR_THRE		0x20
 
-static inline void reg_out(struct uart_chip *chip, unsigned int offset,
-			   u32 value)
+static void reg_out_mmio32(struct uart_chip *chip, unsigned int reg, u32 value)
 {
-	chip->reg_out(chip->virt_base + chip->reg_dist * offset, value);
+	mmio_write32(chip->virt_base + reg * 4, value);
 }
 
-static inline u32 reg_in(struct uart_chip *chip, unsigned int offset)
+static u32 reg_in_mmio32(struct uart_chip *chip, unsigned int reg)
 {
-	return chip->reg_in(chip->virt_base + chip->reg_dist * offset);
+	return mmio_read32(chip->virt_base + reg * 4);
 }
 
 static void uart_init(struct uart_chip *chip)
@@ -40,6 +39,7 @@ static void uart_init(struct uart_chip *chip)
 	void *clock_reg = (void*)(unsigned long)chip->virt_clock_reg;
 	unsigned int gate_nr = chip->debug_console->gate_nr;
 
+	/* clock setting only implemented on ARM via 32-bit MMIO */
 	if (clock_reg)
 		mmio_write32(clock_reg,
 			     mmio_read32(clock_reg) | (1 << gate_nr));
@@ -48,27 +48,27 @@ static void uart_init(struct uart_chip *chip)
 	if (!chip->debug_console->divider)
 		return;
 
-	reg_out(chip, UART_LCR, UART_LCR_DLAB);
-	reg_out(chip, UART_DLL, chip->debug_console->divider & 0xff);
-	reg_out(chip, UART_DLM, (chip->debug_console->divider >> 8) & 0xff);
-	reg_out(chip, UART_LCR, UART_LCR_8N1);
+	chip->reg_out(chip, UART_LCR, UART_LCR_DLAB);
+	chip->reg_out(chip, UART_DLL, chip->debug_console->divider & 0xff);
+	chip->reg_out(chip, UART_DLM,
+		      (chip->debug_console->divider >> 8) & 0xff);
+	chip->reg_out(chip, UART_LCR, UART_LCR_8N1);
 }
 
 static bool uart_is_busy(struct uart_chip *chip)
 {
-	return !(reg_in(chip, UART_LSR) & UART_LSR_THRE);
+	return !(chip->reg_in(chip, UART_LSR) & UART_LSR_THRE);
 }
 
 static void uart_write_char(struct uart_chip *chip, char c)
 {
-	reg_out(chip, UART_TX, c);
+	chip->reg_out(chip, UART_TX, c);
 }
 
 struct uart_chip uart_8250_ops = {
 	.init = uart_init,
 	.is_busy = uart_is_busy,
 	.write_char = uart_write_char,
-	.reg_dist = 4,
-	.reg_out = mmio_write32,
-	.reg_in = mmio_read32,
+	.reg_out = reg_out_mmio32,
+	.reg_in = reg_in_mmio32,
 };

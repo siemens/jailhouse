@@ -17,9 +17,8 @@ struct uart_chip {
 	struct jailhouse_debug_console *debug_console;
 
 	/* driver selects defaults, if used */
-	void (*reg_out)(void *address, u32 value);
-	u32 (*reg_in)(void *address);
-	unsigned int reg_dist;
+	void (*reg_out)(struct uart_chip *chip, unsigned int reg, u32 value);
+	u32 (*reg_in)(struct uart_chip *chip, unsigned int reg);
 
 	/* set by the driver */
 	void (*init)(struct uart_chip *chip);

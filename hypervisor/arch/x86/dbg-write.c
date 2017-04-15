@@ -18,14 +18,14 @@
 #include <asm/io.h>
 #include <asm/vga.h>
 
-static void uart_pio_out(void *address, u32 value)
+static void reg_out_pio(struct uart_chip *chip, unsigned int reg, u32 value)
 {
-	outb(value, (u16)(unsigned long long)address);
+	outb(value, (u16)(unsigned long long)chip->virt_base + reg);
 }
 
-static u32 uart_pio_in(void *address)
+static u32 reg_in_pio(struct uart_chip *chip, unsigned int reg)
 {
-	return inb((u16)(unsigned long long)address);
+	return inb((u16)(unsigned long long)chip->virt_base + reg);
 }
 
 void arch_dbg_write_init(void)
@@ -40,10 +40,10 @@ void arch_dbg_write_init(void)
 		if (CON1_IS_MMIO(flags)) {
 			uart->virt_base = hypervisor_header.debug_console_base;
 		} else {
-			uart->virt_base = (void*)system_config->debug_console.address;
-			uart->reg_out = uart_pio_out;
-			uart->reg_in = uart_pio_in;
-			uart->reg_dist = 1;
+			uart->virt_base =
+				(void *)system_config->debug_console.address;
+			uart->reg_out = reg_out_pio;
+			uart->reg_in = reg_in_pio;
 		}
 		uart->init(uart);
 		arch_dbg_write = uart_write;
