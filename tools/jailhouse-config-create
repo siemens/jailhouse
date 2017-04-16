@@ -2,7 +2,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014-2016
+# Copyright (c) Siemens AG, 2014-2017
 # Copyright (c) Valentine Sinitsyn, 2014-2015
 #
 # Authors:
@@ -56,6 +56,12 @@ parser.add_argument('-t', '--template-dir',
                     default=template_default_dir,
                     action='store',
                     type=str)
+parser.add_argument('-c', '--console',
+                    help='the name of the UART device that should be used as '
+                         'primary hypervisor debug console ("ttyX" or "none")',
+                    default='ttyS0',
+                    action='store',
+                    type=str)
 
 memargs = [['--mem-inmates', '2M', 'inmate'],
            ['--mem-hv', '64M', 'hypervisor']]
@@ -95,6 +101,10 @@ inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
 # optional files
 inputs['files_opt'].add('/sys/class/dmi/id/product_name')
 inputs['files_opt'].add('/sys/class/dmi/id/sys_vendor')
+inputs['files_opt'].add('/sys/class/tty/*/iomem_base')
+inputs['files_opt'].add('/sys/class/tty/*/iomem_reg_shift')
+inputs['files_opt'].add('/sys/class/tty/*/io_type')
+inputs['files_opt'].add('/sys/class/tty/*/port')
 inputs['files_opt'].add('/sys/devices/jailhouse/enabled')
 # platform specific files
 inputs['files_intel'].add('/sys/firmware/acpi/tables/DMAR')
@@ -566,7 +576,7 @@ class IOMemRegionTree:
         return regions
 
 
-class IOMMUConfig(object):
+class IOMMUConfig:
     def __init__(self, props):
         self.base_addr = props['base_addr']
         self.mmio_size = props['mmio_size']
@@ -1084,6 +1094,33 @@ def get_cpu_vendor():
                 return cpuvendor
 
 
+class DebugConsole:
+    def __init__(self, console):
+        self.address = 0
+        self.pio = False
+        self.dist1 = False
+        if console != 'none':
+            type = int(input_readline('/sys/class/tty/%s/io_type' % console,
+                                      True))
+            if type == 0:
+                self.address = int(input_readline(
+                    '/sys/class/tty/%s/port' % console, True), 16)
+                self.pio = True
+                self.dist1 = True
+            elif type in (2, 3):
+                shift = int(input_readline(
+                    '/sys/class/tty/%s/iomem_reg_shift' % console, True))
+                if (type == 2 and shift != 0) or (type == 3 and shift != 2):
+                    print('WARNING: Unexpected UART MMIO access mode: '
+                          'type=%d, shift=%d. Disabling console.' %
+                          (type, shift))
+                else:
+                    self.address = int(input_readline(
+                        '/sys/class/tty/%s/iomem_base' % console, True), 16)
+                    self.pio = False
+                    self.dist1 = (shift == 0)
+
+
 if options.generate_collector:
     f = open(options.file, 'w')
     filelist = ' '.join(inputs['files'])
@@ -1155,6 +1192,8 @@ cpucount = count_cpus()
 
 pm_timer_base = parse_ioports()
 
+debug_console = DebugConsole(options.console)
+
 
 f = open(options.file, 'w')
 tmpl = Template(filename=os.path.join(options.template_dir,
@@ -1171,7 +1210,8 @@ kwargs = {
     'irqchips': ioapics,
     'pm_timer_base': pm_timer_base,
     'mmconfig': mmconfig,
-    'iommu_units': iommu_units
+    'iommu_units': iommu_units,
+    'debug_console': debug_console,
 }
 
 f.write(tmpl.render(**kwargs))
