@@ -63,35 +63,34 @@ define cmd_defines
 	 echo "#endif" ) > $@
 endef
 
-defines-file := arch/$(SRCARCH)/include/generated/asm/asm-defines.h
+ASM_DEFINES_H := arch/$(SRCARCH)/include/generated/asm/asm-defines.h
 
-targets := $(defines-file) arch/$(SRCARCH)/asm-defines.s
+targets := $(ASM_DEFINES_H) arch/$(SRCARCH)/asm-defines.s
 
 $(obj)/arch/$(SRCARCH)/asm-defines.s: $(src)/arch/$(SRCARCH)/asm-defines.c
 	$(call if_changed_dep,cc_s_c)
 
-$(obj)/$(defines-file): $(obj)/arch/$(SRCARCH)/asm-defines.s
+$(obj)/$(ASM_DEFINES_H): $(obj)/arch/$(SRCARCH)/asm-defines.s
 	$(Q)mkdir -p $(dir $@)
 	$(call cmd,defines)
 
-$(foreach co,$(CORE_OBJECTS),\
-	$(eval $(obj)/$(co): $(obj)/$(defines-file)))
-
-arch-builtin: $(obj)/$(defines-file) FORCE
-	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
+# Do not generate files by creating dependencies if we are cleaning up
+ifeq ($(filter %/Makefile.clean,$(MAKEFILE_LIST)),)
+$(obj)/arch/$(SRCARCH): $(obj)/$(ASM_DEFINES_H)
+endif
 
 always :=
+
+subdir-y := arch/$(SRCARCH)
 
 define BUILD_JAILHOUSE_template
 always += jailhouse$(1).bin
 
+$$(obj)/arch/$$(SRCARCH)/built-in$(1).o: $$(obj)/arch/$$(SRCARCH)
+
 hypervisor$(1)-y := $$(CORE_OBJECTS) arch/$$(SRCARCH)/built-in$(1).o \
 	hypervisor.lds
 targets += $$(hypervisor$(1)-y)
-
-# Need fake recipe here so make will consider this a volatile target
-$$(obj)/arch/$$(SRCARCH)/built-in$(1).o: arch-builtin
-	@
 
 HYPERVISOR$(1)_OBJS = $$(addprefix $$(obj)/,$$(hypervisor$(1)-y))
 
@@ -114,5 +113,3 @@ $(foreach variant,$(BUILD_VARIANTS),\
 else
 $(eval $(call BUILD_JAILHOUSE_template,))
 endif
-
-.PHONY: arch-builtin
