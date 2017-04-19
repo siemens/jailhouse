@@ -11,14 +11,17 @@
 # the COPYING file in the top-level directory.
 #
 
+INC_CONFIG_H = $(src)/hypervisor/include/jailhouse/config.h
+export INC_CONFIG_H
+
 define filechk_config_mk
 (									\
-	echo "\$$(foreach config,\$$(filter CONFIG_%,		\
+	echo "\$$(foreach config,\$$(filter CONFIG_%,			\
 		\$$(.VARIABLES)), \$$(eval undefine \$$(config)))";	\
-	if [ -f $(src)/hypervisor/include/jailhouse/config.h ]; then	\
+	if [ -f $(INC_CONFIG_H) ]; then	\
 		sed -e "/^#define \([^[:space:]]*\)[[:space:]]*1/!d"	\
 		    -e "s/^#define \([^[:space:]]*\)[[:space:]]*1/\1=y/"\
-			$(src)/hypervisor/include/jailhouse/config.h;	\
+			$(INC_CONFIG_H);				\
 	fi								\
 )
 endef

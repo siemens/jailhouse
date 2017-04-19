@@ -26,8 +26,8 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 
 include $(src)/arch/$(SRCARCH)/Makefile
 
-ifneq ($(wildcard $(obj)/include/jailhouse/config.h),)
-KBUILD_CFLAGS += -include $(obj)/include/jailhouse/config.h
+ifneq ($(wildcard $(INC_CONFIG_H)),)
+KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif
 
 GCOV_PROFILE := n
