@@ -16,6 +16,8 @@
 # Copyright (c) Linux kernel developers, 2014
 #
 
+-include $(GEN_CONFIG_MK)
+
 LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
 		-I$(src)/arch/$(SRCARCH)/include/generated \
 		-I$(src)/include

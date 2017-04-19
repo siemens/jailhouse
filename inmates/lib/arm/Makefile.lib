@@ -12,8 +12,6 @@
 # the COPYING file in the top-level directory.
 #
 
--include $(obj)/../../../hypervisor/include/generated/config.mk
-
 KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
 
 KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include

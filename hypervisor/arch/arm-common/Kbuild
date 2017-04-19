@@ -10,8 +10,6 @@
 # the COPYING file in the top-level directory.
 #
 
-include $(GEN_CONFIG_MK)
-
 GCOV_PROFILE := n
 
 OBJS-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o

@@ -14,14 +14,17 @@
 INC_CONFIG_H = $(src)/hypervisor/include/jailhouse/config.h
 export INC_CONFIG_H
 
+define sed_config_mk
+	"/^#define \([^[:space:]]*\)[[:space:]]*1/!d; \
+	s/^#define \([^[:space:]]*\)[[:space:]]*1/\1=y\nexport \1/"
+endef
+
 define filechk_config_mk
 (									\
 	echo "\$$(foreach config,\$$(filter CONFIG_%,			\
 		\$$(.VARIABLES)), \$$(eval undefine \$$(config)))";	\
 	if [ -f $(INC_CONFIG_H) ]; then	\
-		sed -e "/^#define \([^[:space:]]*\)[[:space:]]*1/!d"	\
-		    -e "s/^#define \([^[:space:]]*\)[[:space:]]*1/\1=y/"\
-			$(INC_CONFIG_H);				\
+		sed -e $(sed_config_mk) $(INC_CONFIG_H);		\
 	fi								\
 )
 endef

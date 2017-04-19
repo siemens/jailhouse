@@ -10,6 +10,8 @@
 # the COPYING file in the top-level directory.
 #
 
+-include $(GEN_CONFIG_MK)
+
 INMATES_LIB = $(src)/lib/$(SRCARCH)
 export INMATES_LIB
 
