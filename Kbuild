@@ -40,7 +40,6 @@ define filechk_version
 endef
 
 GEN_VERSION_H := $(obj)/hypervisor/include/generated/version.h
-export GEN_VERSION_H
 
 $(GEN_VERSION_H): $(src)/Makefile FORCE
 	$(call filechk,version)

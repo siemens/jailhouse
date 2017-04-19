@@ -20,8 +20,6 @@ jailhouse-y := cell.o main.o sysfs.o
 jailhouse-$(CONFIG_PCI) += pci.o
 jailhouse-$(CONFIG_OF) += vpci_template.dtb.o
 
-$(obj)/main.o: $(GEN_VERSION_H)
-
 targets += vpci_template.dtb vpci_template.dtb.S
 
 .SECONDARY: \

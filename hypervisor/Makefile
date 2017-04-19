@@ -77,8 +77,6 @@ $(obj)/$(defines-file): $(obj)/arch/$(SRCARCH)/asm-defines.s
 $(foreach co,$(CORE_OBJECTS),\
 	$(eval $(obj)/$(co): $(obj)/$(defines-file)))
 
-$(obj)/setup.o: $(GEN_VERSION_H)
-
 arch-builtin: $(obj)/$(defines-file) FORCE
 	$(Q)$(MAKE) $(build)=$(obj)/arch/$(SRCARCH)
 
