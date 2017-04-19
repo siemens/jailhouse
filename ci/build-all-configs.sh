@@ -48,7 +48,7 @@ for CONFIG in $CONFIGS; do
 	esac
 
 	$PREFIX make KDIR=ci/linux/build-$CONFIG ARCH=$ARCH \
-	     CROSS_COMPILE=$CROSS_COMPILE
+	     CROSS_COMPILE=$CROSS_COMPILE -j $((2*`nproc`))
 
 	# Keep the clean run out of sight for cov-build so that results are
 	# accumulated as far as possible. Multiple compilations of the same
