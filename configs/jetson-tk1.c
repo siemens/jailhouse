@@ -117,13 +117,14 @@ struct {
 				JAILHOUSE_MEM_IO,
 		},
 		/*
+		 * HACK: 0x1400@0x60002000: APBDMA
 		 * HACK: 0x0500@0x60004000: Legacy Interrupt Controller,
 		 * HACK: 0x0400@0x60005000: Nvidia Timers (TMR + WDT),
 		 * HACK: 0x1000@0x60006000: Clock and Reset Controller
 		 */ {
-			.phys_start = 0x60004000,
-			.virt_start = 0x60004000,
-			.size = 0x3000,
+			.phys_start = 0x60002000,
+			.virt_start = 0x60002000,
+			.size = 0x5000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
