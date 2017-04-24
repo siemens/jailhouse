@@ -20,6 +20,8 @@ General configuration parameters
  * Linux inmates will dump a stack trace in this case.
  */
 #define CONFIG_CRASH_CELL_ON_PANIC 1
+/* Enable code coverage data collection (see Documentation/gcov.txt) */
+#define CONFIG_JAILHOUSE_GCOV 1
 ```
 
 ### Example board specific configurations

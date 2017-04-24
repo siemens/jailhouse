@@ -1,0 +1,50 @@
+Extracting code coverage information from the hypervisor
+========================================================
+
+Jailhouse supports collecting code coverage information while it is running.
+In order to use that feature you have to set CONFIG_JAILHOUSE_GCOV in the
+configuration system. (see Documentation/hypervisor-configuration.txt)
+
+Now rebuild jailhouse and run your favorite example cell. Follow the usual
+workflow until `jailhouse disable`, but do not unload the jailhouse kernel
+module.
+
+While the module is loaded but the hypervisor is not running anymore, you can
+get a copy of the hypervisor-image containing runtime data. And that data
+includes code coverage information. The jailhouse tools allow you to extract
+gcov data from that image (*.gcda-files). And these files can be processed by
+a number of higher level tools.
+
+Example workflow
+----------------
+# enter jailhouse source directory
+cd /path/to/jailhouse
+# remove *.gcda files from previous run
+find -iname *.gcda -exec rm -f {} +
+# now run jailhouse until you eventually "disable" it again
+.....
+jailhouse disable
+# extract the *.gcda files, which will be placed in the src directory
+./tools/jailhouse-gcov-extract
+# at that point you can use higher level tools to process the data
+# here an example for generating an html-report with
+# lcov (http://ltp.sourceforge.net/coverage/lcov.php)
+lcov -o /tmp/coverage.info --capture -d .
+genhtml /tmp/coverage.info --output-directory /tmp/coverage/
+firefox /tmp/coverage/index.html
+
+Cross Compiled
+--------------
+If you have cross compiled jailhouse you will need to copy the
+jailhouse-gcov-extract tool over to your target and execute it when you want
+to collect the statistics. The sources and *.gcno-files are not required on
+the target, just on the machine where you process the data further.
+
+Using the tool, the *.gcda-files will be generated in the directory jailhouse
+was built in on your build machine. If the tool fails to create the *.gcda-
+files, make sure the base directory exists and is writeable for your user.
+
+From there copy the files back to your build host and process them further
+with higher level tools like lcov. Make sure to use gcov and other tools from
+your cross toolchain. For the above example and an ARM32 toolchain you would
+have to add "--gcov-tool arm-linux-gnueabihf-gcov" to the lcov invocation.
