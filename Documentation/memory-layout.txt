@@ -32,6 +32,18 @@ Size: as defined in the system configuration (see hypervisor_memory.size) [1]
         | Data Segment                         |
         |                                      |
         +--------------------------------------+
+        | Init Array                           |
+        |                                      |
+        +--------------------------------------+
+        | Bootstrap Page Tables (only ARM64)   |
+        |                                      |
+        +--------------------------------------+
+        | Trampoline Code (only ARM and ARM64) |
+        |                                      |
+        +--------------------------------------+
+        | Console Page                         |
+        |                                      |
+        +--------------------------------------+
         | BSS Segment                          |
         |                                      |
         +--------------------------------------+
