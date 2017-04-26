@@ -23,7 +23,7 @@ ifeq ($(subst arm64,arm,$(SRCARCH)),arm)
 INCLUDES += -I$(src)/../hypervisor/arch/arm-common/include
 endif
 
-LINUXINCLUDE  :=
+LINUXINCLUDE  := -I$(src)/../hypervisor/include
 KBUILD_AFLAGS += $(INCLUDES)
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \

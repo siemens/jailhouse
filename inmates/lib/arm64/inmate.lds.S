@@ -10,11 +10,17 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/config.h>
+
+#ifndef CONFIG_INMATE_BASE
+#define CONFIG_INMATE_BASE 0x0
+#endif
+
 SECTIONS {
-	. = 0;
+	. = CONFIG_INMATE_BASE;
 	.boot		: { *(.boot) }
 
-	. = 0x1000;
+	. = CONFIG_INMATE_BASE + 0x1000;
 	.cmdline	: {
 		*(.cmdline)
 		BYTE(0); /* empty string in case no buffer is provided */
