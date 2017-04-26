@@ -12,76 +12,68 @@ Available configuration options
 -------------------------------
 
 General configuration parameters
-```
-/* Print error sources with filename and line number to debug console */
-#define CONFIG_TRACE_ERROR 1
-/*
- * Set instruction pointer to 0 if cell CPU has caused an access violation.
- * Linux inmates will dump a stack trace in this case.
- */
-#define CONFIG_CRASH_CELL_ON_PANIC 1
-/* Enable code coverage data collection (see Documentation/gcov.txt) */
-#define CONFIG_JAILHOUSE_GCOV 1
-```
+
+    /* Print error sources with filename and line number to debug console */
+    #define CONFIG_TRACE_ERROR 1
+
+    /*
+     * Set instruction pointer to 0 if cell CPU has caused an access violation.
+     * Linux inmates will dump a stack trace in this case.
+     */
+    #define CONFIG_CRASH_CELL_ON_PANIC 1
+
+    /* Enable code coverage data collection (see Documentation/gcov.txt) */
+    #define CONFIG_JAILHOUSE_GCOV 1
 
 ### Example board specific configurations
 
 #### ARM
 
-```
-/* BananaPi M1 */
-#define CONFIG_MACH_BANANAPI 1
-#define CONFIG_ARM_GIC_V2 1
-```
+##### BananaPi M1
 
-```
-/* Nvidia Jetson TK1 */
-#define CONFIG_MACH_JETSON_TK1 1
-#define CONFIG_ARM_GIC_V2 1
-```
+    #define CONFIG_MACH_BANANAPI 1
+    #define CONFIG_ARM_GIC_V2 1
 
-```
-/* Xunlong Orange Pi Zero, 256 MiB */
-#define CONFIG_MACH_ORANGEPI0 1
-#define CONFIG_ARM_GIC_V2 1
-```
+##### Nvidia Jetson TK1
 
-```
-/* ARM Fast Model */
-#define CONFIG_MACH_VEXPRESS 1
-/* Fast Model supports both, GICv2 and GICv3 */
-#define CONFIG_ARM_GIC_V2 1
-/* #define CONFIG_ARM_GIC_V3 */
-```
+    #define CONFIG_MACH_JETSON_TK1 1
+    #define CONFIG_ARM_GIC_V2 1
+
+##### Xunlong Orange Pi Zero, 256 MiB
+
+    #define CONFIG_MACH_ORANGEPI0 1
+    #define CONFIG_ARM_GIC_V2 1
+
+##### ARM Fast Model
+
+    #define CONFIG_MACH_VEXPRESS 1
+    /* Fast Model supports both, GICv2 and GICv3 */
+    #define CONFIG_ARM_GIC_V2 1
+    /* #define CONFIG_ARM_GIC_V3 */
 
 #### ARM64
 
-```
-/* Nvidia Jetson TK1 */
-#define CONFIG_MACH_JETSON_TX1 1
-#define CONFIG_ARM_GIC_V2 1
-```
+##### Nvidia Jetson TK1
 
-```
-/* Xilinx Zynq UltraScale+ MPSoC ZCU102 */
-#define CONFIG_MACH_ZYNQMP_ZCU102 1
-#define CONFIG_ARM_GIC_V2 1
-```
+    #define CONFIG_MACH_JETSON_TX1 1
+    #define CONFIG_ARM_GIC_V2 1
 
-```
-/* HiKey LeMaker 2 GiB */
-#define CONFIG_MACH_HIKEY 1
-#define CONFIG_ARM_GIC_V2 1
-```
+##### Xilinx Zynq UltraScale+ MPSoC ZCU102
 
-```
-/* ARMv8 Foundation Model */
-#define CONFIG_MACH_FOUNDATION_V8 1
-#define CONFIG_ARM_GIC_V2 1
-```
+    #define CONFIG_MACH_ZYNQMP_ZCU102 1
+    #define CONFIG_ARM_GIC_V2 1
 
-```
-/* AMD ARM-Opteron A1100 */
-#define CONFIG_MACH_AMD_SEATTLE 1
-#define CONFIG_ARM_GIC_V2 1
-```
+##### HiKey LeMaker 2 GiB
+
+    #define CONFIG_MACH_HIKEY 1
+    #define CONFIG_ARM_GIC_V2 1
+
+##### ARMv8 Foundation Model
+
+    #define CONFIG_MACH_FOUNDATION_V8 1
+    #define CONFIG_ARM_GIC_V2 1
+
+##### AMD ARM-Opteron A1100
+
+    #define CONFIG_MACH_AMD_SEATTLE 1
+    #define CONFIG_ARM_GIC_V2 1
