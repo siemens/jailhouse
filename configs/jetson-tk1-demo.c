@@ -18,6 +18,10 @@
 
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
 
+#ifndef CONFIG_INMATE_BASE
+#define CONFIG_INMATE_BASE 0x0
+#endif
+
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
@@ -31,6 +35,8 @@ struct {
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+
+		.cpu_reset_address = CONFIG_INMATE_BASE,
 	},
 
 	.cpus = {
@@ -47,7 +53,7 @@ struct {
 		},
 		/* RAM */ {
 			.phys_start = 0xfbef0000,
-			.virt_start = 0,
+			.virt_start = CONFIG_INMATE_BASE,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_LOADABLE,

@@ -36,6 +36,9 @@ General configuration parameters
      * Strip Jailhouse specific parts from inmates (e.g., heartbeat()).  This
      * allows inmates to be booted on bare-metal, without Jailhouse and is
      * mainly used for testing purposes.
+     *
+     * See configs/jetson-tk1-demo.c for the usage of this parameter in cell
+     * configurations.
      */
     #define CONFIG_BARE_METAL 1
 
