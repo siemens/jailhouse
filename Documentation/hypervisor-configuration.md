@@ -25,6 +25,20 @@ General configuration parameters
     /* Enable code coverage data collection (see Documentation/gcov.txt) */
     #define CONFIG_JAILHOUSE_GCOV 1
 
+    /*
+     * Link inmates against a custom base address.  Only supported on ARM
+     * architectures.  If this parameter is defined, inmates must be loaded to
+     * the appropriate location.
+     */
+    #define CONFIG_INMATE_BASE 0x90000000
+
+    /*
+     * Strip Jailhouse specific parts from inmates (e.g., heartbeat()).  This
+     * allows inmates to be booted on bare-metal, without Jailhouse and is
+     * mainly used for testing purposes.
+     */
+    #define CONFIG_BARE_METAL 1
+
 ### Example board specific configurations
 
 #### ARM
