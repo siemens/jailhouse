@@ -13,7 +13,7 @@
 include $(INMATES_LIB)/Makefile.lib
 include $(INMATES_LIB)/../arm-common/Makefile.lib
 
-always := lib.a
+always := lib.a inmate.lds
 
 lib-y				:= $(COMMON_OBJECTS)
 lib-y				+= header.o
