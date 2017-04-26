@@ -17,6 +17,8 @@
 #define GICC_PMR		0x0004
 #define GICC_IAR		0x000c
 #define GICC_EOIR		0x0010
+#define GICD_CTLR		0x0000
+#define  GICD_CTLR_ENABLE	(1 << 0)
 
 #define GICC_CTLR_GRPEN1	(1 << 0)
 
@@ -32,6 +34,7 @@ int gic_init(void)
 {
 	mmio_write32(GICC_V2_BASE + GICC_CTLR, GICC_CTLR_GRPEN1);
 	mmio_write32(GICC_V2_BASE + GICC_PMR, GICC_PMR_DEFAULT);
+	mmio_write32(GICD_V2_BASE + GICD_CTLR, GICD_CTLR_ENABLE);
 
 	return 0;
 }
