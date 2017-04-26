@@ -16,10 +16,12 @@
  */
 static inline void heartbeat(void)
 {
+#ifndef CONFIG_BARE_METAL
 	asm volatile (
 	"mov	x0, %0\n"
 	"hvc	#0\n"
 	: : "r" (0xbea7) : "x0");
+#endif
 }
 
 void __attribute__((used)) vector_irq(void);
