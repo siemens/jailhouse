@@ -80,24 +80,6 @@ static void __attribute__((noreturn)) help(char *prog, int exit_status)
 	exit(exit_status);
 }
 
-static int dump_console(int fd, bool non_block)
-{
-	int ret;
-	char buffer[128];
-
-	if (non_block && fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-		return -errno;
-
-	do {
-		ret = read(fd, buffer, sizeof(buffer));
-		if (ret < 0)
-			break;
-		ret = write(STDOUT_FILENO, buffer, ret);
-	} while (ret > 0);
-
-	return ret;
-}
-
 static void call_extension_script(const char *cmd, int argc, char *argv[])
 {
 	const struct extension *ext;
@@ -531,9 +513,10 @@ static int cell_management(int argc, char *argv[])
 
 static int console(int argc, char *argv[])
 {
-	int fd;
-	ssize_t ret;
 	bool non_block = true;
+	char buffer[128];
+	ssize_t ret;
+	int fd;
 
 	if (argc == 3) {
 		if (match_opt(argv[2], "-f", "--follow"))
@@ -543,7 +526,25 @@ static int console(int argc, char *argv[])
 	}
 
 	fd = open_dev();
-	ret = dump_console(fd, non_block);
+
+	if (non_block) {
+		ret = fcntl(fd, F_SETFL, O_NONBLOCK);
+		if (ret < 0) {
+			perror("fcntl(set O_NONBLOCK)");
+			goto out;
+		}
+	}
+
+	do {
+		ret = read(fd, buffer, sizeof(buffer));
+		if (ret < 0) {
+			perror("read(console)");
+			break;
+		}
+		ret = write(STDOUT_FILENO, buffer, ret);
+	} while (ret > 0);
+
+out:
 	close(fd);
 
 	return ret;
