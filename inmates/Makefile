@@ -23,12 +23,11 @@ ifeq ($(subst arm64,arm,$(SRCARCH)),arm)
 INCLUDES += -I$(src)/../hypervisor/arch/arm-common/include
 endif
 
-LINUXINCLUDE  := -I$(src)/../hypervisor/include
-KBUILD_AFLAGS += $(INCLUDES)
+LINUXINCLUDE  := $(INCLUDES)
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
-		 -fno-common -fno-stack-protector $(INCLUDES)
+		 -fno-common -fno-stack-protector
 ifneq ($(wildcard $(INC_CONFIG_H)),)
 KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif

@@ -12,9 +12,8 @@
 # the COPYING file in the top-level directory.
 #
 
-KBUILD_CFLAGS				+= -I$(INMATES_LIB)/include
-KBUILD_CFLAGS				+= -I$(INMATES_LIB)/../arm-common/include
-KBUILD_AFLAGS				+= -I$(INMATES_LIB)/include
+LINUXINCLUDE += -I$(INMATES_LIB)/include
+LINUXINCLUDE += -I$(INMATES_LIB)/../arm-common/include
 
 define DECLARE_TARGETS =
  _TARGETS = $(1)
