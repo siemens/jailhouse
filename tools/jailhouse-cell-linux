@@ -301,6 +301,7 @@ jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
 
 class ARMCommon:
     def setup(self, args, config):
+        self._cpu_reset_address = config.cpu_reset_address
         kernel_size = page_align(os.fstat(args.kernel.fileno()).st_size)
         kernel_load_offset = self.get_kernel_offset(args.kernel)
         image_size = kernel_load_offset + kernel_size + self.kernel_alignment()
@@ -384,19 +385,18 @@ Modified device tree written. Start Linux with the following commands \
 (adjusting paths as needed):\n\
 \n\
 jailhouse cell create %s\n\
-jailhouse cell load %s linux-loader.bin -s "%s" -a 0x%x %s -a 0x%x ' %
-              (args.config.name, config.name, self.params.decode(),
-               self.params_address(), args.kernel.name, self._kernel_addr),
-              end='')
+jailhouse cell load %s linux-loader.bin -a 0x%x -s "%s" -a 0x%x %s -a 0x%x ' %
+              (args.config.name, config.name, self.loader_address(),
+               self.params.decode(), self.params_address(), args.kernel.name,
+               self._kernel_addr), end='')
         if args.initrd:
             print('%s -a 0x%x ' % (args.initrd.name, self._ramdisk_addr),
                   end='')
         print('%s -a 0x%x' % (args.write_params.name, self._dtb_addr))
         print('jailhouse cell start %s' % config.name)
 
-    @staticmethod
-    def loader_address():
-        return 0
+    def loader_address(self):
+        return self._cpu_reset_address
 
     def kernel_address(self):
         return self._kernel_addr
@@ -414,9 +414,8 @@ jailhouse cell load %s linux-loader.bin -s "%s" -a 0x%x %s -a 0x%x ' %
 class ARM(ARMCommon):
     name = 'arm'
 
-    @staticmethod
-    def params_address():
-        return 0x100
+    def params_address(self):
+        return self._cpu_reset_address + 0x100
 
     @staticmethod
     def kernel_alignment():
@@ -430,9 +429,8 @@ class ARM(ARMCommon):
 class ARM64(ARMCommon):
     name = 'arm64'
 
-    @staticmethod
-    def params_address():
-        return 0x1000
+    def params_address(self):
+        return self._cpu_reset_address + 0x1000
 
     @staticmethod
     def kernel_alignment():
@@ -529,7 +527,7 @@ class Config:
          self.num_pci_devices,
          self.num_pci_caps,
          self.vpci_irq_base,
-         _) = \
+         self.cpu_reset_address) = \
             struct.unpack_from(Config._HEADER_FORMAT, self.data)
         if str(signature.decode()) != 'JHCELL':
             print('Not a cell configuration: %s' % config_file.name,
