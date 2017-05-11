@@ -511,8 +511,8 @@ class MemoryRegion:
 
 
 class Config:
-    _HEADER_FORMAT = '6sH32s4xIIIIIIIII'
-    _HEADER_REVISION = 4
+    _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ'
+    _HEADER_REVISION = 5
 
     def __init__(self, config_file):
         self.data = config_file.read()
@@ -528,7 +528,8 @@ class Config:
          self.pio_bitmap_size,
          self.num_pci_devices,
          self.num_pci_caps,
-         self.vpci_irq_base) = \
+         self.vpci_irq_base,
+         _) = \
             struct.unpack_from(Config._HEADER_FORMAT, self.data)
         if str(signature.decode()) != 'JHCELL':
             print('Not a cell configuration: %s' % config_file.name,

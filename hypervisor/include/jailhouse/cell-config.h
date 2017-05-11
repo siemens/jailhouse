@@ -40,7 +40,7 @@
 #define _JAILHOUSE_CELL_CONFIG_H
 
 /* Incremented on any layout or semantic change of system or cell config. */
-#define JAILHOUSE_CONFIG_REVISION	4
+#define JAILHOUSE_CONFIG_REVISION	5
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -72,6 +72,8 @@ struct jailhouse_cell_desc {
 	__u32 num_pci_caps;
 
 	__u32 vpci_irq_base;
+
+	__u64 cpu_reset_address;
 } __attribute__((packed));
 
 #define JAILHOUSE_MEM_READ		0x0001

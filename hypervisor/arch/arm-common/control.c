@@ -197,10 +197,10 @@ void arch_cell_reset(struct cell *cell)
 	unsigned int cpu;
 
 	/*
-	 * All CPUs but the first are initially suspended.
-	 * The first CPU starts at address 0.
+	 * All CPUs but the first are initially suspended.  The first CPU
+	 * starts at cpu_reset_address, defined in the cell configuration.
 	 */
-	per_cpu(first)->cpu_on_entry = 0;
+	per_cpu(first)->cpu_on_entry = cell->config->cpu_reset_address;
 	for_each_cpu_except(cpu, cell->cpu_set, first)
 		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
