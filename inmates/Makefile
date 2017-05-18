@@ -27,7 +27,7 @@ LINUXINCLUDE  := $(INCLUDES)
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
-		 -fno-common -fno-stack-protector
+		 -fno-common -fno-stack-protector -ffreestanding
 ifneq ($(wildcard $(INC_CONFIG_H)),)
 KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif
