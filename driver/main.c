@@ -31,6 +31,7 @@
 #include <linux/reboot.h>
 #include <linux/vmalloc.h>
 #include <linux/io.h>
+#include <linux/ioport.h>
 #include <asm/barrier.h>
 #include <asm/smp.h>
 #include <asm/cacheflush.h>
@@ -89,6 +90,7 @@ static atomic_t call_done;
 static int error_code;
 static struct jailhouse_console* volatile console_page;
 static bool console_available;
+static struct resource *hypervisor_mem_res;
 
 /* last_console contains three members:
  *   - valid: indicates if content in the page member is present
@@ -280,6 +282,11 @@ static int __jailhouse_console_dump_delta(struct jailhouse_console *console,
 static void jailhouse_firmware_free(void)
 {
 	jailhouse_sysfs_core_exit(jailhouse_dev);
+	if (hypervisor_mem_res) {
+		release_mem_region(hypervisor_mem_res->start,
+				   resource_size(hypervisor_mem_res));
+		hypervisor_mem_res = NULL;
+	}
 	vunmap(hypervisor_mem);
 	hypervisor_mem = NULL;
 }
@@ -398,13 +405,25 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	/* Unmap hypervisor_mem from a previous "enable". The mapping has to be
 	 * redone since the root-cell config might have changed. */
 	jailhouse_firmware_free();
+
+	hypervisor_mem_res = request_mem_region(hv_mem->phys_start,
+						hv_mem->size,
+						"Jailhouse hypervisor");
+	if (!hypervisor_mem_res) {
+		pr_err("jailhouse: mem_region_request failed for hypervisor "
+		       "memory.\n");
+		pr_notice("jailhouse: Did you reserve the memory with "
+			  "\"memmap=\" or \"mem=\"?\n");
+		goto error_release_fw;
+	}
+
 	/* Map physical memory region reserved for Jailhouse. */
 	hypervisor_mem = jailhouse_ioremap(hv_mem->phys_start, remap_addr,
 					   hv_mem->size);
 	if (!hypervisor_mem) {
 		pr_err("jailhouse: Unable to map RAM reserved for hypervisor "
 		       "at %08lx\n", (unsigned long)hv_mem->phys_start);
-		goto error_release_fw;
+		goto error_release_memreg;
 	}
 
 	console_page = (struct jailhouse_console*)
@@ -524,6 +543,11 @@ error_unmap:
 		iounmap(console);
 	if (clock_reg)
 		iounmap(clock_reg);
+
+error_release_memreg:
+	release_mem_region(hypervisor_mem_res->start,
+			   resource_size(hypervisor_mem_res));
+	hypervisor_mem_res = NULL;
 
 error_release_fw:
 	release_firmware(hypervisor);
