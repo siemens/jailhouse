@@ -32,7 +32,7 @@ unsigned int arch_mmio_count_regions(struct cell *cell)
 
 static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 {
-	trace_error(-EINVAL);
+	int err __attribute__((unused)) = trace_error(-EINVAL);
 	while (1);
 }
 
