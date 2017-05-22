@@ -66,7 +66,8 @@ retry:
 
 	bitmap_copy(cpumask_bits(&cell->cpus_assigned),
 		    jailhouse_cell_cpu_set(cell_desc),
-		    min(nr_cpumask_bits, (int)cell_desc->cpu_set_size * 8));
+		    min((unsigned int)nr_cpumask_bits,
+		        cell_desc->cpu_set_size * 8));
 
 	cell->num_memory_regions = cell_desc->num_memory_regions;
 	cell->memory_regions = vmalloc(sizeof(struct jailhouse_memory) *
