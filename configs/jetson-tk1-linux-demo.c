@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Configuration for linux-demo inmate on Jetson TK1:
- * 1 CPU, 239M RAM, serial port D
+ * 2 CPUs, 239M RAM, serial port D
  *
  * Copyright (c) Siemens AG, 2014-2016
  *
