@@ -14,6 +14,7 @@
 
 #include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
+#include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
@@ -28,7 +29,7 @@
 #define NUM_EXCP_DESC		20
 #define IRQ_DESC_START		32
 
-static u64 gdt[] = {
+static u64 gdt[NUM_GDT_DESC] = {
 	[GDT_DESC_NULL]   = 0,
 	[GDT_DESC_CODE]   = 0x00af9b000000ffffUL,
 	[GDT_DESC_TSS]    = 0x0000890000000000UL,
@@ -127,6 +128,9 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	/* read TR and TSS descriptor */
 	asm volatile("str %0" : "=m" (cpu_data->linux_tss.selector));
 	read_descriptor(cpu_data, &cpu_data->linux_tss);
+
+	if (cpu_data->linux_tss.selector / 8 >= NUM_GDT_DESC)
+		return trace_error(-EINVAL);
 
 	/* save CS as long as we have access to the Linux page table */
 	asm volatile("mov %%cs,%0" : "=m" (cpu_data->linux_cs.selector));
@@ -239,7 +243,8 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 
 void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 {
-	u64 *gdt;
+	unsigned int tss_idx;
+	u64 *linux_gdt;
 
 	if (!cpu_data->initialized)
 		return;
@@ -251,6 +256,16 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 	write_cr0(cpu_data->linux_cr0);
 	write_cr3(cpu_data->linux_cr3);
 	write_cr4(cpu_data->linux_cr4);
+
+	/*
+	 * Copy Linux TSS descriptor into our GDT, clearing the busy flag,
+	 * then reload TR from it. We can't use Linux' GDT as it is r/o.
+	 */
+	linux_gdt = (u64 *)cpu_data->linux_gdtr.base;
+	tss_idx = cpu_data->linux_tss.selector / 8;
+	gdt[tss_idx] = linux_gdt[tss_idx] & ~DESC_TSS_BUSY;
+	gdt[tss_idx + 1] = linux_gdt[tss_idx + 1];
+	asm volatile("ltr %%ax" : : "a" (cpu_data->linux_tss.selector));
 
 	asm volatile("lgdtq %0" : : "m" (cpu_data->linux_gdtr));
 	asm volatile("lidtq %0" : : "m" (cpu_data->linux_idtr));
@@ -266,11 +281,6 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 		"mfence\n\t"
 		"swapgs\n\t"
 		: : "r" (cpu_data->linux_gs.selector));
-
-	/* clear busy flag in Linux TSS, then reload it */
-	gdt = (u64 *)cpu_data->linux_gdtr.base;
-	gdt[cpu_data->linux_tss.selector / 8] &= ~DESC_TSS_BUSY;
-	asm volatile("ltr %%ax" : : "a" (cpu_data->linux_tss.selector));
 
 	write_msr(MSR_FS_BASE, cpu_data->linux_fs.base);
 	write_msr(MSR_GS_BASE, cpu_data->linux_gs.base);

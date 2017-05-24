@@ -127,7 +127,11 @@
 #define GDT_DESC_CODE					1
 #define GDT_DESC_TSS					2
 #define GDT_DESC_TSS_HI					3
-#define NUM_GDT_DESC					4
+/*
+ * Linux uses 16 entries, we only 4. But we need to be able to reload the Linux
+ * TSS from our GDT because Linux write-protects its GDT. So, leave some space.
+ */
+#define NUM_GDT_DESC					16
 
 #define X86_INST_LEN_CPUID				2
 #define X86_INST_LEN_RDMSR				2
