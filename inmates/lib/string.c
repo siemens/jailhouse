@@ -36,7 +36,7 @@ int strncmp(const char *s1, const char *s2, unsigned long n)
 	int diff;
 
 	while (n-- > 0) {
-		diff = *s1 - *s2;
+		diff = *s1++ - *s2++;
 		if (diff)
 			return diff;
 		if (*s1 == 0)
