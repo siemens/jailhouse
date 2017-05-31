@@ -59,8 +59,8 @@ struct {
 				JAILHOUSE_MEM_COMM_REGION,
 		},
 		/* HDA BAR0 */ {
-			.phys_start = 0xfebf0000,
-			.virt_start = 0xfebf0000,
+			.phys_start = 0xfebd4000,
+			.virt_start = 0xfebd4000,
 			.size = 0x00004000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
