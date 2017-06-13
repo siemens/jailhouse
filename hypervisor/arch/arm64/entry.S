@@ -17,8 +17,10 @@
 #include <asm/paging.h>
 #include <asm/percpu.h>
 #include <asm/jailhouse_hypercall.h>
+#include <jailhouse/header.h>
 
-#define LINUX_HVC_SET_VECTORS		1
+#define LINUX_HVC_SET_VECTORS_LEGACY	1
+#define LINUX_HVC_SET_VECTORS		0
 
 /* x11 must contain the virt-to-phys offset */
 .macro virt2phys, register
@@ -46,6 +48,7 @@ arch_entry:
 	 * x15: virtual UART address
 	 * x16: cpuid
 	 * x17: caller lr
+	 * x18: hyp-stub version
 	 */
 	mov	x16, x0
 	mov	x17, x30
@@ -55,6 +58,8 @@ arch_entry:
 	 * MMU. Later, we will only read a stale memory content.
 	 */
 	adr     x0, hypervisor_header
+
+	ldr	x18, [x0, #HEADER_HYP_STUB_VERSION]
 
 	ldr	x15, =UART_BASE
 
@@ -93,9 +98,15 @@ arch_entry:
 	 */
 
 	/* install bootstrap_vectors */
-	mov	x0, #LINUX_HVC_SET_VECTORS
 	ldr	x1, =bootstrap_vectors
 	virt2phys x1
+
+	/* choose opcode */
+	mov	x0, #LINUX_HVC_SET_VECTORS
+	cmp	x18, #HYP_STUB_ABI_LEGACY
+	b.ne	1f
+	mov	x0, #LINUX_HVC_SET_VECTORS_LEGACY
+1:
 	hvc	#0
 
 	hvc	#0	/* bootstrap vectors enter EL2 at el2_entry */
