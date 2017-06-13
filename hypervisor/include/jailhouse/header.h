@@ -74,4 +74,8 @@ struct jailhouse_header {
 	/** Virtual address of the clock gate register (if used).
 	 * @note Filled by Linux loader driver before entry. */
 	void *debug_clock_reg;
+
+	/** Physical address of Linux's hyp-stubs.
+	 * @note Filled by Linux loader driver before entry. */
+	unsigned long long arm_linux_hyp_vectors;
 };

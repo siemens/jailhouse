@@ -75,6 +75,10 @@ MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
 #endif
 MODULE_VERSION(JAILHOUSE_VERSION);
 
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+extern unsigned int __hyp_stub_vectors[];
+#endif
+
 struct console_state {
 	unsigned int head;
 	unsigned int last_console_id;
@@ -438,6 +442,10 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	header = (struct jailhouse_header *)hypervisor_mem;
 	header->max_cpus = max_cpus;
+
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	header->arm_linux_hyp_vectors = virt_to_phys(__hyp_stub_vectors);
+#endif
 
 	err = jailhouse_sysfs_core_init(jailhouse_dev, header->core_size);
 	if (err)
