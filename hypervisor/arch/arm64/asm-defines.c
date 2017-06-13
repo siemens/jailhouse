@@ -32,7 +32,6 @@ void common(void)
 	       __builtin_offsetof(struct per_cpu, stack) + \
 	       FIELD_SIZEOF(struct per_cpu, stack));
 	DEFINE(PERCPU_SIZE_SHIFT_ASM, PERCPU_SIZE_SHIFT);
-	OFFSET(PERCPU_SAVED_VECTORS, per_cpu, saved_vectors);
 	BLANK();
 
 	DEFINE(DCACHE_CLEAN_ASM, DCACHE_CLEAN);

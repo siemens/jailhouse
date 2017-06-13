@@ -27,7 +27,6 @@
 
 struct per_cpu {
 	u8 stack[PAGE_SIZE];
-	unsigned long saved_vectors;
 
 	/* common fields */
 	unsigned int cpu_id;

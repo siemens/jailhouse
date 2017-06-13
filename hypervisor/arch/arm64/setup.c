@@ -131,6 +131,10 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	arch_paging_flush_cpu_caches(cpu_data, sizeof(*cpu_data));
 	dsb(ish);
 
+	/* hand over control of EL2 back to Linux */
+	asm volatile("msr vbar_el2, %0"
+		:: "r" (hypervisor_header.arm_linux_hyp_vectors));
+
 	/* Return to EL1 */
 	shutdown_func((struct per_cpu *)paging_hvirt2phys(cpu_data));
 }

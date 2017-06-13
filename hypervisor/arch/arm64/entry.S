@@ -18,7 +18,6 @@
 #include <asm/percpu.h>
 #include <asm/jailhouse_hypercall.h>
 
-#define LINUX_HVC_GET_VECTORS		0
 #define LINUX_HVC_SET_VECTORS		1
 
 /* x11 must contain the virt-to-phys offset */
@@ -45,17 +44,11 @@ arch_entry:
 	 * x13: virtual hypervisor address
 	 * x14: physical UART address
 	 * x15: virtual UART address
-	 * x16: saved hyp vectors
-	 * x17: cpuid
-	 * x18: caller lr
+	 * x16: cpuid
+	 * x17: caller lr
 	 */
-	mov	x17, x0
-	mov	x18, x30
-
-	/* keep the Linux stub EL2 vectors for later */
-	mov	x0, #LINUX_HVC_GET_VECTORS
-	hvc	#0
 	mov	x16, x0
+	mov	x17, x30
 
 	/*
 	 * Access the just updated hypervisor_header prior to turning off the
@@ -128,7 +121,7 @@ el2_entry:
 	adr	x1, hyp_vectors
 	msr	vbar_el2, x1
 
-	mov	x0, x17		/* preserved cpuid, will be passed to entry */
+	mov	x0, x16		/* preserved cpuid, will be passed to entry */
 	adrp	x1, __page_pool
 	mov	x2, #(1 << PERCPU_SIZE_SHIFT_ASM)
 	/*
@@ -139,7 +132,7 @@ el2_entry:
 
 	/* set up the stack and push the root cell's callee saved registers */
 	add	sp, x1, #PERCPU_STACK_END
-	stp	x29, x18, [sp, #-16]!	/* note: our caller lr is in x18 */
+	stp	x29, x17, [sp, #-16]!	/* note: our caller lr is in x17 */
 	stp	x27, x28, [sp, #-16]!
 	stp	x25, x26, [sp, #-16]!
 	stp	x23, x24, [sp, #-16]!
@@ -155,10 +148,6 @@ el2_entry:
 
 	mov	x29, xzr	/* reset fp,lr */
 	mov	x30, xzr
-
-	/* save the Linux stub vectors we kept earlier */
-	add	x2, x1, #PERCPU_SAVED_VECTORS
-	str	x16, [x2]
 
 	/* Call entry(cpuid, struct per_cpu*). Should not return. */
 	bl	entry
@@ -188,11 +177,6 @@ shutdown_el2:
 	isb
 
 	msr	tpidr_el2, xzr
-
-	/* hand over control of EL2 back to Linux */
-	add	x1, x0, #PERCPU_SAVED_VECTORS
-	ldr	x2, [x1]
-	msr	vbar_el2, x2
 
 	/* Call vmreturn(guest_registers) */
 	add	x0, x0, #(PERCPU_STACK_END - 32 * 8)
