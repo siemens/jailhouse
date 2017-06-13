@@ -44,7 +44,7 @@ static int set_id_map(int i, unsigned long address, unsigned long size)
 
 	/* The trampoline code should be contained in one page. */
 	if ((address & PAGE_MASK) != ((address + size - 1) & PAGE_MASK)) {
-		printk("FATAL: Unable to IDmap more than one page at at time.\n");
+		printk("FATAL: Unable to IDmap more than one page at a time.\n");
 		return -E2BIG;
 	}
 
