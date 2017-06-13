@@ -39,8 +39,6 @@ struct registers {
 #define dsb(domain)	asm volatile("dsb " #domain ::: "memory")
 #define isb()		asm volatile("isb")
 
-unsigned int hvc(unsigned int r0, ...);
-
 static inline void cpu_relax(void)
 {
 	asm volatile("" : : : "memory");

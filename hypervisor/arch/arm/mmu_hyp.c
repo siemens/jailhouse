@@ -34,9 +34,6 @@ static struct {
 
 extern unsigned long trampoline_start, trampoline_end;
 
-/* When disabling Jailhouse, we will need to restore the Linux stub */
-static unsigned long saved_vectors = 0;
-
 static int set_id_map(int i, unsigned long address, unsigned long size)
 {
 	if (i >= ARRAY_SIZE(id_maps))
@@ -274,14 +271,6 @@ int switch_exception_level(struct per_cpu *cpu_data)
 				 PAGE_DEFAULT_FLAGS);
 
 	/*
-	 * The hypervisor stub allows to fetch its current vector base by doing
-	 * an HVC with r0 = -1. They will need to be restored when disabling
-	 * jailhouse.
-	 */
-	if (saved_vectors == 0)
-		saved_vectors = hvc(-1);
-
-	/*
 	 * paging struct won't be easily accessible when initializing el2, only
 	 * the CPU datas will be readable at their physical address
 	 */
@@ -363,7 +352,7 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	 * - reset the vectors
 	 * - return to EL1
 	 */
-	shutdown_fun_phys(regs_phys, saved_vectors);
+	shutdown_fun_phys(regs_phys, hypervisor_header.arm_linux_hyp_vectors);
 
 	__builtin_unreachable();
 }
