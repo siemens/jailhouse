@@ -445,6 +445,11 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 	header->arm_linux_hyp_vectors = virt_to_phys(__hyp_stub_vectors);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
+	header->arm_linux_hyp_abi = HYP_STUB_ABI_LEGACY;
+#else
+	header->arm_linux_hyp_abi = HYP_STUB_ABI_OPCODE;
+#endif
 #endif
 
 	err = jailhouse_sysfs_core_init(jailhouse_dev, header->core_size);

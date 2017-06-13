@@ -16,6 +16,10 @@
 #include <asm/setup.h>
 #include <asm/sysregs.h>
 
+/* This is only used if we use the new hyp-stub ABI that was introduced in
+ * 4.12-rc1 */
+#define LINUX_HVC_SET_VECTOR 0
+
 /* functions used for translating addresses during the MMU setup process */
 typedef void* (*phys2virt_t)(unsigned long);
 typedef unsigned long (*virt2phys_t)(volatile const void *);
@@ -297,8 +301,19 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	 */
 	arm_dcaches_clean_by_sw();
 
-	/* replace Linux hyp-stubs by our own bootstrap vector table */
-	hvc(phys_bootstrap, 0);
+	/* Replace Linux hyp-stubs by our own bootstrap vector table.
+	 *
+	 * Hyp-stub ABI semantic changed since 4.12-rc1 on ARM. To share the
+	 * hvc routine among both versions, we simply zero r1 which is
+	 * meaningless for the old ABI. The new ABI expects an opcode in r0 and
+	 * an argument in r1. See Linux
+	 * Documentation/virtual/kvm/arm/hyp-abi.txt .
+	 */
+	if (hypervisor_header.arm_linux_hyp_abi == HYP_STUB_ABI_LEGACY)
+		hvc(phys_bootstrap, 0);
+	else
+		hvc(LINUX_HVC_SET_VECTOR, phys_bootstrap);
+
 	cpu_switch_el2(virt2phys);
 	/*
 	 * At this point, we are at EL2, and we work with physical addresses.

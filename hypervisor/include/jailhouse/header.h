@@ -14,6 +14,11 @@
 
 #define JAILHOUSE_SIGNATURE	"JAILHOUS"
 
+#define HYP_STUB_ABI_LEGACY 0
+#define HYP_STUB_ABI_OPCODE 1
+
+#ifndef __ASSEMBLY__
+
 /**
  * @ingroup Setup
  * @{
@@ -78,4 +83,9 @@ struct jailhouse_header {
 	/** Physical address of Linux's hyp-stubs.
 	 * @note Filled by Linux loader driver before entry. */
 	unsigned long long arm_linux_hyp_vectors;
+	/** Denotes hyp-stub ABI for arm and arm64:
+	 * @note Filled by Linux loader driver before entry. */
+	unsigned int arm_linux_hyp_abi;
 };
+
+#endif
