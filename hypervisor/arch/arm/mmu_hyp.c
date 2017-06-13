@@ -34,6 +34,15 @@ static struct {
 
 extern unsigned long trampoline_start, trampoline_end;
 
+static inline unsigned int hvc(unsigned int r0, unsigned int r1)
+{
+	register unsigned int __r0 asm("r0") = r0;
+	register unsigned int __r1 asm("r1") = r1;
+
+	asm volatile("hvc #0" : "=r" (__r0) : "r" (__r0), "r" (__r1));
+	return __r0;
+}
+
 static int set_id_map(int i, unsigned long address, unsigned long size)
 {
 	if (i >= ARRAY_SIZE(id_maps))
@@ -91,16 +100,9 @@ static void destroy_id_maps(void)
 }
 
 static void __attribute__((naked, noinline))
-cpu_switch_el2(unsigned long phys_bootstrap, virt2phys_t virt2phys)
+cpu_switch_el2(virt2phys_t virt2phys)
 {
 	asm volatile(
-		/*
-		 * The linux hyp stub allows to install the vectors with a
-		 * single hvc. The vector base address is in r0
-		 * (phys_bootstrap).
-		 */
-		"hvc	#0\n\t"
-
 		/*
 		 * Now that the bootstrap vectors are installed, call setup_el2
 		 * with the translated physical values of lr and sp as
@@ -295,7 +297,9 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	 */
 	arm_dcaches_clean_by_sw();
 
-	cpu_switch_el2(phys_bootstrap, virt2phys);
+	/* replace Linux hyp-stubs by our own bootstrap vector table */
+	hvc(phys_bootstrap, 0);
+	cpu_switch_el2(virt2phys);
 	/*
 	 * At this point, we are at EL2, and we work with physical addresses.
 	 * The MMU needs to be initialised and execution must go back to virtual
