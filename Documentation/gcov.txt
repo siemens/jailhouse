@@ -3,7 +3,7 @@ Extracting code coverage information from the hypervisor
 
 Jailhouse supports collecting code coverage information while it is running.
 In order to use that feature you have to set CONFIG_JAILHOUSE_GCOV in the
-configuration system. (see Documentation/hypervisor-configuration.txt)
+configuration system. (see Documentation/hypervisor-configuration.md)
 
 Now rebuild jailhouse and run your favorite example cell. Follow the usual
 workflow until `jailhouse disable`, but do not unload the jailhouse kernel
