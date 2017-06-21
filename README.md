@@ -43,6 +43,10 @@ Frequently Asked Questions (FAQ):
 
  - See [FAQ file](FAQ.md)
 
+IRC channel:
+  - Freenode, irc.freenode.net, #jailhouse
+  - Webchat: https://webchat.freenode.net/?channels=jailhouse
+
 Mailing list:
 
   - jailhouse-dev@googlegroups.com
