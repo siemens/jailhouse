@@ -13,7 +13,7 @@
 # includes installation-related variables and definitions
 include $(src)/../scripts/include.mk
 
-LD = $(CC)
+LD = $(CC) $(KBUILD_CFLAGS)
 NOSTDINC_FLAGS :=
 LINUXINCLUDE := -I$(src)/../driver
 KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
@@ -21,6 +21,10 @@ KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
 	-DJAILHOUSE_VERSION=\"$(shell cat $(src)/../VERSION)\" $(EXTRA_CFLAGS)
 LDFLAGS :=
 GCOV_PROFILE := n
+
+# force no-pie for distro compilers that enable pie by default
+KBUILD_CFLAGS += $(call cc-option, -fno-pie)
+KBUILD_CFLAGS += $(call cc-option, -no-pie)
 
 BINARIES := jailhouse
 
