@@ -67,8 +67,8 @@ struct {
 				JAILHOUSE_MEM_LOADABLE,
 		},
 		/* IVSHMEM shared memory region */ {
-			.phys_start = 0x7f000000,
-			.virt_start = 0x7f000000,
+			.phys_start = 0x7bf00000,
+			.virt_start = 0x7bf00000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_ROOTSHARED,
