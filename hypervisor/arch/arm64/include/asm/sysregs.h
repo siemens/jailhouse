@@ -153,6 +153,11 @@
 #define ESR_EC_VECTOR32		0x3A
 #define ESR_EC_BRK64		0x3C
 
+#define ESR_MATCH_MCR_MRC(esr, op0, op1, crn, crm, op2)		\
+	(((esr) & (BIT_MASK(21, 10) | BIT_MASK(4, 1))) ==	\
+	 (((op0) << 20) | ((op2) << 17) | ((op1) << 14) |	\
+	  ((crn) << 10) | ((crm) << 1)))
+
 /* exception level in SPSR_ELx */
 #define SPSR_EL(spsr)		(((spsr) & 0xc) >> 2)
 

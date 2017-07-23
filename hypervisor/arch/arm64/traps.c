@@ -58,6 +58,24 @@ static int handle_hvc(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
+static int handle_sysreg(struct trap_context *ctx)
+{
+	u32 esr = ctx->esr;
+	u32 rt  = (esr >> 5) & 0x1f;
+
+	/* All handled registers are write-only. */
+	if (esr & 1)
+		return TRAP_UNHANDLED;
+
+	if (ESR_MATCH_MCR_MRC(esr, 3, 0, 12, 11, 5) && /* ICC_SGI1R */
+	    gicv3_handle_sgir_write(rt == 31 ? 0 : ctx->regs[rt])) {
+		arch_skip_instruction(ctx);
+		return TRAP_HANDLED;
+	}
+
+	return TRAP_UNHANDLED;
+}
+
 static int handle_iabt(struct trap_context *ctx)
 {
 	unsigned long hpfar, hdfar;
@@ -141,8 +159,9 @@ static void fill_trap_context(struct trap_context *ctx, struct registers *regs)
 
 static const trap_handler trap_handlers[0x40] =
 {
-	[ESR_EC_SMC64]		= handle_smc,
 	[ESR_EC_HVC64]		= handle_hvc,
+	[ESR_EC_SMC64]		= handle_smc,
+	[ESR_EC_SYS64]		= handle_sysreg,
 	[ESR_EC_IABT_LOW]	= handle_iabt,
 	[ESR_EC_DABT_LOW]	= arch_handle_dabt,
 };
