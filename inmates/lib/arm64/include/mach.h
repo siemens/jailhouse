@@ -19,16 +19,12 @@
 #define GICD_V2_BASE	((void *)0xe1110000)
 #define GICC_V2_BASE	((void *)0xe112f000)
 
-#define TIMER_IRQ	27
-
 #elif defined(CONFIG_MACH_FOUNDATION_V8)
 #define CON_TYPE	"PL011"
 #define CON_BASE	0x1c090000
 
 #define GICD_V2_BASE	((void *)0x2c001000)
 #define GICC_V2_BASE	((void *)0x2c002000)
-
-#define TIMER_IRQ	27
 
 #elif defined(CONFIG_MACH_HIKEY)
 #define CON_TYPE	"PL011"
@@ -37,16 +33,12 @@
 #define GICD_V2_BASE	((void *)0xf6801000)
 #define GICC_V2_BASE	((void *)0xf6802000)
 
-#define TIMER_IRQ	27
-
 #elif defined(CONFIG_MACH_JETSON_TX1)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x70006000
 
 #define GICD_V2_BASE	((void *)0x50041000)
 #define GICC_V2_BASE	((void *)0x50042000)
-
-#define TIMER_IRQ	27
 
 #elif defined(CONFIG_MACH_ZYNQMP_ZCU102)
 #define CON_TYPE	"XUARTPS"
@@ -55,6 +47,9 @@
 #define GICD_V2_BASE	((void *)0xf9010000)
 #define GICC_V2_BASE	((void *)0xf902f000)
 
-#define TIMER_IRQ	27
 
+#endif
+
+#ifndef TIMER_IRQ
+#define TIMER_IRQ	27
 #endif

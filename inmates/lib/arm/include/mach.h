@@ -24,8 +24,6 @@
 #define GICD_V2_BASE	((void *)0x50041000)
 #define GICC_V2_BASE	((void *)0x50042000)
 
-#define TIMER_IRQ	27
-
 #elif defined(CONFIG_MACH_BANANAPI)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c29c00
@@ -37,16 +35,12 @@
 #define GICD_V2_BASE	((void *)0x01c81000)
 #define GICC_V2_BASE	((void *)0x01c82000)
 
-#define TIMER_IRQ	27
-
 #elif defined(CONFIG_MACH_ORANGEPI0)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c28000
 
 #define GICD_V2_BASE	((void *)0x01c81000)
 #define GICC_V2_BASE	((void *)0x01c82000)
-
-#define TIMER_IRQ	27
 
 #elif defined(CONFIG_MACH_VEXPRESS)
 #define CON_TYPE	"PL011"
@@ -58,6 +52,8 @@
 #define GICD_V3_BASE	((void *)0x2f000000)
 #define GICR_V3_BASE	((void *)0x2f100000)
 
-#define TIMER_IRQ	27
+#endif
 
+#ifndef TIMER_IRQ
+#define TIMER_IRQ      27
 #endif
