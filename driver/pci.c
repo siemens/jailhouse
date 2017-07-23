@@ -251,6 +251,7 @@ static const struct of_device_id gic_of_match[] = {
 	{ .compatible = "arm,cortex-a15-gic", },
 	{ .compatible = "arm,cortex-a7-gic", },
 	{ .compatible = "arm,gic-400", },
+	{ .compatible = "arm,gic-v3", },
 	{},
 };
 
