@@ -1,0 +1,83 @@
+/*
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate test on ESPRESSObin,
+ * corresponds to configs/espressobin-linux-demo.c
+ *
+ * Copyright (c) Siemens AG, 2016-2017
+ *
+ * Authors:
+ *  Jan Kiszka <jan.kiszka@siemens.com>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/dts-v1/;
+
+/ {
+	model = "Jailhouse cell on ESPRESSObin";
+
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu@1 {
+			compatible = "arm,cortex-a53", "arm,armv8";
+			device_type = "cpu";
+			reg = <0x0 0x1>;
+			enable-method = "psci";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	gic: interrupt-controller@d1d00000 {
+		compatible = "arm,gic-v3";
+		#interrupt-cells = <3>;
+		interrupt-controller;
+		reg = <0x0 0xd1d00000 0x0 0x10000>, /* GICD */
+		      <0x0 0xd1d60000 0x0 0x20000>; /* GICR */
+	};
+
+	uart0: serial@d0012000 {
+		compatible = "marvell,armada-3700-uart";
+		reg = <0x0 0xd0012000 0x0 0x400>;
+		interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	vpci@fc000000 {
+		compatible = "pci-host-ecam-generic";
+		device_type = "pci";
+		bus-range = <0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 108 0>,
+				<0 0 0 2 &gic GIC_SPI 109 0>,
+				<0 0 0 3 &gic GIC_SPI 110 0>,
+				<0 0 0 4 &gic GIC_SPI 111 0>;
+		reg = <0x0 0xfc000000 0x0 0x100000>;
+		ranges =
+			<0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+	};
+};
