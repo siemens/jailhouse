@@ -40,7 +40,7 @@ GCOV_PROFILE := n
 
 OBJS-y := ../string.o ../cmdline.o
 OBJS-y += printk.o gic.o timer.o
-OBJS-y += uart-jailhouse.o uart-pl011.o uart-8250.o uart-xuartps.o
+OBJS-y += uart-jailhouse.o uart-pl011.o uart-8250.o uart-xuartps.o uart-mvebu.o
 OBJS-y += gic-v2.o gic-v3.o
 
 COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))
