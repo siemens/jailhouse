@@ -558,8 +558,11 @@ error_unmap:
 		iounmap(clock_reg);
 
 error_release_memreg:
-	release_mem_region(hypervisor_mem_res->start,
-			   resource_size(hypervisor_mem_res));
+	/* jailhouse_firmware_free() could have been called already and
+	 * has released hypervisor_mem_res. */
+	if (hypervisor_mem_res)
+		release_mem_region(hypervisor_mem_res->start,
+				resource_size(hypervisor_mem_res));
 	hypervisor_mem_res = NULL;
 
 error_release_fw:
