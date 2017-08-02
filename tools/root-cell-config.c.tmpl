@@ -87,7 +87,7 @@ struct {
 			.pci_mmconfig_end_bus = ${hex(mmconfig.end_bus)},
 			.x86 = {
 				.pm_timer_address = ${hex(pm_timer_base)},
-				.vtd_interrupt_limit = 256,
+				.vtd_interrupt_limit = ${int(vtd_interrupt_limit)},
 				% if iommu_units:
 				.iommu_units = {
 					% for unit in iommu_units:

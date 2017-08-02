@@ -21,6 +21,7 @@
 from __future__ import print_function
 import sys
 import os
+import math
 import re
 import argparse
 import struct
@@ -639,6 +640,7 @@ def parse_iomem(pcidevices):
 
 
 def parse_pcidevices():
+    int_src_cnt = 0
     devices = []
     caps = []
     basedir = '/sys/bus/pci/devices'
@@ -660,8 +662,9 @@ def parse_pcidevices():
                     d.caps[0].comments.append(str(d))
                     d.caps_start = len(caps)
                     caps.extend(d.caps)
+            int_src_cnt += max(d.num_msi_vectors, d.num_msix_vectors)
             devices.append(d)
-    return (devices, caps)
+    return (devices, caps, int_src_cnt)
 
 
 def parse_kernel_cmdline():
@@ -1146,7 +1149,13 @@ if jh_enabled == '1':
           file=sys.stderr)
     sys.exit(1)
 
-(pcidevices, pcicaps) = parse_pcidevices()
+IOAPIC_MAX_PINS = 120
+int_src_count = IOAPIC_MAX_PINS
+
+(pcidevices, pcicaps, cnt) = parse_pcidevices()
+
+int_src_count += cnt
+vtd_interrupt_limit = 2**math.ceil(math.log(int_src_count, 2))
 
 product = [input_readline('/sys/class/dmi/id/sys_vendor',
                           True).rstrip(),
@@ -1209,6 +1218,7 @@ kwargs = {
     'cpucount': cpucount,
     'irqchips': ioapics,
     'pm_timer_base': pm_timer_base,
+    'vtd_interrupt_limit': vtd_interrupt_limit,
     'mmconfig': mmconfig,
     'iommu_units': iommu_units,
     'debug_console': debug_console,
