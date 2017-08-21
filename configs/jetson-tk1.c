@@ -23,7 +23,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[20];
+	struct jailhouse_memory mem_regions[22];
 	struct jailhouse_irqchip irqchips[2];
 	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
@@ -177,10 +177,17 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* XUSB */ {
+		/* XUSB_HOST */ {
 			.phys_start = 0x70090000,
 			.virt_start = 0x70090000,
 			.size = 0xa000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* XUSB_PADCTL */ {
+			.phys_start = 0x7009f000,
+			.virt_start = 0x7009f000,
+			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
@@ -188,6 +195,13 @@ struct {
 			.phys_start = 0x700b0000,
 			.virt_start = 0x700b0000,
 			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* XUSB_DEV */ {
+			.phys_start = 0x700d0000,
+			.virt_start = 0x700d0000,
+			.size = 0xa000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
@@ -245,7 +259,7 @@ struct {
 				0xffffff00, 0xffffffff, 0x00000000,
 				0x00000000, 0x00000000, 0x00000000,
 			},
-			.shmem_region = 19,
+			.shmem_region = 21,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
 	},
