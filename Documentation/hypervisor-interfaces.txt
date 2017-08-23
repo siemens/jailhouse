@@ -273,10 +273,12 @@ Communication Region
 --------------------
 
 The communication region is a per-cell shared memory area that both the
-hypervisor and the particular cell can read from and write to. It is an
-optional communication mechanism. If the region shall be used by a cell, it
+hypervisor and the particular cell can read from and write to by default. It is
+an optional communication mechanism. If the region shall be used by a cell, it
 has to be mapped into the cell's address space via its configuration (see [2]
-for details).
+for details). If the cell is configured to be passive with respect to the
+communication region (cell flag JAILHOUSE_CELL_PASSIVE_COMMREG) and the region
+is mapped, it has to be declared read-only in the cell configuration.
 
 
 Communication region layout

@@ -53,8 +53,7 @@ struct {
 		/* communication region */ {
 			.virt_start = 0x00100000,
 			.size = 0x00001000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_COMM_REGION,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_COMM_REGION,
 		},
 	},
 
