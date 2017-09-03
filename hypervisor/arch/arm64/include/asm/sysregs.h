@@ -30,8 +30,9 @@
 			| PSR_MODE_EL1h)
 
 #define MPIDR_CPUID_MASK	0xff00ffffff
-#define MPIDR_MP_BIT		(1 << 31)
+#define MPIDR_AFF0_MASK		0x00000000ff
 #define MPIDR_U_BIT		(1 << 30)
+#define MPIDR_MP_BIT		(1 << 31)
 
 #define SCTLR_M_BIT	(1 << 0)
 #define SCTLR_A_BIT	(1 << 1)

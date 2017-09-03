@@ -216,43 +216,27 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 {
 	struct per_cpu *cpu_data = arg;
 
-	/* Change the ID register, all other accesses are allowed. */
-	if (!mmio->is_write) {
-		switch (mmio->address) {
-		case GICR_TYPER:
-			/*
-			 * Declare each redistributor region to be last. This
-			 * avoids that we miss one and cause the guest to
-			 * overscan while matching redistributors in a
-			 * partitioned region.
-			 */
-			mmio->value = GICR_TYPER_Last;
-
-			/* AArch64 can use a writeq for this register */
-			if (mmio->size == 8)
-				mmio->value |= (u64)cpu_data->virt_id << 32;
-
-			return MMIO_HANDLED;
-		case GICR_TYPER + 4:
-			/* Upper bits contain the affinity */
-			mmio->value = cpu_data->virt_id;
-			return MMIO_HANDLED;
-		}
-	}
 	mmio_perform_access(cpu_data->gicr.base, mmio);
+
+	/*
+	 * Declare each redistributor region to be last. This avoids that we
+	 * miss one and cause the guest to overscan while matching
+	 * redistributors in a partitioned region.
+	 */
+	if (mmio->address == GICR_TYPER && !mmio->is_write)
+		mmio->value |= GICR_TYPER_Last;
+
 	return MMIO_HANDLED;
 }
 
 static int gic_cell_init(struct cell *cell)
 {
-	unsigned long redist_base = system_config->platform_info.arm.gicr_base;
-	unsigned long redist_size = gic_version == 4 ? 0x40000 : 0x20000;
 	unsigned int cpu;
 
 	for_each_cpu(cpu, cell->cpu_set)
-		mmio_region_register(cell,
-			redist_base + per_cpu(cpu)->virt_id * redist_size,
-			redist_size, gic_handle_redist_access, per_cpu(cpu));
+		mmio_region_register(cell, per_cpu(cpu)->gicr.phys_addr,
+				     gic_version == 4 ? 0x40000 : 0x20000,
+				     gic_handle_redist_access, per_cpu(cpu));
 
 	return 0;
 }
@@ -330,19 +314,24 @@ enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 	if (!irqchip_irq_in_cell(cell, irq))
 		return MMIO_HANDLED;
 
-	/* Translate the virtual cpu id into the physical one */
 	if (mmio->is_write) {
-		mmio->value = arm_cpu_virt2phys(cell, mmio->value);
-		if (mmio->value == -1) {
-			printk("Attempt to route IRQ%d outside of cell\n", irq);
-			return MMIO_ERROR;
-		}
-		mmio_perform_access(gicd_base, mmio);
+		/*
+		 * Validate that the target CPU is part of the cell.
+		 * Note that we do not support Interrupt Routing Mode = 1.
+		 */
+		for_each_cpu(cpu, cell->cpu_set)
+			if ((per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK) ==
+			    mmio->value) {
+				mmio_perform_access(gicd_base, mmio);
+				return MMIO_HANDLED;
+			}
+
+		printk("Attempt to route IRQ%d outside of cell\n", irq);
+		return MMIO_ERROR;
 	} else {
-		cpu = mmio_read32(gicd_base + GICD_IROUTER + 8 * irq);
-		mmio->value = arm_cpu_phys2virt(cpu);
+		mmio->value = mmio_read32(gicd_base + GICD_IROUTER + 8 * irq);
+		return MMIO_HANDLED;
 	}
-	return MMIO_HANDLED;
 }
 
 static void gic_eoi_irq(u32 irq_id, bool deactivate)

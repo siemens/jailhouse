@@ -56,6 +56,6 @@ extern spinlock_t dist_lock;
 
 enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 				      unsigned int irq);
-void gic_handle_sgir_write(struct sgi *sgi, bool virt_input);
+void gic_handle_sgir_write(struct sgi *sgi, bool affinity_routing);
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

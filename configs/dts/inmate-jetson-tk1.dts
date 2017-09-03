@@ -29,17 +29,15 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu@2 {
 			compatible = "arm,cortex-a15";
 			device_type = "cpu";
-			/* Linux expects a CPU 0 to be present */
-			reg = <0x0>;
+			reg = <0x2>;
 		};
 
-		cpu@1 {
+		cpu@3 {
 			compatible = "arm,cortex-a15";
 			device_type = "cpu";
-			/* this has to reflect the real ID */
 			reg = <0x3>;
 		};
 	};

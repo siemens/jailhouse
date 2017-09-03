@@ -127,7 +127,7 @@ static enum mmio_result handle_sgir_access(struct mmio_access *mmio)
 	return MMIO_HANDLED;
 }
 
-void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
+void gic_handle_sgir_write(struct sgi *sgi, bool affinity_routing)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned long targets = sgi->targets;
@@ -144,8 +144,8 @@ void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 				/* Route to all (cell) CPUs but the caller. */
 				if (cpu == cpu_data->cpu_id)
 					continue;
-			} else if (virt_input) {
-				if (!test_bit(arm_cpu_phys2virt(cpu),
+			} else if (affinity_routing) {
+				if (!test_bit(cpu_data->mpidr & MPIDR_AFF0_MASK,
 					      &targets))
 					continue;
 			} else {

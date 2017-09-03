@@ -94,8 +94,6 @@ void arm_cpu_reset(unsigned long pc)
 	/* transfer the context that may have been passed to PSCI_CPU_ON */
 	regs->usr[1] = cpu_data->cpu_on_context;
 
-	arm_write_sysreg(VMPIDR_EL2, cpu_data->virt_id | MPIDR_MP_BIT);
-
 	arm_paging_vcpu_init(&cell->arch.mm);
 
 	irqchip_cpu_reset(cpu_data);
