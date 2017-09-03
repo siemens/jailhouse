@@ -35,7 +35,7 @@
 		(base) ... ((base) + (n - 1) * (size))
 
 /* The GICv2 interface numbering does not necessarily match the logical map */
-u8 gicv2_target_cpu_map[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+u8 gicv2_target_cpu_map[8];
 
 DEFINE_SPINLOCK(dist_lock);
 
