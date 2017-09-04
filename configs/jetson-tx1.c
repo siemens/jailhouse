@@ -21,8 +21,9 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[42];
+	struct jailhouse_memory mem_regions[43];
 	struct jailhouse_irqchip irqchips[2];
+	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
@@ -39,18 +40,27 @@ struct {
 				 JAILHOUSE_CON1_REGDIST_4 |
 				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
 		},
-		.platform_info.arm = {
-			.gicd_base = 0x50041000,
-			.gicc_base = 0x50042000,
-			.gich_base = 0x50044000,
-			.gicv_base = 0x50046000,
-			.maintenance_irq = 25,
+		.platform_info = {
+			.pci_mmconfig_base = 0x48000000,
+			.pci_mmconfig_end_bus = 0,
+			.pci_is_virtual = 1,
+
+			.arm = {
+				.gicd_base = 0x50041000,
+				.gicc_base = 0x50042000,
+				.gich_base = 0x50044000,
+				.gicv_base = 0x50046000,
+				.maintenance_irq = 25,
+			}
 		},
 		.root_cell = {
 			.name = "Jetson-TX1",
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
+			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+
+			.vpci_irq_base = 148,
 		},
 	},
 
@@ -355,6 +365,12 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
+		/* IVSHMEM shared memory region */ {
+			.phys_start = 0x17bf00000,
+			.virt_start = 0x17bf00000,
+			.size = 0x100000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
 	},
 	.irqchips = {
 		/* GIC */ {
@@ -370,6 +386,19 @@ struct {
 			.pin_bitmap = {
 				0xffffffff, 0xffffffff
 			},
+		},
+	},
+
+	.pci_devices = {
+		/* 00:00.0 */ {
+			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
+			.bdf = 0x00,
+			.bar_mask = {
+				0xffffff00, 0xffffffff, 0x00000000,
+				0x00000000, 0x00000000, 0x00000000,
+			},
+			.shmem_region = 42,
+			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
 	},
 };
