@@ -204,32 +204,7 @@ static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 static enum mmio_result gic_handle_redist_access(void *arg,
 						 struct mmio_access *mmio)
 {
-	struct cell *cell = this_cell();
-	unsigned int cpu;
-	unsigned int virt_id;
-	unsigned int redist_size = (gic_version == 4) ? 0x40000 : 0x20000;
-	void *phys_redist = NULL;
-	unsigned long offs;
-
-	/*
-	 * The redistributor accessed by the cell is not the one stored in these
-	 * cpu_datas, but the one associated to its virtual id. So we first
-	 * need to translate the redistributor address.
-	 */
-	for_each_cpu(cpu, cell->cpu_set) {
-		virt_id = arm_cpu_phys2virt(cpu);
-		offs = per_cpu(virt_id)->gicr_base - gicr_base;
-		if (mmio->address >= offs &&
-		    mmio->address < offs + redist_size) {
-			phys_redist = per_cpu(cpu)->gicr_base;
-			break;
-		}
-	}
-
-	if (phys_redist == NULL)
-		return MMIO_ERROR;
-
-	mmio->address -= offs;
+	struct per_cpu *cpu_data = arg;
 
 	/* Change the ID register, all other accesses are allowed. */
 	if (!mmio->is_write) {
@@ -245,23 +220,29 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 
 			/* AArch64 can use a writeq for this register */
 			if (mmio->size == 8)
-				mmio->value |= (u64)virt_id << 32;
+				mmio->value |= (u64)cpu_data->virt_id << 32;
 
 			return MMIO_HANDLED;
 		case GICR_TYPER + 4:
 			/* Upper bits contain the affinity */
-			mmio->value = virt_id;
+			mmio->value = cpu_data->virt_id;
 			return MMIO_HANDLED;
 		}
 	}
-	mmio_perform_access(phys_redist, mmio);
+	mmio_perform_access(cpu_data->gicr_base, mmio);
 	return MMIO_HANDLED;
 }
 
 static int gic_cell_init(struct cell *cell)
 {
-	mmio_region_register(cell, system_config->platform_info.arm.gicr_base,
-			     GICR_SIZE, gic_handle_redist_access, NULL);
+	unsigned long redist_base = system_config->platform_info.arm.gicr_base;
+	unsigned long redist_size = gic_version == 4 ? 0x40000 : 0x20000;
+	unsigned int cpu;
+
+	for_each_cpu(cpu, cell->cpu_set)
+		mmio_region_register(cell,
+			redist_base + per_cpu(cpu)->virt_id * redist_size,
+			redist_size, gic_handle_redist_access, per_cpu(cpu));
 
 	return 0;
 }
@@ -441,7 +422,13 @@ static enum mmio_result gicv3_handle_irq_target(struct mmio_access *mmio,
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
-	return 2;
+	unsigned int cpu, regions = 1; /* GICD */
+
+	/* 1 GICR per CPU */
+	for_each_cpu(cpu, cell->cpu_set)
+		regions++;
+
+	return regions;
 }
 
 struct irqchip_ops irqchip = {
