@@ -114,7 +114,7 @@ static inline void gic_write_lr(unsigned int i, u32 value)
 	mmio_write32(gich_base + GICH_LR_BASE + i * 4, value);
 }
 
-static inline u32 gic_read_iar(void)
+static inline u32 gic_read_iar_irqn(void)
 {
 	extern void *gicc_base;
 

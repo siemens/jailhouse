@@ -255,7 +255,7 @@ static inline void gic_write_lr(unsigned int n, u64 val)
 	}
 }
 
-static inline u32 gic_read_iar(void)
+static inline u32 gic_read_iar_irqn(void)
 {
 	u32 irq_id;
 
