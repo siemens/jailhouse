@@ -22,8 +22,6 @@ struct arch_cell {
 	struct paging_structures mm;
 
 	u32 irq_bitmap[1024/32];
-
-	unsigned int last_virt_id;
 };
 
 /** PCI-related cell states. */

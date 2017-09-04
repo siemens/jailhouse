@@ -201,7 +201,6 @@ int arch_cell_create(struct cell *cell)
 	 */
 	for_each_cpu(cpu, cell->cpu_set)
 		per_cpu(cpu)->virt_id = virt_id++;
-	cell->arch.last_virt_id = virt_id - 1;
 
 	err = irqchip_cell_init(cell);
 	if (err) {

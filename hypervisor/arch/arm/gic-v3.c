@@ -235,10 +235,14 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 	if (!mmio->is_write) {
 		switch (mmio->address) {
 		case GICR_TYPER:
-			if (virt_id == cell->arch.last_virt_id)
-				mmio->value = GICR_TYPER_Last;
-			else
-				mmio->value = 0;
+			/*
+			 * Declare each redistributor region to be last. This
+			 * avoids that we miss one and cause the guest to
+			 * overscan while matching redistributors in a
+			 * partitioned region.
+			 */
+			mmio->value = GICR_TYPER_Last;
+
 			/* AArch64 can use a writeq for this register */
 			if (mmio->size == 8)
 				mmio->value |= (u64)virt_id << 32;
