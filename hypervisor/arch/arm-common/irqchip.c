@@ -155,6 +155,11 @@ void gic_handle_sgir_write(struct sgi *sgi, bool virt_input)
 				 * physical CPU IDs, so there is no need to
 				 * translate them to the hypervisor's virtual
 				 * IDs.
+				 *
+				 * If we end up here in GICv3 mode, ie. with
+				 * affinity routing enabled, the cpu map will
+				 * be empty, and we will do nothing - just like
+				 * the spec demands.
 				 */
 				if (!(targets & gicv2_target_cpu_map[cpu]))
 					continue;
