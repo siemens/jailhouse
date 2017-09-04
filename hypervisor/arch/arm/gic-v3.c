@@ -118,6 +118,10 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 		return -ENODEV;
 	}
 
+	/* Make sure we can handle Aff0 with the TargetList of ICC_SGI1R_EL1. */
+	if ((cpu_data->mpidr & MPIDR_AFF0_MASK) >= 16)
+		return trace_error(-EIO);
+
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(redist_base + GICR_SGI_BASE + GICR_ISENABLER,
 		     0x0000ffff | (1 << mnt_irq));
