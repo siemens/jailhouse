@@ -52,9 +52,12 @@ struct per_cpu {
 	union {
 		/** Only GICv2: per-cpu initialization completed. */
 		bool gicc_initialized;
-		/** Only GICv3: physical redistributor base. When non-NULL,
-		 * per-cpu initialization completed. */
-		void *gicr_base;
+		/** Only GICv3 */
+		struct {
+			/** mapped redistributor base. When non-NULL, per-cpu
+			 * cpu initialization completed.*/
+			void *base;
+		} gicr;
 	};
 
 	struct cell *cell;

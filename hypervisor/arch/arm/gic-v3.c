@@ -71,7 +71,7 @@ static void gic_clear_pending_irqs(void)
 static void gic_cpu_reset(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
-	void *gicr = cpu_data->gicr_base + GICR_SGI_BASE;
+	void *gicr = cpu_data->gicr.base + GICR_SGI_BASE;
 
 	gic_clear_pending_irqs();
 
@@ -106,14 +106,14 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 
 		typer = mmio_read64(redist_base + GICR_TYPER);
 		if ((typer >> 32) == cpu_data->cpu_id) {
-			cpu_data->gicr_base = redist_base;
+			cpu_data->gicr.base = redist_base;
 			break;
 		}
 
 		redist_base += gic_version == 4 ? 0x40000 : 0x20000;
 	} while (!(typer & GICR_TYPER_Last));
 
-	if (!cpu_data->gicr_base) {
+	if (!cpu_data->gicr.base) {
 		printk("GIC: No redist found for CPU%d\n", cpu_data->cpu_id);
 		return -ENODEV;
 	}
@@ -172,13 +172,13 @@ static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 {
 	u32 ich_vmcr, icc_ctlr, cell_icc_igrpen1;
 
-	if (!cpu_data->gicr_base)
+	if (!cpu_data->gicr.base)
 		return;
 
 	arm_write_sysreg(ICH_HCR_EL2, 0);
 
 	/* Disable the maintenance interrupt - not used by Linux. */
-	mmio_write32(cpu_data->gicr_base + GICR_SGI_BASE + GICR_ICENABLER,
+	mmio_write32(cpu_data->gicr.base + GICR_SGI_BASE + GICR_ICENABLER,
 		     1 << system_config->platform_info.arm.maintenance_irq);
 
 	/* Restore the root config */
@@ -233,7 +233,7 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 			return MMIO_HANDLED;
 		}
 	}
-	mmio_perform_access(cpu_data->gicr_base, mmio);
+	mmio_perform_access(cpu_data->gicr.base, mmio);
 	return MMIO_HANDLED;
 }
 
