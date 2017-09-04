@@ -171,34 +171,13 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 	return regs;
 }
 
-unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id)
-{
-	unsigned int cpu;
-
-	for_each_cpu(cpu, cell->cpu_set) {
-		if (per_cpu(cpu)->virt_id == virt_id)
-			return cpu;
-	}
-
-	return -1;
-}
-
 int arch_cell_create(struct cell *cell)
 {
 	int err;
-	unsigned int cpu;
-	unsigned int virt_id = 0;
 
 	err = arm_paging_cell_init(cell);
 	if (err)
 		return err;
-
-	/*
-	 * Generate a virtual CPU id according to the position of each CPU in
-	 * the cell set
-	 */
-	for_each_cpu(cpu, cell->cpu_set)
-		per_cpu(cpu)->virt_id = virt_id++;
 
 	err = irqchip_cell_init(cell);
 	if (err) {
@@ -214,18 +193,11 @@ int arch_cell_create(struct cell *cell)
 void arch_cell_destroy(struct cell *cell)
 {
 	unsigned int cpu;
-	struct per_cpu *percpu;
 
 	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
 
-	for_each_cpu(cpu, cell->cpu_set) {
-		percpu = per_cpu(cpu);
-
-		/* Re-assign the physical IDs for the root cell */
-		percpu->virt_id = percpu->cpu_id;
-
-		percpu->cpu_on_entry = PSCI_INVALID_ADDRESS;
-	}
+	for_each_cpu(cpu, cell->cpu_set)
+		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
 	mach_cell_exit(cell);
 	irqchip_cell_exit(cell);

@@ -40,7 +40,6 @@ struct per_cpu {
 	unsigned long linux_reg[NUM_ENTRY_REGS];
 
 	unsigned int cpu_id;
-	unsigned int virt_id;
 
 	/* synchronizes parallel insertions of SGIs into the pending ring */
 	spinlock_t pending_irqs_lock;
@@ -131,13 +130,6 @@ static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
 			- sizeof(struct registers));
 }
-
-static inline unsigned int arm_cpu_phys2virt(unsigned int cpu_id)
-{
-	return per_cpu(cpu_id)->virt_id;
-}
-
-unsigned int arm_cpu_virt2phys(struct cell *cell, unsigned int virt_id);
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PERCPU_H */

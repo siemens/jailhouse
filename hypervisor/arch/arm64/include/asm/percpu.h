@@ -116,20 +116,6 @@ static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
 			- sizeof(struct registers));
 }
-
-/*
- * We get rid of the virt_id in the AArch64 implementation, since it
- * doesn't really fit with the MPIDR CPU identification scheme on ARM.
- *
- * Until the GICv3 and ARMv7 code has been properly refactored to
- * support this scheme, we stub this call so we can share the GICv2
- * code with ARMv7.
- *
- * TODO: implement MPIDR support in the GICv3 code, so it can be
- * used on AArch64.
- * TODO: refactor out virt_id from the AArch7 port as well.
- */
-unsigned int arm_cpu_phys2virt(unsigned int cpu_id);
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PERCPU_H */

@@ -73,7 +73,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 {
 	int err;
 
-	cpu_data->virt_id = cpu_data->cpu_id;
 	cpu_data->mpidr = phys_processor_id();
 
 	/*
