@@ -257,10 +257,10 @@ static inline void gic_write_lr(unsigned int n, u64 val)
 
 static inline u32 gic_read_iar_irqn(void)
 {
-	u32 irq_id;
+	u32 iar;
 
-	arm_read_sysreg(ICC_IAR1_EL1, irq_id);
-	return irq_id;
+	arm_read_sysreg(ICC_IAR1_EL1, iar);
+	return iar & 0xffffff;
 }
 
 void gicv3_handle_sgir_write(u64 sgir);
