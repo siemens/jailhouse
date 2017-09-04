@@ -57,6 +57,8 @@ struct per_cpu {
 			/** mapped redistributor base. When non-NULL, per-cpu
 			 * cpu initialization completed.*/
 			void *base;
+			/** physical redistributor address */
+			unsigned long phys_addr;
 		} gicr;
 	};
 

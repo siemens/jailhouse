@@ -90,12 +90,14 @@ static void gic_cpu_reset(struct per_cpu *cpu_data)
 static int gic_cpu_init(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
+	unsigned long redist_addr = system_config->platform_info.arm.gicr_base;
+	void *redist_base = gicr_base;
+	unsigned long redist_size;
 	u64 typer;
 	u32 pidr;
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
 	u32 ich_vtr;
 	u32 ich_vmcr;
-	void *redist_base = gicr_base;
 
 	/* Find redistributor */
 	do {
@@ -104,13 +106,17 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 		if (gic_version != 3 && gic_version != 4)
 			break;
 
+		redist_size = gic_version == 4 ? 0x40000 : 0x20000;
+
 		typer = mmio_read64(redist_base + GICR_TYPER);
 		if ((typer >> 32) == cpu_data->cpu_id) {
 			cpu_data->gicr.base = redist_base;
+			cpu_data->gicr.phys_addr = redist_addr;
 			break;
 		}
 
-		redist_base += gic_version == 4 ? 0x40000 : 0x20000;
+		redist_base += redist_size;
+		redist_addr += redist_size;
 	} while (!(typer & GICR_TYPER_Last));
 
 	if (!cpu_data->gicr.base) {
