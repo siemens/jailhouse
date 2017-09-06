@@ -204,7 +204,7 @@ static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 
 static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
-	void *irouter = gicd_base + GICD_IROUTER + irq_id;
+	void *irouter = gicd_base + GICD_IROUTER + 8 * irq_id;
 	u32 route = mmio_read32(irouter);
 
 	if (!cell_owns_cpu(cell, route))
