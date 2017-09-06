@@ -118,9 +118,7 @@ static enum mmio_result handle_sgir_access(struct mmio_access *mmio)
 
 	sgi.targets = (val >> 16) & 0xff;
 	sgi.routing_mode = (val >> 24) & 0x3;
-	sgi.aff1 = 0;
-	sgi.aff2 = 0;
-	sgi.aff3 = 0;
+	sgi.cluster_id = 0;
 	sgi.id = val & 0xf;
 
 	gic_handle_sgir_write(&sgi, false);

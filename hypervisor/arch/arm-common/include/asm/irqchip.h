@@ -30,11 +30,8 @@ struct sgi {
 	 * 2: only this CPU
 	 */
 	u8	routing_mode;
-	/* GICv2 only uses 8bit in targets, and no affinity routing */
-	u8	aff1;
-	u8	aff2;
-	/* Only available on 64-bit, when CTLR.A3V is 1 */
-	u8	aff3;
+	/* cluster_id: mpidr & MPIDR_CLUSTERID_MASK */
+	u64	cluster_id;
 	u16	targets;
 	u16	id;
 };

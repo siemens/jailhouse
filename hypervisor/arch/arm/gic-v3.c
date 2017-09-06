@@ -250,6 +250,10 @@ static int gic_cell_init(struct cell *cell)
 	return 0;
 }
 
+#define MPIDR_TO_SGIR_AFFINITY(cluster_id, level) \
+	(MPIDR_AFFINITY_LEVEL((cluster_id), (level)) \
+	<< ICC_SGIR_AFF## level ##_SHIFT)
+
 static int gic_send_sgi(struct sgi *sgi)
 {
 	u64 val;
@@ -261,11 +265,11 @@ static int gic_send_sgi(struct sgi *sgi)
 	if (sgi->routing_mode == 2)
 		targets = 1 << phys_processor_id();
 
-	val = (u64)sgi->aff3 << ICC_SGIR_AFF3_SHIFT
-	    | (u64)sgi->aff2 << ICC_SGIR_AFF2_SHIFT
-	    | sgi->aff1 << ICC_SGIR_AFF1_SHIFT
+	val = (MPIDR_TO_SGIR_AFFINITY(sgi->cluster_id, 3)
+	    | MPIDR_TO_SGIR_AFFINITY(sgi->cluster_id, 2)
+	    | MPIDR_TO_SGIR_AFFINITY(sgi->cluster_id, 1)
 	    | (targets & ICC_SGIR_TARGET_MASK)
-	    | (sgi->id & 0xf) << ICC_SGIR_IRQN_SHIFT;
+	    | (sgi->id & 0xf) << ICC_SGIR_IRQN_SHIFT);
 
 	if (sgi->routing_mode == 1)
 		val |= ICC_SGIR_ROUTING_BIT;
@@ -282,6 +286,12 @@ static int gic_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
+#define SGIR_TO_AFFINITY(sgir, level)	\
+	((sgir) >> ICC_SGIR_AFF## level ##_SHIFT & 0xff)
+
+#define SGIR_TO_MPIDR_AFFINITY(sgir, level)			\
+	(SGIR_TO_AFFINITY(sgir, level) << MPIDR_LEVEL_SHIFT(level))
+
 void gicv3_handle_sgir_write(u64 sgir)
 {
 	struct sgi sgi;
@@ -290,9 +300,9 @@ void gicv3_handle_sgir_write(u64 sgir)
 	/* FIXME: clusters are not supported yet. */
 	sgi.targets = sgir & ICC_SGIR_TARGET_MASK;
 	sgi.routing_mode = routing_mode;
-	sgi.aff1 = sgir >> ICC_SGIR_AFF1_SHIFT & 0xff;
-	sgi.aff2 = sgir >> ICC_SGIR_AFF2_SHIFT & 0xff;
-	sgi.aff3 = sgir >> ICC_SGIR_AFF3_SHIFT & 0xff;
+	sgi.cluster_id = (SGIR_TO_MPIDR_AFFINITY(sgir, 3)
+		       | SGIR_TO_MPIDR_AFFINITY(sgir, 2)
+		       | SGIR_TO_MPIDR_AFFINITY(sgir, 1));
 	sgi.id = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
 	gic_handle_sgir_write(&sgi, true);
