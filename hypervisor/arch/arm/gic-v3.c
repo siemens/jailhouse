@@ -212,10 +212,12 @@ static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
 	void *irouter = gicd_base + GICD_IROUTER + 8 * irq_id;
-	u32 route = mmio_read32(irouter);
+	u64 mpidr = per_cpu(first_cpu(cell->cpu_set))->mpidr;
+	u32 route = arm_cpu_by_mpidr(cell,
+				     mmio_read64(irouter) & MPIDR_CPUID_MASK);
 
 	if (!cell_owns_cpu(cell, route))
-		mmio_write32(irouter, first_cpu(cell->cpu_set));
+		mmio_write64(irouter, mpidr);
 }
 
 static enum mmio_result gic_handle_redist_access(void *arg,
@@ -336,7 +338,7 @@ enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 		printk("Attempt to route IRQ%d outside of cell\n", irq);
 		return MMIO_ERROR;
 	} else {
-		mmio->value = mmio_read32(gicd_base + GICD_IROUTER + 8 * irq);
+		mmio->value = mmio_read64(gicd_base + GICD_IROUTER + 8 * irq);
 		return MMIO_HANDLED;
 	}
 }
