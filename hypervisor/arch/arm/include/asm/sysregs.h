@@ -84,6 +84,13 @@
 #define  SCTLR_C_AND_M_SET(sctlr)	\
 	(((sctlr) & (SCTLR_C_BIT | SCTLR_M_BIT)) == (SCTLR_C_BIT | SCTLR_M_BIT))
 
+#define MPIDR_LEVEL_BITS		8
+#define MPIDR_LEVEL_MASK		((1 << MPIDR_LEVEL_BITS) - 1)
+#define MPIDR_LEVEL_SHIFT(level)	(MPIDR_LEVEL_BITS * (level))
+
+#define MPIDR_AFFINITY_LEVEL(mpidr, level) \
+	(((mpidr) >> (MPIDR_LEVEL_BITS * (level))) & MPIDR_LEVEL_MASK)
+
 /* Bits to wipe on cell reset */
 #define  SCTLR_MASK	(SCTLR_M_BIT | SCTLR_A_BIT | SCTLR_C_BIT	\
 			| SCTLR_I_BIT | SCTLR_V_BIT | SCTLR_WXN_BIT	\

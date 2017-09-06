@@ -19,6 +19,7 @@
 #include <asm/gic.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
+#include <asm/sysregs.h>
 #include <asm/traps.h>
 
 /*
@@ -93,11 +94,17 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	unsigned long redist_addr = system_config->platform_info.arm.gicr_base;
 	void *redist_base = gicr_base;
 	unsigned long redist_size;
-	u64 typer;
-	u32 pidr;
+	u64 typer, mpidr;
+	u32 pidr, aff;
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
 	u32 ich_vtr;
 	u32 ich_vmcr;
+
+	mpidr = cpu_data->mpidr;
+	aff = (MPIDR_AFFINITY_LEVEL(mpidr, 3) << 24 |
+	       MPIDR_AFFINITY_LEVEL(mpidr, 2) << 16 |
+	       MPIDR_AFFINITY_LEVEL(mpidr, 1) << 8 |
+	       MPIDR_AFFINITY_LEVEL(mpidr, 0));
 
 	/* Find redistributor */
 	do {
@@ -109,7 +116,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 		redist_size = gic_version == 4 ? 0x40000 : 0x20000;
 
 		typer = mmio_read64(redist_base + GICR_TYPER);
-		if ((typer >> 32) == cpu_data->cpu_id) {
+		if ((typer >> 32) == aff) {
 			cpu_data->gicr.base = redist_base;
 			cpu_data->gicr.phys_addr = redist_addr;
 			break;
