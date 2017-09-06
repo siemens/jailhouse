@@ -38,7 +38,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(GEN_CONFIG_MK)
+-include $(GEN_CONFIG_MK)
 
 KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
 
