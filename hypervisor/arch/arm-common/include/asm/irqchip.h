@@ -55,6 +55,7 @@ struct irqchip_ops {
 
 	enum mmio_result (*handle_irq_target)(struct mmio_access *mmio,
 					      unsigned int irq);
+	enum mmio_result (*handle_sgir_access)(struct mmio_access *mmio);
 };
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell);

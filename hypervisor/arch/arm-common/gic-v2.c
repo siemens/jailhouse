@@ -385,6 +385,23 @@ static enum mmio_result gic_handle_irq_target(struct mmio_access *mmio,
 	return MMIO_HANDLED;
 }
 
+static enum mmio_result gic_handle_sgir_access(struct mmio_access *mmio)
+{
+	struct sgi sgi;
+	unsigned long val = mmio->value;
+
+	if (!mmio->is_write)
+		return MMIO_HANDLED;
+
+	sgi.targets = (val >> 16) & 0xff;
+	sgi.routing_mode = (val >> 24) & 0x3;
+	sgi.cluster_id = 0;
+	sgi.id = val & 0xf;
+
+	gic_handle_sgir_write(&sgi);
+	return MMIO_HANDLED;
+}
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	return 1;
@@ -411,5 +428,6 @@ struct irqchip_ops irqchip = {
 	.eoi_irq = gic_eoi_irq,
 
 	.handle_irq_target = gic_handle_irq_target,
+	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,
 };

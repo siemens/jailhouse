@@ -105,23 +105,6 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 	return MMIO_HANDLED;
 }
 
-static enum mmio_result handle_sgir_access(struct mmio_access *mmio)
-{
-	struct sgi sgi;
-	unsigned long val = mmio->value;
-
-	if (!mmio->is_write)
-		return MMIO_HANDLED;
-
-	sgi.targets = (val >> 16) & 0xff;
-	sgi.routing_mode = (val >> 24) & 0x3;
-	sgi.cluster_id = 0;
-	sgi.id = val & 0xf;
-
-	gic_handle_sgir_write(&sgi);
-	return MMIO_HANDLED;
-}
-
 void gic_handle_sgir_write(struct sgi *sgi)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
@@ -200,7 +183,7 @@ static enum mmio_result gic_handle_dist_access(void *arg,
 		break;
 
 	case GICD_SGIR:
-		ret = handle_sgir_access(mmio);
+		ret = irqchip.handle_sgir_access(mmio);
 		break;
 
 	case GICD_CTLR:

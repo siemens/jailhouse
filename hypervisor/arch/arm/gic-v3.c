@@ -438,6 +438,12 @@ static enum mmio_result gicv3_handle_irq_target(struct mmio_access *mmio,
 	return MMIO_HANDLED;
 }
 
+static enum mmio_result gic_handle_sgir_access(struct mmio_access *mmio)
+{
+	/* ignore writes, we are in affinity routing mode */
+	return MMIO_HANDLED;
+}
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	unsigned int cpu, regions = 1; /* GICD */
@@ -467,5 +473,6 @@ struct irqchip_ops irqchip = {
 	.has_pending_irqs = gicv3_has_pending_irqs,
 	.eoi_irq = gic_eoi_irq,
 	.handle_irq_target = gicv3_handle_irq_target,
+	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,
 };
