@@ -37,10 +37,11 @@ void arm_cpu_park(void)
 
 void arm_cpu_kick(unsigned int cpu_id)
 {
-	struct sgi sgi = {};
+	struct sgi sgi;
 
 	sgi.targets = irqchip_get_cpu_target(cpu_id);
 	sgi.cluster_id = irqchip_get_cluster_target(cpu_id);
+	sgi.routing_mode = 0;
 	sgi.id = SGI_EVENT;
 	irqchip_send_sgi(&sgi);
 }
