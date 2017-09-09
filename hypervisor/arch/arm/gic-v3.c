@@ -460,6 +460,11 @@ static int gic_get_cpu_target(unsigned int cpu_id)
 	return 1 << per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
 }
 
+static u64 gic_get_cluster_target(unsigned int cpu_id)
+{
+	return per_cpu(cpu_id)->mpidr & MPIDR_CLUSTERID_MASK;
+}
+
 struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
@@ -475,4 +480,5 @@ struct irqchip_ops irqchip = {
 	.handle_irq_target = gicv3_handle_irq_target,
 	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,
+	.get_cluster_target = gic_get_cluster_target,
 };

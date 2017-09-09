@@ -412,6 +412,11 @@ static int gic_get_cpu_target(unsigned int cpu_id)
 	return gicv2_target_cpu_map[cpu_id];
 }
 
+static u64 gic_get_cluster_target(unsigned int cpu_id)
+{
+	return 0;
+}
+
 struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
@@ -430,4 +435,5 @@ struct irqchip_ops irqchip = {
 	.handle_irq_target = gic_handle_irq_target,
 	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,
+	.get_cluster_target = gic_get_cluster_target,
 };

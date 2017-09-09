@@ -57,6 +57,7 @@
 #define CTR_EL0		SYSREG_32(0, c0, c0, 1)
 #define MPIDR_EL1	SYSREG_32(0, c0, c0, 5)
 #define  MPIDR_CPUID_MASK	0x00ffffff
+#define  MPIDR_CLUSTERID_MASK	0x00ffff00
 #define  MPIDR_AFF0_MASK	0x000000ff
 #define  MPIDR_U_BIT		(1 << 30)
 #define  MPIDR_MP_BIT		(1 << 31)

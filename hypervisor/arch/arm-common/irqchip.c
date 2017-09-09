@@ -110,6 +110,7 @@ void gic_handle_sgir_write(struct sgi *sgi)
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned long targets = sgi->targets;
 	unsigned int cpu, target;
+	u64 cluster;
 
 	sgi->targets = 0;
 
@@ -119,6 +120,7 @@ void gic_handle_sgir_write(struct sgi *sgi)
 	else
 		for_each_cpu(cpu, cpu_data->cell->cpu_set) {
 			target = irqchip_get_cpu_target(cpu);
+			cluster = irqchip_get_cluster_target(cpu);
 
 			if (sgi->routing_mode == 1) {
 				/* Route to all (cell) CPUs but the caller. */
@@ -126,7 +128,8 @@ void gic_handle_sgir_write(struct sgi *sgi)
 					continue;
 			} else {
 				/* Router to target CPUs in cell */
-				if (!(targets & target))
+				if ((sgi->cluster_id != cluster) ||
+				    !(targets & target))
 					continue;
 			}
 
@@ -336,6 +339,11 @@ int irqchip_cpu_init(struct per_cpu *cpu_data)
 int irqchip_get_cpu_target(unsigned int cpu_id)
 {
 	return irqchip.get_cpu_target(cpu_id);
+}
+
+u64 irqchip_get_cluster_target(unsigned int cpu_id)
+{
+	return irqchip.get_cluster_target(cpu_id);
 }
 
 void irqchip_cpu_reset(struct per_cpu *cpu_data)
