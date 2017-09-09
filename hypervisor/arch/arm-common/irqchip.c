@@ -108,11 +108,8 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 void gic_handle_sgir_write(struct sgi *sgi)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
-	unsigned long targets = sgi->targets;
 	unsigned int cpu, target;
 	u64 cluster;
-
-	sgi->targets = 0;
 
 	if (sgi->routing_mode == 2)
 		/* Route to the caller itself */
@@ -129,23 +126,12 @@ void gic_handle_sgir_write(struct sgi *sgi)
 			} else {
 				/* Router to target CPUs in cell */
 				if ((sgi->cluster_id != cluster) ||
-				    !(targets & target))
+				    !(sgi->targets & target))
 					continue;
 			}
 
 			irqchip_set_pending(per_cpu(cpu), sgi->id);
-
-			/*
-			 * routing_mode will be propagated to irqchip_send_sgi.
-			 * as well. So this adjustment is only targeting the
-			 * mode 0 case.
-			 */
-			sgi->targets |= target;
 		}
-
-	/* Let the other CPUS inject their SGIs */
-	sgi->id = SGI_INJECT;
-	irqchip_send_sgi(sgi);
 }
 
 static enum mmio_result gic_handle_dist_access(void *arg,
@@ -257,6 +243,7 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 {
 	bool local_injection = (this_cpu_data() == cpu_data);
 	unsigned int new_tail;
+	struct sgi sgi;
 
 	if (!cpu_data) {
 		/* Injection via GICD */
@@ -287,11 +274,19 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 
 	/*
 	 * The list registers are full, trigger maintenance interrupt if we are
-	 * on the target CPU. In the other case, the caller will send a
-	 * SGI_INJECT, and irqchip_inject_pending will take care.
+	 * on the target CPU. In the other case, send SGI_INJECT to the target
+	 * CPU.
 	 */
-	if (local_injection)
+	if (local_injection) {
 		irqchip.enable_maint_irq(true);
+	} else {
+		sgi.targets = irqchip_get_cpu_target(cpu_data->cpu_id);
+		sgi.cluster_id = irqchip_get_cluster_target(cpu_data->cpu_id);
+		sgi.routing_mode = 0;
+		sgi.id = SGI_INJECT;
+
+		irqchip_send_sgi(&sgi);
+	}
 }
 
 void irqchip_inject_pending(struct per_cpu *cpu_data)
