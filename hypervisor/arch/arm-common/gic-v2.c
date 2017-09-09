@@ -16,6 +16,8 @@
 #include <asm/irqchip.h>
 #include <asm/setup.h>
 
+/* The GICv2 interface numbering does not necessarily match the logical map */
+static u8 gicv2_target_cpu_map[8];
 static unsigned int gic_num_lr;
 
 void *gicc_base;
@@ -388,6 +390,11 @@ unsigned int irqchip_mmio_count_regions(struct cell *cell)
 	return 1;
 }
 
+static int gic_get_cpu_target(unsigned int cpu_id)
+{
+	return gicv2_target_cpu_map[cpu_id];
+}
+
 struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
@@ -404,4 +411,5 @@ struct irqchip_ops irqchip = {
 	.eoi_irq = gic_eoi_irq,
 
 	.handle_irq_target = gic_handle_irq_target,
+	.get_cpu_target = gic_get_cpu_target,
 };

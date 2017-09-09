@@ -305,7 +305,7 @@ void gicv3_handle_sgir_write(u64 sgir)
 		       | SGIR_TO_MPIDR_AFFINITY(sgir, 1));
 	sgi.id = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
-	gic_handle_sgir_write(&sgi, true);
+	gic_handle_sgir_write(&sgi);
 }
 
 /*
@@ -449,6 +449,11 @@ unsigned int irqchip_mmio_count_regions(struct cell *cell)
 	return regions;
 }
 
+static int gic_get_cpu_target(unsigned int cpu_id)
+{
+	return 1 << per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
+}
+
 struct irqchip_ops irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
@@ -462,4 +467,5 @@ struct irqchip_ops irqchip = {
 	.has_pending_irqs = gicv3_has_pending_irqs,
 	.eoi_irq = gic_eoi_irq,
 	.handle_irq_target = gicv3_handle_irq_target,
+	.get_cpu_target = gic_get_cpu_target,
 };

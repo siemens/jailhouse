@@ -34,9 +34,6 @@
 #define REG_RANGE(base, n, size)	\
 		(base) ... ((base) + (n - 1) * (size))
 
-/* The GICv2 interface numbering does not necessarily match the logical map */
-u8 gicv2_target_cpu_map[8];
-
 DEFINE_SPINLOCK(dist_lock);
 
 void *gicd_base;
@@ -121,15 +118,15 @@ static enum mmio_result handle_sgir_access(struct mmio_access *mmio)
 	sgi.cluster_id = 0;
 	sgi.id = val & 0xf;
 
-	gic_handle_sgir_write(&sgi, false);
+	gic_handle_sgir_write(&sgi);
 	return MMIO_HANDLED;
 }
 
-void gic_handle_sgir_write(struct sgi *sgi, bool affinity_routing)
+void gic_handle_sgir_write(struct sgi *sgi)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned long targets = sgi->targets;
-	unsigned int cpu;
+	unsigned int cpu, target;
 
 	sgi->targets = 0;
 
@@ -138,22 +135,15 @@ void gic_handle_sgir_write(struct sgi *sgi, bool affinity_routing)
 		irqchip_set_pending(cpu_data, sgi->id);
 	else
 		for_each_cpu(cpu, cpu_data->cell->cpu_set) {
+			target = irqchip_get_cpu_target(cpu);
+
 			if (sgi->routing_mode == 1) {
 				/* Route to all (cell) CPUs but the caller. */
 				if (cpu == cpu_data->cpu_id)
 					continue;
-			} else if (affinity_routing) {
-				if (!test_bit(cpu_data->mpidr & MPIDR_AFF0_MASK,
-					      &targets))
-					continue;
 			} else {
-				/*
-				 * If we end up here in GICv3 mode, ie. with
-				 * affinity routing enabled, the cpu map will
-				 * be empty, and we will do nothing - just like
-				 * the spec demands.
-				 */
-				if (!(targets & gicv2_target_cpu_map[cpu]))
+				/* Router to target CPUs in cell */
+				if (!(targets & target))
 					continue;
 			}
 
@@ -164,7 +154,7 @@ void gic_handle_sgir_write(struct sgi *sgi, bool affinity_routing)
 			 * as well. So this adjustment is only targeting the
 			 * mode 0 case.
 			 */
-			sgi->targets |= (1 << cpu);
+			sgi->targets |= target;
 		}
 
 	/* Let the other CPUS inject their SGIs */
@@ -358,6 +348,11 @@ int irqchip_send_sgi(struct sgi *sgi)
 int irqchip_cpu_init(struct per_cpu *cpu_data)
 {
 	return irqchip.cpu_init(cpu_data);
+}
+
+int irqchip_get_cpu_target(unsigned int cpu_id)
+{
+	return irqchip.get_cpu_target(cpu_id);
 }
 
 void irqchip_cpu_reset(struct per_cpu *cpu_data)

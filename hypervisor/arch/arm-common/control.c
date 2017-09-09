@@ -39,7 +39,7 @@ void arm_cpu_kick(unsigned int cpu_id)
 {
 	struct sgi sgi = {};
 
-	sgi.targets = 1 << cpu_id;
+	sgi.targets = irqchip_get_cpu_target(cpu_id);
 	sgi.id = SGI_EVENT;
 	irqchip_send_sgi(&sgi);
 }

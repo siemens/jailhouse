@@ -51,6 +51,8 @@ struct irqchip_ops {
 	void	(*enable_maint_irq)(bool enable);
 	bool	(*has_pending_irqs)(void);
 
+	int 	(*get_cpu_target)(unsigned int cpu_id);
+
 	enum mmio_result (*handle_irq_target)(struct mmio_access *mmio,
 					      unsigned int irq);
 };
@@ -59,6 +61,7 @@ unsigned int irqchip_mmio_count_regions(struct cell *cell);
 
 int irqchip_init(void);
 int irqchip_cpu_init(struct per_cpu *cpu_data);
+int irqchip_get_cpu_target(unsigned int cpu_id);
 void irqchip_cpu_reset(struct per_cpu *cpu_data);
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data);
 
