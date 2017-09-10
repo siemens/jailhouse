@@ -46,6 +46,7 @@ struct {
 			.pci_is_virtual = 1,
 
 			.arm = {
+				.gic_version = 2,
 				.gicd_base = 0x50041000,
 				.gicc_base = 0x50042000,
 				.gich_base = 0x50044000,

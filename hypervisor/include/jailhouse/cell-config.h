@@ -39,8 +39,11 @@
 #ifndef _JAILHOUSE_CELL_CONFIG_H
 #define _JAILHOUSE_CELL_CONFIG_H
 
-/* Incremented on any layout or semantic change of system or cell config. */
-#define JAILHOUSE_CONFIG_REVISION	5
+/*
+ * Incremented on any layout or semantic change of system or cell config.
+ * Also update HEADER_REVISION in tools.
+ */
+#define JAILHOUSE_CONFIG_REVISION	6
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -242,7 +245,7 @@ struct jailhouse_system {
 			} __attribute__((packed)) x86;
 			struct {
 				u8 maintenance_irq;
-				u8 padding;
+				u8 gic_version;
 				u64 gicd_base;
 				u64 gicc_base;
 				u64 gich_base;

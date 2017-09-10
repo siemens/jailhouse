@@ -41,6 +41,7 @@ struct {
 			.pci_mmconfig_base = 0xf0000000,
 			.pci_mmconfig_end_bus = 255,
 			.arm = {
+				.gic_version = 2,
 				.gicd_base = 0xe1110000,
 				.gicc_base = 0xe112f000,
 				.gich_base = 0xe1140000,

@@ -38,9 +38,11 @@ struct {
 		},
 		.platform_info.arm = {
 #ifdef CONFIG_ARM_GIC_V3
+			.gic_version = 3,
 			.gicd_base = 0x2f000000,
 			.gicr_base = 0x2f100000,
 #else /* GICv2 */
+			.gic_version = 2,
 			.gicd_base = 0x2c001000,
 			.gicc_base = 0x2c002000,
 			.gich_base = 0x2c004000,
