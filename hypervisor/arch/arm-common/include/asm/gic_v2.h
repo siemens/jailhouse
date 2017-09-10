@@ -68,17 +68,4 @@
 #define GICH_LR_CPUID_SHIFT	10
 #define GICH_LR_PHYS_ID_SHIFT	10
 #define GICH_LR_VIRT_ID_MASK	0x3ff
-
-#ifndef __ASSEMBLY__
-
-#include <jailhouse/mmio.h>
-
-static inline u32 gic_read_iar_irqn(void)
-{
-	extern void *gicc_base;
-
-	return mmio_read32(gicc_base + GICC_IAR) & 0x3ff;
-}
-
-#endif /* !__ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_GIC_V2_H */

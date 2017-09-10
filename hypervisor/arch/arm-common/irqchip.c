@@ -201,7 +201,7 @@ void irqchip_handle_irq(struct per_cpu *cpu_data)
 
 	while (1) {
 		/* Read IAR1: set 'active' state */
-		irq_id = gic_read_iar_irqn();
+		irq_id = irqchip.read_iar_irqn();
 
 		if (irq_id == 0x3ff) /* Spurious IRQ */
 			break;

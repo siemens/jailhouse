@@ -425,6 +425,14 @@ enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 	}
 }
 
+static u32 gic_read_iar_irqn(void)
+{
+	u32 iar;
+
+	arm_read_sysreg(ICC_IAR1_EL1, iar);
+	return iar & 0xffffff;
+}
+
 static void gic_eoi_irq(u32 irq_id, bool deactivate)
 {
 	arm_write_sysreg(ICC_EOIR1_EL1, irq_id);
@@ -548,6 +556,7 @@ struct irqchip_ops irqchip = {
 	.inject_irq = gic_inject_irq,
 	.enable_maint_irq = gicv3_enable_maint_irq,
 	.has_pending_irqs = gicv3_has_pending_irqs,
+	.read_iar_irqn = gic_read_iar_irqn,
 	.eoi_irq = gic_eoi_irq,
 	.handle_irq_target = gicv3_handle_irq_target,
 	.handle_sgir_access = gic_handle_sgir_access,

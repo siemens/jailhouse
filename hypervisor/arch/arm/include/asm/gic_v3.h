@@ -163,14 +163,6 @@
 
 #include <jailhouse/types.h>
 
-static inline u32 gic_read_iar_irqn(void)
-{
-	u32 iar;
-
-	arm_read_sysreg(ICC_IAR1_EL1, iar);
-	return iar & 0xffffff;
-}
-
 void gicv3_handle_sgir_write(u64 sgir);
 
 #endif /* __ASSEMBLY__ */

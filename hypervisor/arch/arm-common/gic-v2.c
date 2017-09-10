@@ -20,8 +20,7 @@
 static u8 gicv2_target_cpu_map[8];
 static unsigned int gic_num_lr;
 
-void *gicc_base;
-
+static void *gicc_base;
 static void *gich_base;
 
 static u32 gic_read_lr(unsigned int i)
@@ -189,6 +188,11 @@ static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 	mmio_write32(gicc_base + GICC_CTLR, gicc_ctlr);
 	mmio_write32(gicc_base + GICC_PMR,
 		     (gich_vmcr >> GICH_VMCR_PMR_SHIFT) << GICV_PMR_SHIFT);
+}
+
+static u32 gic_read_iar_irqn(void)
+{
+	return mmio_read32(gicc_base + GICC_IAR) & 0x3ff;
 }
 
 static void gic_eoi_irq(u32 irq_id, bool deactivate)
@@ -445,6 +449,7 @@ struct irqchip_ops irqchip = {
 	.inject_irq = gic_inject_irq,
 	.enable_maint_irq = gic_enable_maint_irq,
 	.has_pending_irqs = gic_has_pending_irqs,
+	.read_iar_irqn = gic_read_iar_irqn,
 	.eoi_irq = gic_eoi_irq,
 
 	.handle_irq_target = gic_handle_irq_target,
