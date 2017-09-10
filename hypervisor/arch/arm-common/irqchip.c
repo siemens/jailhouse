@@ -116,15 +116,15 @@ void gic_handle_sgir_write(struct sgi *sgi)
 		irqchip_set_pending(cpu_data, sgi->id);
 	else
 		for_each_cpu(cpu, cpu_data->cell->cpu_set) {
-			target = irqchip_get_cpu_target(cpu);
-			cluster = irqchip_get_cluster_target(cpu);
-
 			if (sgi->routing_mode == 1) {
 				/* Route to all (cell) CPUs but the caller. */
 				if (cpu == cpu_data->cpu_id)
 					continue;
 			} else {
-				/* Router to target CPUs in cell */
+				target = irqchip_get_cpu_target(cpu);
+				cluster = irqchip_get_cluster_target(cpu);
+
+				/* Route to target CPUs in cell */
 				if ((sgi->cluster_id != cluster) ||
 				    !(sgi->targets & target))
 					continue;
