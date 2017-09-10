@@ -142,7 +142,7 @@ static enum mmio_result gic_handle_dist_access(void *arg,
 
 	switch (reg) {
 	case REG_RANGE(GICD_IROUTER, 1024, 8):
-		ret = gic_handle_irq_route(mmio, (reg - GICD_IROUTER) / 8);
+		ret = irqchip.handle_irq_route(mmio, (reg - GICD_IROUTER) / 8);
 		break;
 
 	case REG_RANGE(GICD_ITARGETSR, 1024, 1):

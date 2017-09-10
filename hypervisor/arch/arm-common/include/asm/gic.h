@@ -52,8 +52,6 @@ extern struct irqchip irqchip;
 extern void *gicd_base;
 extern spinlock_t dist_lock;
 
-enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
-				      unsigned int irq);
 void gic_handle_sgir_write(struct sgi *sgi);
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

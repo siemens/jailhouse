@@ -397,8 +397,8 @@ void gicv3_handle_sgir_write(u64 sgir)
 /*
  * GICv3 uses a 64bit register IROUTER for each IRQ
  */
-enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
-				      unsigned int irq)
+static enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
+					     unsigned int irq)
 {
 	struct cell *cell = this_cell();
 	unsigned int cpu;
@@ -572,6 +572,7 @@ struct irqchip irqchip = {
 	.has_pending_irqs = gicv3_has_pending_irqs,
 	.read_iar_irqn = gic_read_iar_irqn,
 	.eoi_irq = gic_eoi_irq,
+	.handle_irq_route = gic_handle_irq_route,
 	.handle_irq_target = gicv3_handle_irq_target,
 	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,

@@ -327,8 +327,8 @@ static bool gic_has_pending_irqs(void)
 	return false;
 }
 
-enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
-				      unsigned int irq)
+static enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
+					     unsigned int irq)
 {
 	/* doesn't exist in v2 - ignore access */
 	return MMIO_HANDLED;
@@ -452,6 +452,7 @@ struct irqchip irqchip = {
 	.read_iar_irqn = gic_read_iar_irqn,
 	.eoi_irq = gic_eoi_irq,
 
+	.handle_irq_route = gic_handle_irq_route,
 	.handle_irq_target = gic_handle_irq_target,
 	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,

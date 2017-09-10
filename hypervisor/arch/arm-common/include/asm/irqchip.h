@@ -55,6 +55,8 @@ struct irqchip {
 	int 	(*get_cpu_target)(unsigned int cpu_id);
 	u64 	(*get_cluster_target)(unsigned int cpu_id);
 
+	enum mmio_result (*handle_irq_route)(struct mmio_access *mmio,
+					     unsigned int irq);
 	enum mmio_result (*handle_irq_target)(struct mmio_access *mmio,
 					      unsigned int irq);
 	enum mmio_result (*handle_sgir_access)(struct mmio_access *mmio);
