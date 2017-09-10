@@ -468,9 +468,9 @@ void irqchip_config_commit(struct cell *cell_added_removed)
 
 int irqchip_init(void)
 {
-	int i, err;
-	u32 pidr2, cidr;
 	u32 dev_id = 0;
+	int i, err;
+	u32 cidr;
 
 	/* Only executed on master CPU */
 	if (irqchip_is_init)
@@ -487,17 +487,6 @@ int irqchip_init(void)
 	}
 	if (dev_id != AMBA_DEVICE)
 		return trace_error(-ENODEV);
-
-	/* Probe the GIC version */
-	pidr2 = mmio_read32(gicd_base + GICD_PIDR2);
-	switch (GICD_PIDR2_ARCH(pidr2)) {
-	case 0x2:
-	case 0x3:
-	case 0x4:
-		break;
-	default:
-		return trace_error(-ENODEV);
-	}
 
 	err = irqchip.init();
 	if (err)

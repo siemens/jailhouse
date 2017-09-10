@@ -38,6 +38,10 @@ static bool gic_targets_in_cell(struct cell *cell, u8 targets)
 
 static int gic_init(void)
 {
+	/* Probe the GICD version */
+	if (GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICD_PIDR2)) != 2)
+		return trace_error(-ENODEV);
+
 	gicc_base = paging_map_device(
 			system_config->platform_info.arm.gicc_base, GICC_SIZE);
 	if (!gicc_base)

@@ -100,6 +100,11 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	u32 ich_vtr;
 	u32 ich_vmcr;
 
+	/* Probe the GICD version */
+	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICD_PIDR2));
+	if (gic_version != 3 && gic_version != 4)
+		return trace_error(-ENODEV);
+
 	mpidr = cpu_data->mpidr;
 	aff = (MPIDR_AFFINITY_LEVEL(mpidr, 3) << 24 |
 	       MPIDR_AFFINITY_LEVEL(mpidr, 2) << 16 |
@@ -109,8 +114,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	/* Find redistributor */
 	do {
 		pidr = mmio_read32(redist_base + GICR_PIDR2);
-		gic_version = GICR_PIDR2_ARCH(pidr);
-		if (gic_version != 3 && gic_version != 4)
+		if (GICR_PIDR2_ARCH(pidr) != gic_version)
 			break;
 
 		redist_size = gic_version == 4 ? 0x40000 : 0x20000;
