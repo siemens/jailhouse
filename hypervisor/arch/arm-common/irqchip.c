@@ -462,3 +462,15 @@ int irqchip_init(void)
 
 	return 0;
 }
+
+unsigned int irqchip_mmio_count_regions(struct cell *cell)
+{
+	unsigned int cpu, regions = 1; /* GICD */
+
+	if (system_config->platform_info.arm.gic_version >= 3)
+		/* 1 GICR per CPU */
+		for_each_cpu(cpu, cell->cpu_set)
+			regions++;
+
+	return regions;
+}

@@ -438,11 +438,6 @@ static enum mmio_result gic_handle_dist_access(struct mmio_access *mmio)
 	}
 }
 
-unsigned int irqchip_mmio_count_regions(struct cell *cell)
-{
-	return 1;
-}
-
 static int gic_get_cpu_target(unsigned int cpu_id)
 {
 	return gicv2_target_cpu_map[cpu_id];

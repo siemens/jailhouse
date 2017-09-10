@@ -551,17 +551,6 @@ static enum mmio_result gic_handle_dist_access(struct mmio_access *mmio)
 	}
 }
 
-unsigned int irqchip_mmio_count_regions(struct cell *cell)
-{
-	unsigned int cpu, regions = 1; /* GICD */
-
-	/* 1 GICR per CPU */
-	for_each_cpu(cpu, cell->cpu_set)
-		regions++;
-
-	return regions;
-}
-
 static int gic_get_cpu_target(unsigned int cpu_id)
 {
 	return 1 << per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
