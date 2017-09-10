@@ -14,7 +14,6 @@
 #define _JAILHOUSE_ASM_GIC_V2_H
 
 #define GICC_SIZE		0x2000
-#define GICD_SIZE		0x1000
 #define GICH_SIZE		0x2000
 
 #define GICD_CIDR0		0xff0

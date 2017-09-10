@@ -382,7 +382,7 @@ int irqchip_cell_init(struct cell *cell)
 		return err;
 
 	mmio_region_register(cell, system_config->platform_info.arm.gicd_base,
-			     GICD_SIZE, gic_handle_dist_access, NULL);
+			     irqchip.gicd_size, gic_handle_dist_access, NULL);
 
 	if (cell == &root_cell)
 		return 0;
@@ -471,8 +471,9 @@ int irqchip_init(void)
 	if (irqchip_is_init)
 		return 0;
 
-	gicd_base = paging_map_device(
-			system_config->platform_info.arm.gicd_base, GICD_SIZE);
+	gicd_base =
+		paging_map_device(system_config->platform_info.arm.gicd_base,
+				  irqchip.gicd_size);
 	if (!gicd_base)
 		return -ENOMEM;
 

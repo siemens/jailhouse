@@ -559,7 +559,7 @@ static u64 gic_get_cluster_target(unsigned int cpu_id)
 	return per_cpu(cpu_id)->mpidr & MPIDR_CLUSTERID_MASK;
 }
 
-struct irqchip_ops irqchip = {
+struct irqchip irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
@@ -576,4 +576,6 @@ struct irqchip_ops irqchip = {
 	.handle_sgir_access = gic_handle_sgir_access,
 	.get_cpu_target = gic_get_cpu_target,
 	.get_cluster_target = gic_get_cluster_target,
+
+	.gicd_size = 0x10000,
 };

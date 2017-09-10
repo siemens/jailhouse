@@ -47,7 +47,7 @@
 #define is_spi(irqn)			((irqn) > 31 && (irqn) < 1020)
 
 #ifndef __ASSEMBLY__
-extern struct irqchip_ops irqchip;
+extern struct irqchip irqchip;
 
 extern void *gicd_base;
 extern spinlock_t dist_lock;

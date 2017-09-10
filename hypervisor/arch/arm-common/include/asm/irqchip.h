@@ -36,7 +36,7 @@ struct sgi {
 	u16	id;
 };
 
-struct irqchip_ops {
+struct irqchip {
 	int	(*init)(void);
 	int	(*cpu_init)(struct per_cpu *cpu_data);
 	void	(*cpu_reset)(struct per_cpu *cpu_data);
@@ -58,6 +58,8 @@ struct irqchip_ops {
 	enum mmio_result (*handle_irq_target)(struct mmio_access *mmio,
 					      unsigned int irq);
 	enum mmio_result (*handle_sgir_access)(struct mmio_access *mmio);
+
+	unsigned long gicd_size;
 };
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell);
