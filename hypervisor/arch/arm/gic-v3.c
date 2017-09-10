@@ -35,34 +35,42 @@ static u32 gic_version;
 
 static void *gicr_base;
 
-static u64 gic_read_lr(unsigned int n)
+static u64 gic_read_lr(unsigned int reg)
 {
 	u32 lr, lrc;
 
-	switch (n) {
-#define __READ_LR(n)					\
+	switch (reg) {
+#define __READ_LR0_7(n)					\
 	case n:						\
-		arm_read_sysreg(ICH_LR##n, lr);		\
-		arm_read_sysreg(ICH_LRC##n, lrc);	\
+		arm_read_sysreg(ICH_LR0_7(n), lr);	\
+		arm_read_sysreg(ICH_LRC0_7(n), lrc);	\
 		break;
 
-	__READ_LR(0)
-	__READ_LR(1)
-	__READ_LR(2)
-	__READ_LR(3)
-	__READ_LR(4)
-	__READ_LR(5)
-	__READ_LR(6)
-	__READ_LR(7)
-	__READ_LR(8)
-	__READ_LR(9)
-	__READ_LR(10)
-	__READ_LR(11)
-	__READ_LR(12)
-	__READ_LR(13)
-	__READ_LR(14)
-	__READ_LR(15)
-#undef __READ_LR
+	__READ_LR0_7(0)
+	__READ_LR0_7(1)
+	__READ_LR0_7(2)
+	__READ_LR0_7(3)
+	__READ_LR0_7(4)
+	__READ_LR0_7(5)
+	__READ_LR0_7(6)
+	__READ_LR0_7(7)
+#undef __READ_LR0_7
+
+#define __READ_LR8_15(n)				\
+	case n+8:					\
+		arm_read_sysreg(ICH_LR8_15(n), lr);	\
+		arm_read_sysreg(ICH_LRC8_15(n), lrc);	\
+		break;
+
+	__READ_LR8_15(0)
+	__READ_LR8_15(1)
+	__READ_LR8_15(2)
+	__READ_LR8_15(3)
+	__READ_LR8_15(4)
+	__READ_LR8_15(5)
+	__READ_LR8_15(6)
+	__READ_LR8_15(7)
+#undef __READ_LR8_15
 
 	default:
 		return (u64)(-1);
@@ -71,35 +79,42 @@ static u64 gic_read_lr(unsigned int n)
 	return (u64)lrc << 32 | lr;
 }
 
-static void gic_write_lr(unsigned int n, u64 val)
+static void gic_write_lr(unsigned int reg, u64 val)
 {
 	u32 lr = (u32)val;
 	u32 lrc = val >> 32;
 
-	switch (n) {
-#define __WRITE_LR(n)					\
+	switch (reg) {
+#define __WRITE_LR0_7(n)				\
 	case n:						\
-		arm_write_sysreg(ICH_LR##n, lr);	\
-		arm_write_sysreg(ICH_LRC##n, lrc);	\
+		arm_write_sysreg(ICH_LR0_7(n), lr);	\
+		arm_write_sysreg(ICH_LRC0_7(n), lrc);	\
 		break;
 
-	__WRITE_LR(0)
-	__WRITE_LR(1)
-	__WRITE_LR(2)
-	__WRITE_LR(3)
-	__WRITE_LR(4)
-	__WRITE_LR(5)
-	__WRITE_LR(6)
-	__WRITE_LR(7)
-	__WRITE_LR(8)
-	__WRITE_LR(9)
-	__WRITE_LR(10)
-	__WRITE_LR(11)
-	__WRITE_LR(12)
-	__WRITE_LR(13)
-	__WRITE_LR(14)
-	__WRITE_LR(15)
-#undef __WRITE_LR
+	__WRITE_LR0_7(0)
+	__WRITE_LR0_7(1)
+	__WRITE_LR0_7(2)
+	__WRITE_LR0_7(3)
+	__WRITE_LR0_7(4)
+	__WRITE_LR0_7(5)
+	__WRITE_LR0_7(6)
+	__WRITE_LR0_7(7)
+#undef __WRITE_LR0_7
+
+#define __WRITE_LR8_15(n)				\
+	case n+8:					\
+		arm_write_sysreg(ICH_LR8_15(n), lr);	\
+		arm_write_sysreg(ICH_LRC8_15(n), lrc);	\
+		break;
+	__WRITE_LR8_15(0)
+	__WRITE_LR8_15(1)
+	__WRITE_LR8_15(2)
+	__WRITE_LR8_15(3)
+	__WRITE_LR8_15(4)
+	__WRITE_LR8_15(5)
+	__WRITE_LR8_15(6)
+	__WRITE_LR8_15(7)
+#undef __WRITE_LR8_15
 	}
 }
 
