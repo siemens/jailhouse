@@ -18,39 +18,15 @@
 #define GICH_SIZE		0x2000
 
 #define GICD_CIDR0		0xff0
-#define GICD_CIDR1		0xff4
-#define GICD_CIDR2		0xff8
-#define GICD_CIDR3		0xffc
 
 #define GICD_PIDR0		0xfe0
-#define GICD_PIDR1		0xfe4
 #define GICD_PIDR2		0xfe8
-#define GICD_PIDR3		0xfec
 #define GICD_PIDR4		0xfd0
-#define GICD_PIDR5		0xfd4
-#define GICD_PIDR6		0xfd8
-#define GICD_PIDR7		0xfdc
 
 #define GICC_CTLR		0x0000
 #define GICC_PMR		0x0004
-#define GICC_BPR		0x0008
 #define GICC_IAR		0x000c
 #define GICC_EOIR		0x0010
-#define GICC_RPR		0x0014
-#define GICC_HPPIR		0x0018
-#define GICC_ABPR		0x001c
-#define GICC_AIAR		0x0020
-#define GICC_AEOIR		0x0024
-#define GICC_AHPPIR		0x0028
-#define GICC_APR0		0x00d0
-#define GICC_APR1		0x00d4
-#define GICC_APR2		0x00d8
-#define GICC_APR3		0x00dc
-#define GICC_NSAPR0		0x00e0
-#define GICC_NSAPR1		0x00e4
-#define GICC_NSAPR2		0x00e8
-#define GICC_NSAPR3		0x00ec
-#define GICC_IIDR		0x00fc
 #define GICC_DIR		0x1000
 
 #define GICC_CTLR_GRPEN1	(1 << 0)
@@ -61,9 +37,6 @@
 #define GICH_HCR		0x000
 #define GICH_VTR		0x004
 #define GICH_VMCR		0x008
-#define GICH_MISR		0x010
-#define GICH_EISR0		0x020
-#define GICH_EISR1		0x024
 #define GICH_ELSR0		0x030
 #define GICH_ELSR1		0x034
 #define GICH_APR		0x0f0
