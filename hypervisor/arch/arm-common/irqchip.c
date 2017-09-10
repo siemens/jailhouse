@@ -222,7 +222,7 @@ void irqchip_handle_irq(struct per_cpu *cpu_data)
 		 * This allows to not be re-interrupted by a level-triggered
 		 * interrupt that needs handling in the guest (e.g. timer)
 		 */
-		irqchip_eoi_irq(irq_id, handled);
+		irqchip.eoi_irq(irq_id, handled);
 	}
 }
 
@@ -314,11 +314,6 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 	 * interrupt.
 	 */
 	irqchip.enable_maint_irq(false);
-}
-
-void irqchip_eoi_irq(u32 irqn, bool deactivate)
-{
-	irqchip.eoi_irq(irqn, deactivate);
 }
 
 int irqchip_send_sgi(struct sgi *sgi)

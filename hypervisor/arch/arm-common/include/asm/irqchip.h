@@ -77,7 +77,6 @@ void irqchip_config_commit(struct cell *cell_added_removed);
 
 int irqchip_send_sgi(struct sgi *sgi);
 void irqchip_handle_irq(struct per_cpu *cpu_data);
-void irqchip_eoi_irq(u32 irqn, bool deactivate);
 
 bool irqchip_has_pending_irqs(void);
 
