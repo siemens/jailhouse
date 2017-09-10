@@ -369,7 +369,6 @@ void gicv3_handle_sgir_write(u64 sgir)
 	struct sgi sgi;
 	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
 
-	/* FIXME: clusters are not supported yet. */
 	sgi.targets = sgir & ICC_SGIR_TARGET_MASK;
 	sgi.routing_mode = routing_mode;
 	sgi.cluster_id = (SGIR_TO_MPIDR_AFFINITY(sgir, 3)
