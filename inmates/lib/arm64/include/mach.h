@@ -42,6 +42,7 @@
 #define CON_TYPE	"PL011"
 #define CON_BASE	0xe1010000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0xe1110000)
 #define GICC_V2_BASE	((void *)0xe112f000)
 
@@ -49,6 +50,7 @@
 #define CON_TYPE	"PL011"
 #define CON_BASE	0x1c090000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x2c001000)
 #define GICC_V2_BASE	((void *)0x2c002000)
 
@@ -56,6 +58,7 @@
 #define CON_TYPE	"PL011"
 #define CON_BASE	0xf7113000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0xf6801000)
 #define GICC_V2_BASE	((void *)0xf6802000)
 
@@ -63,6 +66,7 @@
 #define CON_TYPE	"8250"
 #define CON_BASE	0x70006000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x50041000)
 #define GICC_V2_BASE	((void *)0x50042000)
 
@@ -70,9 +74,9 @@
 #define CON_TYPE	"XUARTPS"
 #define CON_BASE	0xff010000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0xf9010000)
 #define GICC_V2_BASE	((void *)0xf902f000)
-
 
 #endif
 

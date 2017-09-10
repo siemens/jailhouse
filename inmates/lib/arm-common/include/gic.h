@@ -48,10 +48,14 @@
 
 #ifndef __ASSEMBLY__
 
-int gic_init(void);
-void gic_enable(unsigned int irqn);
-void gic_write_eoi(u32 irqn);
-u32 gic_read_ack(void);
+struct gic {
+	int (*init)(void);
+	void (*enable)(unsigned int irqn);
+	void (*write_eoi)(u32 irqn);
+	u32 (*read_ack)(void);
+};
+
+extern const struct gic gic;
 
 #endif /* !__ASSEMBLY__ */
 

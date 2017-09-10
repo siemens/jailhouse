@@ -47,20 +47,21 @@ void vector_irq(void)
 	u32 irqn;
 
 	while (1) {
-		irqn = gic_read_ack();
+		irqn = gic.read_ack();
 		if (irqn == 0x3ff)
 			break;
 
 		if (irq_handler)
 			irq_handler(irqn);
 
-		gic_write_eoi(irqn);
+		gic.write_eoi(irqn);
 	}
 }
 
 void gic_setup(irq_handler_t handler)
 {
-	gic_init();
+	gic.init();
+
 	irq_handler = handler;
 
 	gic_setup_irq_stack();
@@ -68,5 +69,5 @@ void gic_setup(irq_handler_t handler)
 
 void gic_enable_irq(unsigned int irq)
 {
-	gic_enable(irq);
+	gic.enable(irq);
 }

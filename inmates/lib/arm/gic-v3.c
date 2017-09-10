@@ -40,6 +40,11 @@
 #include <mach.h>
 #include <gic.h>
 
+#ifndef GICD_V3_BASE
+#define GICD_V3_BASE		((void *)-1)
+#define GICR_V3_BASE		((void *)-1)
+#endif
+
 #define GICR_SGI_BASE		0x10000
 #define GICR_ISENABLER		GICD_ISENABLER
 
@@ -51,7 +56,7 @@
 
 #define ICC_IGRPEN1_EN		0x1
 
-void gic_enable(unsigned int irqn)
+static void gic_v3_enable(unsigned int irqn)
 {
 	if (is_sgi_ppi(irqn))
 		mmio_write32(GICR_V3_BASE + GICR_SGI_BASE + GICR_ISENABLER,
@@ -61,7 +66,7 @@ void gic_enable(unsigned int irqn)
 			     1 << (irqn % 32));
 }
 
-int gic_init(void)
+static int gic_v3_init(void)
 {
 	arm_write_sysreg(ICC_CTLR_EL1, 0);
 	arm_write_sysreg(ICC_PMR_EL1, 0xf0);
@@ -70,15 +75,26 @@ int gic_init(void)
 	return 0;
 }
 
-void gic_write_eoi(u32 irqn)
+static void gic_v3_write_eoi(u32 irqn)
 {
 	arm_write_sysreg(ICC_EOIR1_EL1, irqn);
 }
 
-u32 gic_read_ack(void)
+static u32 gic_v3_read_ack(void)
 {
 	u32 val;
 
 	arm_read_sysreg(ICC_IAR1_EL1, val);
 	return val;
 }
+
+const struct gic gic_v3 = {
+	.init = gic_v3_init,
+	.enable = gic_v3_enable,
+	.write_eoi = gic_v3_write_eoi,
+	.read_ack = gic_v3_read_ack,
+};
+
+#if GIC_VERSION == 3
+extern const struct gic gic __attribute__((alias("gic_v3")));
+#endif

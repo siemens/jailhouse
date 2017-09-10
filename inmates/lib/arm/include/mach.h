@@ -47,6 +47,7 @@
 #define CON_CLOCK_REG  0
 #define CON_GATE_NR    0
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x50041000)
 #define GICC_V2_BASE	((void *)0x50042000)
 
@@ -58,6 +59,7 @@
 #define CON_CLOCK_REG	0x01c2006c
 #define CON_GATE_NR	23
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x01c81000)
 #define GICC_V2_BASE	((void *)0x01c82000)
 
@@ -65,6 +67,7 @@
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c28000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x01c81000)
 #define GICC_V2_BASE	((void *)0x01c82000)
 
@@ -72,11 +75,15 @@
 #define CON_TYPE	"PL011"
 #define CON_BASE	0x1c090000
 
+#define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x2c001000)
 #define GICC_V2_BASE	((void *)0x2c002000)
 
+/*
+#define GIC_VERSION	3
 #define GICD_V3_BASE	((void *)0x2f000000)
 #define GICR_V3_BASE	((void *)0x2f100000)
+*/
 
 #endif
 

@@ -39,6 +39,11 @@
 #include <mach.h>
 #include <gic.h>
 
+#ifndef GICD_V2_BASE
+#define GICD_V2_BASE		((void *)-1)
+#define GICC_V2_BASE		((void *)-1)
+#endif
+
 #define GICC_CTLR		0x0000
 #define GICC_PMR		0x0004
 #define GICC_IAR		0x000c
@@ -50,13 +55,13 @@
 
 #define GICC_PMR_DEFAULT	0xf0
 
-void gic_enable(unsigned int irqn)
+static void gic_v2_enable(unsigned int irqn)
 {
 	mmio_write32(GICD_V2_BASE + GICD_ISENABLER + ((irqn >> 3) & ~0x3),
 		     1 << (irqn & 0x1f));
 }
 
-int gic_init(void)
+static int gic_v2_init(void)
 {
 	mmio_write32(GICC_V2_BASE + GICC_CTLR, GICC_CTLR_GRPEN1);
 	mmio_write32(GICC_V2_BASE + GICC_PMR, GICC_PMR_DEFAULT);
@@ -65,12 +70,23 @@ int gic_init(void)
 	return 0;
 }
 
-void gic_write_eoi(u32 irqn)
+static void gic_v2_write_eoi(u32 irqn)
 {
 	mmio_write32(GICC_V2_BASE + GICC_EOIR, irqn);
 }
 
-u32 gic_read_ack(void)
+static u32 gic_v2_read_ack(void)
 {
 	return mmio_read32(GICC_V2_BASE + GICC_IAR);
 }
+
+const struct gic gic_v2 = {
+	.init = gic_v2_init,
+	.enable = gic_v2_enable,
+	.write_eoi = gic_v2_write_eoi,
+	.read_ack = gic_v2_read_ack,
+};
+
+#if GIC_VERSION == 2
+extern const struct gic gic __attribute__((alias("gic_v2")));
+#endif
