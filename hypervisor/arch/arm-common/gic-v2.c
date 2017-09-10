@@ -21,7 +21,18 @@ static u8 gicv2_target_cpu_map[8];
 static unsigned int gic_num_lr;
 
 void *gicc_base;
-void *gich_base;
+
+static void *gich_base;
+
+static u32 gic_read_lr(unsigned int i)
+{
+	return mmio_read32(gich_base + GICH_LR_BASE + i * 4);
+}
+
+static void gic_write_lr(unsigned int i, u32 value)
+{
+	mmio_write32(gich_base + GICH_LR_BASE + i * 4, value);
+}
 
 /* Check that the targeted interface belongs to the cell */
 static bool gic_targets_in_cell(struct cell *cell, u8 targets)

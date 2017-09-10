@@ -73,20 +73,6 @@
 
 #include <jailhouse/mmio.h>
 
-static inline u32 gic_read_lr(unsigned int i)
-{
-	extern void *gich_base;
-
-	return mmio_read32(gich_base + GICH_LR_BASE + i * 4);
-}
-
-static inline void gic_write_lr(unsigned int i, u32 value)
-{
-	extern void *gich_base;
-
-	mmio_write32(gich_base + GICH_LR_BASE + i * 4, value);
-}
-
 static inline u32 gic_read_iar_irqn(void)
 {
 	extern void *gicc_base;
