@@ -49,7 +49,7 @@ static bool gic_targets_in_cell(struct cell *cell, u8 targets)
 static int gic_init(void)
 {
 	/* Probe the GICD version */
-	if (GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICD_PIDR2)) != 2)
+	if (GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICDv2_PIDR2)) != 2)
 		return trace_error(-ENODEV);
 
 	gicc_base = paging_map_device(
@@ -404,21 +404,38 @@ static enum mmio_result gic_handle_irq_target(struct mmio_access *mmio,
 	return MMIO_HANDLED;
 }
 
-static enum mmio_result gic_handle_sgir_access(struct mmio_access *mmio)
+static enum mmio_result gic_handle_dist_access(struct mmio_access *mmio)
 {
-	struct sgi sgi;
 	unsigned long val = mmio->value;
+	struct sgi sgi;
 
-	if (!mmio->is_write)
+	switch (mmio->address) {
+	case GICD_SGIR:
+		if (!mmio->is_write)
+			return MMIO_HANDLED;
+
+		sgi.targets = (val >> 16) & 0xff;
+		sgi.routing_mode = (val >> 24) & 0x3;
+		sgi.cluster_id = 0;
+		sgi.id = val & 0xf;
+
+		gic_handle_sgir_write(&sgi);
 		return MMIO_HANDLED;
 
-	sgi.targets = (val >> 16) & 0xff;
-	sgi.routing_mode = (val >> 24) & 0x3;
-	sgi.cluster_id = 0;
-	sgi.id = val & 0xf;
-
-	gic_handle_sgir_write(&sgi);
-	return MMIO_HANDLED;
+	case GICD_CTLR:
+	case GICD_TYPER:
+	case GICD_IIDR:
+	case REG_RANGE(GICDv2_PIDR0, 4, 4):
+	case REG_RANGE(GICDv2_PIDR4, 4, 4):
+	case REG_RANGE(GICDv2_CIDR0, 4, 4):
+		/* Allow read access, ignore write */
+		if (!mmio->is_write)
+			mmio_perform_access(gicd_base, mmio);
+		/* fall through */
+	default:
+		/* Ignore access. */
+		return MMIO_HANDLED;
+	}
 }
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
@@ -454,7 +471,7 @@ struct irqchip irqchip = {
 
 	.handle_irq_route = gic_handle_irq_route,
 	.handle_irq_target = gic_handle_irq_target,
-	.handle_sgir_access = gic_handle_sgir_access,
+	.handle_dist_access = gic_handle_dist_access,
 	.get_cpu_target = gic_get_cpu_target,
 	.get_cluster_target = gic_get_cluster_target,
 

@@ -59,7 +59,7 @@ struct irqchip {
 					     unsigned int irq);
 	enum mmio_result (*handle_irq_target)(struct mmio_access *mmio,
 					      unsigned int irq);
-	enum mmio_result (*handle_sgir_access)(struct mmio_access *mmio);
+	enum mmio_result (*handle_dist_access)(struct mmio_access *mmio);
 
 	unsigned long gicd_size;
 };

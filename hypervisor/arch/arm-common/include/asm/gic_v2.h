@@ -16,11 +16,10 @@
 #define GICC_SIZE		0x2000
 #define GICH_SIZE		0x2000
 
-#define GICD_CIDR0		0xff0
-
-#define GICD_PIDR0		0xfe0
-#define GICD_PIDR2		0xfe8
-#define GICD_PIDR4		0xfd0
+#define GICDv2_CIDR0		0xff0
+#define GICDv2_PIDR0		0xfe0
+#define GICDv2_PIDR2		0xfe8
+#define GICDv2_PIDR4		0xfd0
 
 #define GICC_CTLR		0x0000
 #define GICC_PMR		0x0004

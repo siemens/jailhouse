@@ -28,9 +28,6 @@
 	     (counter) < (config)->num_irqchips;			\
 	     (chip)++, (counter)++)
 
-#define REG_RANGE(base, n, size)	\
-		(base) ... ((base) + (n - 1) * (size))
-
 DEFINE_SPINLOCK(dist_lock);
 
 void *gicd_base;
@@ -168,23 +165,8 @@ static enum mmio_result gic_handle_dist_access(void *arg,
 					      false);
 		break;
 
-	case GICD_SGIR:
-		ret = irqchip.handle_sgir_access(mmio);
-		break;
-
-	case GICD_CTLR:
-	case GICD_TYPER:
-	case GICD_IIDR:
-	case REG_RANGE(GICD_PIDR0, 4, 4):
-	case REG_RANGE(GICD_PIDR4, 4, 4):
-	case REG_RANGE(GICD_CIDR0, 4, 4):
-		/* Allow read access, ignore write */
-		if (!mmio->is_write)
-			mmio_perform_access(gicd_base, mmio);
-		/* fall through */
 	default:
-		/* Ignore access. */
-		ret = MMIO_HANDLED;
+		ret = irqchip.handle_dist_access(mmio);
 	}
 
 	return ret;

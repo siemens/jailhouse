@@ -46,6 +46,8 @@
 #define is_ppi(irqn)			((irqn) > 15 && (irqn) < 32)
 #define is_spi(irqn)			((irqn) > 31 && (irqn) < 1020)
 
+#define REG_RANGE(base, n, size)	(base)...((base) + (n - 1) * (size))
+
 #ifndef __ASSEMBLY__
 extern struct irqchip irqchip;
 

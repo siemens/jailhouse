@@ -17,11 +17,10 @@
 
 #define GICR_SIZE		0x100000
 
-#define GICD_CIDR0		0xfff0
-
-#define GICD_PIDR0		0xffe0
-#define GICD_PIDR2		0xffe8
-#define GICD_PIDR4		0xffd0
+#define GICDv3_CIDR0		0xfff0
+#define GICDv3_PIDR0		0xffe0
+#define GICDv3_PIDR2		0xffe8
+#define GICDv3_PIDR4		0xffd0
 
 #define GICR_TYPER		0x0008
 #define GICR_PIDR2		0xffe8

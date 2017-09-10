@@ -184,7 +184,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	u32 ich_vmcr;
 
 	/* Probe the GICD version */
-	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICD_PIDR2));
+	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICDv3_PIDR2));
 	if (gic_version != 3 && gic_version != 4)
 		return trace_error(-ENODEV);
 
@@ -532,10 +532,23 @@ static enum mmio_result gicv3_handle_irq_target(struct mmio_access *mmio,
 	return MMIO_HANDLED;
 }
 
-static enum mmio_result gic_handle_sgir_access(struct mmio_access *mmio)
+static enum mmio_result gic_handle_dist_access(struct mmio_access *mmio)
 {
-	/* ignore writes, we are in affinity routing mode */
-	return MMIO_HANDLED;
+	switch (mmio->address) {
+	case GICD_CTLR:
+	case GICD_TYPER:
+	case GICD_IIDR:
+	case REG_RANGE(GICDv3_PIDR0, 4, 4):
+	case REG_RANGE(GICDv3_PIDR4, 4, 4):
+	case REG_RANGE(GICDv3_CIDR0, 4, 4):
+		/* Allow read access, ignore write */
+		if (!mmio->is_write)
+			mmio_perform_access(gicd_base, mmio);
+		/* fall through */
+	default:
+		/* Ignore access. */
+		return MMIO_HANDLED;
+	}
 }
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell)
@@ -574,7 +587,7 @@ struct irqchip irqchip = {
 	.eoi_irq = gic_eoi_irq,
 	.handle_irq_route = gic_handle_irq_route,
 	.handle_irq_target = gicv3_handle_irq_target,
-	.handle_sgir_access = gic_handle_sgir_access,
+	.handle_dist_access = gic_handle_dist_access,
 	.get_cpu_target = gic_get_cpu_target,
 	.get_cluster_target = gic_get_cluster_target,
 
