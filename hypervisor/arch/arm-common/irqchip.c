@@ -23,9 +23,6 @@
 #include <asm/irqchip.h>
 #include <asm/sysregs.h>
 
-/* AMBA's biosfood */
-#define AMBA_DEVICE	0xb105f00d
-
 #define for_each_irqchip(chip, config, counter)				\
 	for ((chip) = jailhouse_cell_irqchips(config), (counter) = 0;	\
 	     (counter) < (config)->num_irqchips;			\
@@ -463,9 +460,7 @@ void irqchip_config_commit(struct cell *cell_added_removed)
 
 int irqchip_init(void)
 {
-	u32 dev_id = 0;
-	int i, err;
-	u32 cidr;
+	int err;
 
 	/* Only executed on master CPU */
 	if (irqchip_is_init)
@@ -476,13 +471,6 @@ int irqchip_init(void)
 				  irqchip.gicd_size);
 	if (!gicd_base)
 		return -ENOMEM;
-
-	for (i = 3; i >= 0; i--) {
-		cidr = mmio_read32(gicd_base + GICD_CIDR0 + i * 4);
-		dev_id |= cidr << i * 8;
-	}
-	if (dev_id != AMBA_DEVICE)
-		return trace_error(-ENODEV);
 
 	err = irqchip.init();
 	if (err)
