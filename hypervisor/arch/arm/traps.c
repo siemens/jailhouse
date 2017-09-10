@@ -380,16 +380,16 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	access_cell_reg(ctx, rt, &lo, true);
 	access_cell_reg(ctx, rt2, &hi, true);
 
-#ifdef CONFIG_ARM_GIC_V3
 	/* trapped by HCR.IMO/FMO */
-	if (HSR_MATCH_MCRR_MRRC(ctx->hsr, 0, 12)) /* ICC_SGI1R */
-		gicv3_handle_sgir_write(((u64)hi << 32) | lo);
-	else
-#endif
-	/* trapped if HCR.TVM is set */
-	if (!(CP15_64_PERFORM_WRITE(0, 2) ||	/* TTBR0 */
-	      CP15_64_PERFORM_WRITE(1, 2)))	/* TTBR1 */
-		return TRAP_UNHANDLED;
+	if (HSR_MATCH_MCRR_MRRC(ctx->hsr, 0, 12)) { /* ICC_SGI1R */
+		if (!gicv3_handle_sgir_write(((u64)hi << 32) | lo))
+			return TRAP_UNHANDLED;
+	} else {
+		/* trapped if HCR.TVM is set */
+		if (!(CP15_64_PERFORM_WRITE(0, 2) ||	/* TTBR0 */
+		    CP15_64_PERFORM_WRITE(1, 2)))	/* TTBR1 */
+			return TRAP_UNHANDLED;
+	}
 
 	arch_skip_instruction(ctx);
 

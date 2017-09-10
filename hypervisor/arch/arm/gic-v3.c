@@ -17,6 +17,7 @@
 #include <jailhouse/types.h>
 #include <asm/control.h>
 #include <asm/gic.h>
+#include <asm/gic_v3.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
 #include <asm/sysregs.h>
@@ -379,10 +380,13 @@ static int gic_send_sgi(struct sgi *sgi)
 #define SGIR_TO_MPIDR_AFFINITY(sgir, level)			\
 	(SGIR_TO_AFFINITY(sgir, level) << MPIDR_LEVEL_SHIFT(level))
 
-void gicv3_handle_sgir_write(u64 sgir)
+bool gicv3_handle_sgir_write(u64 sgir)
 {
 	struct sgi sgi;
 	unsigned long routing_mode = !!(sgir & ICC_SGIR_ROUTING_BIT);
+
+	if (gic_version < 3)
+		return false;
 
 	sgi.targets = sgir & ICC_SGIR_TARGET_MASK;
 	sgi.routing_mode = routing_mode;
@@ -392,6 +396,8 @@ void gicv3_handle_sgir_write(u64 sgir)
 	sgi.id = sgir >> ICC_SGIR_IRQN_SHIFT & 0xf;
 
 	gic_handle_sgir_write(&sgi);
+
+	return true;
 }
 
 /*
@@ -561,7 +567,7 @@ static u64 gic_get_cluster_target(unsigned int cpu_id)
 	return per_cpu(cpu_id)->mpidr & MPIDR_CLUSTERID_MASK;
 }
 
-struct irqchip irqchip = {
+const struct irqchip gicv3_irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,

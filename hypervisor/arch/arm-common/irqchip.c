@@ -38,6 +38,8 @@ void *gicd_base;
  */
 static bool irqchip_is_init;
 
+static struct irqchip irqchip;
+
 /*
  * Most of the GIC distributor writes only reconfigure the IRQs corresponding to
  * the bits of the written value, by using separate `set' and `clear' registers.
@@ -447,6 +449,19 @@ int irqchip_init(void)
 	/* Only executed on master CPU */
 	if (irqchip_is_init)
 		return 0;
+
+	switch (system_config->platform_info.arm.gic_version) {
+	case 2:
+		irqchip = gicv2_irqchip;
+		break;
+#ifndef __aarch64__
+	case 3:
+		irqchip = gicv3_irqchip;
+		break;
+#endif
+	default:
+		return trace_error(-EINVAL);
+	}
 
 	gicd_base =
 		paging_map_device(system_config->platform_info.arm.gicd_base,

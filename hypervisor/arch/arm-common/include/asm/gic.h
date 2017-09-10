@@ -13,12 +13,7 @@
 #ifndef _JAILHOUSE_ASM_GIC_COMMON_H
 #define _JAILHOUSE_ASM_GIC_COMMON_H
 
-#include <jailhouse/mmio.h>
-#if defined(CONFIG_ARM_GIC_V2)
-# include <asm/gic_v2.h>
-#elif defined(CONFIG_ARM_GIC_V3)
-# include <asm/gic_v3.h>
-#endif
+#include <asm/spinlock.h>
 
 #define GICD_CTLR			0x0000
 # define GICD_CTLR_ARE_NS		(1 << 4)
@@ -49,11 +44,12 @@
 #define REG_RANGE(base, n, size)	(base)...((base) + (n - 1) * (size))
 
 #ifndef __ASSEMBLY__
-extern struct irqchip irqchip;
+extern const struct irqchip gicv2_irqchip, gicv3_irqchip;
 
 extern void *gicd_base;
 extern spinlock_t dist_lock;
 
 void gic_handle_sgir_write(struct sgi *sgi);
+bool gicv3_handle_sgir_write(u64 sgir);
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

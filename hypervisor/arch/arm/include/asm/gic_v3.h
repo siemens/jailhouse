@@ -123,12 +123,4 @@
 #define ICH_LR_PRIORITY_SHIFT	48
 #define ICH_LR_SGI_EOI		(0x1ULL << 41)
 #define ICH_LR_PHYS_ID_SHIFT	32
-
-#ifndef __ASSEMBLY__
-
-#include <jailhouse/types.h>
-
-void gicv3_handle_sgir_write(u64 sgir);
-
-#endif /* __ASSEMBLY__ */
 #endif /* _JAILHOUSE_ASM_GIC_V3_H */

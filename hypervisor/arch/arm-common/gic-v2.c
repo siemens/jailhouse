@@ -13,6 +13,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <asm/gic.h>
+#include <asm/gic_v2.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
 
@@ -448,7 +449,7 @@ static u64 gic_get_cluster_target(unsigned int cpu_id)
 	return 0;
 }
 
-struct irqchip irqchip = {
+const struct irqchip gicv2_irqchip = {
 	.init = gic_init,
 	.cpu_init = gic_cpu_init,
 	.cpu_reset = gic_cpu_reset,
