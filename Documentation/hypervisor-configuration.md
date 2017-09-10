@@ -49,48 +49,37 @@ General configuration parameters
 ##### BananaPi M1
 
     #define CONFIG_MACH_BANANAPI 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### Nvidia Jetson TK1
 
     #define CONFIG_MACH_JETSON_TK1 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### Xunlong Orange Pi Zero, 256 MiB
 
     #define CONFIG_MACH_ORANGEPI0 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### ARM Fast Model
 
     #define CONFIG_MACH_VEXPRESS 1
-    /* Fast Model supports both, GICv2 and GICv3 */
-    #define CONFIG_ARM_GIC_V2 1
-    /* #define CONFIG_ARM_GIC_V3 */
 
 #### ARM64
 
 ##### Nvidia Jetson TK1
 
     #define CONFIG_MACH_JETSON_TX1 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### Xilinx Zynq UltraScale+ MPSoC ZCU102
 
     #define CONFIG_MACH_ZYNQMP_ZCU102 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### HiKey LeMaker 2 GiB
 
     #define CONFIG_MACH_HIKEY 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### ARMv8 Foundation Model
 
     #define CONFIG_MACH_FOUNDATION_V8 1
-    #define CONFIG_ARM_GIC_V2 1
 
 ##### AMD ARM-Opteron A1100
 
     #define CONFIG_MACH_AMD_SEATTLE 1
-    #define CONFIG_ARM_GIC_V2 1

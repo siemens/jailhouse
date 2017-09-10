@@ -1,3 +1,2 @@
 #define CONFIG_TRACE_ERROR		1
-#define CONFIG_ARM_GIC_V3		1
 #define CONFIG_MACH_VEXPRESS		1
