@@ -14,6 +14,7 @@
 #define _JAILHOUSE_ASM_GIC_V3_H
 
 #include <asm/sysregs.h>
+#include <asm/arch_gicv3.h>
 
 #define GICR_SIZE		0x100000
 
@@ -60,12 +61,6 @@
 #define ICH_AP1R1_EL2		SYSREG_32(4, c12, c9, 1)
 #define ICH_AP1R2_EL2		SYSREG_32(4, c12, c9, 2)
 #define ICH_AP1R3_EL2		SYSREG_32(4, c12, c9, 3)
-
-/* Different on AArch32 and AArch64... */
-#define ICH_LR0_7(x)		SYSREG_32(4, c12, c12, x)
-#define ICH_LR8_15(x)		SYSREG_32(4, c12, c13, x)
-#define ICH_LRC0_7(x)		SYSREG_32(4, c12, c14, x)
-#define ICH_LRC8_15(x)		SYSREG_32(4, c12, c15, x)
 
 #define ICC_CTLR_EOImode	0x2
 #define ICC_PMR_MASK		0xff

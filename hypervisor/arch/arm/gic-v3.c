@@ -38,13 +38,12 @@ static void *gicr_base;
 
 static u64 gic_read_lr(unsigned int reg)
 {
-	u32 lr, lrc;
+	u64 val;
 
 	switch (reg) {
 #define __READ_LR0_7(n)					\
 	case n:						\
-		arm_read_sysreg(ICH_LR0_7(n), lr);	\
-		arm_read_sysreg(ICH_LRC0_7(n), lrc);	\
+		ARM_GIC_READ_LR0_7(n, val)		\
 		break;
 
 	__READ_LR0_7(0)
@@ -59,8 +58,7 @@ static u64 gic_read_lr(unsigned int reg)
 
 #define __READ_LR8_15(n)				\
 	case n+8:					\
-		arm_read_sysreg(ICH_LR8_15(n), lr);	\
-		arm_read_sysreg(ICH_LRC8_15(n), lrc);	\
+		ARM_GIC_READ_LR8_15(n, val)		\
 		break;
 
 	__READ_LR8_15(0)
@@ -77,19 +75,15 @@ static u64 gic_read_lr(unsigned int reg)
 		return (u64)(-1);
 	}
 
-	return (u64)lrc << 32 | lr;
+	return val;
 }
 
 static void gic_write_lr(unsigned int reg, u64 val)
 {
-	u32 lr = (u32)val;
-	u32 lrc = val >> 32;
-
 	switch (reg) {
 #define __WRITE_LR0_7(n)				\
 	case n:						\
-		arm_write_sysreg(ICH_LR0_7(n), lr);	\
-		arm_write_sysreg(ICH_LRC0_7(n), lrc);	\
+		ARM_GIC_WRITE_LR0_7(n, val)		\
 		break;
 
 	__WRITE_LR0_7(0)
@@ -104,8 +98,7 @@ static void gic_write_lr(unsigned int reg, u64 val)
 
 #define __WRITE_LR8_15(n)				\
 	case n+8:					\
-		arm_write_sysreg(ICH_LR8_15(n), lr);	\
-		arm_write_sysreg(ICH_LRC8_15(n), lrc);	\
+		ARM_GIC_WRITE_LR8_15(n, val)		\
 		break;
 	__WRITE_LR8_15(0)
 	__WRITE_LR8_15(1)
