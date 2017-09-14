@@ -454,11 +454,9 @@ int irqchip_init(void)
 	case 2:
 		irqchip = gicv2_irqchip;
 		break;
-#ifndef __aarch64__
 	case 3:
 		irqchip = gicv3_irqchip;
 		break;
-#endif
 	default:
 		return trace_error(-EINVAL);
 	}
