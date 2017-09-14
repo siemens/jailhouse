@@ -45,7 +45,6 @@
 #define ICC_SRE_EL1		SYSREG_32(0, c12, c12, 5)
 #define ICC_SRE_EL2		SYSREG_32(4, c12, c9, 5)
 #define ICC_IGRPEN1_EL1		SYSREG_32(0, c12, c12, 7)
-#define ICC_SGI1R_EL1		SYSREG_64(0, c12)
 #define ICC_AP1R0_EL1		SYSREG_32(0, c12, c9, 0)
 #define ICC_AP1R1_EL1		SYSREG_32(0, c12, c9, 1)
 #define ICC_AP1R2_EL1		SYSREG_32(0, c12, c9, 2)

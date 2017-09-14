@@ -20,6 +20,8 @@
 #define ICH_LRC0_7(x)		SYSREG_32(4, c12, c14, x)
 #define ICH_LRC8_15(x)		SYSREG_32(4, c12, c15, x)
 
+#define ICC_SGI1R_EL1		SYSREG_64(0, c12)
+
 #define ARM_GIC_READ_LR0_7(n, val) do {		\
 	u32 lr##n, lrc##n;			\
 						\

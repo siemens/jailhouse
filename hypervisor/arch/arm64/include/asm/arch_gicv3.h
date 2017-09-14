@@ -18,6 +18,8 @@
 #define ICH_LR0_7_EL2(x)		SYSREG_64(4, c12, c12, x)
 #define ICH_LR8_15_EL2(x)		SYSREG_64(4, c12, c13, x)
 
+#define ICC_SGI1R_EL1			SYSREG_64(0, c12, c11, 5)
+
 #define ARM_GIC_READ_LR0_7(n, val)	arm_read_sysreg(ICH_LR0_7_EL2(n), val);
 #define ARM_GIC_WRITE_LR0_7(n, val)	arm_write_sysreg(ICH_LR0_7_EL2(n), val);
 
