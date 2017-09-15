@@ -1,10 +1,12 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) OTH Regensburg, 2016
+ * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2017
  *
  * Authors:
- *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+ *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -36,22 +38,45 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct uart_chip {
-	void *base;
+#include <inmate.h>
+#include <uart.h>
 
-	void *clock_reg;
-	int gate_nr;
+#define UART_TX			0x0
+#define UART_DLL		0x0
+#define UART_DLM		0x1
+#define UART_LCR		0x3
+#define  UART_LCR_8N1		0x03
+#define  UART_LCR_DLAB		0x80
+#define UART_LSR		0x5
+#define  UART_LSR_THRE		0x20
 
-	unsigned int divider;
+static void uart_init(struct uart_chip *chip)
+{
+	if (chip->clock_reg)
+		mmio_write32(chip->clock_reg,
+			     mmio_read32(chip->clock_reg) |
+			     (1 << chip->gate_nr));
 
-	void (*init)(struct uart_chip*);
-	bool (*is_busy)(struct uart_chip*);
-	void (*write)(struct uart_chip*, char c);
+	if (chip->divider) {
+		mmio_write8(chip->base + UART_LCR, UART_LCR_DLAB);
+		mmio_write8(chip->base + UART_DLL, chip->divider);
+		mmio_write8(chip->base + UART_DLM, 0);
+		mmio_write8(chip->base + UART_LCR, UART_LCR_8N1);
+	}
+}
+
+static bool uart_is_busy(struct uart_chip *chip)
+{
+	return !(mmio_read8(chip->base + UART_LSR) & UART_LSR_THRE);
+}
+
+static void uart_write(struct uart_chip *chip, char c)
+{
+	mmio_write8(chip->base + UART_TX, c);
+}
+
+struct uart_chip uart_8250_8_ops = {
+	.init = uart_init,
+	.is_busy = uart_is_busy,
+	.write = uart_write,
 };
-
-extern struct uart_chip uart_jailhouse_ops;
-extern struct uart_chip uart_8250_ops;
-extern struct uart_chip uart_8250_8_ops;
-extern struct uart_chip uart_pl011_ops;
-extern struct uart_chip uart_xuartps_ops;
-extern struct uart_chip uart_mvebu_ops;

@@ -86,6 +86,8 @@ static void console_init(void)
 		chip = &uart_jailhouse_ops;
 	else if (!strcmp(type, "8250"))
 		chip = &uart_8250_ops;
+	else if (!strcmp(type, "8250-8"))
+		chip = &uart_8250_8_ops;
 	else if (!strcmp(type, "PL011"))
 		chip = &uart_pl011_ops;
 	else if (!strcmp(type, "XUARTPS"))
