@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2017
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
@@ -12,6 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/uart.h>
 
@@ -23,6 +24,16 @@
 #define  UART_LCR_DLAB		0x80
 #define UART_LSR		0x5
 #define  UART_LSR_THRE		0x20
+
+static void reg_out_mmio8(struct uart_chip *chip, unsigned int reg, u32 value)
+{
+	mmio_write8(chip->virt_base + reg, value);
+}
+
+static u32 reg_in_mmio8(struct uart_chip *chip, unsigned int reg)
+{
+	return mmio_read8(chip->virt_base + reg);
+}
 
 static void reg_out_mmio32(struct uart_chip *chip, unsigned int reg, u32 value)
 {
@@ -38,11 +49,17 @@ static void uart_init(struct uart_chip *chip)
 {
 	void *clock_reg = (void*)(unsigned long)chip->virt_clock_reg;
 	unsigned int gate_nr = chip->debug_console->gate_nr;
+	const u32 flags = system_config->debug_console.flags;
 
 	/* clock setting only implemented on ARM via 32-bit MMIO */
 	if (clock_reg)
 		mmio_write32(clock_reg,
 			     mmio_read32(clock_reg) | (1 << gate_nr));
+
+	if (CON1_IS_MMIO(flags) && CON1_USES_REGDIST_1(flags)) {
+		chip->reg_out = reg_out_mmio8;
+		chip->reg_in = reg_in_mmio8;
+	}
 
 	/* only initialise if divider is not zero */
 	if (!chip->debug_console->divider)
