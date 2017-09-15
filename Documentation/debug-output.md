@@ -27,6 +27,8 @@ Possible debug outputs for arm and arm64:
 
     - JAILHOUSE_CON1_TYPE_8250      /* 8250 compatible UART*/
     - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
+    - JAILHOUSE_CON1_TYPE_XUARTPS   /* Xilinx UART */
+    - JAILHOUSE_CON1_TYPE_MVEBU     /* Marvell UART */
 
 Possible access modes, to be or'ed:
 
@@ -35,8 +37,8 @@ Possible access modes, to be or'ed:
 
 Possible register distances (MMIO only, PIO is implicitly 1-byte), to be or'ed:
 
-    - JAILHOUSE_CON1_REGDIST_1      /* 1-byte distance, x86 only */
-    - JAILHOUSE_CON1_REGDIST_4      /* 4-bytes distance, x86 and ARM */
+    - JAILHOUSE_CON1_REGDIST_1      /* 1-byte distance */
+    - JAILHOUSE_CON1_REGDIST_4      /* 4-bytes distance */
 
 ### .address and .size
 The address member denotes the base address of the Debug console (PIO or MMIO
@@ -114,13 +116,13 @@ On x86, default output driver is PIO UART on port 0x3f8, ARM devices choose
 their output driver according to their settings in mach/debug.h.
 
 ### Parameter list
-| Parameter     | Description           | x86                | ARM and ARM64   |
-|:--------------|:----------------------|:-------------------|:----------------|
-| con-type      | Debug Output Driver   | PIO, MMIO8, MMIO32 | 8250, PL011     |
-| con-base      | PIO/MMIO Base Address | e.g. 0x3f8         | e.g. 0x70006000 |
-| con-divider   | UART divider          | 0x1                | 0x0d            |
-| con-clock-reg | Clock Register        | not supported      |                 |
-| con-gate-nr   | Clock Gate Nr         | not supported      |                 |
+| Parameter     | Description           | x86                | ARM and ARM64                   |
+|:--------------|:----------------------|:-------------------|:--------------------------------|
+| con-type      | Debug Output Driver   | PIO, MMIO8, MMIO32 | 8250[-8], PL011, XUARTPS, MVEBU |
+| con-base      | PIO/MMIO Base Address | e.g. 0x3f8         | e.g. 0x70006000                 |
+| con-divider   | UART divider          | 0x1                | 0x0d                            |
+| con-clock-reg | Clock Register        | not supported      |                                 |
+| con-gate-nr   | Clock Gate Nr         | not supported      |                                 |
 
 All architectures support the empty con-type "none" and "JAILHOUSE".  The
 "JAILHOUSE" console type uses the hypervisor's debug output via hypercalls.
@@ -132,7 +134,8 @@ temporarily while debugging a specific cell.
 Similar to the hypervisor configuration, a zero value for con-divider will skip
 initialisation of the UART interface.
 
-con-clock-reg and con-gate-nr are currently only available on ARM 8250.
+con-clock-reg and con-gate-nr are currently only available on ARM 8250 and
+8250-8.
 
 On x86, VGA output is not available for inmates.
 
