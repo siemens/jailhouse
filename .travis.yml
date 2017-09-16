@@ -41,7 +41,7 @@ install:
 cache:
   directories:
   - ci/linux
-  - ci/linux-4.4
+  - ci/linux-4.13
 
 script:
   - if [ ${COVERITY_SCAN_BRANCH} != 1 ];
