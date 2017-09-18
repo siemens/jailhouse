@@ -340,13 +340,6 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 	}
 
 	mmio_perform_access(cpu_data->gicr.base, mmio);
-	/*
-	 * Declare each redistributor region to be last. This avoids that we
-	 * miss one and cause the guest to overscan while matching
-	 * redistributors in a partitioned region.
-	 */
-	if (mmio->address == GICR_TYPER && !mmio->is_write)
-		mmio->value |= GICR_TYPER_Last;
 
 	return MMIO_HANDLED;
 }
@@ -355,10 +348,17 @@ static int gic_cell_init(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu(cpu, cell->cpu_set)
+	/*
+	 * We register all regions so that the cell can iterate over the
+	 * original range in order to find corresponding redistributors.
+	 */
+	for (cpu = 0; cpu < system_config->root_cell.cpu_set_size * 8; cpu++) {
+		if (!cpu_id_valid(cpu))
+			continue;
 		mmio_region_register(cell, per_cpu(cpu)->gicr.phys_addr,
 				     gic_version == 4 ? 0x40000 : 0x20000,
 				     gic_handle_redist_access, per_cpu(cpu));
+	}
 
 	return 0;
 }
