@@ -306,8 +306,40 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 {
 	struct per_cpu *cpu_data = arg;
 
-	mmio_perform_access(cpu_data->gicr.base, mmio);
+	switch (mmio->address) {
+	case GICR_IIDR:
+	case GICR_TYPER:
+	case 0xffd0 ... 0xfffc: /* ID registers */
+		/*
+		 * Read-only registers that might be used by a cell to find the
+		 * redistributor corresponding to a CPU. Keep them accessible.
+		 */
+		break;
+	case GICR_SYNCR:
+		mmio->value = 0;
+		return MMIO_HANDLED;
+	case GICR_CTLR:
+	case GICR_STATUSR:
+	case GICR_WAKER:
+	case GICR_SGI_BASE + GICR_ISENABLER:
+	case GICR_SGI_BASE + GICR_ICENABLER:
+	case GICR_SGI_BASE + GICR_ISPENDR:
+	case GICR_SGI_BASE + GICR_ICPENDR:
+	case GICR_SGI_BASE + GICR_ISACTIVER:
+	case GICR_SGI_BASE + GICR_ICACTIVER:
+	case REG_RANGE(GICR_SGI_BASE + GICR_IPRIORITYR, 8, 4):
+	case REG_RANGE(GICR_SGI_BASE + GICR_ICFGR, 2, 4):
+		if (this_cell() != cpu_data->cell) {
+			/* ignore access to foreign redistributors */
+			return MMIO_HANDLED;
+		}
+		break;
+	default:
+		/* ignore access */
+		return MMIO_HANDLED;
+	}
 
+	mmio_perform_access(cpu_data->gicr.base, mmio);
 	/*
 	 * Declare each redistributor region to be last. This avoids that we
 	 * miss one and cause the guest to overscan while matching
