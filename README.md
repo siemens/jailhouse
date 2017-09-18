@@ -347,3 +347,31 @@ Finally, Jailhouse is can be stopped completely again:
 
 All non-Linux cells running at that point will be destroyed, and resources
 will be returned to Linux.
+
+
+ARM64 Demonstration in QEMU
+---------------------------
+
+Similarly like x86, Jailhouse can be tried out in a completely emulated ARM64
+(aarch64) environment under QEMU. QEMU version 2.10 and the following patch are
+required: https://patchwork.ozlabs.org/patch/817339. Later versions of QEMU
+should include a corresponding fix.
+
+Start the QEMU machine like this:
+
+    qemu-system-aarch64 -cpu cortex-a57 -smp 4 -m 1G \
+        -machine virt,gic-version=3,virtualization=on -nographic \
+        -netdev user,id=net -device virtio-net-device,netdev=net \
+        -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
+        -device virtio-blk-device,drive=disk \
+        -kernel /path/to/kernel-image -append "root=/dev/vda1 mem=768M"
+
+Jailhouse can be started after loading its kernel module. Run:
+
+    jailhouse enable /path/to/qemu-arm64.cell
+
+The corresponding test to apic-demo on x86 is the gic-demo:
+
+    jailhouse cell create /path/to/qemu-arm64-gic-demo.cell
+    jailhouse cell load gic-demo /path/to/gic-demo.bin
+    jailhouse cell start gic-demo

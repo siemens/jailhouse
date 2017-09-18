@@ -86,6 +86,14 @@
 #define GICD_V3_BASE	((void *)0xd1d00000)
 #define GICR_V3_BASE	((void *)0xd1d60000)	/* CPU 1 */
 
+#elif defined(CONFIG_MACH_QEMU_ARM64)
+#define CON_TYPE	"PL011"
+#define CON_BASE	0x09000000
+
+#define GIC_VERSION	3
+#define GICD_V3_BASE	((void *)0x08000000)
+#define GICR_V3_BASE	((void *)0x08100000)	/* CPU 3 */
+
 #endif
 
 #ifndef TIMER_IRQ
