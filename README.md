@@ -241,10 +241,10 @@ creation. To study the structures, use one of the demo cell configurations files
 as reference, e.g. configs/apic-demo.c or configs/e1000-demo.c.
 
 
-Demonstration in QEMU/KVM
--------------------------
+x86 Demonstration in QEMU/KVM
+-----------------------------
 
-The included system configuration qemu-vm.c can be used to run Jailhouse in
+The included system configuration qemu-x86.c can be used to run Jailhouse in
 QEMU/KVM virtual machine on x86 hosts (Intel and AMD are supported). Currently
 it requires Linux 4.4 or newer on the host side. QEMU version 2.7 or newer is
 required.
@@ -284,7 +284,7 @@ set to log to the serial port (ie remove any 'console=ttyS0' arguments from the
 grub config). Reboot the guest and load jailhouse.ko. Then enable Jailhouse
 like this:
 
-    jailhouse enable /path/to/qemu-vm.cell
+    jailhouse enable /path/to/qemu-x86.cell
 
 Next you can create a cell with a demonstration application as follows:
 

@@ -34,7 +34,7 @@ current VESA mode and enable your root cell.
     # modprobe jailhouse
     # vbetool vbemode set 3 && jailhouse enable configs/system.cell
 
-[Note] for testing on QEMU replace 'system.cell' by 'qemu-vm.cell'.
+[Note] for testing on QEMU replace 'system.cell' by 'qemu-x86.cell'.
 
 
 References
