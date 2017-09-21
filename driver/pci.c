@@ -17,6 +17,7 @@
 #include <linux/of_fdt.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
 
 #include "pci.h"
 
@@ -258,15 +259,20 @@ static const struct of_device_id gic_of_match[] = {
 static bool create_vpci_of_overlay(struct jailhouse_system *config)
 {
 	const size_t size = __dtb_vpci_template_end - __dtb_vpci_template_begin;
+	struct property int_map_prop = {.value = NULL};
 	struct device_node *overlay = NULL;
 	struct device_node *vpci = NULL;
 	struct device_node *gic = NULL;
+	struct of_changeset changeset;
 	void *overlay_data = NULL;
+	u32 gic_address_cells;
+	unsigned int n, cell;
 	bool success = false;
-	phandle gic_handle;
 	u32 *prop_val;
 	u64 base_addr;
 	int len;
+
+	of_changeset_init(&changeset);
 
 	overlay_data = kmemdup(__dtb_vpci_template_begin, size, GFP_KERNEL);
 	if (!overlay_data)
@@ -286,28 +292,34 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	if (!gic)
 		goto out;
 
-	gic_handle = cpu_to_be32(gic->phandle);
+	if (of_property_read_u32(gic, "#address-cells", &gic_address_cells) < 0)
+		gic_address_cells = 0;
 
 	vpci = of_find_node_by_name(overlay, "vpci");
 	if (!vpci)
 		goto out;
 
-	prop_val = (u32 *)of_get_property(vpci, "interrupt-map", &len);
-	if (!prop_val || len != 4 * 8 * sizeof(u32))
+	int_map_prop.name = "interrupt-map";
+	int_map_prop.length = 4 * (8 + gic_address_cells) * sizeof(u32);
+	int_map_prop.value = kzalloc(int_map_prop.length, GFP_KERNEL);
+	if (!int_map_prop.value)
 		goto out;
 
-	/*
-	 * Inject the GIC handles and the slot's SPI number in the interrupt
-	 * map. We can patch this tree as it's still local in our overlay_data.
-	 */
-	prop_val[4] = gic_handle;
-	prop_val[6] = cpu_to_be32(config->root_cell.vpci_irq_base);
-	prop_val[12] = gic_handle;
-	prop_val[14] = cpu_to_be32(config->root_cell.vpci_irq_base + 1);
-	prop_val[20] = gic_handle;
-	prop_val[22] = cpu_to_be32(config->root_cell.vpci_irq_base + 2);
-	prop_val[28] = gic_handle;
-	prop_val[30] = cpu_to_be32(config->root_cell.vpci_irq_base + 3);
+	prop_val = int_map_prop.value;
+	for (n = 0, cell = 0; n < 4; n++) {
+		cell += 3;				/* match addr (0) */
+		prop_val[cell++] = cpu_to_be32(n + 1);	/* match addr */
+		prop_val[cell++] = cpu_to_be32(gic->phandle);
+		cell += gic_address_cells;		/* parent addr (0) */
+		prop_val[cell++] = cpu_to_be32(GIC_SPI);
+		prop_val[cell++] =
+			cpu_to_be32(config->root_cell.vpci_irq_base + n);
+		prop_val[cell++] = cpu_to_be32(IRQ_TYPE_NONE);
+	}
+
+	if (of_changeset_add_property(&changeset, vpci, &int_map_prop) < 0 ||
+	    of_changeset_apply(&changeset) < 0)
+		goto out;
 
 	prop_val = (u32 *)of_get_property(vpci, "reg", &len);
 	if (!prop_val || len != 4 * sizeof(u32))
@@ -343,6 +355,8 @@ out:
 	of_node_put(vpci);
 	of_node_put(gic);
 	kfree(overlay_data);
+	of_changeset_destroy(&changeset);
+	kfree(int_map_prop.value);
 
 	return success;
 }
