@@ -104,8 +104,8 @@ static void cell_resume(struct per_cpu *cpu_data)
  * 	   communication region, is shut down or in failed state. Returns
  * 	   false on request denial or invalid replies.
  */
-static bool cell_send_message(struct cell *cell, u32 message,
-			      enum msg_type type)
+static bool cell_exchange_message(struct cell *cell, u32 message,
+				  enum msg_type type)
 {
 	if (cell->config->flags & JAILHOUSE_CELL_PASSIVE_COMMREG)
 		return true;
@@ -150,8 +150,8 @@ static void cell_reconfig_completed(void)
 	struct cell *cell;
 
 	for_each_non_root_cell(cell)
-		cell_send_message(cell, JAILHOUSE_MSG_RECONFIG_COMPLETED,
-				  MSG_INFORMATION);
+		cell_exchange_message(cell, JAILHOUSE_MSG_RECONFIG_COMPLETED,
+				      MSG_INFORMATION);
 }
 
 /**
@@ -489,8 +489,8 @@ err_resume:
 
 static bool cell_shutdown_ok(struct cell *cell)
 {
-	return cell_send_message(cell, JAILHOUSE_MSG_SHUTDOWN_REQUEST,
-				 MSG_REQUEST);
+	return cell_exchange_message(cell, JAILHOUSE_MSG_SHUTDOWN_REQUEST,
+				     MSG_REQUEST);
 }
 
 static int cell_management_prologue(enum management_task task,
