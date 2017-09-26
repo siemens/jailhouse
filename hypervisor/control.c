@@ -101,12 +101,16 @@ static void cell_resume(struct per_cpu *cpu_data)
  * @return True if a request message was approved or reception of an
  * 	   informational message was acknowledged by the target cell. It also
  * 	   returns true if the target cell does not support an active
- * 	   communication region, is shut down or in failed state. Returns
- * 	   false on request denial or invalid replies.
+ * 	   communication region, is shut down or in failed state.
+ *	   In case of timeout (if enabled) it also stops the cell and put it
+ *	   in failed state.
+ *	   Returns false on request denial or invalid replies.
  */
 static bool cell_exchange_message(struct cell *cell, u32 message,
 				  enum msg_type type)
 {
+	u64 timeout = cell->config->msg_reply_timeout;
+
 	if (cell->config->flags & JAILHOUSE_CELL_PASSIVE_COMMREG)
 		return true;
 
@@ -128,6 +132,15 @@ static bool cell_exchange_message(struct cell *cell, u32 message,
 
 		if (reply != JAILHOUSE_MSG_NONE)
 			return false;
+
+		if (cell->config->msg_reply_timeout > 0 && --timeout == 0) {
+			printk("Timeout expired while waiting for reply from "
+			       "target cell\n");
+			cell_suspend(cell, this_cpu_data());
+			cell->comm_page.comm_region.cell_state =
+				JAILHOUSE_CELL_FAILED;
+			return true;
+		}
 
 		cpu_relax();
 	}
