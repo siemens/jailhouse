@@ -41,6 +41,7 @@ union opcode {
 
 struct parse_context {
 	unsigned int remaining;
+	unsigned int count;
 	unsigned int size;
 	const u8 *inst;
 };
@@ -50,6 +51,7 @@ static bool ctx_update(struct parse_context *ctx,
 		       const struct guest_paging_structures *pg)
 {
 	ctx->inst += advance;
+	ctx->count += advance;
 	if (ctx->size > advance) {
 		ctx->size -= advance;
 	} else {
@@ -66,7 +68,8 @@ static bool ctx_update(struct parse_context *ctx,
 struct mmio_instruction x86_mmio_parse(unsigned long pc,
 	const struct guest_paging_structures *pg_structs, bool is_write)
 {
-	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
+	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN,
+				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	struct mmio_instruction inst = { .inst_len = 0 };
 	union opcode op[4] = { };
@@ -87,7 +90,6 @@ restart:
 		if (op[0].rex.x)
 			goto error_unsupported;
 
-		inst.inst_len++;
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 		goto restart;
@@ -103,30 +105,25 @@ restart:
 			inst.access_size = 2;
 		else
 			goto error_unsupported;
-
-		inst.inst_len += 3;
 		break;
 	case X86_OP_MOVB_TO_MEM:
-		inst.inst_len += 2;
 		inst.access_size = 1;
 		does_write = true;
 		break;
 	case X86_OP_MOV_TO_MEM:
-		inst.inst_len += 2;
 		inst.access_size = has_rex_w ? 8 : 4;
 		does_write = true;
 		break;
 	case X86_OP_MOV_FROM_MEM:
-		inst.inst_len += 2;
 		inst.access_size = has_rex_w ? 8 : 4;
 		break;
 	case X86_OP_MOV_MEM_TO_AX:
-		inst.inst_len += 5;
+		inst.inst_len = ctx.count + 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
-		inst.inst_len += 5;
+		inst.inst_len = ctx.count + 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.out_val = guest_regs->by_index[15];
 		does_write = true;
@@ -148,7 +145,6 @@ restart:
 			break;
 		}
 
-		inst.inst_len++;
 
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
@@ -166,6 +162,8 @@ restart:
 	default:
 		goto error_unsupported;
 	}
+
+	inst.inst_len += ctx.count;
 	if (has_rex_r)
 		inst.in_reg_num = 7 - op[2].modrm.reg;
 	else if (op[2].modrm.reg == 4)
