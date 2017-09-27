@@ -149,6 +149,7 @@
 #define X86_OP_MOVB_TO_MEM				0x88
 #define X86_OP_MOV_TO_MEM				0x89
 #define X86_OP_MOV_FROM_MEM				0x8b
+#define X86_OP_MOV_IMMEDIATE_TO_MEM			0xc7
 #define X86_OP_MOV_MEM_TO_AX    			0xa1
 #define X86_OP_MOV_AX_TO_MEM				0xa3
 

@@ -21,6 +21,13 @@
 
 #define X86_MAX_INST_LEN	15
 
+/*
+ * There are a few instructions that can have 8-byte immediate values
+ * on 64-bit mode, but they are not supported/expected here, so we are
+ * safe.
+ */
+#define IMMEDIATE_SIZE          4
+
 union opcode {
 	u8 raw;
 	struct { /* REX */
@@ -72,10 +79,12 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	struct mmio_instruction inst = { .inst_len = 0 };
+	bool has_immediate = false;
 	union opcode op[4] = { };
 	bool does_write = false;
 	bool has_rex_w = false;
 	bool has_rex_r = false;
+	unsigned int n;
 
 	if (!ctx_update(&ctx, &pc, 0, pg_structs))
 		goto error_noinst;
@@ -117,6 +126,11 @@ restart:
 	case X86_OP_MOV_FROM_MEM:
 		inst.access_size = has_rex_w ? 8 : 4;
 		break;
+	case X86_OP_MOV_IMMEDIATE_TO_MEM:
+		inst.access_size = has_rex_w ? 8 : 4;
+		has_immediate = true;
+		does_write = true;
+		break;
 	case X86_OP_MOV_MEM_TO_AX:
 		inst.inst_len = ctx.count + 4;
 		inst.access_size = has_rex_w ? 8 : 4;
@@ -140,6 +154,10 @@ restart:
 	case 0:
 		if (op[2].modrm.rm == 5) { /* 32-bit displacement */
 			inst.inst_len += 4;
+			/* walk displacement bytes, to point to immediate */
+			if (has_immediate &&
+			    !ctx_update(&ctx, &pc, 4, pg_structs))
+				goto error_noinst;
 			break;
 		} else if (op[2].modrm.rm != 4) { /* no SIB */
 			break;
@@ -171,7 +189,13 @@ restart:
 	else
 		inst.in_reg_num = 15 - op[2].modrm.reg;
 
-	if (does_write)
+	if (has_immediate)
+		for (n = 0; n < IMMEDIATE_SIZE; n++) {
+			if (!ctx_update(&ctx, &pc, 1, pg_structs))
+				goto error_noinst;
+			inst.out_val |= (unsigned long)*ctx.inst << (n * 8);
+		}
+	else if (does_write)
 		inst.out_val = guest_regs->by_index[inst.in_reg_num];
 
 final:
