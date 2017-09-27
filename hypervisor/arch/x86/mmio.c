@@ -96,11 +96,14 @@ restart:
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 		op[1].raw = *(ctx.inst);
-		if (op[1].raw != X86_OP_MOVZX_OPC2)
+		if (op[1].raw == X86_OP_MOVZX_OPC2_B)
+			inst.access_size = 1;
+		else if (op[1].raw == X86_OP_MOVZX_OPC2_W)
+			inst.access_size = 2;
+		else
 			goto error_unsupported;
 
 		inst.inst_len += 3;
-		inst.access_size = has_rex_w ? 2 : 1;
 		break;
 	case X86_OP_MOVB_TO_MEM:
 		inst.inst_len += 2;
