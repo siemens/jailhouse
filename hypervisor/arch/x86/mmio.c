@@ -45,17 +45,14 @@ struct parse_context {
 	const u8 *inst;
 };
 
-static void ctx_move_next_byte(struct parse_context *ctx)
+static bool ctx_update(struct parse_context *ctx,
+		       unsigned long *pc, unsigned int advance,
+		       const struct guest_paging_structures *pg)
 {
-	ctx->inst++;
-	ctx->size--;
-}
-
-static bool ctx_maybe_get_bytes(struct parse_context *ctx,
-				unsigned long *pc,
-				const struct guest_paging_structures *pg)
-{
-	if (!ctx->size) {
+	ctx->inst += advance;
+	if (ctx->size > advance) {
+		ctx->size -= advance;
+	} else {
 		ctx->size = ctx->remaining;
 		ctx->inst = vcpu_get_inst_bytes(pg, *pc, &ctx->size);
 		if (!ctx->inst)
@@ -64,14 +61,6 @@ static bool ctx_maybe_get_bytes(struct parse_context *ctx,
 		*pc += ctx->size;
 	}
 	return true;
-}
-
-static bool ctx_advance(struct parse_context *ctx,
-			unsigned long *pc,
-			const struct guest_paging_structures *pg)
-{
-	ctx_move_next_byte(ctx);
-	return ctx_maybe_get_bytes(ctx, pc, pg);
 }
 
 struct mmio_instruction x86_mmio_parse(unsigned long pc,
@@ -84,10 +73,10 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 	bool has_rex_w = false;
 	bool has_rex_r = false;
 
-restart:
-	if (!ctx_maybe_get_bytes(&ctx, &pc, pg_structs))
+	if (!ctx_update(&ctx, &pc, 0, pg_structs))
 		goto error_noinst;
 
+restart:
 	op[0].raw = *(ctx.inst);
 	if (op[0].rex.code == X86_REX_CODE) {
 		if (op[0].rex.w)
@@ -97,13 +86,14 @@ restart:
 		if (op[0].rex.x)
 			goto error_unsupported;
 
-		ctx_move_next_byte(&ctx);
 		inst.inst_len++;
+		if (!ctx_update(&ctx, &pc, 1, pg_structs))
+			goto error_noinst;
 		goto restart;
 	}
 	switch (op[0].raw) {
 	case X86_OP_MOVZX_OPC1:
-		if (!ctx_advance(&ctx, &pc, pg_structs))
+		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 		op[1].raw = *(ctx.inst);
 		if (op[1].raw != X86_OP_MOVZX_OPC2)
@@ -130,7 +120,7 @@ restart:
 		goto error_unsupported;
 	}
 
-	if (!ctx_advance(&ctx, &pc, pg_structs))
+	if (!ctx_update(&ctx, &pc, 1, pg_structs))
 		goto error_noinst;
 
 	op[2].raw = *(ctx.inst);
@@ -145,7 +135,7 @@ restart:
 
 		inst.inst_len++;
 
-		if (!ctx_advance(&ctx, &pc, pg_structs))
+		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 
 		op[3].raw = *(ctx.inst);
