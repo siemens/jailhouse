@@ -504,7 +504,8 @@ unsigned int apic_mmio_access(unsigned long rip,
 		return 0;
 	}
 	if (is_write) {
-		val = this_cpu_data()->guest_regs.by_index[inst.reg_num];
+		val = inst.out_val;
+
 		if (apic_accessing_reserved_bits(reg, val))
 			return 0;
 
@@ -531,7 +532,7 @@ unsigned int apic_mmio_access(unsigned long rip,
 			apic_ops.write(reg, val);
 	} else {
 		val = apic_ops.read(reg);
-		this_cpu_data()->guest_regs.by_index[inst.reg_num] = val;
+		this_cpu_data()->guest_regs.by_index[inst.in_reg_num] = val;
 	}
 	return inst.inst_len;
 }

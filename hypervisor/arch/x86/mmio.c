@@ -67,6 +67,7 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 	const struct guest_paging_structures *pg_structs, bool is_write)
 {
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN };
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	struct mmio_instruction inst = { .inst_len = 0 };
 	union opcode op[4] = { };
 	bool does_write = false;
@@ -122,12 +123,12 @@ restart:
 	case X86_OP_MOV_MEM_TO_AX:
 		inst.inst_len += 5;
 		inst.access_size = has_rex_w ? 8 : 4;
-		inst.reg_num = 15;
+		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
 		inst.inst_len += 5;
 		inst.access_size = has_rex_w ? 8 : 4;
-		inst.reg_num = 15;
+		inst.out_val = guest_regs->by_index[15];
 		does_write = true;
 		goto final;
 	default:
@@ -166,11 +167,14 @@ restart:
 		goto error_unsupported;
 	}
 	if (has_rex_r)
-		inst.reg_num = 7 - op[2].modrm.reg;
+		inst.in_reg_num = 7 - op[2].modrm.reg;
 	else if (op[2].modrm.reg == 4)
 		goto error_unsupported;
 	else
-		inst.reg_num = 15 - op[2].modrm.reg;
+		inst.in_reg_num = 15 - op[2].modrm.reg;
+
+	if (does_write)
+		inst.out_val = guest_regs->by_index[inst.in_reg_num];
 
 final:
 	if (does_write != is_write)

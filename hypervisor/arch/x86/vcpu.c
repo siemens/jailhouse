@@ -239,7 +239,7 @@ bool vcpu_handle_mmio_access(void)
 
 	mmio.is_write = intercept.is_write;
 	if (mmio.is_write)
-		mmio.value = guest_regs->by_index[inst.reg_num];
+		mmio.value = inst.out_val;
 
 	mmio.address = intercept.phys_addr;
 	mmio.size = inst.access_size;
@@ -247,7 +247,7 @@ bool vcpu_handle_mmio_access(void)
 	result = mmio_handle_access(&mmio);
 	if (result == MMIO_HANDLED) {
 		if (!mmio.is_write)
-			guest_regs->by_index[inst.reg_num] = mmio.value;
+			guest_regs->by_index[inst.in_reg_num] = mmio.value;
 		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
 	}

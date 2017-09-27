@@ -25,9 +25,11 @@ struct mmio_instruction {
 	unsigned int inst_len;
 	/** Size of the access. */
 	unsigned int access_size;
-	/** Number of the register that holds the output value or should
-	 * receive the input. */
-	unsigned int reg_num;
+	/** Number of the register that should receive the input. */
+	unsigned int in_reg_num;
+	/** Output value, already copied either from a register or
+         * from an immediate value */
+	unsigned long out_val;
 };
 
 /**
