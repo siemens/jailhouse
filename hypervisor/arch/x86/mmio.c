@@ -109,12 +109,12 @@ restart:
 		break;
 	case X86_OP_MOV_TO_MEM:
 		inst.inst_len += 2;
-		inst.access_size = 4;
+		inst.access_size = has_rex_w ? 8 : 4;
 		does_write = true;
 		break;
 	case X86_OP_MOV_FROM_MEM:
 		inst.inst_len += 2;
-		inst.access_size = 4;
+		inst.access_size = has_rex_w ? 8 : 4;
 		break;
 	default:
 		goto error_unsupported;
