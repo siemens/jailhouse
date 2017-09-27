@@ -119,6 +119,17 @@ restart:
 		inst.inst_len += 2;
 		inst.access_size = has_rex_w ? 8 : 4;
 		break;
+	case X86_OP_MOV_MEM_TO_AX:
+		inst.inst_len += 5;
+		inst.access_size = has_rex_w ? 8 : 4;
+		inst.reg_num = 15;
+		goto final;
+	case X86_OP_MOV_AX_TO_MEM:
+		inst.inst_len += 5;
+		inst.access_size = has_rex_w ? 8 : 4;
+		inst.reg_num = 15;
+		does_write = true;
+		goto final;
 	default:
 		goto error_unsupported;
 	}
@@ -161,6 +172,7 @@ restart:
 	else
 		inst.reg_num = 15 - op[2].modrm.reg;
 
+final:
 	if (does_write != is_write)
 		goto error_inconsitent;
 
