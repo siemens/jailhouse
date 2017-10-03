@@ -90,7 +90,7 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 		goto error_noinst;
 
 restart:
-	op[0].raw = *(ctx.inst);
+	op[0].raw = *ctx.inst;
 	if (op[0].rex.code == X86_REX_CODE) {
 		if (op[0].rex.w)
 			has_rex_w = true;
@@ -107,7 +107,7 @@ restart:
 	case X86_OP_MOVZX_OPC1:
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
-		op[1].raw = *(ctx.inst);
+		op[1].raw = *ctx.inst;
 		if (op[1].raw == X86_OP_MOVZX_OPC2_B)
 			inst.access_size = 1;
 		else if (op[1].raw == X86_OP_MOVZX_OPC2_W)
@@ -149,7 +149,7 @@ restart:
 	if (!ctx_update(&ctx, &pc, 1, pg_structs))
 		goto error_noinst;
 
-	op[2].raw = *(ctx.inst);
+	op[2].raw = *ctx.inst;
 	switch (op[2].modrm.mod) {
 	case 0:
 		if (op[2].modrm.rm == 5) { /* 32-bit displacement */
@@ -167,7 +167,7 @@ restart:
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 
-		op[3].raw = *(ctx.inst);
+		op[3].raw = *ctx.inst;
 		if (op[3].sib.base == 5)
 			inst.inst_len += 4;
 		break;
