@@ -25,6 +25,10 @@
 
 	interrupt-parent = <&gic>;
 
+	hypervisor {
+		compatible = "jailhouse,cell";
+	};
+
 	cpus {
 		#address-cells = <2>;
 		#size-cells = <0>;

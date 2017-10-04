@@ -25,6 +25,10 @@
 		bootargs = "earlycon";
 	};
 
+	hypervisor {
+		compatible = "jailhouse,cell";
+	};
+
 	cpus {
 		#address-cells = <2>;
 		#size-cells = <0>;
