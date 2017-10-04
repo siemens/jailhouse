@@ -36,7 +36,7 @@ static u32 gic_version;
 
 static void *gicr_base;
 
-static u64 gic_read_lr(unsigned int reg)
+static u64 gicv3_read_lr(unsigned int reg)
 {
 	u64 val;
 
@@ -78,7 +78,7 @@ static u64 gic_read_lr(unsigned int reg)
 	return val;
 }
 
-static void gic_write_lr(unsigned int reg, u64 val)
+static void gicv3_write_lr(unsigned int reg, u64 val)
 {
 	switch (reg) {
 #define __WRITE_LR0_7(n)				\
@@ -112,7 +112,7 @@ static void gic_write_lr(unsigned int reg, u64 val)
 	}
 }
 
-static int gic_init(void)
+static int gicv3_init(void)
 {
 	/* TODO: need to validate more? */
 	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
@@ -127,13 +127,13 @@ static int gic_init(void)
 	return 0;
 }
 
-static void gic_clear_pending_irqs(void)
+static void gicv3_clear_pending_irqs(void)
 {
 	unsigned int n;
 
 	/* Clear list registers. */
 	for (n = 0; n < gic_num_lr; n++)
-		gic_write_lr(n, 0);
+		gicv3_write_lr(n, 0);
 
 	/* Clear active priority bits */
 	if (gic_num_priority_bits >= 5)
@@ -146,12 +146,12 @@ static void gic_clear_pending_irqs(void)
 	}
 }
 
-static void gic_cpu_reset(struct per_cpu *cpu_data)
+static void gicv3_cpu_reset(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	void *gicr = cpu_data->gicr.base + GICR_SGI_BASE;
 
-	gic_clear_pending_irqs();
+	gicv3_clear_pending_irqs();
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff | (1 << mnt_irq));
@@ -165,7 +165,7 @@ static void gic_cpu_reset(struct per_cpu *cpu_data)
 	arm_write_sysreg(ICH_VMCR_EL2, 0);
 }
 
-static int gic_cpu_init(struct per_cpu *cpu_data)
+static int gicv3_cpu_init(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	unsigned long redist_addr = system_config->platform_info.arm.gicr_base;
@@ -247,7 +247,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	 * use. Physically pending IRQs will be forwarded to Linux once we
 	 * enable interrupts for the hypervisor.
 	 */
-	gic_clear_pending_irqs();
+	gicv3_clear_pending_irqs();
 
 	ich_vmcr = (cell_icc_pmr & ICC_PMR_MASK) << ICH_VMCR_VPMR_SHIFT;
 	if (cell_icc_igrpen1 & ICC_IGRPEN1_EN)
@@ -262,7 +262,7 @@ static int gic_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 }
 
-static void gic_cpu_shutdown(struct per_cpu *cpu_data)
+static void gicv3_cpu_shutdown(struct per_cpu *cpu_data)
 {
 	u32 ich_vmcr, icc_ctlr, cell_icc_igrpen1;
 
@@ -290,7 +290,7 @@ static void gic_cpu_shutdown(struct per_cpu *cpu_data)
 	}
 }
 
-static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
+static void gicv3_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
 	void *irouter = gicd_base + GICD_IROUTER + 8 * irq_id;
 	u64 mpidr = per_cpu(first_cpu(cell->cpu_set))->mpidr;
@@ -301,8 +301,8 @@ static void gic_adjust_irq_target(struct cell *cell, u16 irq_id)
 		mmio_write64(irouter, mpidr);
 }
 
-static enum mmio_result gic_handle_redist_access(void *arg,
-						 struct mmio_access *mmio)
+static enum mmio_result gicv3_handle_redist_access(void *arg,
+						   struct mmio_access *mmio)
 {
 	struct per_cpu *cpu_data = arg;
 
@@ -344,7 +344,7 @@ static enum mmio_result gic_handle_redist_access(void *arg,
 	return MMIO_HANDLED;
 }
 
-static int gic_cell_init(struct cell *cell)
+static int gicv3_cell_init(struct cell *cell)
 {
 	unsigned int cpu;
 
@@ -357,7 +357,7 @@ static int gic_cell_init(struct cell *cell)
 			continue;
 		mmio_region_register(cell, per_cpu(cpu)->gicr.phys_addr,
 				     gic_version == 4 ? 0x40000 : 0x20000,
-				     gic_handle_redist_access, per_cpu(cpu));
+				     gicv3_handle_redist_access, per_cpu(cpu));
 	}
 
 	return 0;
@@ -367,7 +367,7 @@ static int gic_cell_init(struct cell *cell)
 	(MPIDR_AFFINITY_LEVEL((cluster_id), (level)) \
 	<< ICC_SGIR_AFF## level ##_SHIFT)
 
-static int gic_send_sgi(struct sgi *sgi)
+static int gicv3_send_sgi(struct sgi *sgi)
 {
 	u64 val;
 	u16 targets = sgi->targets;
@@ -428,8 +428,8 @@ bool gicv3_handle_sgir_write(u64 sgir)
 /*
  * GICv3 uses a 64bit register IROUTER for each IRQ
  */
-static enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
-					     unsigned int irq)
+static enum mmio_result gicv3_handle_irq_route(struct mmio_access *mmio,
+					       unsigned int irq)
 {
 	struct cell *cell = this_cell();
 	unsigned int cpu;
@@ -470,7 +470,7 @@ static enum mmio_result gic_handle_irq_route(struct mmio_access *mmio,
 	}
 }
 
-static u32 gic_read_iar_irqn(void)
+static u32 gicv3_read_iar_irqn(void)
 {
 	u32 iar;
 
@@ -478,14 +478,14 @@ static u32 gic_read_iar_irqn(void)
 	return iar & 0xffffff;
 }
 
-static void gic_eoi_irq(u32 irq_id, bool deactivate)
+static void gicv3_eoi_irq(u32 irq_id, bool deactivate)
 {
 	arm_write_sysreg(ICC_EOIR1_EL1, irq_id);
 	if (deactivate)
 		arm_write_sysreg(ICC_DIR_EL1, irq_id);
 }
 
-static int gic_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
+static int gicv3_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 {
 	int i;
 	int free_lr = -1;
@@ -505,7 +505,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 		 * Entry is in use, check that it doesn't match the one we want
 		 * to inject.
 		 */
-		lr = gic_read_lr(i);
+		lr = gicv3_read_lr(i);
 
 		/*
 		 * A strict phys->virt id mapping is used for SPIs, so this test
@@ -528,7 +528,7 @@ static int gic_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 		lr |= (u64)irq_id << ICH_LR_PHYS_ID_SHIFT;
 	}
 
-	gic_write_lr(free_lr, lr);
+	gicv3_write_lr(free_lr, lr);
 
 	return 0;
 }
@@ -550,7 +550,7 @@ static bool gicv3_has_pending_irqs(void)
 	unsigned int n;
 
 	for (n = 0; n < gic_num_lr; n++)
-		if (gic_read_lr(n) & ICH_LR_PENDING)
+		if (gicv3_read_lr(n) & ICH_LR_PENDING)
 			return true;
 
 	return false;
@@ -563,7 +563,7 @@ static enum mmio_result gicv3_handle_irq_target(struct mmio_access *mmio,
 	return MMIO_HANDLED;
 }
 
-static enum mmio_result gic_handle_dist_access(struct mmio_access *mmio)
+static enum mmio_result gicv3_handle_dist_access(struct mmio_access *mmio)
 {
 	switch (mmio->address) {
 	case GICD_CTLR:
@@ -582,34 +582,34 @@ static enum mmio_result gic_handle_dist_access(struct mmio_access *mmio)
 	}
 }
 
-static int gic_get_cpu_target(unsigned int cpu_id)
+static int gicv3_get_cpu_target(unsigned int cpu_id)
 {
 	return 1 << per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
 }
 
-static u64 gic_get_cluster_target(unsigned int cpu_id)
+static u64 gicv3_get_cluster_target(unsigned int cpu_id)
 {
 	return per_cpu(cpu_id)->mpidr & MPIDR_CLUSTERID_MASK;
 }
 
 const struct irqchip gicv3_irqchip = {
-	.init = gic_init,
-	.cpu_init = gic_cpu_init,
-	.cpu_reset = gic_cpu_reset,
-	.cpu_shutdown = gic_cpu_shutdown,
-	.cell_init = gic_cell_init,
-	.adjust_irq_target = gic_adjust_irq_target,
-	.send_sgi = gic_send_sgi,
-	.inject_irq = gic_inject_irq,
+	.init = gicv3_init,
+	.cpu_init = gicv3_cpu_init,
+	.cpu_reset = gicv3_cpu_reset,
+	.cpu_shutdown = gicv3_cpu_shutdown,
+	.cell_init = gicv3_cell_init,
+	.adjust_irq_target = gicv3_adjust_irq_target,
+	.send_sgi = gicv3_send_sgi,
+	.inject_irq = gicv3_inject_irq,
 	.enable_maint_irq = gicv3_enable_maint_irq,
 	.has_pending_irqs = gicv3_has_pending_irqs,
-	.read_iar_irqn = gic_read_iar_irqn,
-	.eoi_irq = gic_eoi_irq,
-	.handle_irq_route = gic_handle_irq_route,
+	.read_iar_irqn = gicv3_read_iar_irqn,
+	.eoi_irq = gicv3_eoi_irq,
+	.handle_irq_route = gicv3_handle_irq_route,
 	.handle_irq_target = gicv3_handle_irq_target,
-	.handle_dist_access = gic_handle_dist_access,
-	.get_cpu_target = gic_get_cpu_target,
-	.get_cluster_target = gic_get_cluster_target,
+	.handle_dist_access = gicv3_handle_dist_access,
+	.get_cpu_target = gicv3_get_cpu_target,
+	.get_cluster_target = gicv3_get_cluster_target,
 
 	.gicd_size = 0x10000,
 };
