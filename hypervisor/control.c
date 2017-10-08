@@ -697,6 +697,8 @@ void shutdown(void)
 
 static int hypervisor_disable(struct per_cpu *cpu_data)
 {
+	static volatile unsigned int waiting_cpus;
+	static bool do_common_shutdown;
 	unsigned int this_cpu = cpu_data->cpu_id;
 	unsigned int cpu;
 	int state, ret;
@@ -726,35 +728,55 @@ static int hypervisor_disable(struct per_cpu *cpu_data)
 	 * running in parallel before that CPU releases the root cell again via
 	 * cell_resume. In that case, we will see the result of the change.
 	 *
-	 * shutdown_lock is here just to coordinate between the root cell CPUs
-	 * who is evaluating num_cells and should start the shutdown depending
-	 * on its state.
+	 * shutdown_lock is here to protect shutdown_state, waiting_cpus and
+	 * do_common_shutdown.
 	 */
 	spin_lock(&shutdown_lock);
 
 	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
-		if (num_cells == 1) {
-			printk("Shutting down hypervisor\n");
-			shutdown();
-			state = SHUTDOWN_STARTED;
-		} else {
-			state = -EBUSY;
-		}
-
+		state = num_cells == 1 ? SHUTDOWN_STARTED : -EBUSY;
 		for_each_cpu(cpu, root_cell.cpu_set)
 			per_cpu(cpu)->shutdown_state = state;
 	}
 
 	if (cpu_data->shutdown_state == SHUTDOWN_STARTED) {
-		printk(" Releasing CPU %d\n", this_cpu);
+		do_common_shutdown = true;
+		waiting_cpus++;
 		ret = 0;
-	} else
+	} else {
 		ret = cpu_data->shutdown_state;
-	cpu_data->shutdown_state = SHUTDOWN_NONE;
+		cpu_data->shutdown_state = SHUTDOWN_NONE;
+	}
 
 	spin_unlock(&shutdown_lock);
 
-	return ret;
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * The shutdown will change hardware behavior, and we  have to avoid
+	 * that one CPU already turns it to native mode while another makes use
+	 * of it or runs into a hypervisor trap. This barrier prevents such
+	 * scenarios.
+	 */
+	while (waiting_cpus < hypervisor_header.online_cpus)
+		cpu_relax();
+
+	spin_lock(&shutdown_lock);
+
+	if (do_common_shutdown) {
+		/*
+		 * The first CPU to get here changes common settings to native.
+		 */
+		printk("Shutting down hypervisor\n");
+		shutdown();
+		do_common_shutdown = false;
+	}
+	printk(" Releasing CPU %d\n", this_cpu);
+
+	spin_unlock(&shutdown_lock);
+
+	return 0;
 }
 
 static long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
