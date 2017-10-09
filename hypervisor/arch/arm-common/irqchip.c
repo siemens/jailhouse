@@ -326,12 +326,37 @@ void irqchip_cpu_reset(struct per_cpu *cpu_data)
 
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 {
+	int irq_id;
+
 	/*
-	 * The GIC backend must take care of only resetting the hyp interface if
-	 * it has been initialised: this function may be executed during the
-	 * setup phase.
+	 * The GIC implementation must take care of only resetting the hyp
+	 * interface if it has been initialized because this function may be
+	 * executed during the setup phase. It returns an error if the
+	 * initialization do not take place yet.
 	 */
-	irqchip.cpu_shutdown(cpu_data);
+	if (irqchip.cpu_shutdown(cpu_data) < 0)
+		return;
+
+	/*
+	 * Migrate interrupts queued in the GICV.
+	 * No locking required at this stage because no other CPU is able to
+	 * inject anymore.
+	 */
+	do {
+		irq_id = irqchip.get_pending_irq();
+		if (irq_id >= 0)
+			irqchip.inject_phys_irq(irq_id);
+	} while (irq_id >= 0);
+
+	/* Migrate interrupts queued in software. */
+	while (cpu_data->pending_irqs_head != cpu_data->pending_irqs_tail) {
+		irq_id = cpu_data->pending_irqs[cpu_data->pending_irqs_head];
+
+		irqchip.inject_phys_irq(irq_id);
+
+		cpu_data->pending_irqs_head =
+			(cpu_data->pending_irqs_head + 1) % MAX_PENDING_IRQS;
+	}
 }
 
 int irqchip_cell_init(struct cell *cell)

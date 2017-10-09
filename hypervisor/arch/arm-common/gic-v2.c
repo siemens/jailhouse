@@ -330,6 +330,43 @@ static bool gicv2_has_pending_irqs(void)
 	return false;
 }
 
+static int gicv2_get_pending_irq(void)
+{
+	unsigned int n;
+	u64 lr;
+
+	for (n = 0; n < gic_num_lr; n++) {
+		lr = gicv2_read_lr(n);
+		if (lr & GICH_LR_PENDING_BIT) {
+			gicv2_write_lr(n, 0);
+			return lr & GICH_LR_VIRT_ID_MASK;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static void gicv2_inject_phys_irq(u16 irq_id)
+{
+	unsigned int offset = (irq_id / 32) * 4;
+	unsigned int mask = 1 << (irq_id % 32);
+
+	if (is_sgi(irq_id)) {
+		/* Inject with CPU 0 as source - we don't track the origin. */
+		mmio_write8(gicd_base + GICD_SPENDSGIR + irq_id, 1);
+	} else {
+		/*
+		 * Hardware interrupts are physically active until they are
+		 * processed by the cell. Deactivate them first so that we can
+		 * reinject.
+		 */
+		mmio_write32(gicd_base + GICD_ICACTIVER + offset, mask);
+
+		/* inject via GICD */
+		mmio_write32(gicd_base + GICD_ISPENDR + offset, mask);
+	}
+}
+
 static enum mmio_result gicv2_handle_irq_route(struct mmio_access *mmio,
 					       unsigned int irq)
 {
@@ -466,6 +503,9 @@ const struct irqchip gicv2_irqchip = {
 	.has_pending_irqs = gicv2_has_pending_irqs,
 	.read_iar_irqn = gicv2_read_iar_irqn,
 	.eoi_irq = gicv2_eoi_irq,
+
+	.get_pending_irq = gicv2_get_pending_irq,
+	.inject_phys_irq = gicv2_inject_phys_irq,
 
 	.handle_irq_route = gicv2_handle_irq_route,
 	.handle_irq_target = gicv2_handle_irq_target,

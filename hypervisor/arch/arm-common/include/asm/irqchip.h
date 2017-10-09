@@ -51,6 +51,8 @@ struct irqchip {
 	int	(*inject_irq)(struct per_cpu *cpu_data, u16 irq_id);
 	void	(*enable_maint_irq)(bool enable);
 	bool	(*has_pending_irqs)(void);
+	int	(*get_pending_irq)(void);
+	void	(*inject_phys_irq)(u16 irq_id);
 
 	int 	(*get_cpu_target)(unsigned int cpu_id);
 	u64 	(*get_cluster_target)(unsigned int cpu_id);

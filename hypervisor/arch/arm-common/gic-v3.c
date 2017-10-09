@@ -558,6 +558,49 @@ static bool gicv3_has_pending_irqs(void)
 	return false;
 }
 
+static int gicv3_get_pending_irq(void)
+{
+	unsigned int n;
+	u64 lr;
+
+	for (n = 0; n < gic_num_lr; n++) {
+		lr = gicv3_read_lr(n);
+		if (lr & ICH_LR_PENDING) {
+			gicv3_write_lr(n, 0);
+			return (u32)lr;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static void gicv3_inject_phys_irq(u16 irq_id)
+{
+	void *gicr = this_cpu_data()->gicr.base + GICR_SGI_BASE;
+	unsigned int offset = (irq_id / 32) * 4;
+	unsigned int mask = 1 << (irq_id % 32);
+
+	if (!is_spi(irq_id)) {
+		/*
+		 * Hardware interrupts are physically active until they are
+		 * processed by the cell. Deactivate them first so that we can
+		 * reinject.
+		 * For simplicity reasons, we also issue deactivation for SGIs
+		 * although they don't need this.
+		 */
+		mmio_write32(gicr + GICR_ICACTIVER, mask);
+
+		/* inject via GICR */
+		mmio_write32(gicr + GICR_ISPENDR, mask);
+	} else {
+		/* see above */
+		mmio_write32(gicd_base + GICD_ICACTIVER + offset, mask);
+
+		/* injet via GICD */
+		mmio_write32(gicd_base + GICD_ISPENDR + offset, mask);
+	}
+}
+
 static enum mmio_result gicv3_handle_irq_target(struct mmio_access *mmio,
 						unsigned int irq)
 {
@@ -605,6 +648,8 @@ const struct irqchip gicv3_irqchip = {
 	.inject_irq = gicv3_inject_irq,
 	.enable_maint_irq = gicv3_enable_maint_irq,
 	.has_pending_irqs = gicv3_has_pending_irqs,
+	.get_pending_irq = gicv3_get_pending_irq,
+	.inject_phys_irq = gicv3_inject_phys_irq,
 	.read_iar_irqn = gicv3_read_iar_irqn,
 	.eoi_irq = gicv3_eoi_irq,
 	.handle_irq_route = gicv3_handle_irq_route,
