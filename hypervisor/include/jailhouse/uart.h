@@ -10,6 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/types.h>
+
 struct uart_chip {
 	/* must be set by the caller */
 	void *virt_base;
