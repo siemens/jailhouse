@@ -34,7 +34,10 @@ test_compile()
 		prepend="#include <jailhouse/types.h>"
 		;;
 	jailhouse_hypercall.h)
-		# only included directly for linker script
+		# only included directly on arm64
+		if [ "$ARCH" != "arm64" ]; then
+			return;
+		fi
 		prepend="#define __ASSEMBLY__
 			 #include <jailhouse/types.h>"
 		;;
