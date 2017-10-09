@@ -35,6 +35,10 @@ struct registers {
 	unsigned long usr[NUM_USR_REGS];
 };
 
+#define ARM_PARKING_CODE		\
+	0xe320f003, /* 1: wfi  */	\
+	0xeafffffd, /*    b 1b */
+
 #define dmb(domain)	asm volatile("dmb " #domain ::: "memory")
 #define dsb(domain)	asm volatile("dsb " #domain ::: "memory")
 #define isb()		asm volatile("isb")

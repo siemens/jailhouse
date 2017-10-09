@@ -18,15 +18,9 @@
 #include <asm/control.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
+#include <asm/setup-common.h>
 
 extern u8 __trampoline_start[];
-
-static u32 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE / 4] = {
-	0xd503207f, /* 1: wfi  */
-	0x17ffffff, /*    b 1b */
-};
-
-struct paging_structures parking_mm;
 
 int arch_init_early(void)
 {
@@ -45,56 +39,26 @@ int arch_init_early(void)
 	if (err)
 		return err;
 
-	parking_mm.root_paging = cell_paging;
-	parking_mm.root_table =
-		page_alloc_aligned(&mem_pool, ARM_CELL_ROOT_PT_SZ);
-	if (!parking_mm.root_table)
-		return -ENOMEM;
-
-	err = paging_create(&parking_mm, paging_hvirt2phys(parking_code),
-			    PAGE_SIZE, 0,
-			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
-			     S2_PTE_ACCESS_RO | S2_PTE_FLAG_NORMAL),
-			    PAGING_COHERENT);
-	if (err)
-		return err;
-
-	return arm_paging_cell_init(&root_cell);
+	return arm_init_early();
 }
 
 int arch_cpu_init(struct per_cpu *cpu_data)
 {
 	unsigned long hcr = HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT
 				| HCR_TSC_BIT | HCR_TAC_BIT | HCR_RW_BIT;
-	int err;
 
 	/* switch to the permanent page tables */
 	enable_mmu_el2(paging_hvirt2phys(hv_paging_structs.root_table));
 
-	cpu_data->mpidr = phys_processor_id();
-
 	/* Setup guest traps */
 	arm_write_sysreg(HCR_EL2, hcr);
 
-	arm_paging_vcpu_init(&root_cell.arch.mm);
-
-	err = irqchip_init();
-	if (err)
-		return err;
-
-	return irqchip_cpu_init(cpu_data);
+	return arm_cpu_init(cpu_data);
 }
 
 int arch_init_late(void)
 {
-	int err;
-
-	/* Setup the SPI bitmap */
-	err = irqchip_cell_init(&root_cell);
-	if (err)
-		return err;
-
-	return map_root_memory_regions();
+	return arm_init_late();
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
