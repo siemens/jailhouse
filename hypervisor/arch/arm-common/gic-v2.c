@@ -167,13 +167,13 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 }
 
-static void gicv2_cpu_shutdown(struct per_cpu *cpu_data)
+static int gicv2_cpu_shutdown(struct per_cpu *cpu_data)
 {
 	u32 gich_vmcr = mmio_read32(gich_base + GICH_VMCR);
 	u32 gicc_ctlr = 0;
 
 	if (!cpu_data->gicc_initialized)
-		return;
+		return -ENODEV;
 
 	mmio_write32(gich_base + GICH_HCR, 0);
 
@@ -189,6 +189,8 @@ static void gicv2_cpu_shutdown(struct per_cpu *cpu_data)
 	mmio_write32(gicc_base + GICC_CTLR, gicc_ctlr);
 	mmio_write32(gicc_base + GICC_PMR,
 		     (gich_vmcr >> GICH_VMCR_PMR_SHIFT) << GICV_PMR_SHIFT);
+
+	return 0;
 }
 
 static u32 gicv2_read_iar_irqn(void)

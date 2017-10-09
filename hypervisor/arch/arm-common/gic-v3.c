@@ -262,12 +262,12 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 }
 
-static void gicv3_cpu_shutdown(struct per_cpu *cpu_data)
+static int gicv3_cpu_shutdown(struct per_cpu *cpu_data)
 {
 	u32 ich_vmcr, icc_ctlr, cell_icc_igrpen1;
 
 	if (!cpu_data->gicr.base)
-		return;
+		return -ENODEV;
 
 	arm_write_sysreg(ICH_HCR_EL2, 0);
 
@@ -288,6 +288,8 @@ static void gicv3_cpu_shutdown(struct per_cpu *cpu_data)
 		cell_icc_igrpen1 &= ~ICC_IGRPEN1_EN;
 		arm_write_sysreg(ICC_IGRPEN1_EL1, cell_icc_igrpen1);
 	}
+
+	return 0;
 }
 
 static void gicv3_adjust_irq_target(struct cell *cell, u16 irq_id)
