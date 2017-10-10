@@ -165,77 +165,6 @@ el2_entry:
 	b	.
 
 
-	.pushsection	.trampoline, "ax"
-	.globl shutdown_el2
-shutdown_el2:
-	/* x0: struct percpu* */
-
-	/*
-	 * Disable the hypervisor MMU.
-	 *
-	 * Note: no data accesses must be done after turning MMU off unless the
-	 * target region has been flushed out of D-cache.
-	 */
-	mrs	x1, sctlr_el2
-	ldr	x2, =(SCTLR_M_BIT | SCTLR_C_BIT | SCTLR_I_BIT)
-	bic	x1, x1, x2
-	msr	sctlr_el2, x1
-	isb
-
-	msr	mair_el2, xzr
-	msr	ttbr0_el2, xzr
-	msr	tcr_el2, xzr
-	isb
-
-	msr	tpidr_el2, xzr
-
-	/* Call vmreturn(guest_registers) */
-	add	x0, x0, #(PERCPU_STACK_END - 32 * 8)
-	b	vmreturn
-
-
-	.globl enable_mmu_el2
-enable_mmu_el2:
-	/*
-	 * x0: u64 ttbr0_el2
-	 */
-
-	/* setup the MMU for EL2 hypervisor mappings */
-	ldr	x1, =DEFAULT_MAIR_EL2
-	msr	mair_el2, x1
-
-	/* AARCH64_TODO: ARM architecture supports CPU clusters which could be
-	 * in separate inner shareable domains. At the same time: "The Inner
-	 * Shareable domain is expected to be the set of PEs controlled by
-	 * a single hypervisor or operating system." (see p. 93 of ARM ARM)
-	 * We should think what hw configuration we support by one instance of
-	 * the hypervisor and choose Inner or Outer sharable domain.
-	 */
-	ldr	x1, =(T0SZ(48) | (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)	\
-			       | (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)	\
-			       | (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)	\
-			       | (PARANGE_48B << TCR_PS_SHIFT)		\
-			       | TCR_EL2_RES1)
-	msr	tcr_el2, x1
-
-	msr	ttbr0_el2, x0
-
-	isb
-	tlbi	alle2
-	dsb	nsh
-
-	/* Enable MMU, allow cacheability for instructions and data */
-	ldr	x1, =(SCTLR_I_BIT | SCTLR_C_BIT | SCTLR_M_BIT | SCTLR_EL2_RES1)
-	msr	sctlr_el2, x1
-
-	isb
-	tlbi	alle2
-	dsb	nsh
-
-	ret
-	.popsection
-
-
 /*
  * macros used by init_bootstrap_pt
  */
@@ -320,7 +249,6 @@ init_bootstrap_pt:
 	b	\label
 .endm
 
-	.globl bootstrap_vectors
 	.align 11
 bootstrap_vectors:
 	ventry	.
@@ -342,3 +270,74 @@ bootstrap_vectors:
 	ventry	.
 	ventry	.
 	ventry	.
+
+
+	.pushsection	.trampoline, "ax"
+	.globl enable_mmu_el2
+enable_mmu_el2:
+	/*
+	 * x0: u64 ttbr0_el2
+	 */
+
+	/* setup the MMU for EL2 hypervisor mappings */
+	ldr	x1, =DEFAULT_MAIR_EL2
+	msr	mair_el2, x1
+
+	/* AARCH64_TODO: ARM architecture supports CPU clusters which could be
+	 * in separate inner shareable domains. At the same time: "The Inner
+	 * Shareable domain is expected to be the set of PEs controlled by
+	 * a single hypervisor or operating system." (see p. 93 of ARM ARM)
+	 * We should think what hw configuration we support by one instance of
+	 * the hypervisor and choose Inner or Outer sharable domain.
+	 */
+	ldr	x1, =(T0SZ(48) | (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)	\
+			       | (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)	\
+			       | (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)	\
+			       | (PARANGE_48B << TCR_PS_SHIFT)		\
+			       | TCR_EL2_RES1)
+	msr	tcr_el2, x1
+
+	msr	ttbr0_el2, x0
+
+	isb
+	tlbi	alle2
+	dsb	nsh
+
+	/* Enable MMU, allow cacheability for instructions and data */
+	ldr	x1, =(SCTLR_I_BIT | SCTLR_C_BIT | SCTLR_M_BIT | SCTLR_EL2_RES1)
+	msr	sctlr_el2, x1
+
+	isb
+	tlbi	alle2
+	dsb	nsh
+
+	ret
+
+
+	.globl shutdown_el2
+shutdown_el2:
+	/* x0: struct percpu* */
+
+	/*
+	 * Disable the hypervisor MMU.
+	 *
+	 * Note: no data accesses must be done after turning MMU off unless the
+	 * target region has been flushed out of D-cache.
+	 */
+	mrs	x1, sctlr_el2
+	ldr	x2, =(SCTLR_M_BIT | SCTLR_C_BIT | SCTLR_I_BIT)
+	bic	x1, x1, x2
+	msr	sctlr_el2, x1
+	isb
+
+	msr	mair_el2, xzr
+	msr	ttbr0_el2, xzr
+	msr	tcr_el2, xzr
+	isb
+
+	msr	tpidr_el2, xzr
+
+	/* Call vmreturn(guest_registers) */
+	add	x0, x0, #(PERCPU_STACK_END - 32 * 8)
+	b	vmreturn
+	.popsection
