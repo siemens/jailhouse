@@ -13,7 +13,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <asm/entry.h>
-#include <asm/setup.h>
+#include <asm/mmu_hyp.h>
 #include <asm/sysregs.h>
 
 /* This is only used if we use the new hyp-stub ABI that was introduced in

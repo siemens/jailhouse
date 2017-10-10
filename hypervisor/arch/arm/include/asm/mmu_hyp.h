@@ -10,14 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef _JAILHOUSE_ASM_SETUP_H
-#define _JAILHOUSE_ASM_SETUP_H
-
 #include <asm/percpu.h>
-
-#ifndef __ASSEMBLY__
 
 int switch_exception_level(struct per_cpu *cpu_data);
 
-#endif /* !__ASSEMBLY__ */
-#endif /* !_JAILHOUSE_ASM_SETUP_H */
+void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data);

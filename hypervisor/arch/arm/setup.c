@@ -16,7 +16,7 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/mach.h>
-#include <asm/setup.h>
+#include <asm/mmu_hyp.h>
 #include <asm/setup-common.h>
 #include <asm/sysregs.h>
 
