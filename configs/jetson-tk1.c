@@ -141,7 +141,7 @@ struct {
 			.virt_start = 0x70000800,
 			.size = 0x00000100,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-					JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
 		},
 		/* UART */ {
 			.phys_start = 0x70006000,
