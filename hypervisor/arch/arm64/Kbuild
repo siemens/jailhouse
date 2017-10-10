@@ -17,5 +17,4 @@ include $(src)/../arm-common/Kbuild
 always := built-in.o
 
 obj-y := $(COMMON_OBJECTS)
-obj-y += entry.o setup.o control.o mmio.o caches.o
-obj-y += exception.o traps.o
+obj-y += entry.o setup.o control.o mmio.o caches.o traps.o

@@ -16,8 +16,8 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/control.h>
+#include <asm/entry.h>
 #include <asm/irqchip.h>
-#include <asm/setup.h>
 #include <asm/setup-common.h>
 
 extern u8 __trampoline_start[];

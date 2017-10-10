@@ -32,9 +32,6 @@ void arch_reset_self(struct per_cpu *cpu_data);
 void arch_shutdown_self(struct per_cpu *cpu_data);
 unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 
-void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
-void __attribute__((noreturn)) shutdown_el2(struct per_cpu *cpu_data);
-
 void arm_cpu_reset(unsigned long pc);
 void arm_cpu_park(void);
 void arm_cpu_kick(unsigned int cpu_id);
