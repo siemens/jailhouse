@@ -15,7 +15,6 @@
 #include <asm/gic.h>
 #include <asm/gic_v2.h>
 #include <asm/irqchip.h>
-#include <asm/setup.h>
 
 /* The GICv2 interface numbering does not necessarily match the logical map */
 static u8 gicv2_target_cpu_map[8];

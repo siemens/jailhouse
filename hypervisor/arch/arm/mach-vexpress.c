@@ -16,7 +16,6 @@
 #include <jailhouse/mmio.h>
 #include <asm/control.h>
 #include <asm/mach.h>
-#include <asm/setup.h>
 
 #define SYSREGS_BASE		0x1c010000
 

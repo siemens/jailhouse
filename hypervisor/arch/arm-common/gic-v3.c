@@ -19,7 +19,6 @@
 #include <asm/gic.h>
 #include <asm/gic_v3.h>
 #include <asm/irqchip.h>
-#include <asm/setup.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
 
