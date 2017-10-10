@@ -17,7 +17,7 @@
 #include <asm/control.h>
 #include <asm/mach.h>
 #include <asm/mmu_hyp.h>
-#include <asm/setup-common.h>
+#include <asm/setup.h>
 #include <asm/sysregs.h>
 
 unsigned int cache_line_size;

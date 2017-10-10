@@ -13,7 +13,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/processor.h>
-#include <asm/setup-common.h>
+#include <asm/setup.h>
 
 static u32 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE / 4] = {
 	ARM_PARKING_CODE

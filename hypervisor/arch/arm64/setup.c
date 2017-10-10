@@ -18,7 +18,7 @@
 #include <asm/control.h>
 #include <asm/entry.h>
 #include <asm/irqchip.h>
-#include <asm/setup-common.h>
+#include <asm/setup.h>
 
 extern u8 __trampoline_start[];
 
