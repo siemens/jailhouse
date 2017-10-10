@@ -90,6 +90,22 @@ int arch_init_late(void)
 	return arm_init_late();
 }
 
+static inline void __attribute__((always_inline))
+cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
+{
+	cpu_data->linux_reg[0] = return_code;
+
+	asm volatile (
+		"msr	sp_svc, %0\n\t"
+		"msr	elr_hyp, %1\n\t"
+		"msr	spsr_hyp, %2\n\t"
+		:
+		: "r" (cpu_data->linux_sp +
+		       (NUM_ENTRY_REGS * sizeof(unsigned long))),
+		  "r" (cpu_data->linux_ret),
+		  "r" (cpu_data->linux_flags));
+}
+
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	/* Return to the kernel */
