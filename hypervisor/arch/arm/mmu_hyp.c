@@ -12,7 +12,7 @@
 
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
-#include <asm/control.h>
+#include <asm/entry.h>
 #include <asm/setup.h>
 #include <asm/sysregs.h>
 
@@ -257,9 +257,6 @@ static void check_mmu_map(unsigned long virt_addr, unsigned long phys_addr)
  */
 int switch_exception_level(struct per_cpu *cpu_data)
 {
-	extern unsigned long bootstrap_vectors;
-	extern unsigned long hyp_vectors;
-
 	/* Save the virtual address of the phys2virt function for later */
 	phys2virt_t phys2virt = paging_phys2hvirt;
 	virt2phys_t virt2phys = paging_hvirt2phys;
