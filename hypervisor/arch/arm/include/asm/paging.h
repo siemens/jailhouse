@@ -15,6 +15,7 @@
 
 #include <jailhouse/types.h>
 #include <jailhouse/utils.h>
+#include <asm/dcaches.h>
 #include <asm/processor.h>
 #include <asm/sysregs.h>
 
@@ -175,12 +176,6 @@ struct paging_structures;
 
 typedef u64 *pt_entry_t;
 
-enum dcache_flush {
-	DCACHE_CLEAN,
-	DCACHE_INVALIDATE,
-	DCACHE_CLEAN_AND_INVALIDATE,
-};
-
 extern unsigned int cpu_parange;
 extern unsigned int cache_line_size;
 
@@ -189,8 +184,6 @@ void arm_paging_cell_destroy(struct cell *cell);
 
 void arm_paging_vcpu_init(struct paging_structures *pg_structs);
 
-void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
-void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush);
 void arm_dcaches_clean_by_sw(void);
 
 static inline void arm_paging_vcpu_flush_tlbs(void)

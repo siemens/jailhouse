@@ -15,6 +15,7 @@
 
 #include <jailhouse/types.h>
 #include <jailhouse/utils.h>
+#include <asm/dcaches.h>
 #include <asm/processor.h>
 #include <asm/sysregs.h>
 
@@ -175,12 +176,6 @@ struct paging_structures;
 
 typedef u64 *pt_entry_t;
 
-enum dcache_flush {
-	DCACHE_CLEAN,
-	DCACHE_INVALIDATE,
-	DCACHE_CLEAN_AND_INVALIDATE,
-};
-
 extern unsigned int cpu_parange;
 
 /* return the bits supported for the physical address range for this
@@ -240,9 +235,6 @@ static inline unsigned int get_cpu_parange(void)
 				| (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)\
 				| (TCR_PS_CELL << TCR_PS_SHIFT)		\
 				| VTCR_RES1)
-
-void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush);
-void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush);
 
 int arm_paging_cell_init(struct cell *cell);
 void arm_paging_cell_destroy(struct cell *cell);
