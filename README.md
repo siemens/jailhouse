@@ -45,7 +45,7 @@ Frequently Asked Questions (FAQ):
 
 IRC channel:
   - Freenode, irc.freenode.net, #jailhouse
-  - Webchat: https://webchat.freenode.net/?channels=jailhouse
+  - [![Webchat](https://img.shields.io/badge/irc-freenode-blue.svg "IRC Freenode")](https://webchat.freenode.net/?channels=jailhouse)
 
 Mailing list:
 
