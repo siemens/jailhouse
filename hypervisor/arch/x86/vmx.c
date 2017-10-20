@@ -908,7 +908,8 @@ void vcpu_park(void)
 		return;
 	}
 #endif
-	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
+	vcpu_vendor_reset(0);
+	vmcs_write64(GUEST_IA32_DEBUGCTL, 0);
 	vmcs_write64(EPT_POINTER, paging_hvirt2phys(parking_pt.root_table) |
 				  EPT_TYPE_WRITEBACK | EPT_PAGE_WALK_LEN);
 }

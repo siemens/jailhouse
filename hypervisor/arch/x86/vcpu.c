@@ -26,12 +26,11 @@
 #include <asm/percpu.h>
 #include <asm/vcpu.h>
 
-/* This page is mapped so the code begins at 0x000ffff0 */
 static u8 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE] = {
-	[0xff0] = 0xfa, /* 1: cli */
-	[0xff1] = 0xf4, /*    hlt */
-	[0xff2] = 0xeb,
-	[0xff3] = 0xfc  /*    jmp 1b */
+	0xfa, /* 1: cli */
+	0xf4, /*    hlt */
+	0xeb,
+	0xfc  /*    jmp 1b */
 };
 
 struct paging_structures parking_pt;
@@ -49,8 +48,7 @@ int vcpu_early_init(void)
 	if (!parking_pt.root_table)
 		return -ENOMEM;
 	return paging_create(&parking_pt, paging_hvirt2phys(parking_code),
-			     PAGE_SIZE, 0x000ff000,
-			     PAGE_READONLY_FLAGS | PAGE_FLAG_US,
+			     PAGE_SIZE, 0, PAGE_READONLY_FLAGS | PAGE_FLAG_US,
 			     PAGING_NON_COHERENT);
 }
 

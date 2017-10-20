@@ -987,7 +987,7 @@ void vcpu_park(void)
 		return;
 	}
 #endif
-	vcpu_vendor_reset(APIC_BSP_PSEUDO_SIPI);
+	vcpu_vendor_reset(0);
 	/* No need to clear VMCB Clean bit: vcpu_vendor_reset() already does
 	 * this. */
 	this_cpu_data()->vmcb.n_cr3 = paging_hvirt2phys(parking_pt.root_table);
