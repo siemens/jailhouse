@@ -792,7 +792,7 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 
 void vcpu_vendor_reset(unsigned int sipi_vector)
 {
-	unsigned long val;
+	unsigned long reset_addr, val;
 	bool ok = true;
 
 	ok &= vmx_set_guest_cr(CR0_IDX, X86_CR0_NW | X86_CR0_CD | X86_CR0_ET);
@@ -803,18 +803,24 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	ok &= vmcs_write64(GUEST_RFLAGS, 0x02);
 	ok &= vmcs_write64(GUEST_RSP, 0);
 
-	val = 0;
 	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
-		val = 0xfff0;
-		sipi_vector = 0xf0;
-
 		/* only cleared on hard reset */
 		ok &= vmcs_write64(GUEST_IA32_DEBUGCTL, 0);
-	}
-	ok &= vmcs_write64(GUEST_RIP, val);
 
-	ok &= vmcs_write16(GUEST_CS_SELECTOR, sipi_vector << 8);
-	ok &= vmcs_write64(GUEST_CS_BASE, sipi_vector << 12);
+		reset_addr = this_cell()->config->cpu_reset_address;
+
+		ok &= vmcs_write64(GUEST_RIP, reset_addr & 0xffff);
+
+		ok &= vmcs_write16(GUEST_CS_SELECTOR,
+				   (reset_addr >> 4) & 0xf000);
+		ok &= vmcs_write64(GUEST_CS_BASE, reset_addr & ~0xffffL);
+	} else {
+		ok &= vmcs_write64(GUEST_RIP, 0);
+
+		ok &= vmcs_write16(GUEST_CS_SELECTOR, sipi_vector << 8);
+		ok &= vmcs_write64(GUEST_CS_BASE, sipi_vector << 12);
+	}
+
 	ok &= vmcs_write32(GUEST_CS_LIMIT, 0xffff);
 	ok &= vmcs_write32(GUEST_CS_AR_BYTES, 0x0009b);
 

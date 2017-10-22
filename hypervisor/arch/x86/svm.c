@@ -559,24 +559,29 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	};
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct vmcb *vmcb = &cpu_data->vmcb;
-	unsigned long val;
+	unsigned long reset_addr;
 
 	vmcb->cr0 = X86_CR0_NW | X86_CR0_CD | X86_CR0_ET;
 	vmcb->cr3 = 0;
 	vmcb->cr4 = 0;
 
 	vmcb->rflags = 0x02;
-
-	val = 0;
-	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
-		val = 0xfff0;
-		sipi_vector = 0xf0;
-	}
-	vmcb->rip = val;
 	vmcb->rsp = 0;
 
-	vmcb->cs.selector = sipi_vector << 8;
-	vmcb->cs.base = sipi_vector << 12;
+	if (sipi_vector == APIC_BSP_PSEUDO_SIPI) {
+		reset_addr = this_cell()->config->cpu_reset_address;
+
+		vmcb->rip = reset_addr & 0xffff;
+
+		vmcb->cs.selector = (reset_addr >> 4) & 0xf000;
+		vmcb->cs.base = reset_addr & ~0xffffL;
+	} else {
+		vmcb->rip = 0;
+
+		vmcb->cs.selector = sipi_vector << 8;
+		vmcb->cs.base = sipi_vector << 12;
+	}
+
 	vmcb->cs.limit = 0xffff;
 	vmcb->cs.access_rights = 0x009b;
 
