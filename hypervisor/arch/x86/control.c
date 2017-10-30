@@ -53,6 +53,8 @@ int arch_cell_create(struct cell *cell)
 
 	cell->comm_page.comm_region.pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
+	cell->comm_page.comm_region.pci_mmconfig_base =
+		system_config->platform_info.pci_mmconfig_base;
 	cell->comm_page.comm_region.num_cpus = 0;
 	for_each_cpu(cpu, cell->cpu_set)
 		cell->comm_page.comm_region.num_cpus++;

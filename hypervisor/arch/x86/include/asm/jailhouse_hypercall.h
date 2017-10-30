@@ -99,6 +99,8 @@ extern bool jailhouse_use_vmcall;
 struct jailhouse_comm_region {
 	COMM_REGION_GENERIC_HEADER;
 
+	/** Base address of PCI memory mapped config (x86-specific). */
+	__u64 pci_mmconfig_base;
 	/** I/O port address of the PM timer (x86-specific). */
 	__u16 pm_timer_address;
 	/** Number of CPUs available to the cell (x86-specific). */

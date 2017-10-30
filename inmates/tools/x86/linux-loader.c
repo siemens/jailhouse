@@ -27,6 +27,7 @@ struct setup_data {
 	u64	next;
 	u32	type;
 	u32	length;
+	u64	pci_mmconfig_base;
 	u16	pm_timer_address;
 	u16	num_cpus;
 	u8	cpu_ids[SMP_MAX_CPUS];
@@ -45,6 +46,7 @@ void inmate_main(void)
 
 	setup_data = (struct setup_data *)boot_params->setup_data;
 	setup_data->pm_timer_address = comm_region->pm_timer_address;
+	setup_data->pci_mmconfig_base = comm_region->pci_mmconfig_base;
 	setup_data->num_cpus = comm_region->num_cpus;
 
 	smp_wait_for_all_cpus();

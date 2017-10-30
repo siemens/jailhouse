@@ -690,7 +690,7 @@ class JailhouseCell:
 
 def x86_gen_setup_data():
     MAX_CPUS = 255
-    return struct.pack('8x4sI4x', b'JLHS', 4 + MAX_CPUS) + bytearray(MAX_CPUS)
+    return struct.pack('8x4sI12x', b'JLHS', 12 + MAX_CPUS) + bytearray(MAX_CPUS)
 
 
 # pretend to be part of the jailhouse tool
