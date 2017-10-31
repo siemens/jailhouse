@@ -12,7 +12,7 @@
 
 #include <inmate.h>
 
-#define ZERO_PAGE_ADDR		0xf5000UL
+#define ZERO_PAGE_ADDR		HEAP_BASE
 
 struct boot_params {
 	u8	padding1[0x230];

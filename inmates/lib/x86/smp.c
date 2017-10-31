@@ -57,9 +57,9 @@ void smp_start_cpu(unsigned int cpu_id, void (*entry)(void))
 
 	write_msr(X2APIC_ICR, base_val | APIC_DM_INIT);
 	delay_us(10000);
-	write_msr(X2APIC_ICR, base_val | APIC_DM_SIPI | 0xf0);
+	write_msr(X2APIC_ICR, base_val | APIC_DM_SIPI);
 	delay_us(200);
-	write_msr(X2APIC_ICR, base_val | APIC_DM_SIPI | 0xf0);
+	write_msr(X2APIC_ICR, base_val | APIC_DM_SIPI);
 
 	while (ap_entry != NULL)
 		cpu_relax();

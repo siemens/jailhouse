@@ -246,6 +246,8 @@ class X86:
     name = 'x86'
 
     def setup(self, args, config):
+        self._cpu_reset_address = config.cpu_reset_address
+
         self._zero_page = X86ZeroPage(args.kernel, args.initrd, config)
 
         setup_data = x86_gen_setup_data()
@@ -278,13 +280,11 @@ jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
         print('%s -a 0x%x' % (args.write_params.name, arch.params_address()))
         print('jailhouse cell start %s' % config.name)
 
-    @staticmethod
-    def loader_address():
-        return 0xf0000
+    def loader_address(self):
+        return self._cpu_reset_address
 
-    @staticmethod
-    def params_address():
-        return 0xf5000
+    def params_address(self):
+        return self._cpu_reset_address + 0x6000
 
     def kernel_address(self):
         return self._zero_page.kernel_load_addr

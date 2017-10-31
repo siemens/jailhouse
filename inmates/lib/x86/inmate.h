@@ -39,8 +39,7 @@
 #ifndef _JAILHOUSE_INMATE_H
 #define _JAILHOUSE_INMATE_H
 
-#define HEAP_BASE		0x000000
-#define FSEGMENT_BASE		0x0f0000
+#define HEAP_BASE		((unsigned long)stack_top)
 #define COMM_REGION_BASE	0x100000
 
 #define INMATE_CS32		0x8
@@ -255,6 +254,8 @@ extern volatile u32 smp_num_cpus;
 extern u8 smp_cpu_ids[SMP_MAX_CPUS];
 void smp_wait_for_all_cpus(void);
 void smp_start_cpu(unsigned int cpu_id, void (*entry)(void));
+
+extern const char stack_top[];
 #endif
 
 #include "../inmate_common.h"

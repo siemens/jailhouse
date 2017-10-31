@@ -289,7 +289,7 @@ like this:
 Next you can create a cell with a demonstration application as follows:
 
     jailhouse cell create /path/to/apic-demo.cell
-    jailhouse cell load apic-demo /path/to/apic-demo.bin -a 0xf0000
+    jailhouse cell load apic-demo /path/to/apic-demo.bin
     jailhouse cell start apic-demo
 
 apic-demo.bin is left by the built process in the inmates/demos/x86 directory.
@@ -324,8 +324,8 @@ To demonstrate the execution of a second, non-Linux cell, issue the following
 commands:
 
     jailhouse cell create /path/to/pci-demo.cell
-    jailhouse cell load pci-demo /path/to/pci-demo.bin -a 0xf0000 \
-        -s "con-base=0x2f8" -a 0xf0000
+    jailhouse cell load pci-demo /path/to/pci-demo.bin \
+        -s "con-base=0x2f8" -a 0x100
     jailhouse cell start pci-demo
 
 The pci-demo will use the second serial port provided by QEMU. You will find
@@ -337,8 +337,8 @@ the content of existing cell (provided they accept their shutdown first). To
 reload and restart the tiny-demo, issue the following commands:
 
     jailhouse cell start apic-demo
-    jailhouse cell load pci-demo /path/to/pci-demo.bin -a 0xf0000 \
-        -s "con-base=0x2f8" -a 0xf0000
+    jailhouse cell load pci-demo /path/to/pci-demo.bin \
+        -s "con-base=0x2f8" -a 0x100
     jailhouse cell start pci-demo
 
 Finally, Jailhouse is can be stopped completely again:

@@ -34,8 +34,6 @@ struct {
 		.num_irqchips = 0,
 		.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
 		.num_pci_devices = 0,
-
-		.cpu_reset_address = 0xffff0,
 	},
 
 	.cpus = {

@@ -52,19 +52,13 @@
 
 	.globl __reset_entry
 __reset_entry:
-	ljmp $0xf000,$start16
-
-
-	.section ".startup", "ax"
-
-start16:
 	lgdtl %cs:gdt_ptr
 
 	mov %cr0,%eax
 	or $X86_CR0_PE,%al
 	mov %eax,%cr0
 
-	ljmpl $INMATE_CS32,$start32 + FSEGMENT_BASE
+	ljmpl $INMATE_CS32,$start32
 
 
 	.code32
@@ -95,7 +89,7 @@ start32:
 	jnz call_entry
 
 	mov $1,%edi
-	lock xadd %edi,cpu_number + FSEGMENT_BASE
+	lock xadd %edi,cpu_number
 
 	cmp $SMP_MAX_CPUS,%edi
 	jae stop
@@ -155,7 +149,7 @@ loader_gdt:
 
 gdt_ptr:
 	.short	gdt_ptr - loader_gdt - 1
-	.long	loader_gdt + FSEGMENT_BASE
+	.long	loader_gdt
 
 
 	.section ".rodata"

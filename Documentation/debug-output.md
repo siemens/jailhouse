@@ -143,15 +143,15 @@ On x86, VGA output is not available for inmates.
 Example command line parameters for PIO based debug output on x86, where the
 inmate will initialise UART:
 
-    jailhouse cell load foocell inmate.bin -a 0xf0000 \
-        -s "con-base=0x3f8 con-divider=1" -a 0xf0000
+    jailhouse cell load foocell inmate.bin \
+        -s "con-base=0x3f8 con-divider=1" -a 0x100
 
 Example configuration for MMIO based debug output on ARM using the 8250 driver:
 
-    jailhouse cell load foocell inmate.bin -a 0x0 \
+    jailhouse cell load foocell inmate.bin \
         -s "con-type=8250 con-base=0x70006000 con-divider=0xdd" -a 0x100
 
 Example configuration for MMIO based debug output on ARM64 using the PL011 driver:
 
-    jailhouse cell load foocell inmate.bin -a 0x0 \
+    jailhouse cell load foocell inmate.bin \
         -s "con-type=PL011 con-base=0xf7113000" -a 0x1000
