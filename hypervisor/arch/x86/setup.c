@@ -255,8 +255,9 @@ void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
 	write_msr(MSR_IA32_PAT, cpu_data->pat);
 	write_msr(MSR_EFER, cpu_data->linux_efer);
 	write_cr0(cpu_data->linux_cr0);
-	write_cr3(cpu_data->linux_cr3);
 	write_cr4(cpu_data->linux_cr4);
+	/* cr3 must be last in case cr4 enables PCID */
+	write_cr3(cpu_data->linux_cr3);
 
 	/*
 	 * Copy Linux TSS descriptor into our GDT, clearing the busy flag,
