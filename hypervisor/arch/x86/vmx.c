@@ -28,54 +28,234 @@
 #define CR0_IDX			0
 #define CR4_IDX			1
 
+#define FAST_STRING_ENABLE	(1UL << 0)
+
+#define USER_MODE_MONITOR_MWAIT	(1UL << 1)
+
 #define PIO_BITMAP_PAGES	2
 
 static const struct segment invalid_seg = {
 	.access_rights = 0x10000
 };
 
-/* bit cleared: direct access allowed */
-// TODO: convert to whitelist
+/* MSR access whitelist: each bit *set* (LSB 0) will cause a VM-exit,
+ * so all explicit registers listed here are safe to be accessed in
+ * the given mode without Jailhouse's intervention */
 static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
-	[ VMX_MSR_BMP_0000_READ ] = {
-		[      0/8 ...  0x26f/8 ] = 0,
-		[  0x270/8 ...  0x277/8 ] = 0x80, /* 0x277 */
-		[  0x278/8 ...  0x2f7/8 ] = 0,
-		[  0x2f8/8 ...  0x2ff/8 ] = 0x80, /* 0x2ff */
-		[  0x300/8 ...  0x7ff/8 ] = 0,
-		[  0x800/8 ...  0x807/8 ] = 0x0c, /* 0x802, 0x803 */
-		[  0x808/8 ...  0x80f/8 ] = 0xa5, /* 0x808, 0x80a, 0x80d, 0x80f */
-		[  0x810/8 ...  0x817/8 ] = 0xff, /* 0x810 - 0x817 */
-		[  0x818/8 ...  0x81f/8 ] = 0xff, /* 0x818 - 0x81f */
-		[  0x820/8 ...  0x827/8 ] = 0xff, /* 0x820 - 0x827 */
-		[  0x828/8 ...  0x82f/8 ] = 0x81, /* 0x828, 0x82f */
-		[  0x830/8 ...  0x837/8 ] = 0xfd, /* 0x830, 0x832 - 0x837 */
-		[  0x838/8 ...  0x83f/8 ] = 0x43, /* 0x838, 0x839, 0x83e */
-		[  0x840/8 ... 0x1fff/8 ] = 0,
+    [ VMX_MSR_BMP_0000_READ ] = {
+		/* Deny everything first */
+		[    0x0/8 ... 0x1fff/8 ] = 0xff,
+
+		/* Platform ID/Machine Info/Feature Control + TSC adjust */
+		/* 0x17: IA32_PLATFORM_ID */
+		[   0x10/8 ...   0x17/8 ] = 0x7f,
+		/* 0x3a: IA32_FEATURE_CONTROL,
+		 * 0x3b: IA32_TSC_ADJUST */
+		[   0x38/8 ...   0x3f/8 ] = 0xf3,
+		/* 0x4e: MSR_PPIN_CTL,
+		 * 0x4f: MSR_PPIN */
+		[   0x48/8 ...   0x4f/8 ] = 0x3f,
+		/* 0xce: MSR_PLATFORM_INFO */
+		[   0xc8/8 ...   0xcf/8 ] = 0xbf,
+		/* 0x140: MISC_FEATURE_ENABLES */
+		[  0x140/8 ...  0x148/8 ] = 0xfe,
+
+		/* APIC */
+		/* 0x1b: IA32_APIC_BASE */
+		[   0x18/8 ...   0x1f/8 ] = 0xf7,
+		/* 0x6e0: IA32_TSC_DEADLINE */
+		[  0x6e0/8 ...  0x6e7/8 ] = 0xfe,
+
+		/* Microcode update (allow checking state) */
+		/* 0x8b: IA32_BIOS_SIGN_ID */
+		[   0x88/8 ...   0x8f/8 ] = 0xf7,
+
+		/* Machine-Check Exception */
+		/* 0x0: IA32_P5_MC_ADDR,
+		 * 0x1: IA32_P5_MC_TYPE */
+		[      0/8 ...    0xf/8 ] = 0xfc,
+		/* 0x179: IA32_MCG_CAP,
+		 * 0x17a: IA32_MCG_STATUS */
+		[  0x178/8 ...  0x17f/8 ] = 0xf9,
+		/* 0x280: IA32_MC0_CTL2,
+		 * [...]
+		 * 0x29f: IA32_MC31_CTL2 */
+		[  0x280/8 ...  0x29f/8 ] = 0,
+		/* 0x400: IA32_MC0_CTL,
+		 * [...]
+		 * 0x46f: IA32_MC27_MISC */
+		[  0x400/8 ...  0x46f/8 ] = 0,
+		/* 0x470: IA32_MC28_CTL,
+		 * 0x471: IA32_MC28_STATUS
+		 * 0x472: IA32_MC28_ADDR
+		 * 0x473: IA32_MC28_MISC */
+		[  0x470/8 ...  0x477/8 ] = 0xf0,
+
+		/* Fast System Call */
+		/* 0x174: IA32_SYSENTER_CS,
+		 * 0x175: IA32_SYSENTER_ESP,
+		 * 0x176: IA32_SYSENTER_EIP */
+		[  0x170/8 ...  0x177/8 ] = 0x8f,
+
+		/* Debug Control */
+		/* 0x1d9: IA32_DEBUGCTL */
+		[  0x1d8/8 ...  0x1df/8 ] = 0xfd,
+
+		/* Performance/thermal Control */
+		/* 0xe7: IA32_MPERF */
+		[  0xe0/8 ...  0xe7/8 ] = 0x7f,
+		/* 0xe8: IA32_APERF */
+		[  0xe8/8 ...  0xef/8 ] = 0xfe,
+		/* 0x199: IA32_PERF_CTL,
+		 * 0x19a: IA32_CLOCK_MODULATION,
+		 * 0x19b: IA32_THERM_INTERRUPT,
+		 * 0x19c: IA32_THERM_STATUS */
+		[  0x198/8 ...  0x19f/8 ] = 0xe1,
+		/* 0x1b0: IA32_ENERGY_PERF_BIAS,
+		 * 0x1b1: IA32_PACKAGE_THERM_STATUS,
+		 * 0x1b2: IA32_PACKAGE_THERM_INTERRUPT */
+		[  0x1b0/8 ...  0x1b7/8 ] = 0xf8,
+		/* 0x648: MSR_CONFIG_TDP_NOMINAL,
+		 * 0x64b: MSR_CONFIG_TDP_CONTROL,
+		 * 0x64c: MSR_TURBO_ACTIVATION_RATIO */
+		[  0x648/8 ...  0x64f/8 ] = 0xe6,
+
+		/* Performance Monitoring (+ misc + thermal) */
+		/* 0x186: IA32_PERFEVTSEL0,
+		 * 0x187: IA32_PERFEVTSEL1 */
+		[  0x180/8 ...  0x187/8 ] = 0x3f,
+		/* 0x188: IA32_PERFEVTSEL2,
+		 * 0x189: IA32_PERFEVTSEL3 */
+		[  0x188/8 ...  0x18f/8 ] = 0xfc,
+		/* 0x1a0: IA32_MISC_ENABLE,
+		 * 0x1a2: IA32_TEMPERATURE_TARGET,
+		 * 0x1a6: MSR_OFFCORE_RSP_0,
+		 * 0x1a7: MSR_OFFCORE_RSP_1 */
+		[  0x1a0/8 ...  0x1a7/8 ] = 0x3a,
+		/* 0x1ad: MSR_TURBO_RATIO_LIMIT */
+		[  0x1a8/8 ...  0x1af/8 ] = 0xdf,
+		/* 0x1c9: MSR_LASTBRANCH_TOS */
+		[  0x1c8/8 ...  0x1cf/8 ] = 0xfd,
+		/* 0x345: IA32_PERF_CAPABILITIES */
+		[  0x340/8 ...  0x347/8 ] = 0xdf,
+		/* 0x38d: IA32_FIXED_CTR_CTRL */
+		[  0x388/8 ...  0x38f/8 ] = 0xdf,
+		/* 0x4c1: IA32_A_PMC0,
+		 * [...]
+		 * 0x4c7: IA32_A_PMC6 */
+		[  0x4c0/8 ...  0x4c7/8 ] = 0x0,
+		/* 0x4c8: IA32_A_PMC7 */
+		[  0x4c8/8 ...  0x4cf/8 ] = 0xfe,
+		/* 0x570: IA32_RTIT_CTL */
+		[  0x570/8 ...  0x577/8 ] = 0xfe,
+		/* 0x680: MSR_LASTBRANCH_0_FROM_IP,
+		 * [...]
+		 * 0x69f: MSR_LASTBRANCH_31_FROM_IP */
+		[  0x680/8 ...  0x69f/8 ] = 0x0,
+		/* 0x6c0: MSR_LASTBRANCH_0_TO_IP,
+		 * [...]
+		 * 0x6df: MSR_LASTBRANCH_31_TO_IP */
+		[  0x6c0/8 ...  0x6df/8 ] = 0x0,
+
+		/* MTRRs (Memory Type Range Registers) */
+		/* 0xfe: IA32_MTRRCAP */
+		[   0xf8/8 ...   0xff/8 ] = 0xbf,
+		/* 0x200: IA32_MTRR_PHYSBASE0,
+		 * 0x201: IA32_MTRR_PHYSMASK0,
+		 * [...]
+		 * 0x20e: IA32_MTRR_PHYSBASE7,
+		 * 0x20f: IA32_MTRR_PHYSMASK7 */
+		[  0x200/8 ...  0x20f/8 ] = 0,
+		/* 0x210: IA32_MTRR_PHYSBASE8,
+		 * 0x211: IA32_MTRR_PHYSMASK8,
+		 * 0x212: IA32_MTRR_PHYSBASE9,
+		 * 0x213: IA32_MTRR_PHYSMASK9 */
+		[  0x210/8 ...  0x217/8 ] = 0xf0,
+		/* 0x250: IA32_MTRR_FIX64K_00000 */
+		[  0x250/8 ...  0x257/8 ] = 0xfe,
+		/* 0x258: IA32_MTRR_FIX16K_80000,
+		 * 0x259: IA32_MTRR_FIX16K_A0000 */
+		[  0x258/8 ...  0x25f/8 ] = 0xfc,
+		/* 0x268: IA32_MTRR_FIX4K_C0000,
+		 * [...]
+		 * 0x26f: IA32_MTRR_FIX4K_F8000 */
+		[  0x268/8 ...  0x26f/8 ] = 0,
+
+		/* Virtualization */
+		/* 0x480: IA32_VMX_BASIC,
+		 * [...]
+		 * 0x48f: IA32_VMX_TRUE_EXIT_CTLS */
+		[  0x480/8 ...  0x48f/8 ] = 0,
+		/* 0x490: IA32_VMX_TRUE_ENTRY_CTLS,
+		 * 0x491: IA32_VMX_VMFUNC */
+		[  0x490/8 ...  0x497/8 ] = 0xfc,
 	},
 	[ VMX_MSR_BMP_C000_READ ] = {
-		[      0/8 ... 0x1fff/8 ] = 0,
+		/* Deny everything first */
+		[    0x0/8 ... 0x1fff/8 ] = 0xff,
+
+		/* Fast System Call + EFER + TSC_AUX */
+		/* 0xc0000080: IA32_EFER,
+		 * 0xc0000081: IA32_STAR,
+		 * 0xc0000082: IA32_LSTAR,
+		 * 0xc0000083: IA32_CSTAR,
+		 * 0xc0000084: IA32_FMASK */
+		[   0x80/8 ...   0x87/8 ] = 0xe0,
+		/* 0xc0000100: IA32_FS_BASE,
+		 * 0xc0000101: IA32_GS_BASE
+		 * 0xc0000102: IA32_KERNEL_GS_BASE,
+		 * 0xc0000103: IA32_TSC_AUX */
+		[  0x100/8 ...  0x107/8 ] = 0xf0,
 	},
 	[ VMX_MSR_BMP_0000_WRITE ] = {
-		[      0/8 ...   0x17/8 ] = 0,
-		[   0x18/8 ...   0x1f/8 ] = 0x08, /* 0x01b */
-		[   0x20/8 ...  0x1ff/8 ] = 0,
-		[  0x200/8 ...  0x277/8 ] = 0xff, /* 0x200 - 0x277 */
-		[  0x278/8 ...  0x2f7/8 ] = 0,
-		[  0x2f8/8 ...  0x2ff/8 ] = 0x80, /* 0x2ff */
-		[  0x300/8 ...  0x387/8 ] = 0,
-		[  0x388/8 ...  0x38f/8 ] = 0x80, /* 0x38f */
-		[  0x390/8 ...  0x7ff/8 ] = 0,
-		[  0x808/8 ...  0x80f/8 ] = 0x89, /* 0x808, 0x80b, 0x80f */
-		[  0x810/8 ...  0x827/8 ] = 0,
-		[  0x828/8 ...  0x82f/8 ] = 0x81, /* 0x828, 0x82f */
-		[  0x830/8 ...  0x837/8 ] = 0xfd, /* 0x830, 0x832 - 0x837 */
-		[  0x838/8 ...  0x83f/8 ] = 0xc1, /* 0x838, 0x83e, 0x83f */
-		[  0x840/8 ...  0xd8f/8 ] = 0xff, /* esp. 0xc80 - 0xd8f */
-		[  0xd90/8 ... 0x1fff/8 ] = 0,
+		/* Deny everything first */
+		[    0x0/8 ... 0x1fff/8 ] = 0xff,
+
+		// TODO: safe to write reserved bits?
+
+		/* 0x3b: IA32_TSC_ADJUST */
+		[   0x38/8 ...   0x3f/8 ] = 0xf7,
+		/* 0x6e0: IA32_TSC_DEADLINE */
+		[  0x6e0/8 ...  0x6e7/8 ] = 0xfe,
+
+		/* Microcode update (allow checking state) */
+		/* 0x8b: IA32_BIOS_SIGN_ID */
+		[   0x88/8 ...   0x8f/8 ] = 0xf7,
+
+		/* Fast System Call */
+		/* 0x174: IA32_SYSENTER_CS,
+		 * 0x175: IA32_SYSENTER_ESP,
+		 * 0x176: IA32_SYSENTER_EIP */
+		[  0x170/8 ...  0x177/8 ] = 0x8f,
+
+		/* Tracing */
+		/* 0x680: MSR_LASTBRANCH_0_FROM_IP,
+		 * [...]
+		 * 0x69f: MSR_LASTBRANCH_31_FROM_IP */
+		[  0x680/8 ...  0x69f/8 ] = 0x0,
+		/* 0x6c0: MSR_LASTBRANCH_0_TO_IP,
+		 * [...]
+		 * 0x6df: MSR_LASTBRANCH_31_TO_IP */
+		[  0x6c0/8 ...  0x6df/8 ] = 0x0,
 	},
 	[ VMX_MSR_BMP_C000_WRITE ] = {
-		[      0/8 ... 0x1fff/8 ] = 0,
+		/* Deny everything first */
+		[    0x0/8 ... 0x1fff/8 ] = 0xff,
+
+		// TODO: safe to write reserved bits?
+
+		/* Fast System Call + EFER + TSC_AUX */
+		/* 0xc0000080: IA32_EFER,
+		 * 0xc0000081: IA32_STAR,
+		 * 0xc0000082: IA32_LSTAR,
+		 * 0xc0000083: IA32_CSTAR,
+		 * 0xc0000084: IA32_FMASK */
+		[   0x80/8 ...   0x87/8 ] = 0xe0,
+		/* 0xc0000100: IA32_FS_BASE,
+		 * 0xc0000101: IA32_GS_BASE
+		 * 0xc0000102: IA32_KERNEL_GS_BASE,
+		 * 0xc0000103: IA32_TSC_AUX */
+		[  0x100/8 ...  0x107/8 ] = 0xf0,
 	},
 };
 
@@ -1004,6 +1184,70 @@ static bool vmx_handle_cr(void)
 	return false;
 }
 
+static bool vmx_handle_msr_write(void)
+{
+	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	unsigned long val;
+
+	switch (guest_regs->rcx) {
+	case MSR_MISC_FEATURE_ENABLES:
+		/* Only allow 'User Mode MONITOR/MWAIT' changes */
+		val = read_msr(MSR_MISC_FEATURE_ENABLES) &
+			~USER_MODE_MONITOR_MWAIT;
+		val |= get_wrmsr_value(guest_regs) & USER_MODE_MONITOR_MWAIT;
+		write_msr(MSR_MISC_FEATURE_ENABLES, val);
+		break;
+	case MSR_IA32_MISC_ENABLE:
+		/* Only allow 'Fast-Strings Enable' changes */
+		val = read_msr(MSR_IA32_MISC_ENABLE) & ~FAST_STRING_ENABLE;
+		val |= get_wrmsr_value(guest_regs) & FAST_STRING_ENABLE;
+		write_msr(MSR_IA32_MISC_ENABLE, val);
+		break;
+	/* No-op for the following */
+	case MSR_IA32_PERF_GLOBAL_CTRL:
+	case MSR_IA32_PMC0 ... MSR_IA32_PMC7:
+	case MSR_PEBS_ENABLE:
+	case MSR_IA32_DS_AREA:
+		/*
+		 * See vcpu_init(), where we make sure all performance counters
+		 * are off forcibly. No case in letting these act, then.
+		 */
+	case MSR_IA32_MC0_CTL2 ... MSR_IA32_MC31_CTL2:
+		/* Programming interface to use corrected MC error signaling */
+	case MSR_IA32_PERF_CTL:
+		/*
+		 * Used to temporarily disable opportunistic processor
+		 * performance operation, but may affect the whole system
+		 */
+	case MSR_IA32_FIXED_CTR0 ... MSR_IA32_FIXED_CTR2:
+	case MSR_IA32_FIXED_CTR_CTRL:
+		/*
+		 * Control for fixed-function performance counters. May be
+		 * unique per package.
+		 */
+	case MSR_IA32_THERM_INTERRUPT:
+	case MSR_IA32_PACKAGE_THERM_INTERRUPT:
+		/*
+		 * Management of thermal events. The non-package variant may
+		 * still be unique on some micro-architectures.
+		 */
+	case MSR_OFFCORE_RSP_0:
+	case MSR_OFFCORE_RSP_1:
+		/*
+		 * These offcore counters have information on shared resources,
+		 * so we'd better block at least writing on them.
+		 */
+	case MSR_IA32_TEMPERATURE_TARGET:
+		/* May affect the whole package. */
+		break;
+	default:
+		return vcpu_handle_msr_write();
+	}
+
+	vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
+	return true;
+}
+
 bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
 	if (vmcs_read32(VM_ENTRY_CONTROLS) & VM_ENTRY_IA32E_MODE) {
@@ -1169,11 +1413,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_MSR_WRITE:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
-		if (cpu_data->guest_regs.rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
-			/* ignore writes */
-			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
-			return;
-		} else if (vcpu_handle_msr_write())
+		if (vmx_handle_msr_write())
 			return;
 		break;
 	case EXIT_REASON_APIC_ACCESS:

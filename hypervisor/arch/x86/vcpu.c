@@ -263,8 +263,9 @@ invalid_access:
 bool vcpu_handle_msr_read(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
+	unsigned long msr = cpu_data->guest_regs.rcx;
 
-	switch (cpu_data->guest_regs.rcx) {
+	switch (msr) {
 	case MSR_X2APIC_BASE ... MSR_X2APIC_END:
 		x2apic_handle_read();
 		break;
@@ -276,8 +277,11 @@ bool vcpu_handle_msr_read(void)
 				cpu_data->mtrr_def_type);
 		break;
 	default:
-		panic_printk("FATAL: Unhandled MSR read: %lx\n",
-			     cpu_data->guest_regs.rcx);
+		panic_printk("FATAL: Unhandled MSR read: %lx\n", msr);
+#ifdef CONFIG_PERMISSIVE_MSR_ACCESS
+		set_rdmsr_value(&cpu_data->guest_regs, read_msr(msr));
+		break;
+#endif
 		return false;
 	}
 
@@ -323,9 +327,23 @@ bool vcpu_handle_msr_write(void)
 		vcpu_vendor_set_guest_pat((val & MTRR_ENABLE) ?
 					  cpu_data->pat : 0);
 		break;
+	/* No-op for the following */
+	case MSR_IA32_MCG_CTL:
+		/* Enables/disables MCE reporting (globally) */
+	case MSR_IA32_MC0_CTL ... MSR_IA32_MC28_MISC:
+		/*
+		 * Control signaling of MC for errors produced by a particular
+		 * hardware unit
+		 */
+		break;
 	default:
-		panic_printk("FATAL: Unhandled MSR write: %lx\n",
-			     cpu_data->guest_regs.rcx);
+		val = get_wrmsr_value(&cpu_data->guest_regs);
+		panic_printk("FATAL: Unhandled MSR write: %lx, value %lx\n",
+			     cpu_data->guest_regs.rcx, val);
+#ifdef CONFIG_PERMISSIVE_MSR_ACCESS
+		write_msr(cpu_data->guest_regs.rcx, val);
+		break;
+#endif
 		return false;
 	}
 
