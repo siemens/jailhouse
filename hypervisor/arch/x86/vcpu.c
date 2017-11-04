@@ -228,8 +228,7 @@ bool vcpu_handle_mmio_access(void)
 	vcpu_vendor_get_execution_state(&x_state);
 	vcpu_vendor_get_mmio_intercept(&intercept);
 
-	if (!vcpu_get_guest_paging_structs(&pg_structs))
-		goto invalid_access;
+	vcpu_get_guest_paging_structs(&pg_structs);
 
 	inst = x86_mmio_parse(x_state.rip, &pg_structs, intercept.is_write);
 	if (!inst.inst_len)

@@ -13,6 +13,7 @@
 #include <jailhouse/paging.h>
 
 extern const struct paging x86_64_paging[];
+extern const struct paging pae_paging[];
 extern const struct paging i386_paging[];
 
 extern struct paging hv_paging[];

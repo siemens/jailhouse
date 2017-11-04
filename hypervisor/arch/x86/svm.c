@@ -654,24 +654,22 @@ static void update_efer(struct vmcb *vmcb)
 	vmcb->clean_bits &= ~CLEAN_BITS_CRX;
 }
 
-bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
+void vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
 	struct vmcb *vmcb = &this_cpu_data()->vmcb;
 
 	if (vmcb->efer & EFER_LMA) {
 		pg_structs->root_paging = x86_64_paging;
 		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(51, 12);
-	} else if ((vmcb->cr0 & X86_CR0_PG) &&
-		   !(vmcb->cr4 & X86_CR4_PAE)) {
-		pg_structs->root_paging = i386_paging;
-		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(31, 12);
 	} else if (!(vmcb->cr0 & X86_CR0_PG)) {
 		pg_structs->root_paging = NULL;
+	} else if (vmcb->cr4 & X86_CR4_PAE) {
+		pg_structs->root_paging = pae_paging;
+		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(31, 5);
 	} else {
-		printk("FATAL: Unsupported paging mode\n");
-		return false;
+		pg_structs->root_paging = i386_paging;
+		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(31, 12);
 	}
-	return true;
 }
 
 void vcpu_vendor_set_guest_pat(unsigned long val)
@@ -714,9 +712,9 @@ static bool svm_parse_mov_to_cr(struct vmcb *vmcb, unsigned long pc,
 	u8 opcodes[] = {0x0f, 0x22}, modrm;
 	int n;
 
+	vcpu_get_guest_paging_structs(&pg_structs);
+
 	ctx.remaining = ARRAY_SIZE(opcodes);
-	if (!vcpu_get_guest_paging_structs(&pg_structs))
-		return false;
 	ctx.cs_base = (vmcb->efer & EFER_LMA) ? 0 : vmcb->cs.base;
 
 	if (!ctx_advance(&ctx, &pc, &pg_structs))
@@ -822,8 +820,7 @@ static bool svm_handle_apic_access(struct vmcb *vmcb)
 	if (offset & 0x00f)
 		goto out_err;
 
-	if (!vcpu_get_guest_paging_structs(&pg_structs))
-		goto out_err;
+	vcpu_get_guest_paging_structs(&pg_structs);
 
 	inst_len = apic_mmio_access(vmcb->rip, &pg_structs, offset >> 4,
 				    is_write);

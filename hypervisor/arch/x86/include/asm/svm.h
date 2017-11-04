@@ -343,10 +343,7 @@ struct vmcb {
 	u64 sysenter_esp;
 	u64 sysenter_eip;
 	u64 cr2;
-	u64 pdpe0;
-	u64 pdpe1;
-	u64 pdpe2;
-	u64 pdpe3;
+	u8 reserved[32];
 	u64 g_pat;
 	u64 debugctlmsr;
 	u64 lastbranchfromip;

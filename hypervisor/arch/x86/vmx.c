@@ -1004,24 +1004,43 @@ static bool vmx_handle_cr(void)
 	return false;
 }
 
-bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
+void vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+	unsigned int n;
+
 	if (vmcs_read32(VM_ENTRY_CONTROLS) & VM_ENTRY_IA32E_MODE) {
 		pg_structs->root_paging = x86_64_paging;
 		pg_structs->root_table_gphys =
 			vmcs_read64(GUEST_CR3) & BIT_MASK(51, 12);
 	} else if (!(vmcs_read64(GUEST_CR0) & X86_CR0_PG)) {
 		pg_structs->root_paging = NULL;
-	} else if (vmcs_read64(GUEST_CR0) & X86_CR0_PG &&
-		 !(vmcs_read64(GUEST_CR4) & X86_CR4_PAE)) {
+	} else if (vmcs_read64(GUEST_CR4) & X86_CR4_PAE) {
+		pg_structs->root_paging = pae_paging;
+		/*
+		 * Although we read the PDPTEs from the guest registers, we
+		 * need to provide the root table here to please the generic
+		 * page table walker. It will map the PDPT then, but we won't
+		 * use it.
+		 */
+		pg_structs->root_table_gphys =
+			vmcs_read64(GUEST_CR3) & BIT_MASK(31, 5);
+		/*
+		 * The CPU caches the PDPTEs in registers. We need to use them
+		 * instead of reading the entries from guest memory.
+		 */
+		for (n = 0; n < 4; n++)
+			cpu_data->pdpte[n] = vmcs_read64(GUEST_PDPTR0 + n * 2);
+	} else {
 		pg_structs->root_paging = i386_paging;
 		pg_structs->root_table_gphys =
 			vmcs_read64(GUEST_CR3) & BIT_MASK(31, 12);
-	} else {
-		printk("FATAL: Unsupported paging mode\n");
-		return false;
 	}
-	return true;
+}
+
+pt_entry_t vcpu_pae_get_pdpte(page_table_t page_table, unsigned long virt)
+{
+	return &this_cpu_data()->pdpte[(virt >> 30) & 0x3];
 }
 
 void vcpu_vendor_set_guest_pat(unsigned long val)
@@ -1046,8 +1065,7 @@ static bool vmx_handle_apic_access(void)
 		if (offset & 0x00f)
 			break;
 
-		if (!vcpu_get_guest_paging_structs(&pg_structs))
-			break;
+		vcpu_get_guest_paging_structs(&pg_structs);
 
 		inst_len = apic_mmio_access(vmcs_read64(GUEST_RIP),
 					    &pg_structs, offset >> 4,

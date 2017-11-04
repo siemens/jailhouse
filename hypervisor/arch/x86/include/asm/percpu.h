@@ -93,6 +93,9 @@ struct per_cpu {
 	unsigned long mtrr_def_type;
 	/** @} */
 
+	/** Cached PDPTEs, used by VMX for PAE guest paging mode. */
+	unsigned long pdpte[4];
+
 	/** True when CPU is initialized by hypervisor. */
 	bool initialized;
 	union {

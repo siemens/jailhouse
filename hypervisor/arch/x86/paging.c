@@ -13,6 +13,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/string.h>
 #include <jailhouse/utils.h>
+#include <asm/vcpu.h>
 
 #define X86_FLAG_HUGEPAGE	0x80
 
@@ -218,6 +219,37 @@ const struct paging i386_paging[] = {
 		.entry_valid	= i386_entry_valid,
 		.get_entry	= i386_get_entry_l1,
 		.get_phys	= i386_get_phys_l1,
+		/* get_next_pt not valid */
+	},
+};
+
+/* Can be overridden in vendor-specific code if needed */
+pt_entry_t __attribute__((weak)) vcpu_pae_get_pdpte(page_table_t page_table,
+						    unsigned long virt)
+{
+	return &page_table[(virt >> 30) & 0x3];
+}
+
+/* read-only, no page table construction supported */
+const struct paging pae_paging[] = {
+	{
+		.entry_valid	= x86_64_entry_valid,
+		.get_entry	= vcpu_pae_get_pdpte,
+		.get_phys	= paging_get_phys_invalid,
+		.get_next_pt	= x86_64_get_next_pt,
+	},
+	{
+		.page_size	= 2 * 1024 * 1024,
+		.entry_valid	= x86_64_entry_valid,
+		.get_entry	= x86_64_get_entry_l2,
+		.get_phys	= x86_64_get_phys_l2,
+		.get_next_pt	= x86_64_get_next_pt,
+	},
+	{
+		.page_size	= PAGE_SIZE,
+		.entry_valid	= x86_64_entry_valid,
+		.get_entry	= x86_64_get_entry_l1,
+		.get_phys	= x86_64_get_phys_l1,
 		/* get_next_pt not valid */
 	},
 };
