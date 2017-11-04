@@ -1010,6 +1010,8 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 		pg_structs->root_paging = x86_64_paging;
 		pg_structs->root_table_gphys =
 			vmcs_read64(GUEST_CR3) & BIT_MASK(51, 12);
+	} else if (!(vmcs_read64(GUEST_CR0) & X86_CR0_PG)) {
+		pg_structs->root_paging = NULL;
 	} else if (vmcs_read64(GUEST_CR0) & X86_CR0_PG &&
 		 !(vmcs_read64(GUEST_CR4) & X86_CR4_PAE)) {
 		pg_structs->root_paging = i386_paging;
