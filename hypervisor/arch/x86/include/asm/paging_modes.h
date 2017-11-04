@@ -14,6 +14,5 @@
 
 extern const struct paging x86_64_paging[];
 extern const struct paging i386_paging[];
-extern const struct paging realmode_paging[];
 
 extern struct paging hv_paging[];

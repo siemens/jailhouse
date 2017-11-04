@@ -666,17 +666,7 @@ bool vcpu_get_guest_paging_structs(struct guest_paging_structures *pg_structs)
 		pg_structs->root_paging = i386_paging;
 		pg_structs->root_table_gphys = vmcb->cr3 & BIT_MASK(31, 12);
 	} else if (!(vmcb->cr0 & X86_CR0_PG)) {
-		/*
-		 * Can be in non-paged protected mode as well, but
-		 * the translation mechanism will stay the same ayway.
-		 */
-		pg_structs->root_paging = realmode_paging;
-		/*
-		 * This will make paging_get_guest_pages map the page
-		 * that also contains the bootstrap code and, thus, is
-		 * always present in a cell.
-		 */
-		pg_structs->root_table_gphys = 0xff000;
+		pg_structs->root_paging = NULL;
 	} else {
 		printk("FATAL: Unsupported paging mode\n");
 		return false;

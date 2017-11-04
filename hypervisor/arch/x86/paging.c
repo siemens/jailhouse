@@ -221,30 +221,3 @@ const struct paging i386_paging[] = {
 		/* get_next_pt not valid */
 	},
 };
-
-static bool realmode_entry_valid(pt_entry_t pte, unsigned long flags)
-{
-	return true;
-}
-
-static pt_entry_t realmode_get_entry(page_table_t page_table,
-		unsigned long virt)
-{
-	return NULL;
-}
-
-static unsigned long realmode_get_phys(pt_entry_t pte, unsigned long virt)
-{
-	return virt;
-}
-
-/* naturally read-only */
-const struct paging realmode_paging[] = {
-	{
-		.page_size	= PAGE_SIZE,
-		.entry_valid	= realmode_entry_valid,
-		.get_entry	= realmode_get_entry,
-		.get_phys	= realmode_get_phys,
-		/* get_next_pt not valid */
-	},
-};
