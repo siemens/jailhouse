@@ -153,9 +153,10 @@ struct paging {
 /** Describes the root of hierarchical paging structures. */
 struct paging_structures {
 	/** Pointer to array of paging parameters and callbacks, first element
-	 * describing the root level. */
+	 * describing the root level, NULL if paging is disabled. */
 	const struct paging *root_paging;
-	/** Reference to root-level page table. */
+	/** Reference to root-level page table, ignored if root_paging is NULL.
+	 */
 	page_table_t root_table;
 };
 

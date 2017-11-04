@@ -518,7 +518,7 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 	if (num > NUM_TEMPORARY_PAGES)
 		return NULL;
 	while (num-- > 0) {
-		if (pg_structs)
+		if (pg_structs && pg_structs->root_paging)
 			gphys = paging_gvirt2gphys(pg_structs, gaddr,
 						   page_virt, flags);
 		else
