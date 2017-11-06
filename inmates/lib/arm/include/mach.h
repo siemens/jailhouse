@@ -63,6 +63,18 @@
 #define GICD_V2_BASE	((void *)0x01c81000)
 #define GICC_V2_BASE	((void *)0x01c82000)
 
+#elif defined(CONFIG_MACH_EMCON_RZG)
+#define CON_TYPE	"HSCIF"
+#define CON_BASE	0xe6ee0000
+#define CON_DIVIDER	0x10
+
+#define CON_CLOCK_REG	0xe615014c
+#define CON_GATE_NR	15
+
+#define GIC_VERSION	2
+#define GICD_V2_BASE	((void *)0x01c81000)
+#define GICC_V2_BASE	((void *)0x01c82000)
+
 #elif defined(CONFIG_MACH_ORANGEPI0)
 #define CON_TYPE	"8250"
 #define CON_BASE	0x01c28000
