@@ -26,7 +26,6 @@
 #define IOAPIC_REG_INDEX	0x00
 #define IOAPIC_REG_DATA		0x10
 #define IOAPIC_REG_EOI		0x40
-#define IOAPIC_ID		0x00
 #define IOAPIC_VER		0x01
 # define IOPAPIC_VER_MRE(ver)	(((ver) & BIT_MASK(23, 16)) >> 16)
 #define IOAPIC_REDIR_TBL_START	0x10
@@ -295,7 +294,7 @@ static enum mmio_result ioapic_access_handler(void *arg,
 	case IOAPIC_REG_DATA:
 		index = ioapic->index_reg_val;
 
-		if (index == IOAPIC_ID || index == IOAPIC_VER) {
+		if (index < IOAPIC_REDIR_TBL_START) {
 			if (mmio->is_write)
 				goto invalid_access;
 			mmio->value = ioapic_reg_read(ioapic->phys_ioapic,
@@ -303,8 +302,7 @@ static enum mmio_result ioapic_access_handler(void *arg,
 			return MMIO_HANDLED;
 		}
 
-		if (index < IOAPIC_REDIR_TBL_START ||
-		    index >= (IOAPIC_REDIR_TBL_START +
+		if (index >= (IOAPIC_REDIR_TBL_START +
 			      ioapic->phys_ioapic->pins * 2))
 			goto invalid_access;
 
