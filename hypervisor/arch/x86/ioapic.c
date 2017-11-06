@@ -307,8 +307,11 @@ static enum mmio_result ioapic_access_handler(void *arg,
 			goto invalid_access;
 
 		entry = (index - IOAPIC_REDIR_TBL_START) / 2;
-		if (!test_bit(entry, (unsigned long *)ioapic->pin_bitmap))
-			goto invalid_access;
+		if (!test_bit(entry, (unsigned long *)ioapic->pin_bitmap)) {
+			/* ignore access */
+			mmio->value = 0;
+			return MMIO_HANDLED;
+		}
 
 		if (mmio->is_write) {
 			if (ioapic_virt_redir_write(ioapic, index,
