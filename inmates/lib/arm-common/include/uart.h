@@ -55,3 +55,4 @@ extern struct uart_chip uart_8250_8_ops;
 extern struct uart_chip uart_pl011_ops;
 extern struct uart_chip uart_xuartps_ops;
 extern struct uart_chip uart_mvebu_ops;
+extern struct uart_chip uart_hscif_ops;

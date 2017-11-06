@@ -10,4 +10,5 @@
  * the COPYING file in the top-level directory.
  */
 
-extern struct uart_chip uart_pl011_ops, uart_xuartps_ops, uart_mvebu_ops;
+extern struct uart_chip uart_pl011_ops, uart_xuartps_ops, uart_mvebu_ops,
+			uart_hscif_ops;

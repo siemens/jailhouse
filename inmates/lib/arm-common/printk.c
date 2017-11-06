@@ -94,6 +94,8 @@ static void console_init(void)
 		chip = &uart_xuartps_ops;
 	else if (!strcmp(type, "MVEBU"))
 		chip = &uart_mvebu_ops;
+	else if (!strcmp(type, "HSCIF"))
+		chip = &uart_hscif_ops;
 
 	if (!chip)
 		return;

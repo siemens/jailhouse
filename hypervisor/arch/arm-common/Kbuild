@@ -17,6 +17,7 @@ ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
 OBJS-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o setup.o
 OBJS-y += irqchip.o pci.o ivshmem.o uart-pl011.o uart-xuartps.o uart-mvebu.o
+OBJS-y += uart-hscif.o
 OBJS-y += gic-v2.o gic-v3.o
 
 COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))

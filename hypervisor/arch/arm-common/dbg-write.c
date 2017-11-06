@@ -32,6 +32,8 @@ void arch_dbg_write_init(void)
 		uart = &uart_xuartps_ops;
 	else if (con_type == JAILHOUSE_CON1_TYPE_MVEBU)
 		uart = &uart_mvebu_ops;
+	else if (con_type == JAILHOUSE_CON1_TYPE_HSCIF)
+		uart = &uart_hscif_ops;
 
 	if (uart) {
 		uart->debug_console = &system_config->debug_console;

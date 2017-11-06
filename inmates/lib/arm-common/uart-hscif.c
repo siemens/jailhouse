@@ -1,10 +1,10 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) ARM Limited, 2014
+ * Copyright (c) emtrion GmbH, 2017
  *
  * Authors:
- *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Ruediger Fichter <ruediger.fichter@emtrion.de>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -36,67 +36,52 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _JAILHOUSE_INMATE_H
-#define _JAILHOUSE_INMATE_H
+#include <inmate.h>
+#include <uart.h>
 
-typedef signed char s8;
-typedef unsigned char u8;
+#define HSCIF_HSBRR			0x04
+#define HSCIF_HSSCR			0x08
+#define HSCIF_HSFTDR			0x0C
+#define HSCIF_HSFSR			0x10
+#define HSCIF_HSTTRGR			0x58
 
-typedef signed short s16;
-typedef unsigned short u16;
+#define HSCIF_HSSCR_RE			0x0010
+#define HSCIF_HSSCR_TE			0x0020
 
-typedef signed int s32;
-typedef unsigned int u32;
+#define HSCIF_HSFSR_TDFE		0x0020
+#define HSCIF_HSFSR_TEND		0x0040
 
-typedef signed long long s64;
-typedef unsigned long long u64;
+#define HSCIF_FIFO_SIZE			128
 
-static inline u8 mmio_read8(void *address)
+static void uart_init(struct uart_chip *chip)
 {
-	return *(volatile u8 *)address;
+	u16 hsscr;
+
+	if (chip->divider) {
+		hsscr = mmio_read16(chip->base + HSCIF_HSSCR);
+		mmio_write16(chip->base + HSCIF_HSSCR,
+			     hsscr & ~(HSCIF_HSSCR_TE | HSCIF_HSSCR_RE));
+		mmio_write8(chip->base + HSCIF_HSBRR, chip->divider);
+		mmio_write16(chip->base + HSCIF_HSTTRGR, HSCIF_FIFO_SIZE / 2);
+		mmio_write16(chip->base + HSCIF_HSSCR, hsscr | HSCIF_HSSCR_TE);
+	}
 }
 
-static inline void mmio_write8(void *address, u8 value)
+static bool uart_is_busy(struct uart_chip *chip)
 {
-	*(volatile u8 *)address = value;
+	return !(mmio_read16(chip->base + HSCIF_HSFSR) & HSCIF_HSFSR_TDFE);
 }
 
-static inline u16 mmio_read16(void *address)
+static void uart_write(struct uart_chip *chip, char c)
 {
-	return *(volatile u16 *)address;
+	mmio_write8(chip->base + HSCIF_HSFTDR, c);
+	mmio_write16(chip->base + HSCIF_HSFSR,
+		     mmio_read16(chip->base + HSCIF_HSFSR) &
+				 ~(HSCIF_HSFSR_TDFE | HSCIF_HSFSR_TEND));
 }
 
-static inline void mmio_write16(void *address, u16 value)
-{
-	*(volatile u16 *)address = value;
-}
-
-static inline u32 mmio_read32(void *address)
-{
-	return *(volatile u32 *)address;
-}
-
-static inline void mmio_write32(void *address, u32 value)
-{
-	*(volatile u32 *)address = value;
-}
-
-static inline void cpu_relax(void)
-{
-	asm volatile("" : : : "memory");
-}
-
-typedef void (*irq_handler_t)(unsigned int);
-void gic_setup(irq_handler_t handler);
-void gic_enable_irq(unsigned int irq);
-
-unsigned long timer_get_frequency(void);
-u64 timer_get_ticks(void);
-u64 timer_ticks_to_ns(u64 ticks);
-void timer_start(u64 timeout);
-
-#include <arch/inmate.h>
-
-#include "../inmate_common.h"
-
-#endif /* !_JAILHOUSE_INMATE_H */
+struct uart_chip uart_hscif_ops = {
+	.init = uart_init,
+	.is_busy = uart_is_busy,
+	.write = uart_write,
+};
