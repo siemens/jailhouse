@@ -207,16 +207,11 @@ int ioapic_init(void)
 
 void ioapic_prepare_handover(void)
 {
-	enum ioapic_handover handover;
 	struct cell_ioapic *ioapic;
-	struct cell *cell;
 	unsigned int n;
 
-	for_each_cell(cell) {
-		handover = (cell == &root_cell) ? PINS_ACTIVE : PINS_MASKED;
-		for_each_cell_ioapic(ioapic, cell, n)
-			ioapic_mask_cell_pins(ioapic, handover);
-	}
+	for_each_cell_ioapic(ioapic, &root_cell, n)
+		ioapic_mask_cell_pins(ioapic, PINS_ACTIVE);
 }
 
 int ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip,
