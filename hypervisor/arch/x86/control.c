@@ -123,6 +123,7 @@ void arch_cell_destroy(struct cell *cell)
 
 void arch_cell_reset(struct cell *cell)
 {
+	ioapic_cell_reset(cell);
 }
 
 void arch_config_commit(struct cell *cell_added_removed)

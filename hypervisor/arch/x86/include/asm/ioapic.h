@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -98,6 +98,7 @@ int ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip,
 			   struct phys_ioapic **phys_ioapic_ptr);
 
 int ioapic_cell_init(struct cell *cell);
+void ioapic_cell_reset(struct cell *cell);
 void ioapic_cell_exit(struct cell *cell);
 
 void ioapic_config_commit(struct cell *cell_added_removed);
