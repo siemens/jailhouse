@@ -250,7 +250,7 @@ class X86:
 
         self._zero_page = X86ZeroPage(args.kernel, args.initrd, config)
 
-        setup_data = x86_gen_setup_data()
+        setup_data = x86_gen_setup_data(config)
 
         self._zero_page.setup_header.set_setup_data(
             arch.params_address() + 0x1000)
@@ -525,6 +525,9 @@ class Irqchip:
          self.pin_bitmap_hi) = \
             struct.unpack_from(self._IRQCHIP_FORMAT, irqchip_struct)
 
+    def is_standard(self):
+        return self.address == 0xfec00000
+
 
 class Config:
     _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ8x'
@@ -714,9 +717,17 @@ class JailhouseCell:
         fcntl.ioctl(self.dev, JailhouseCell.JAILHOUSE_CELL_START, start)
 
 
-def x86_gen_setup_data():
+def x86_gen_setup_data(config):
     MAX_CPUS = 255
-    return struct.pack('8x4sI12x', b'JLHS', 12 + MAX_CPUS) + bytearray(MAX_CPUS)
+    SETUP_DATA_VERSION = 1
+    standard_ioapic = 0
+    for irqchip in config.irqchips:
+        if irqchip.is_standard():
+            standard_ioapic = 1
+    return struct.pack('8x4sIHH12xB', b'JLHS', 17 + MAX_CPUS,
+                       SETUP_DATA_VERSION, SETUP_DATA_VERSION,
+                       standard_ioapic) + \
+        bytearray(MAX_CPUS)
 
 
 # pretend to be part of the jailhouse tool

@@ -27,9 +27,12 @@ struct setup_data {
 	u64	next;
 	u32	type;
 	u32	length;
-	u64	pci_mmconfig_base;
+	u16	version;
+	u16	compatible_version;
 	u16	pm_timer_address;
 	u16	num_cpus;
+	u64	pci_mmconfig_base;
+	u8	standard_ioapic;
 	u8	cpu_ids[SMP_MAX_CPUS];
 };
 
