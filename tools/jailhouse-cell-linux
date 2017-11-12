@@ -508,6 +508,24 @@ class MemoryRegion:
                            MemoryRegion.E820_RESERVED)
 
 
+class CacheRegion:
+    _REGION_FORMAT = 'IIBxH'
+    SIZE = struct.calcsize(_REGION_FORMAT)
+
+
+class Irqchip:
+    _IRQCHIP_FORMAT = 'QIIQQ'
+    SIZE = struct.calcsize(_IRQCHIP_FORMAT)
+
+    def __init__(self, irqchip_struct):
+        (self.address,
+         self.id,
+         self.pin_base,
+         self.pin_bitmap_lo,
+         self.pin_bitmap_hi) = \
+            struct.unpack_from(self._IRQCHIP_FORMAT, irqchip_struct)
+
+
 class Config:
     _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ8x'
     _HEADER_REVISION = 7
@@ -545,6 +563,14 @@ class Config:
             self.memory_regions.append(
                 MemoryRegion(self.data[memregion_offs:]))
             memregion_offs += MemoryRegion.SIZE
+
+        irqchip_offs = memregion_offs + \
+            self.num_cache_regions * CacheRegion.SIZE
+        self.irqchips = []
+        for n in range(self.num_irqchips):
+            self.irqchips.append(
+                Irqchip(self.data[irqchip_offs:]))
+            irqchip_offs += Irqchip.SIZE
 
 
 # see linux/Documentation/x86/boot.txt
