@@ -1,0 +1,167 @@
+/*
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate test on emCON-RZ/G1M board,
+ * corresponds to configs/emtrion-emconrzg1m-linux-demo.c
+ *
+ * Copyright (c) emtrion GmbH, 2017
+ *
+ * Authors:
+ *  Jan von Wiarda <jan.vonwiarda@emtrion.de>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/power/r8a7743-sysc.h>
+
+/dts-v1/;
+
+/memreserve/ 0x0000000070000000 0x0000000000002000;
+/ {
+	model = "Jailhouse cell on emCON-RZ/G1M";
+	compatible = "emtrion,emconrzg1m", "renesas,r8a7743";
+
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	interrupt-parent = <&gic>;
+
+	aliases {
+		i2c2 = "/i2c@e6530000";
+		serial6 = "/serial@e6ee0000";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			enable-method = "psci";
+			device_type = "cpu";
+			compatible = "arm,cortex-a15";
+			reg = <0x0>;
+			clock-frequency = <0x59682f00>;
+			voltage-tolerance = <0x1>;
+			clocks = <0x2 0x8>;
+			clock-latency = <0x493e0>;
+			power-domains = <0x3 0x0>;
+			operating-points = <0x16e360 0xf4240 0x1406f4 0xf4240
+					    0x112a88 0xf4240 0xe4e1c 0xf4240
+					    0xb71b0 0xf4240 0x5b8d8 0xf4240>;
+		};
+	};
+
+	memory@70000000 {
+		device_type = "memory";
+		reg = <0x0 0x70000000 0x0 0x0bef0000>;
+	};
+
+	chosen {
+		bootargs = "console=ttySC6,115200 root=/dev/sda1 rootwait
+			    ip=dhcp loglevel=8 vt.global_cursor_default=0
+			    consoleblank=0";
+		stdout-path = "/serial@e6ee0000";
+	};
+
+	timer {
+		compatible = "arm,armv7-timer";
+		interrupts = <GIC_PPI 13
+				(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 14
+				(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 11
+				(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 10
+				(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	vcc_sdhi0: regulator@0 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SDHI0 Vcc";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		regulator-boot-on;
+		regulator-always-on;
+
+	};
+
+	vccq_sdhi0: regulator@1 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SDHI0 VccQ";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	gic: interrupt-controller@f1001000 {
+		compatible = "arm,cortex-a7-gic", "arm,cortex-a15-gic";
+		reg = <0x0 0xf1001000 0x0 0x1000>,
+		      <0x0 0xf1002000 0x0 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+	sysc: system-controller@e6180000 {
+		compatible = "renesas,r8a7743-sysc";
+		reg = <0 0xe6180000 0 0x0200>;
+		#power-domain-cells = <1>;
+	};
+
+	pfc: pin-controller@e6060000 {
+		compatible = "renesas,pfc-r8a7743";
+		reg = <0x0 0xe6060000 0x0 0x11c>;
+		#gpio-range-cells = <0x3>;
+		linux,phandle = <0x7>;
+		phandle = <0x7>;
+
+		serial6 {
+			renesas,groups = "scif4_data_c";
+			renesas,function = "scif4";
+			linux,phandle = <0x12>;
+			phandle = <0x12>;
+		};
+
+		sdhi0_pins: sd0 {
+			renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+					 "sdhi0_cd", "sdhi0_wp";
+			renesas,function = "sdhi0";
+		};
+	};
+
+	scif4: serial@e6ee0000 {
+		compatible = "renesas,scif-r8a7743", "renesas,scif";
+		reg = <0 0xe6ee0000 0 0x40>;
+		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&sysc R8A7743_PD_ALWAYS_ON>;
+		status = "okay";
+		pinctrl-0 = <0x12>;
+		pinctrl-names = "default";
+	};
+
+	sdhi0: sd@ee100000 {
+		compatible = "renesas,sdhi-r8a7743";
+		reg = <0 0xee100000 0 0x200>;
+		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&sysc R8A7743_PD_ALWAYS_ON>;
+		status = "okay";
+		vmmc-supply = <&vcc_sdhi0>;
+		vqmmc-supply = <&vccq_sdhi0>;
+	};
+
+	i2c2: i2c@e6530000 {
+		compatible = "renesas,i2c-r8a7743";
+		reg = <0 0xe6530000 0 0x40>;
+		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&sysc R8A7743_PD_ALWAYS_ON>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+};
