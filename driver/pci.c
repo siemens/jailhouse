@@ -19,6 +19,11 @@
 #include <linux/version.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)
+#define of_overlay_apply(overlay, id)	(*id = of_overlay_create(overlay))
+#define of_overlay_remove(id)		of_overlay_destroy(*id)
+#endif
+
 #include "pci.h"
 
 struct claimed_dev {
@@ -235,7 +240,8 @@ void jailhouse_pci_cell_cleanup(struct cell *cell)
 #ifdef CONFIG_OF_OVERLAY
 extern u8 __dtb_vpci_template_begin[], __dtb_vpci_template_end[];
 
-static int overlay_id = -1;
+static int overlay_id;
+static bool overlay_applied;
 
 static unsigned int count_ivshmem_devices(struct cell *cell)
 {
@@ -267,7 +273,6 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	void *overlay_data = NULL;
 	u32 gic_address_cells;
 	unsigned int n, cell;
-	bool success = false;
 	u32 *prop_val;
 	u64 base_addr;
 	int len;
@@ -345,11 +350,10 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	prop_val[4] = cpu_to_be32(base_addr);
 	prop_val[6] = cpu_to_be32(count_ivshmem_devices(root_cell) * 0x2000);
 
-	overlay_id = of_overlay_create(overlay);
-	if (overlay_id < 0)
+	if (of_overlay_apply(overlay, &overlay_id) < 0)
 		goto out;
 
-	success = true;
+	overlay_applied = true;
 
 out:
 	of_node_put(vpci);
@@ -358,13 +362,13 @@ out:
 	of_changeset_destroy(&changeset);
 	kfree(int_map_prop.value);
 
-	return success;
+	return overlay_applied;
 }
 
 static void destroy_vpci_of_overlay(void)
 {
-	if (overlay_id >= 0)
-		of_overlay_destroy(overlay_id);
+	if (overlay_applied)
+		of_overlay_remove(&overlay_id);
 }
 #else /* !CONFIG_OF_OVERLAY */
 static bool create_vpci_of_overlay(struct jailhouse_system *config)
