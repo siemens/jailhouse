@@ -41,17 +41,21 @@
 #define PM_TIMER_HZ		3579545
 #define PM_TIMER_OVERFLOW      ((0x1000000 * NS_PER_SEC) / PM_TIMER_HZ)
 
+#define IA32_TSC_DEADLINE	0x6e0
+
 #define X2APIC_LVTT		0x832
+# define LVTT_TSC_DEADLINE	(1 << 18)
 #define X2APIC_TMICT		0x838
 #define X2APIC_TMCCT		0x839
 #define X2APIC_TDCR		0x83e
 
-static unsigned long divided_apic_freq;
+static unsigned long apic_tick_freq;
 static unsigned long pm_timer_last[SMP_MAX_CPUS];
 static unsigned long pm_timer_overflows[SMP_MAX_CPUS];
 static unsigned long tsc_freq, tsc_overflow;
 static unsigned long tsc_last[SMP_MAX_CPUS];
 static unsigned long tsc_overflows[SMP_MAX_CPUS];
+static bool tsc_deadline;
 
 static u64 rdtsc(void)
 {
@@ -84,6 +88,9 @@ unsigned long tsc_init(void)
 {
 	unsigned long start_pm, end_pm;
 	u64 start_tsc, end_tsc;
+
+	if (tsc_freq)
+		return tsc_freq;
 
 	tsc_freq = cmdline_parse_int("tsc_freq", 0);
 
@@ -132,11 +139,19 @@ unsigned long apic_timer_init(unsigned int vector)
 {
 	unsigned long apic_freq;
 	unsigned long start, end;
-	unsigned long tmr;
+	unsigned long tmr, ecx;
 
 	apic_freq = cmdline_parse_int("apic_freq", 0);
 
-	if (apic_freq == 0) {
+	asm volatile("cpuid" : "=c" (ecx) : "a" (1)
+		: "rbx", "rdx", "memory");
+	tsc_deadline = !!(ecx & (1 << 24));
+
+	if (tsc_deadline) {
+		vector |= LVTT_TSC_DEADLINE;
+		apic_tick_freq = tsc_init();
+		apic_freq = apic_tick_freq / 1000;
+	} else if (apic_freq == 0) {
 		write_msr(X2APIC_TDCR, 3);
 
 		start = pm_timer_read();
@@ -150,14 +165,17 @@ unsigned long apic_timer_init(unsigned int vector)
 
 		write_msr(X2APIC_TMICT, 0);
 
-		divided_apic_freq = (0xffffffffULL - tmr) * NS_PER_SEC / (end - start);
-		apic_freq = (divided_apic_freq * 16 + 500) / 1000;
+		apic_tick_freq = (0xffffffffULL - tmr) * NS_PER_SEC / (end - start);
+		apic_freq = (apic_tick_freq * 16 + 500) / 1000;
 	} else {
-		divided_apic_freq = apic_freq / 16;
+		apic_tick_freq = apic_freq / 16;
 		apic_freq /= 1000;
 	}
 
 	write_msr(X2APIC_LVTT, vector);
+
+	/* Required when using TSC deadline mode. */
+	asm volatile("mfence" : : : "memory");
 
 	return apic_freq;
 }
@@ -165,6 +183,9 @@ unsigned long apic_timer_init(unsigned int vector)
 void apic_timer_set(unsigned long timeout_ns)
 {
 	unsigned long long ticks =
-		(unsigned long long)timeout_ns * divided_apic_freq;
-	write_msr(X2APIC_TMICT, ticks / NS_PER_SEC);
+		(unsigned long long)timeout_ns * apic_tick_freq / NS_PER_SEC;
+	if (tsc_deadline)
+		write_msr(IA32_TSC_DEADLINE, rdtsc() + ticks);
+	else
+		write_msr(X2APIC_TMICT, ticks);
 }
