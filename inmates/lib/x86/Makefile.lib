@@ -38,6 +38,7 @@
 
 KBUILD_CFLAGS += -m64 -mno-red-zone
 GCOV_PROFILE := n
+OBJECT_FILES_NON_STANDARD := y
 
 define DECLARE_TARGETS =
  _TARGETS = $(1)
