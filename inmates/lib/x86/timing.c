@@ -86,29 +86,7 @@ unsigned long tsc_read(void)
 
 unsigned long tsc_init(void)
 {
-	unsigned long start_pm, end_pm;
-	u64 start_tsc, end_tsc;
-
-	if (tsc_freq)
-		return tsc_freq;
-
-	tsc_freq = cmdline_parse_int("tsc_freq", 0);
-
-	if (tsc_freq == 0) {
-		start_pm = pm_timer_read();
-		start_tsc = rdtsc();
-		asm volatile("mfence" : : : "memory");
-
-		while (pm_timer_read() - start_pm < 100 * NS_PER_MSEC)
-			cpu_relax();
-
-		end_pm = pm_timer_read();
-		end_tsc = rdtsc();
-		asm volatile("mfence" : : : "memory");
-
-		tsc_freq = (end_tsc - start_tsc) * NS_PER_SEC / (end_pm - start_pm);
-	}
-
+	tsc_freq = comm_region->tsc_khz * 1000L;
 	tsc_overflow = (0x100000000L * NS_PER_SEC) / tsc_freq;
 
 	return tsc_freq;
@@ -138,10 +116,7 @@ void delay_us(unsigned long microsecs)
 unsigned long apic_timer_init(unsigned int vector)
 {
 	unsigned long apic_freq;
-	unsigned long start, end;
-	unsigned long tmr, ecx;
-
-	apic_freq = cmdline_parse_int("apic_freq", 0);
+	unsigned long ecx;
 
 	asm volatile("cpuid" : "=c" (ecx) : "a" (1)
 		: "rbx", "rdx", "memory");
@@ -151,25 +126,9 @@ unsigned long apic_timer_init(unsigned int vector)
 		vector |= LVTT_TSC_DEADLINE;
 		apic_tick_freq = tsc_init();
 		apic_freq = apic_tick_freq / 1000;
-	} else if (apic_freq == 0) {
-		write_msr(X2APIC_TDCR, 3);
-
-		start = pm_timer_read();
-		write_msr(X2APIC_TMICT, 0xffffffff);
-
-		while (pm_timer_read() - start < 100 * NS_PER_MSEC)
-			cpu_relax();
-
-		end = pm_timer_read();
-		tmr = read_msr(X2APIC_TMCCT);
-
-		write_msr(X2APIC_TMICT, 0);
-
-		apic_tick_freq = (0xffffffffULL - tmr) * NS_PER_SEC / (end - start);
-		apic_freq = (apic_tick_freq * 16 + 500) / 1000;
 	} else {
-		apic_tick_freq = apic_freq / 16;
-		apic_freq /= 1000;
+		apic_tick_freq = comm_region->apic_khz * 1000 / 16;
+		apic_freq = comm_region->apic_khz;
 	}
 
 	write_msr(X2APIC_LVTT, vector);
