@@ -21,7 +21,7 @@ struct boot_params {
 	u64	setup_data;
 	u8	padding3[8];
 	u32	init_size;
-};
+} __attribute__((packed));
 
 struct setup_data {
 	u64	next;
@@ -32,9 +32,11 @@ struct setup_data {
 	u16	pm_timer_address;
 	u16	num_cpus;
 	u64	pci_mmconfig_base;
+	u32	tsc_khz;
+	u32	apic_khz;
 	u8	standard_ioapic;
 	u8	cpu_ids[SMP_MAX_CPUS];
-};
+} __attribute__((packed));
 
 void inmate_main(void)
 {
@@ -50,6 +52,8 @@ void inmate_main(void)
 	setup_data = (struct setup_data *)boot_params->setup_data;
 	setup_data->pm_timer_address = comm_region->pm_timer_address;
 	setup_data->pci_mmconfig_base = comm_region->pci_mmconfig_base;
+	setup_data->tsc_khz = comm_region->tsc_khz;
+	setup_data->apic_khz = comm_region->apic_khz;
 	setup_data->num_cpus = comm_region->num_cpus;
 
 	smp_wait_for_all_cpus();

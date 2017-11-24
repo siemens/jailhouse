@@ -718,13 +718,14 @@ class JailhouseCell:
 
 
 def x86_gen_setup_data(config):
+    SETUP_TYPE_JAILHOUSE = 6
     MAX_CPUS = 255
     SETUP_DATA_VERSION = 1
     standard_ioapic = 0
     for irqchip in config.irqchips:
         if irqchip.is_standard():
             standard_ioapic = 1
-    return struct.pack('8x4sIHH12xB', b'JLHS', 17 + MAX_CPUS,
+    return struct.pack('8xIIHH12x8xB', SETUP_TYPE_JAILHOUSE, 25 + MAX_CPUS,
                        SETUP_DATA_VERSION, SETUP_DATA_VERSION,
                        standard_ioapic) + \
         bytearray(MAX_CPUS)
