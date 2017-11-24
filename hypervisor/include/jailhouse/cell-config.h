@@ -43,7 +43,7 @@
  * Incremented on any layout or semantic change of system or cell config.
  * Also update HEADER_REVISION in tools.
  */
-#define JAILHOUSE_CONFIG_REVISION	7
+#define JAILHOUSE_CONFIG_REVISION	8
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -243,6 +243,8 @@ struct jailhouse_system {
 				__u32 vtd_interrupt_limit;
 				__u8 apic_mode;
 				__u8 padding[3];
+				__u32 tsc_khz;
+				__u32 apic_khz;
 				struct jailhouse_iommu
 					iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 			} __attribute__((packed)) x86;

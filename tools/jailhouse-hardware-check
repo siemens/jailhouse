@@ -109,11 +109,11 @@ class Sysconfig:
     MMCFGBASE_SIZE = 8
     MMCFGENDBUS_SIZE = 1
     PCIISVIRT_SIZE = 1
-    X86_PADDING = 10
+    X86_PADDING = 18
     X86_MAX_IOMMU_UNITS = 8
     X86_IOMMU_SIZE = 20
 
-    HEADER_REVISION = 7
+    HEADER_REVISION = 8
     HEADER_FORMAT = '6sH'
 
     def __init__(self, path):

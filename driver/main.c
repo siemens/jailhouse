@@ -506,6 +506,14 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	console_available = CON2_TYPE(config->debug_console.flags) ==
 				JAILHOUSE_CON2_TYPE_ROOTPAGE;
 
+#ifdef CONFIG_X86
+	if (config->platform_info.x86.tsc_khz == 0)
+		config->platform_info.x86.tsc_khz = tsc_khz;
+	if (config->platform_info.x86.apic_khz == 0)
+		config->platform_info.x86.apic_khz =
+			lapic_timer_frequency / (1000 / HZ);
+#endif
+
 	err = jailhouse_cell_prepare_root(&config->root_cell);
 	if (err)
 		goto error_unmap;

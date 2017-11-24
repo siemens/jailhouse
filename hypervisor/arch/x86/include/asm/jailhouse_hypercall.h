@@ -105,6 +105,11 @@ struct jailhouse_comm_region {
 	__u16 pm_timer_address;
 	/** Number of CPUs available to the cell (x86-specific). */
 	__u16 num_cpus;
+	/** Calibrated TSC frequency in kHz (x86-specific). */
+	__u32 tsc_khz;
+	/** Calibrated APIC timer frequency in kHz or 0 if TSC deadline timer
+	 * is available (x86-specific). */
+	__u32 apic_khz;
 };
 
 /**
