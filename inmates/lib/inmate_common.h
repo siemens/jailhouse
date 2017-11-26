@@ -78,6 +78,8 @@ bool cmdline_parse_bool(const char *param);
 #define CMDLINE_BUFFER(size) \
 	const char cmdline[size] __attribute__((section(".cmdline")))
 
+extern const char cmdline[];
+
 void inmate_main(void);
 
 #endif /* !__ASSEMBLY__ */
