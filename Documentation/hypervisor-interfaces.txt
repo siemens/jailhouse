@@ -284,17 +284,17 @@ is mapped, it has to be declared read-only in the cell configuration.
 Communication region layout
 - - - - - - - - - - - - - -
 
-        +------------------------------+ - begin of communication region
-        |   Message to Cell (32 bit)   |   (lower address)
-        +------------------------------+
-        |  Message from Cell (32 bit)  |
-        +------------------------------+
-        |     Cell State (32 bit)      |
-        +------------------------------+
-        |      Reserved (32 bit)       |
-        +------------------------------+
-        :     Platform Information     :
-        +------------------------------+ - higher address
+    +------------------------------+ - begin of communication region
+    |   Message to Cell (32 bit)   |   (lower address)
+    +------------------------------+
+    |  Message from Cell (32 bit)  |
+    +------------------------------+
+    |     Cell State (32 bit)      |
+    +------------------------------+
+    |      Reserved (32 bit)       |
+    +------------------------------+
+    :     Platform Information     :
+    +------------------------------+ - higher address
 
 All fields use the native endianness of the system. The format is of the
 Platform Information part is architecture-specific. Its content is filled by
@@ -379,13 +379,19 @@ to "Running".
 Platform Information for x86
 - - - - - - - - - - - - - - -
 
-        +------------------------------+ - begin of communication region
-        :   generic part, see above    :   (lower address)
-        +------------------------------+
-        |   PM Timer Address (16 bit)  |
-        +------------------------------+
-        |   Number of CPUs (16 bit)    |
-        +------------------------------+ - higher address
+    +----------------------------------+ - begin of communication region
+    :     generic part, see above      :   (lower address)
+    +----------------------------------+
+    |  PCI MMCONFIG Address (64 bit)   |
+    +----------------------------------+
+    |     PM Timer Address (16 bit)    |
+    +----------------------------------+
+    |     Number of CPUs (16 bit)      |
+    +----------------------------------+
+    |  TSC Frequency in kHz (32 bit)   |
+    +----------------------------------+
+    | APIC Timer Freq. in kHz (32 bit) |
+    +----------------------------------+ - higher address
 
 
 References
