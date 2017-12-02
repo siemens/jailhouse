@@ -202,7 +202,8 @@ bool vcpu_handle_io_access(void)
 	if (result == 0)
 		result = i8042_access_handler(io.port, io.in, io.size);
 
-	if (result == 1) {
+	/* Also ignore byte access to port 80, often used for delaying IO. */
+	if (result == 1 || (io.port == 0x80 && io.size == 1)) {
 		vcpu_skip_emulated_instruction(io.inst_len);
 		return true;
 	}
