@@ -4,7 +4,7 @@ Hypervisor Configuration
 Jailhouse supports various static compile-time configuration
 parameters, such as platform specific settings and debugging options.
 Those settings can optionally be defined in
-'hypervisor/include/jailhouse/config.h'.
+'include/jailhouse/config.h'.
 Every configuration option should be defined to "1" or not be in the file at
 all. Defining any other value can cause unexpected behaviour.
 

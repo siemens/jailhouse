@@ -235,7 +235,7 @@ $ cp -av ~/freertos-cell/jailhouse-configs/bananapi.c ~/jailhouse/configs/banana
 $ cp -av freertos-cell/jailhouse-configs/bananapi-freertos-demo.c ~/jailhouse/configs/
 
 #Copy the configuration header file before building
-$ cp -av ~/jailhouse/ci/jailhouse-config-banana-pi.h ~/jailhouse/hypervisor/include/jailhouse/config.h
+$ cp -av ~/jailhouse/ci/jailhouse-config-banana-pi.h ~/jailhouse/include/jailhouse/config.h
 $ cd ~/jailhouse
 $ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KDIR=../linux-stable
 ```

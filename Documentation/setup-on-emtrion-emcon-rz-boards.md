@@ -27,7 +27,7 @@ have mounted this on your development workstation through sshfs or nfs.
 
 Copy the Jailhouse config file to the hypervisor include directory:
 
-cp -av ci/jailhouse-config-emcon-rzg.h hypervisor/include/jailhouse/config.h
+cp -av ci/jailhouse-config-emcon-rzg.h include/jailhouse/config.h
 
 Then you can compile and install Jailhouse using this command on the development workstation:
 

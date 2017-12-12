@@ -12,7 +12,7 @@
 Module.symvers
 modules.order
 driver/jailhouse.ko
-hypervisor/include/jailhouse/config.h
+include/jailhouse/config.h
 hypervisor/hypervisor.lds
 inmates/lib/arm/inmate.lds
 inmates/lib/arm64/inmate.lds

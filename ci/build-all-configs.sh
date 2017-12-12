@@ -30,7 +30,7 @@ for CONFIG in $CONFIGS; do
 	echo
 	echo "*** Building configuration $CONFIG ***"
 
-	cp ci/jailhouse-config-$CONFIG.h hypervisor/include/jailhouse/config.h
+	cp ci/jailhouse-config-$CONFIG.h include/jailhouse/config.h
 
 	case $CONFIG in
 	x86)

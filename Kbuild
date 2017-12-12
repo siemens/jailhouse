@@ -11,7 +11,7 @@
 # the COPYING file in the top-level directory.
 #
 
-INC_CONFIG_H = $(src)/hypervisor/include/jailhouse/config.h
+INC_CONFIG_H = $(src)/include/jailhouse/config.h
 export INC_CONFIG_H
 
 define filechk_config_mk
