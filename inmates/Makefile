@@ -16,8 +16,6 @@ INMATES_LIB = $(src)/lib/$(SRCARCH)
 export INMATES_LIB
 
 INCLUDES := -I$(INMATES_LIB) \
-	    -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
-	    -I$(src)/../hypervisor/include \
 	    -I$(src)/../include/arch/$(SRCARCH) \
 	    -I$(src)/../include
 
