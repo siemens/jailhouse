@@ -23,6 +23,7 @@ fi
 CFLAGS="-fno-builtin-ffsl -Wall -Wstrict-prototypes -Wtype-limits \
 	-Wmissing-declarations -Wmissing-prototypes \
 	-Ihypervisor/arch/$ARCH/include -Ihypervisor/include \
+	-Iinclude/arch/$ARCH -Iinclude \
 	$INCLUDE_ARM_COMMON $EXTRA_CFLAGS"
 
 test_compile()

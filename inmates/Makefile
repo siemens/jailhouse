@@ -17,7 +17,9 @@ export INMATES_LIB
 
 INCLUDES := -I$(INMATES_LIB) \
 	    -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
-	    -I$(src)/../hypervisor/include
+	    -I$(src)/../hypervisor/include \
+	    -I$(src)/../include/arch/$(SRCARCH) \
+	    -I$(src)/../include
 
 ifeq ($(subst arm64,arm,$(SRCARCH)),arm)
 INCLUDES += -I$(src)/../hypervisor/arch/arm-common/include

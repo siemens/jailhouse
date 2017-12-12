@@ -14,7 +14,9 @@
 obj-m := jailhouse.o
 
 ccflags-y := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
-	     -I$(src)/../hypervisor/include
+	     -I$(src)/../hypervisor/include \
+	     -I$(src)/../include/arch/$(SRCARCH) \
+	     -I$(src)/../include
 
 jailhouse-y := cell.o main.o sysfs.o
 jailhouse-$(CONFIG_PCI) += pci.o

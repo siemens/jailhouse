@@ -13,11 +13,12 @@
 subdir-y := dts
 
 LINUXINCLUDE := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
-		-I$(src)/../hypervisor/include
+		-I$(src)/../hypervisor/include \
+		-I$(src)/../include
 KBUILD_CFLAGS := -Wextra
 
-ifneq ($(wildcard $(obj)/../hypervisor/include/jailhouse/config.h),)
-KBUILD_CFLAGS += -include $(obj)/../hypervisor/include/jailhouse/config.h
+ifneq ($(wildcard $(obj)/../include/jailhouse/config.h),)
+KBUILD_CFLAGS += -include $(obj)/../include/jailhouse/config.h
 endif
 
 OBJCOPYFLAGS := -O binary
