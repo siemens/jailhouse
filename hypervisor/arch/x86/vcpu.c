@@ -91,10 +91,6 @@ int vcpu_cell_init(struct cell *cell)
 	int err;
 	u8 *b;
 
-	/* PM timer has to be provided */
-	if (system_config->platform_info.x86.pm_timer_address == 0)
-		return trace_error(-EINVAL);
-
 	err = vcpu_vendor_cell_init(cell);
 	if (err)
 		return err;
@@ -124,11 +120,13 @@ int vcpu_cell_init(struct cell *cell)
 			*b |= ~*pio_bitmap;
 	}
 
-	/* permit access to the PM timer */
+	/* permit access to the PM timer if there is any */
 	pm_timer_addr = system_config->platform_info.x86.pm_timer_address;
-	for (n = 0; n < 4; n++, pm_timer_addr++) {
-		b = cell_iobm.data;
-		b[pm_timer_addr / 8] &= ~(1 << (pm_timer_addr % 8));
+	if (pm_timer_addr) {
+		for (n = 0; n < 4; n++, pm_timer_addr++) {
+			b = cell_iobm.data;
+			b[pm_timer_addr / 8] &= ~(1 << (pm_timer_addr % 8));
+		}
 	}
 
 	return 0;
