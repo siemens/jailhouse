@@ -61,4 +61,12 @@ for header in hypervisor/arch/$ARCH/include/asm/*.h; do
 	test_compile asm $header
 done
 
+for header in include/jailhouse/*.h; do
+	test_compile jailhouse $header
+done
+
+for header in include/arch/$ARCH/asm/*.h; do
+	test_compile asm $header
+done
+
 rm -f .header_check.tmp.[oc]
