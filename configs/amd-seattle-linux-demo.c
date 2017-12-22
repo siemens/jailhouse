@@ -68,7 +68,7 @@ struct {
 				JAILHOUSE_MEM_IO,
 		},
 		/* RAM */ {
-			.phys_start = 0x82efff0000,
+			.phys_start = 0x83dfff0000,
 			.virt_start = 0x0,
 			.size = 0x10000,	/* 64 KB */
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -76,16 +76,16 @@ struct {
 				JAILHOUSE_MEM_LOADABLE,
 		},
 		/* RAM */ {
-			.phys_start = 0x82d0000000,
-			.virt_start = 0x82d0000000,
+			.phys_start = 0x83c0000000,
+			.virt_start = 0x83c0000000,
 			.size =         0x1fff0000,	/* 512 MB - 64 KB */
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
 		/* IVSHMEM shared memory region */ {
-			.phys_start = 0x82fbe00000,
-			.virt_start = 0x82fbe00000,
+			.phys_start = 0x83e4000000,
+			.virt_start = 0x83e4000000,
 			.size =           0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_ROOTSHARED,
