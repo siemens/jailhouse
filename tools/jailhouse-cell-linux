@@ -592,7 +592,7 @@ class Config:
 # see linux/Documentation/x86/boot.txt
 class X86SetupHeader:
     BASE_OFFSET = 0x1f0
-    _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI28xQQ'
+    _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI20xI4xQQ'
 
     def __init__(self, kernel):
         kernel.seek(X86SetupHeader.BASE_OFFSET)
@@ -605,6 +605,7 @@ class X86SetupHeader:
          self.ramdisk_size,
          self.cmd_line_ptr,
          self.kernel_alignment,
+         self.payload_offset,
          self.setup_data,
          self.pref_address) = \
             struct.unpack(X86SetupHeader._HEADER_FORMAT,
@@ -650,6 +651,26 @@ class X86SetupHeader:
         return self.data
 
 
+def get_kernel_compression_method(payload_magic):
+    if payload_magic[0] == 0x1f and payload_magic[1] in (0x8b, 0x9e):
+        return 'gzip'
+    elif payload_magic[0] == 0x42 and payload_magic[1] == 0x5a:
+        return 'bzip2'
+    elif payload_magic[0] == 0x5d and payload_magic[1] == 0x0:
+        return 'lzma'
+    elif payload_magic[0] == 0xfd and payload_magic[1] == 0x37:
+        return 'xz'
+    elif payload_magic[0] == 0x02 and payload_magic[1] == 0x21:
+        return 'lz4'
+    elif payload_magic[0] == 0x89 and payload_magic[1] == 0x4c:
+        return 'lzo'
+    elif payload_magic[0] == 0x7f and payload_magic[1] == 0x45 and \
+            payload_magic[2] == 0x4c and payload_magic[3] == 0x46:
+        return 'uncompressed'
+    else:
+        return 'unknown'
+
+
 # see linux/Documentation/x86/zero-page.txt
 class X86ZeroPage:
     def __init__(self, kernel, initrd, kernel_decomp_factor, config):
@@ -669,11 +690,28 @@ class X86ZeroPage:
         if initrd:
             kernel_size = os.fstat(kernel.fileno()).st_size
             ramdisk_size = os.fstat(initrd.fileno()).st_size
-            # same as arm, magic factor 10 works generally fine
-            decompression_factor = 10
+
+            kernel.seek(prot_image_offs + self.setup_header.payload_offset)
+            payload_magic = bytearray(kernel.read(4))
+            compression_method = get_kernel_compression_method(payload_magic)
+
+            # Unless specified, derive decompression factor from method
             if kernel_decomp_factor:
                 decompression_factor = kernel_decomp_factor
+            elif compression_method in ('bzip2'):
+                # "Bzip2 uses a large amount of memory."
+                # And that causes a larger binary, thus a smaller factor.
+                decompression_factor = 4
+            elif compression_method in ('lz4', 'lzo'):
+                decompression_factor = 6
+            elif compression_method in ('gzip'):
+                decompression_factor = 7
+            elif compression_method in ('lzma'):
+                decompression_factor = 8
+            else:  # xz or unknown
+                decompression_factor = 9
             decompression_space = decompression_factor * kernel_size
+
             ramdisk_load_addr = page_align(self.kernel_load_addr +
                                            decompression_space)
 
