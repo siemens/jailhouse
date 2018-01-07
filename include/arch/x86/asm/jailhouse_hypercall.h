@@ -36,8 +36,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define JAILHOUSE_BORROW_ROOT_PT	1
-
 /*
  * As this is never called on a CPU without VM extensions,
  * we assume that where VMCALL isn't available, VMMCALL is.

@@ -17,3 +17,4 @@
 #endif
 
 #define JAILHOUSE_BASE			__MAKE_UL(0xfffffffff0000000)
+#define JAILHOUSE_BORROW_ROOT_PT	1
