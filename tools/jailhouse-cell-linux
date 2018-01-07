@@ -248,7 +248,8 @@ class X86:
     def setup(self, args, config):
         self._cpu_reset_address = config.cpu_reset_address
 
-        self._zero_page = X86ZeroPage(args.kernel, args.initrd, config)
+        self._zero_page = X86ZeroPage(args.kernel, args.initrd,
+                                      args.kernel_decomp_factor, config)
 
         setup_data = x86_gen_setup_data(config)
 
@@ -311,6 +312,8 @@ class ARMCommon:
             ramdisk_size = page_align(os.fstat(args.initrd.fileno()).st_size)
             # leave sufficient space between the kernel and the initrd
             decompression_factor = self.default_decompression_factor()
+            if args.kernel_decomp_factor:
+                decompression_factor = args.kernel_decomp_factor
             decompression_space = decompression_factor * kernel_size
             kernel_size += decompression_space
             image_size += decompression_space
@@ -649,7 +652,7 @@ class X86SetupHeader:
 
 # see linux/Documentation/x86/zero-page.txt
 class X86ZeroPage:
-    def __init__(self, kernel, initrd, config):
+    def __init__(self, kernel, initrd, kernel_decomp_factor, config):
         self.setup_header = X86SetupHeader(kernel)
 
         prot_image_offs = (self.setup_header.setup_sects + 1) * 512
@@ -667,8 +670,12 @@ class X86ZeroPage:
             kernel_size = os.fstat(kernel.fileno()).st_size
             ramdisk_size = os.fstat(initrd.fileno()).st_size
             # same as arm, magic factor 10 works generally fine
+            decompression_factor = 10
+            if kernel_decomp_factor:
+                decompression_factor = kernel_decomp_factor
+            decompression_space = decompression_factor * kernel_size
             ramdisk_load_addr = page_align(self.kernel_load_addr +
-                                           10 * kernel_size)
+                                           decompression_space)
 
         self.setup_header.set_ramdisk_image(ramdisk_load_addr)
         self.setup_header.set_ramdisk_size(ramdisk_size)
@@ -765,6 +772,10 @@ parser.add_argument('--write-params', '-w', metavar='FILE',
                          'to the console')
 parser.add_argument('--arch', '-a', metavar='ARCH',
                     help='target architecture')
+parser.add_argument('--kernel-decomp-factor', '-k', metavar='N',
+                    type=int,
+                    help='decompression factor of the kernel image, used to '
+                         'reserve space between the kernel and the initramfs')
 
 try:
     args = parser.parse_args()
