@@ -310,8 +310,10 @@ class ARMCommon:
         if args.initrd:
             ramdisk_size = page_align(os.fstat(args.initrd.fileno()).st_size)
             # leave sufficient space between the kernel and the initrd
-            image_size += kernel_size * 4
-            kernel_size *= 5
+            decompression_factor = self.default_decompression_factor()
+            decompression_space = decompression_factor * kernel_size
+            kernel_size += decompression_space
+            image_size += decompression_space
 
         if not args.dtb:
             print('No device tree specified', file=sys.stderr)
@@ -425,6 +427,10 @@ class ARM(ARMCommon):
     def get_kernel_offset(kernel):
         return 0
 
+    @staticmethod
+    def default_decompression_factor():
+        return 4
+
 
 class ARM64(ARMCommon):
     name = 'arm64'
@@ -441,6 +447,10 @@ class ARM64(ARMCommon):
         kernel.seek(8)
         (text_offset,) = struct.unpack_from('<Q', kernel.read(8))
         return text_offset
+
+    @staticmethod
+    def default_decompression_factor():
+        return 1
 
 
 def resolve_arch(defined_arch=None):
