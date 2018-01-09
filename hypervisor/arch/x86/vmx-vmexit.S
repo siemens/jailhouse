@@ -11,6 +11,7 @@
  */
 
 #include <asm/asm-defines.h>
+#include <asm/paging.h>
 
 /* VMX VM-exit handling */
 	.globl vmx_vmexit
@@ -32,7 +33,7 @@ vmx_vmexit:
 	push %r14
 	push %r15
 
-	lea -PERCPU_STACK_END+16*8(%rsp),%rdi
+	mov $LOCAL_CPU_BASE_ASM,%rdi
 	call vcpu_handle_exit
 
 	pop %r15

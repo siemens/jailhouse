@@ -731,9 +731,10 @@ void __attribute__((noreturn)) vcpu_activate_vmm(void)
 
 void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 {
+	/* use common per-cpu area - mandatory after arch_cpu_restore */
+	struct per_cpu *cpu_data = per_cpu(this_cpu_id());
 	unsigned long *stack = (unsigned long *)vmcs_read64(GUEST_RSP);
 	unsigned long linux_ip = vmcs_read64(GUEST_RIP);
-	struct per_cpu *cpu_data = this_cpu_data();
 
 	cpu_data->linux_cr0 = vmcs_read64(GUEST_CR0);
 	cpu_data->linux_cr3 = vmcs_read64(GUEST_CR3);

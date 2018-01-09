@@ -46,8 +46,6 @@ struct per_cpu {
 	/** Linux stack pointer, used for handover to hypervisor. */
 	unsigned long linux_sp;
 
-	/** Self reference, required for this_cpu_data(). */
-	struct per_cpu *cpu_data;
 	/** Logical CPU ID (same as Linux). */
 	unsigned int cpu_id;
 	/** Physical APIC ID. */
@@ -140,6 +138,11 @@ struct per_cpu {
 	/** Number of iterations to clear pending APIC IRQs. */
 	unsigned int num_clear_apic_irqs;
 
+	/** Per-CPU paging structures. */
+	struct paging_structures pg_structs;
+	/** Per-CPU root page table. */
+	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+
 	union {
 		struct {
 			/** VMXON region, required by VMX. */
@@ -161,47 +164,34 @@ struct per_cpu {
 } __attribute__((aligned(PAGE_SIZE)));
 
 /**
- * Define CPU-local accessor for a per-CPU field.
- * @param field		Field name.
- *
- * The accessor will have the form of a function, returning the correspondingly
- * typed field value: @c this_field().
- */
-#define DEFINE_PER_CPU_ACCESSOR(field)					    \
-static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	    \
-{									    \
-	typeof(((struct per_cpu *)0)->field) tmp;			    \
-									    \
-	asm volatile(							    \
-		"mov %%gs:%1,%0\n\t"					    \
-		: "=&q" (tmp)						    \
-		: "m" (*(u8 *)__builtin_offsetof(struct per_cpu, field)));  \
-	return tmp;							    \
-}
-
-/**
  * Retrieve the data structure of the current CPU.
  *
  * @return Pointer to per-CPU data structure.
  */
-static inline struct per_cpu *this_cpu_data(void);
-DEFINE_PER_CPU_ACCESSOR(cpu_data)
+static inline struct per_cpu *this_cpu_data(void)
+{
+	return (struct per_cpu *)LOCAL_CPU_BASE;
+}
 
 /**
  * Retrieve the ID of the current CPU.
  *
  * @return CPU ID.
  */
-static inline unsigned int this_cpu_id(void);
-DEFINE_PER_CPU_ACCESSOR(cpu_id)
+static inline unsigned int this_cpu_id(void)
+{
+	return this_cpu_data()->cpu_id;
+}
 
 /**
  * Retrieve the cell owning the current CPU.
  *
  * @return Pointer to cell.
  */
-static inline struct cell *this_cell(void);
-DEFINE_PER_CPU_ACCESSOR(cell)
+static inline struct cell *this_cell(void)
+{
+	return this_cpu_data()->cell;
+}
 
 /**
  * Retrieve the data structure of the specified CPU.

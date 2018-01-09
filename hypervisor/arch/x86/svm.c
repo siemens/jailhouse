@@ -440,7 +440,8 @@ int vcpu_init(struct per_cpu *cpu_data)
 	write_cr0(X86_CR0_HOST_STATE);
 	write_cr4(X86_CR4_HOST_STATE);
 
-	write_msr(MSR_VM_HSAVE_PA, paging_hvirt2phys(cpu_data->host_state));
+	write_msr(MSR_VM_HSAVE_PA,
+		  paging_hvirt2phys(per_cpu(this_cpu_id())->host_state));
 
 	return 0;
 }
@@ -469,7 +470,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(void)
 	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned long vmcb_pa, host_stack;
 
-	vmcb_pa = paging_hvirt2phys(&cpu_data->vmcb);
+	vmcb_pa = paging_hvirt2phys(&per_cpu(this_cpu_id())->vmcb);
 	host_stack = (unsigned long)cpu_data->stack + sizeof(cpu_data->stack);
 
 	/* We enter Linux at the point arch_entry would return to as well.
@@ -492,7 +493,8 @@ void __attribute__((noreturn)) vcpu_activate_vmm(void)
 
 void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	/* use common per-cpu area - mandatory after arch_cpu_restore */
+	struct per_cpu *cpu_data = per_cpu(this_cpu_id());
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	unsigned long *stack = (unsigned long *)vmcb->rsp;
 	unsigned long linux_ip = vmcb->rip;
@@ -564,7 +566,7 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	};
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct vmcb *vmcb = &cpu_data->vmcb;
-	unsigned long reset_addr;
+	unsigned long vmcb_pa, reset_addr;
 
 	vmcb->cr0 = X86_CR0_NW | X86_CR0_CD | X86_CR0_ET;
 	vmcb->cr3 = 0;
@@ -630,9 +632,8 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 
 	svm_set_cell_config(cpu_data->cell, vmcb);
 
-	asm volatile(
-		"vmload %%rax"
-		: : "a" (paging_hvirt2phys(vmcb)) : "memory");
+	vmcb_pa = paging_hvirt2phys(&per_cpu(this_cpu_id())->vmcb);
+	asm volatile("vmload %%rax" : : "a" (vmcb_pa) : "memory");
 	/* vmload overwrites GS_BASE - restore the host state */
 	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
 }

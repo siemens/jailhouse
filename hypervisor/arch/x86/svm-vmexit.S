@@ -11,6 +11,7 @@
  */
 
 #include <asm/asm-defines.h>
+#include <asm/paging.h>
 
 /* SVM VM entry and handling of VM exit */
 	.globl svm_vmentry
@@ -35,7 +36,7 @@ svm_vmentry:
 	push %r14
 	push %r15
 
-	lea -PERCPU_STACK_END+16*8(%rsp),%rdi
+	mov $LOCAL_CPU_BASE_ASM,%rdi
 	push %rax
 	call vcpu_handle_exit
 	pop %rax

@@ -32,4 +32,5 @@ void common(void)
 	       __builtin_offsetof(struct per_cpu, stack) + \
 	       FIELD_SIZEOF(struct per_cpu, stack));
 	DEFINE(PERCPU_SIZE_ASM, sizeof(struct per_cpu));
+	DEFINE(LOCAL_CPU_BASE_ASM, LOCAL_CPU_BASE);
 }

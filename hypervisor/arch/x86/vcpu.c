@@ -172,8 +172,14 @@ void vcpu_handle_hypercall(void)
 		       this_cpu_id(), code,
 		       vcpu_vendor_get_rip() - X86_INST_LEN_HYPERCALL);
 
-	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
+	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0) {
+		/* migrate the stack back to the common mapping */
+		asm volatile(
+			"sub %0,%%rsp"
+			: : "g" (LOCAL_CPU_BASE -
+				 (unsigned long)per_cpu(this_cpu_id())));
 		vcpu_deactivate_vmm();
+	}
 }
 
 bool vcpu_handle_io_access(void)

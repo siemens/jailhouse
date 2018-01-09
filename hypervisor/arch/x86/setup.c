@@ -12,6 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/control.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
@@ -148,9 +149,29 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	read_descriptor(cpu_data, &cpu_data->linux_gs);
 	cpu_data->linux_gs.base = read_msr(MSR_GS_BASE);
 
-	/* set up per-CPU helpers */
-	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
-	cpu_data->cpu_data = cpu_data;
+	/* set up per-CPU page table */
+	cpu_data->pg_structs.hv_paging = true;
+	cpu_data->pg_structs.root_paging = hv_paging_structs.root_paging;
+	cpu_data->pg_structs.root_table =
+		(page_table_t)cpu_data->root_table_page;
+
+	err = paging_create_hvpt_link(&cpu_data->pg_structs, JAILHOUSE_BASE);
+	if (err)
+		return err;
+
+	if (CON_IS_MMIO(system_config->debug_console.flags)) {
+		err = paging_create_hvpt_link(&cpu_data->pg_structs,
+			(unsigned long)hypervisor_header.debug_console_base);
+		if (err)
+			return err;
+	}
+
+	/* set up private mapping of per-CPU data structure */
+	err = paging_create(&cpu_data->pg_structs, paging_hvirt2phys(cpu_data),
+			    sizeof(*cpu_data), LOCAL_CPU_BASE,
+			    PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
+	if (err)
+		return err;
 
 	/* read registers to restore on first VM-entry */
 	for (n = 0; n < NUM_ENTRY_REGS; n++)
@@ -188,7 +209,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 	/* swap CR3 */
 	cpu_data->linux_cr3 = read_cr3();
-	write_cr3(paging_hvirt2phys(hv_paging_structs.root_table));
+	write_cr3(paging_hvirt2phys(cpu_data->pg_structs.root_table));
 
 	cpu_data->pat = read_msr(MSR_IA32_PAT);
 	write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
