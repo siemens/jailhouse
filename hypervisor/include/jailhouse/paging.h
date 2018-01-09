@@ -246,6 +246,9 @@ int paging_destroy(const struct paging_structures *pg_structs,
 void *paging_map_device(unsigned long phys, unsigned long size);
 void paging_unmap_device(unsigned long phys, void *virt, unsigned long size);
 
+int paging_create_hvpt_link(const struct paging_structures *pg_dest_structs,
+			    unsigned long virt);
+
 void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			     unsigned long gaddr, unsigned int num,
 			     unsigned long flags);
