@@ -72,8 +72,8 @@
 #define CON_GATE_NR	15
 
 #define GIC_VERSION	2
-#define GICD_V2_BASE	((void *)0x01c81000)
-#define GICC_V2_BASE	((void *)0x01c82000)
+#define GICD_V2_BASE	((void *)0xf1001000)
+#define GICC_V2_BASE	((void *)0xf1002000)
 
 #elif defined(CONFIG_MACH_ORANGEPI0)
 #define CON_TYPE	"8250"
