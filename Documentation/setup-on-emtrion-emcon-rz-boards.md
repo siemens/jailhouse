@@ -79,15 +79,6 @@ The sample Linux inmate is setup to use the following devices:
 - SDC0 where the RootFS should be stored
 - I2C2
 
-Currently, it's necessary to use some kernel patches on top of the Linux inmate's kernel, which address
-a common problem of sharing devices between cells without inter-cell communication. On Renesas RZ/G boards
-the Clock Pulse Generator (CPG) is used to turn clocks of certain hardware modules on and off. Since the
-registers of the CPG cannot be shared among inmate and root cell, at the moment only the root cell has
-access to the CPG. As a result the root cell has to make sure that the clocks of the devices used within
-the Linux inmate (SCIF4, SDC0, I2C2) have to be enabled before starting it. Furthermore the device tree of
-the inmate must not comprise clock entries. Some drivers require enabling clocks during probe, otherwise
-the devices will not be initialized. The kernel patches fix this problem for now.
-
 To setup the Linux inmate you have to first copy the following files from the Jailhouse tree into the RootFS
 of the root cell:
 
