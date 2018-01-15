@@ -440,8 +440,8 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 					      PAGE_READONLY_FLAGS);
 		if (phys == INVALID_PHYS_ADDR)
 			return INVALID_PHYS_ADDR;
-		err = paging_create(&hv_paging_structs, phys, PAGE_SIZE,
-				    tmp_page, PAGE_READONLY_FLAGS,
+		err = paging_create(&this_cpu_data()->pg_structs, phys,
+				    PAGE_SIZE, tmp_page, PAGE_READONLY_FLAGS,
 				    PAGING_NON_COHERENT);
 		if (err)
 			return INVALID_PHYS_ADDR;
@@ -558,9 +558,7 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			     unsigned long gaddr, unsigned int num,
 			     unsigned long flags)
 {
-	unsigned long page_base = TEMPORARY_MAPPING_BASE +
-		this_cpu_id() * PAGE_SIZE * NUM_TEMPORARY_PAGES;
-	unsigned long phys, gphys, page_virt = page_base;
+	unsigned long phys, gphys, page_virt = TEMPORARY_MAPPING_BASE;
 	int err;
 
 	if (num > NUM_TEMPORARY_PAGES)
@@ -576,14 +574,15 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 		if (phys == INVALID_PHYS_ADDR)
 			return NULL;
 		/* map guest page */
-		err = paging_create(&hv_paging_structs, phys, PAGE_SIZE,
-				    page_virt, flags, PAGING_NON_COHERENT);
+		err = paging_create(&this_cpu_data()->pg_structs, phys,
+				    PAGE_SIZE, page_virt, flags,
+				    PAGING_NON_COHERENT);
 		if (err)
 			return NULL;
 		gaddr += PAGE_SIZE;
 		page_virt += PAGE_SIZE;
 	}
-	return (void *)page_base;
+	return (void *)TEMPORARY_MAPPING_BASE;
 }
 
 int paging_map_all_per_cpu(unsigned int cpu, bool enable)
@@ -636,10 +635,6 @@ int paging_init(void)
 	mem_pool.flags = PAGE_SCRUB_ON_FREE;
 
 	remap_pool.used_bitmap = page_alloc(&mem_pool, NUM_REMAP_BITMAP_PAGES);
-	remap_pool.used_pages =
-		hypervisor_header.max_cpus * NUM_TEMPORARY_PAGES;
-	for (n = 0; n < remap_pool.used_pages; n++)
-		set_bit(n, remap_pool.used_bitmap);
 
 	hv_paging_structs.hv_paging = true;
 	hv_paging_structs.root_table =
@@ -687,12 +682,7 @@ int paging_init(void)
 			return err;
 	}
 
-	/* Make sure any remappings to the temporary regions can be performed
-	 * without allocations of page table pages. */
-	return paging_create(&hv_paging_structs, 0,
-			     remap_pool.used_pages * PAGE_SIZE,
-			     TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
-			     PAGING_NON_COHERENT);
+	return 0;
 }
 
 /**

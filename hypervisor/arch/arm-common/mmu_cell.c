@@ -56,8 +56,6 @@ unsigned long arch_paging_gphys2phys(unsigned long gphys, unsigned long flags)
 
 void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)
 {
-	unsigned long vaddr = TEMPORARY_MAPPING_BASE +
-		this_cpu_id() * PAGE_SIZE * NUM_TEMPORARY_PAGES;
 	unsigned long region_addr, region_size, size;
 	struct jailhouse_memory const *mem;
 	unsigned int n;
@@ -74,11 +72,12 @@ void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)
 				   NUM_TEMPORARY_PAGES * PAGE_SIZE);
 
 			/* cannot fail, mapping area is preallocated */
-			paging_create(&hv_paging_structs, region_addr, size,
-				      vaddr, PAGE_DEFAULT_FLAGS,
-				      PAGING_NON_COHERENT);
+			paging_create(&this_cpu_data()->pg_structs, region_addr,
+				      size, TEMPORARY_MAPPING_BASE,
+				      PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
 
-			arm_dcaches_flush((void *)vaddr, size, flush);
+			arm_dcaches_flush((void *)TEMPORARY_MAPPING_BASE, size,
+					  flush);
 
 			region_addr += size;
 			region_size -= size;

@@ -163,12 +163,14 @@
 
 #define UART_BASE		0xffffc0000000
 
-#define LOCAL_CPU_BASE		0xff0000000000UL
+/**
+ * Location of per-CPU temporary mapping region in hypervisor address space.
+ */
+#define TEMPORARY_MAPPING_BASE	0xff0000000000UL
+#define NUM_TEMPORARY_PAGES	16
 
 #define REMAP_BASE		0xff8000000000UL
 #define NUM_REMAP_BITMAP_PAGES	4
-
-#define NUM_TEMPORARY_PAGES	16
 
 #ifndef __ASSEMBLY__
 

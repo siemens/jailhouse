@@ -10,8 +10,8 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/paging.h>
 #include <asm/asm-defines.h>
-#include <asm/paging.h>
 
 /* VMX VM-exit handling */
 	.globl vmx_vmexit

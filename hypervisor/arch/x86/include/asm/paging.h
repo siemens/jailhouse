@@ -36,12 +36,14 @@
 
 #define INVALID_PHYS_ADDR	(~0UL)
 
-#define LOCAL_CPU_BASE		0x0000008000000000UL
+/**
+ * Location of per-CPU temporary mapping region in hypervisor address space.
+ */
+#define TEMPORARY_MAPPING_BASE	0x0000008000000000UL
+#define NUM_TEMPORARY_PAGES	16
 
 #define REMAP_BASE		0xffffff8000000000UL
 #define NUM_REMAP_BITMAP_PAGES	4
-
-#define NUM_TEMPORARY_PAGES	16
 
 #define CELL_ROOT_PT_PAGES	1
 

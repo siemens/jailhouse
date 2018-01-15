@@ -136,6 +136,15 @@ static void cpu_init(struct per_cpu *cpu_data)
 	if (err)
 		goto failed;
 
+	/* Make sure any remappings to the temporary regions can be performed
+	 * without allocations of page table pages. */
+	err = paging_create(&cpu_data->pg_structs, 0,
+			    NUM_TEMPORARY_PAGES * PAGE_SIZE,
+			    TEMPORARY_MAPPING_BASE, PAGE_NONPRESENT_FLAGS,
+			    PAGING_NON_COHERENT);
+	if (err)
+		goto failed;
+
 	printk("OK\n");
 
 	/*

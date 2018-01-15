@@ -31,10 +31,9 @@
 /** Count number of pages for given size (round up). */
 #define PAGES(s)		(((s) + PAGE_SIZE-1) / PAGE_SIZE)
 
-/**
- * Location of per-CPU temporary mapping region in hypervisor address space.
- */
-#define TEMPORARY_MAPPING_BASE	REMAP_BASE
+/** Location of per-CPU data structure in hypervisor address space. */
+#define LOCAL_CPU_BASE		(TEMPORARY_MAPPING_BASE + \
+				 NUM_TEMPORARY_PAGES * PAGE_SIZE)
 
 #ifndef __ASSEMBLY__
 
