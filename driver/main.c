@@ -22,6 +22,7 @@
 #include <linux/miscdevice.h>
 #include <linux/firmware.h>
 #include <linux/mm.h>
+#include <linux/kallsyms.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
 #include <linux/sched/signal.h>
 #endif
@@ -75,9 +76,7 @@ MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
 #endif
 MODULE_VERSION(JAILHOUSE_VERSION);
 
-#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 extern unsigned int __hyp_stub_vectors[];
-#endif
 
 struct console_state {
 	unsigned int head;
@@ -95,6 +94,17 @@ static int error_code;
 static struct jailhouse_console* volatile console_page;
 static bool console_available;
 static struct resource *hypervisor_mem_res;
+
+static typeof(ioremap_page_range) *ioremap_page_range_sym;
+#ifdef CONFIG_X86
+static typeof(lapic_timer_frequency) *lapic_timer_frequency_sym;
+#endif
+#ifdef CONFIG_ARM
+static typeof(__boot_cpu_mode) *__boot_cpu_mode_sym;
+#endif
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+static typeof(__hyp_stub_vectors) *__hyp_stub_vectors_sym;
+#endif
 
 /* last_console contains three members:
  *   - valid: indicates if content in the page member is present
@@ -191,9 +201,9 @@ void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 		return NULL;
 	vma->phys_addr = phys;
 
-	if (ioremap_page_range((unsigned long)vma->addr,
-			       (unsigned long)vma->addr + size, phys,
-			       PAGE_KERNEL_EXEC)) {
+	if (ioremap_page_range_sym((unsigned long)vma->addr,
+				   (unsigned long)vma->addr + size, phys,
+				   PAGE_KERNEL_EXEC)) {
 		vunmap(vma->addr);
 		return NULL;
 	}
@@ -374,7 +384,9 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_unlock;
 
 #ifdef CONFIG_ARM
-	if (!is_hyp_mode_available()) {
+	/* open-coded is_hyp_mode_available to use __boot_cpu_mode_sym */
+	if ((*__boot_cpu_mode_sym & MODE_MASK) != HYP_MODE ||
+	    (*__boot_cpu_mode_sym) & BOOT_CPU_MODE_MISMATCH) {
 		pr_err("jailhouse: HYP mode not available\n");
 		err = -ENODEV;
 		goto error_put_module;
@@ -444,7 +456,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	header->max_cpus = max_cpus;
 
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-	header->arm_linux_hyp_vectors = virt_to_phys(__hyp_stub_vectors);
+	header->arm_linux_hyp_vectors = virt_to_phys(*__hyp_stub_vectors_sym);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
 	header->arm_linux_hyp_abi = HYP_STUB_ABI_LEGACY;
 #else
@@ -511,7 +523,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		config->platform_info.x86.tsc_khz = tsc_khz;
 	if (config->platform_info.x86.apic_khz == 0)
 		config->platform_info.x86.apic_khz =
-			lapic_timer_frequency / (1000 / HZ);
+			*lapic_timer_frequency_sym / (1000 / HZ);
 #endif
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
@@ -649,7 +661,7 @@ static int jailhouse_cmd_disable(void)
 	 * This flag has been set when onlining a CPU under Jailhouse
 	 * supervision into SVC instead of HYP mode.
 	 */
-	__boot_cpu_mode &= ~BOOT_CPU_MODE_MISMATCH;
+	*__boot_cpu_mode_sym &= ~BOOT_CPU_MODE_MISMATCH;
 #endif
 
 	atomic_set(&call_done, 0);
@@ -849,6 +861,27 @@ static struct notifier_block jailhouse_shutdown_nb = {
 static int __init jailhouse_init(void)
 {
 	int err;
+
+#ifdef CONFIG_KALLSYMS_ALL
+#define RESOLVE_EXTERNAL_SYMBOL(symbol)				\
+	symbol##_sym = (void *)kallsyms_lookup_name(#symbol);	\
+	if (!symbol##_sym)					\
+		return -EINVAL
+#else
+#define RESOLVE_EXTERNAL_SYMBOL(symbol)				\
+	symbol##_sym = &symbol
+#endif
+
+	RESOLVE_EXTERNAL_SYMBOL(ioremap_page_range);
+#ifdef CONFIG_X86
+	RESOLVE_EXTERNAL_SYMBOL(lapic_timer_frequency);
+#endif
+#ifdef CONFIG_ARM
+	RESOLVE_EXTERNAL_SYMBOL(__boot_cpu_mode);
+#endif
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	RESOLVE_EXTERNAL_SYMBOL(__hyp_stub_vectors);
+#endif
 
 	jailhouse_dev = root_device_register("jailhouse");
 	if (IS_ERR(jailhouse_dev))
