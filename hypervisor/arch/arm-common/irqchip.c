@@ -236,22 +236,23 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	if (local_injection && irqchip.inject_irq(cpu_data, irq_id) != -EBUSY)
 		return;
 
-	spin_lock(&cpu_data->pending_irqs_lock);
+	spin_lock(&cpu_data->pending_irqs.lock);
 
-	new_tail = (cpu_data->pending_irqs_tail + 1) % MAX_PENDING_IRQS;
+	new_tail = (cpu_data->pending_irqs.tail + 1) % MAX_PENDING_IRQS;
 
 	/* Queue space available? */
-	if (new_tail != cpu_data->pending_irqs_head) {
-		cpu_data->pending_irqs[cpu_data->pending_irqs_tail] = irq_id;
-		cpu_data->pending_irqs_tail = new_tail;
+	if (new_tail != cpu_data->pending_irqs.head) {
+		cpu_data->pending_irqs.irqs[cpu_data->pending_irqs.tail] =
+			irq_id;
+		cpu_data->pending_irqs.tail = new_tail;
 		/*
-		 * Make the change to pending_irqs_tail visible before the
+		 * Make the change to pending_irqs.tail visible before the
 		 * caller sends SGI_INJECT.
 		 */
 		memory_barrier();
 	}
 
-	spin_unlock(&cpu_data->pending_irqs_lock);
+	spin_unlock(&cpu_data->pending_irqs.lock);
 
 	/*
 	 * The list registers are full, trigger maintenance interrupt if we are
@@ -274,8 +275,9 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 {
 	u16 irq_id;
 
-	while (cpu_data->pending_irqs_head != cpu_data->pending_irqs_tail) {
-		irq_id = cpu_data->pending_irqs[cpu_data->pending_irqs_head];
+	while (cpu_data->pending_irqs.head != cpu_data->pending_irqs.tail) {
+		irq_id = cpu_data->pending_irqs.irqs[
+			cpu_data->pending_irqs.head];
 
 		if (irqchip.inject_irq(cpu_data, irq_id) == -EBUSY) {
 			/*
@@ -286,8 +288,8 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 			return;
 		}
 
-		cpu_data->pending_irqs_head =
-			(cpu_data->pending_irqs_head + 1) % MAX_PENDING_IRQS;
+		cpu_data->pending_irqs.head =
+			(cpu_data->pending_irqs.head + 1) % MAX_PENDING_IRQS;
 	}
 
 	/*
@@ -319,13 +321,14 @@ u64 irqchip_get_cluster_target(unsigned int cpu_id)
 
 void irqchip_cpu_reset(struct per_cpu *cpu_data)
 {
-	cpu_data->pending_irqs_head = cpu_data->pending_irqs_tail = 0;
+	cpu_data->pending_irqs.head = cpu_data->pending_irqs.tail = 0;
 
 	irqchip.cpu_reset(cpu_data);
 }
 
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 {
+	struct pending_irqs *pending = &cpu_data->pending_irqs;
 	int irq_id;
 
 	/*
@@ -349,13 +352,12 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	} while (irq_id >= 0);
 
 	/* Migrate interrupts queued in software. */
-	while (cpu_data->pending_irqs_head != cpu_data->pending_irqs_tail) {
-		irq_id = cpu_data->pending_irqs[cpu_data->pending_irqs_head];
+	while (pending->head != pending->tail) {
+		irq_id = pending->irqs[pending->head];
 
 		irqchip.inject_phys_irq(irq_id);
 
-		cpu_data->pending_irqs_head =
-			(cpu_data->pending_irqs_head + 1) % MAX_PENDING_IRQS;
+		pending->head = (pending->head + 1) % MAX_PENDING_IRQS;
 	}
 }
 

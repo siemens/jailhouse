@@ -66,6 +66,15 @@ struct irqchip {
 	unsigned long gicd_size;
 };
 
+struct pending_irqs {
+	/* synchronizes parallel insertions of SGIs into the pending ring */
+	spinlock_t lock;
+	u16 irqs[MAX_PENDING_IRQS];
+	unsigned int head;
+	/* removal from the ring happens lockless, thus tail is volatile */
+	volatile unsigned int tail;
+};
+
 unsigned int irqchip_mmio_count_regions(struct cell *cell);
 
 int irqchip_init(void);

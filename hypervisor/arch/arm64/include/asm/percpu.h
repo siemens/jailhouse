@@ -35,12 +35,7 @@ struct per_cpu {
 	int shutdown_state;
 	bool failed;
 
-	/* synchronizes parallel insertions of SGIs into the pending ring */
-	spinlock_t pending_irqs_lock;
-	u16 pending_irqs[MAX_PENDING_IRQS];
-	unsigned int pending_irqs_head;
-	/* removal from the ring happens lockless, thus tail is volatile */
-	volatile unsigned int pending_irqs_tail;
+	struct pending_irqs pending_irqs;
 
 	union {
 		/** Only GICv2: per-cpu initialization completed. */
