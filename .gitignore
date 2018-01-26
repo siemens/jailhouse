@@ -1,6 +1,7 @@
 # Build outputs - only!
 *.[oa]
 *.mod.[co]
+*.cell
 *.cmd
 *.bin
 *.gcno
@@ -19,7 +20,6 @@ inmates/lib/arm64/inmate.lds
 tools/jailhouse
 tools/jailhouse-gcov-extract
 tools/jailhouse-config-collect
-configs/*.cell
 Documentation/generated
 hypervisor/include/generated
 hypervisor/arch/*/include/generated
