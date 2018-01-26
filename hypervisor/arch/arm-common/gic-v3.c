@@ -486,7 +486,7 @@ static void gicv3_eoi_irq(u32 irq_id, bool deactivate)
 		arm_write_sysreg(ICC_DIR_EL1, irq_id);
 }
 
-static int gicv3_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
+static int gicv3_inject_irq(struct per_cpu *cpu_data, u16 irq_id, u16 sender)
 {
 	int i;
 	int free_lr = -1;
@@ -528,6 +528,7 @@ static int gicv3_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 		lr |= ICH_LR_HW_BIT;
 		lr |= (u64)irq_id << ICH_LR_PHYS_ID_SHIFT;
 	}
+	/* GICv3 doesn't support the injection of the calling CPU ID */
 
 	gicv3_write_lr(free_lr, lr);
 

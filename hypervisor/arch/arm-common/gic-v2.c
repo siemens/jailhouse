@@ -266,7 +266,7 @@ static int gicv2_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
-static int gicv2_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
+static int gicv2_inject_irq(struct per_cpu *cpu_data, u16 irq_id, u16 sender)
 {
 	int i;
 	int first_free = -1;
@@ -299,6 +299,8 @@ static int gicv2_inject_irq(struct per_cpu *cpu_data, u16 irq_id)
 	if (!is_sgi(irq_id)) {
 		lr |= GICH_LR_HW_BIT;
 		lr |= (u32)irq_id << GICH_LR_PHYS_ID_SHIFT;
+	} else {
+		lr |= (sender & 0x7) << GICH_LR_CPUID_SHIFT;
 	}
 
 	gicv2_write_lr(first_free, lr);
