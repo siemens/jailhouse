@@ -85,7 +85,7 @@ static u32 gic_v3_read_ack(void)
 	u32 val;
 
 	arm_read_sysreg(ICC_IAR1_EL1, val);
-	return val;
+	return val & 0xffffff;
 }
 
 const struct gic gic_v3 = {

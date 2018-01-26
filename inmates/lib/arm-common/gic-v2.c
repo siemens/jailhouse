@@ -77,7 +77,7 @@ static void gic_v2_write_eoi(u32 irqn)
 
 static u32 gic_v2_read_ack(void)
 {
-	return mmio_read32(GICC_V2_BASE + GICC_IAR);
+	return mmio_read32(GICC_V2_BASE + GICC_IAR) & 0x3ff;
 }
 
 const struct gic gic_v2 = {
