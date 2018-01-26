@@ -10,9 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef _JAILHOUSE_ASM_PSCI_H
-#define _JAILHOUSE_ASM_PSCI_H
-
 #define PSCI_VERSION			0x84000000
 #define PSCI_CPU_SUSPEND_32		0x84000001
 #define PSCI_CPU_SUSPEND_64		0xc4000001
@@ -44,5 +41,3 @@
 struct trap_context;
 
 long psci_dispatch(struct trap_context *ctx);
-
-#endif /* _JAILHOUSE_ASM_PSCI_H */
