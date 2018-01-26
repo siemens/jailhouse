@@ -222,6 +222,7 @@ bool irqchip_has_pending_irqs(void)
 
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 {
+	struct pending_irqs *pending = &cpu_data->pending_irqs;
 	bool local_injection = (this_cpu_data() == cpu_data);
 	unsigned int new_tail;
 	struct sgi sgi;
@@ -236,15 +237,14 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	if (local_injection && irqchip.inject_irq(cpu_data, irq_id) != -EBUSY)
 		return;
 
-	spin_lock(&cpu_data->pending_irqs.lock);
+	spin_lock(&pending->lock);
 
-	new_tail = (cpu_data->pending_irqs.tail + 1) % MAX_PENDING_IRQS;
+	new_tail = (pending->tail + 1) % MAX_PENDING_IRQS;
 
 	/* Queue space available? */
-	if (new_tail != cpu_data->pending_irqs.head) {
-		cpu_data->pending_irqs.irqs[cpu_data->pending_irqs.tail] =
-			irq_id;
-		cpu_data->pending_irqs.tail = new_tail;
+	if (new_tail != pending->head) {
+		pending->irqs[pending->tail] = irq_id;
+		pending->tail = new_tail;
 		/*
 		 * Make the change to pending_irqs.tail visible before the
 		 * caller sends SGI_INJECT.
@@ -252,7 +252,7 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 		memory_barrier();
 	}
 
-	spin_unlock(&cpu_data->pending_irqs.lock);
+	spin_unlock(&pending->lock);
 
 	/*
 	 * The list registers are full, trigger maintenance interrupt if we are
@@ -273,11 +273,11 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 
 void irqchip_inject_pending(struct per_cpu *cpu_data)
 {
+	struct pending_irqs *pending = &cpu_data->pending_irqs;
 	u16 irq_id;
 
-	while (cpu_data->pending_irqs.head != cpu_data->pending_irqs.tail) {
-		irq_id = cpu_data->pending_irqs.irqs[
-			cpu_data->pending_irqs.head];
+	while (pending->head != pending->tail) {
+		irq_id = pending->irqs[pending->head];
 
 		if (irqchip.inject_irq(cpu_data, irq_id) == -EBUSY) {
 			/*
@@ -288,8 +288,7 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 			return;
 		}
 
-		cpu_data->pending_irqs.head =
-			(cpu_data->pending_irqs.head + 1) % MAX_PENDING_IRQS;
+		pending->head = (pending->head + 1) % MAX_PENDING_IRQS;
 	}
 
 	/*
