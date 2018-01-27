@@ -1,5 +1,8 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate test on ARM Foundation Model for ARMv8,
+ * corresponds to configs/arm64/foundation-v8-linux-demo.c
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *

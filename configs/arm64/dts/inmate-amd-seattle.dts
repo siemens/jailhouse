@@ -1,5 +1,8 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate test on AMD Seattle,
+ * corresponds to configs/arm64/amd-seattle-linux-demo.c
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *
