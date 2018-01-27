@@ -1,5 +1,8 @@
 /*
- * LeMaker HiKey board, 2 GB - gic-demo
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for gic-demo inmate on LeMaker HiKey board, 2GiB:
+ * 1 CPU, 64K RAM, 1 serial port
  *
  * Copyright (c) Siemens AG, 2016
  *

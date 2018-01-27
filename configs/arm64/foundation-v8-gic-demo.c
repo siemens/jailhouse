@@ -1,6 +1,9 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
+ * Configuration for gic-demo inmate on Foundation Model v8:
+ * 1 CPU, 64K RAM, serial port 1
+ *
  * Copyright (c) ARM Limited, 2014
  *
  * Authors:

@@ -1,5 +1,7 @@
 /*
- * QEMU arm64 virtual target
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for QEMU arm64 virtual target
  *
  * Copyright (c) Siemens AG, 2017
  *

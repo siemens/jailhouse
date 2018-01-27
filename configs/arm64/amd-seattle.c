@@ -1,5 +1,7 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for AMD Seattle
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *

@@ -1,5 +1,7 @@
 /*
- * Xilinx ZynqMP ZCU102 eval board
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for Xilinx ZynqMP ZCU102 eval board
  *
  * Copyright (c) Siemens AG, 2016
  *

@@ -1,5 +1,8 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for Linux inmate on Foundation Model v8:
+ * 2 CPUs, ~256MB RAM, serial port 3
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *

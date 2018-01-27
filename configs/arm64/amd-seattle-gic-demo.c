@@ -1,5 +1,8 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for gic-demo inmate on AMD Seattle:
+ * 1 CPU, 64K RAM, 1 serial port
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *

@@ -1,5 +1,7 @@
 /*
- * Jailhouse Jetson TX1 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for Jailhouse Jetson TX1 board
  *
  * Copyright (C) 2016 Evidence Srl
  *

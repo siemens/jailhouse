@@ -1,5 +1,8 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for Linux inmate on AMD Seattle:
+ * 2 CPUs, 512MB RAM, 1 serial port
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *

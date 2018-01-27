@@ -1,5 +1,8 @@
 /*
- * Jailhouse AArch64 support
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for uart-demo inmate on AMD Seattle:
+ * 1 CPU, 64K RAM, serial port 2
  *
  * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *

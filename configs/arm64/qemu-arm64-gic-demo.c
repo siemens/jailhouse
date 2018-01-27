@@ -1,5 +1,8 @@
 /*
- * QEMU arm64 virtual target - gic-demo
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for gic-demo inmate on QEMU arm64 virtual target
+ * 1 CPU, 64K RAM, 1 serial port
  *
  * Copyright (c) Siemens AG, 2017
  *

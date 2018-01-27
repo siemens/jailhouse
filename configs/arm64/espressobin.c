@@ -1,5 +1,7 @@
 /*
- * Marvell ESPRESSObin board
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for Marvell ESPRESSObin board
  *
  * Copyright (c) Siemens AG, 2017
  *

@@ -1,5 +1,7 @@
 /*
- * LeMaker HiKey board, 2 GB
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Configuration for LeMaker HiKey board, 2 GB
  *
  * Copyright (c) Siemens AG, 2016
  *
