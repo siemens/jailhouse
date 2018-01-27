@@ -1,6 +1,8 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
+ * Configuration for Virtual Express.
+ *
  * Copyright (c) ARM Limited, 2014
  *
  * Authors:

@@ -1,6 +1,9 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
+ * Configuration for Linux inmate on Virtual Express:
+ * 2 CPUs, 256MB RAM, serial port 3
+ *
  * Copyright (c) ARM Limited, 2014
  *
  * Authors:
