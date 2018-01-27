@@ -25,7 +25,7 @@ OBJCOPYFLAGS := -O binary
 
 GCOV_PROFILE := n
 
-CONFIGS = $(shell cd $(src); ls *.c)
+CONFIGS = $(shell cd $(src); ls $(SRCARCH)/*.c)
 
 always := $(CONFIGS:.c=.cell)
 
