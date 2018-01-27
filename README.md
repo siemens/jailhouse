@@ -219,8 +219,8 @@ the following command:
     jailhouse config create sysconfig.c
 
 In order to translate this into the required binary form, place this file in
-the configs/ directory. The build system will pick up every .c file from there
-and generate a corresponding .cell file.
+the configs/x86/ directory. The build system will pick up every .c file from
+there and generate a corresponding .cell file.
 
 On x86 the hardware capabilities can be validated by running
 
@@ -238,7 +238,7 @@ root cell.
 
 Configurations for additional (non-root) cells currently require manual
 creation. To study the structures, use one of the demo cell configurations files
-as reference, e.g. configs/apic-demo.c or configs/e1000-demo.c.
+as reference, e.g. configs/x86/apic-demo.c or configs/x86/e1000-demo.c.
 
 
 x86 Demonstration in QEMU/KVM
