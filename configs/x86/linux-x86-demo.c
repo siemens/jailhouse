@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for linux inmate, 1 CPU, ~60 MB RAM, 1 serial port
+ * Configuration for Linux inmate, 1 CPU, ~60 MB RAM, ~1MB shmem, serial ports
  *
  * Copyright (c) Siemens AG, 2013-2015
  *

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Minimal configuration for SMP demo inmates, 3 CPUs, 1 MB RAM, 1 serial port
+ * Minimal configuration for SMP demo inmates, 3 CPUs, 1 MB RAM, serial ports
  *
  * Copyright (c) Siemens AG, 2013-2015
  *

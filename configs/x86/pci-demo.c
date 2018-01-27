@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Minimal configuration for PCI demo inmate:
- * 1 CPU, 1 MB RAM, 1 serial port, 1 Intel HDA PCI device
+ * 1 CPU, 1 MB RAM, serial ports, 1 Intel HDA PCI device
  *
  * Copyright (c) Siemens AG, 2014
  *

@@ -1,14 +1,14 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
+ * Configuration for ASRock IMB-A180 G-Series (4G RAM) board
+ * created with 'jailhouse config create imb-a180.c'
+ *
  * Copyright (c) Siemens AG, 2014
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
- *
- * Configuration for ASRock IMB-A180 G-Series (4G RAM) board
- * created with 'jailhouse config create imb-a180.c'
  *
  * Adjusted by Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
  *

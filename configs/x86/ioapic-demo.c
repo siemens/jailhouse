@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Minimal configuration for IOAPIC demo inmate:
- * 1 CPU, 1 MB RAM, 1 serial port, 1 ACPI IRQ pin
+ * 1 CPU, 1 MB RAM, serial ports, 1 ACPI IRQ pin
  *
  * Copyright (c) Siemens AG, 2014
  *

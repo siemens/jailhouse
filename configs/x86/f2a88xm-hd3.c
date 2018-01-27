@@ -1,14 +1,14 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
+ * Configuration for Gigabyte Technology Co., Ltd. GA-F2A88XM-HD3 Rev. 3.0
+ * board with AMD A10-7800 APU and 1G RAM.
+ *
  * Copyright (c) Siemens AG, 2014
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
- *
- * Configuration for Gigabyte Technology Co., Ltd. GA-F2A88XM-HD3 Rev. 3.0
- * board with AMD A10-7800 APU and 1G RAM.
  *
  * Created with 'jailhouse config create f2a88xm-hd3.c' and adjusted
  * by Valentine Sinitsyn <valentine.sinitsyn@gmail.com>.

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Minimal configuration for demo inmates, 1 CPU, 1 MB RAM, 1 serial port
+ * Minimal configuration for demo inmates, 1 CPU, 1 MB RAM, serial ports
  *
  * Copyright (c) Siemens AG, 2013, 2014
  *

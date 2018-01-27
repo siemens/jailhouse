@@ -1,6 +1,9 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
+ * Minimal configuration for ivshmem inmate demo:
+ * 1 CPU, 1MB RAM, serial ports, 4K shmem
+ *
  * Copyright (c) Siemens AG, 2013, 2014
  *
  * Authors:
