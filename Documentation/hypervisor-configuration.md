@@ -37,7 +37,7 @@ General configuration parameters
      * allows inmates to be booted on bare-metal, without Jailhouse and is
      * mainly used for testing purposes.
      *
-     * See configs/jetson-tk1-demo.c for the usage of this parameter in cell
+     * See configs/arm/jetson-tk1-demo.c for the usage of this parameter in cell
      * configurations.
      */
     #define CONFIG_BARE_METAL 1

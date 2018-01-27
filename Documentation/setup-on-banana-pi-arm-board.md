@@ -231,8 +231,8 @@ $ sudo checkinstall make install
 $ sudo apt-get update && sudo apt-get install -y python-mako device-tree-compiler
 $ cd ~
 $ git clone https://github.com/siemens/freertos-cell
-$ cp -av ~/freertos-cell/jailhouse-configs/bananapi.c ~/jailhouse/configs/bananapi.c
-$ cp -av freertos-cell/jailhouse-configs/bananapi-freertos-demo.c ~/jailhouse/configs/
+$ cp -av ~/freertos-cell/jailhouse-configs/bananapi.c ~/jailhouse/configs/arm/bananapi.c
+$ cp -av freertos-cell/jailhouse-configs/bananapi-freertos-demo.c ~/jailhouse/configs/arm/
 
 #Copy the configuration header file before building
 $ cp -av ~/jailhouse/ci/jailhouse-config-banana-pi.h ~/jailhouse/include/jailhouse/config.h
@@ -279,8 +279,8 @@ $ cd ~ && tar -xf jailhouse-compiled.tar.gz
 $ modprobe jailhouse
 
 #If nothing goes wrong, you should see jailhouse using a `$ lsmod`
-$ jailhouse enable ~/jailhouse/configs/bananapi.cell
-$ jailhouse cell create ~/jailhouse/configs/bannapi-freertos-demo.cell
+$ jailhouse enable ~/jailhouse/configs/arm/bananapi.cell
+$ jailhouse cell create ~/jailhouse/configs/arm/bannapi-freertos-demo.cell
 $ jailhouse cell load FreeRTOS ~/freertos-cell/freertos-demo.bin
 $ jailhouse cell start FreeRTOS
 

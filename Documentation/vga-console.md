@@ -32,7 +32,7 @@ Load the jailhouse kernel module. Use the 'vbetool' command to set the
 current VESA mode and enable your root cell.
 
     # modprobe jailhouse
-    # vbetool vbemode set 3 && jailhouse enable configs/system.cell
+    # vbetool vbemode set 3 && jailhouse enable configs/$ARCH/system.cell
 
 [Note] for testing on QEMU replace 'system.cell' by 'qemu-x86.cell'.
 

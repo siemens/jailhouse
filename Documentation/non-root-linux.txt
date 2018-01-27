@@ -62,9 +62,9 @@ The easiest way to start a non-root Linux inmate is via the jailhouse tool:
                          [-c | --cmdline "STRING"] [-w | --write-params FILE]
 
 A device tree (DTB) is only required on ARM and ARM64 systems. You can find
-templates for the supported targets under configs/dts/inmate-<target>.dts.
-Those device tree source files are compiled to their binary representations
-(*.dtb) during the build.
+templates for the supported targets under
+configs/{arm, arm64}/dts/inmate-<target>.dts. Those device tree source files
+are compiled to their binary representations (*.dtb) during the build.
 
 To create, load and start a Linux cell and use the first UART as console, issue
 
