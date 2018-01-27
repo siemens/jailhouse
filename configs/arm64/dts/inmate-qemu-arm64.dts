@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for Linux inmate test on QEMU ARM64 target,
- * corresponds to configs/qemu-arm64-linux-demo.c
+ * corresponds to configs/arm64/qemu-arm64-linux-demo.c
  *
  * Copyright (c) Siemens AG, 2016-2017
  *

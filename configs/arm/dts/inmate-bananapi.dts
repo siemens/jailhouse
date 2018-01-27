@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for Linux inmate test on Banana Pi board,
- * corresponds to configs/bananapi-linux-demo.c
+ * corresponds to configs/arm/bananapi-linux-demo.c
  *
  * Copyright (c) Siemens AG, 2016
  *

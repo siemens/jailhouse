@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for Linux inmate test on emCON-RZ/G1M board,
- * corresponds to configs/emtrion-emconrzg1m-linux-demo.c
+ * corresponds to configs/arm/emtrion-emconrzg1m-linux-demo.c
  *
  * Copyright (c) emtrion GmbH, 2017
  *

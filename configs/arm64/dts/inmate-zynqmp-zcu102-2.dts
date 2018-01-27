@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for 2nd Linux inmate test on ZynqMP ZCU102 board,
- * corresponds to configs/zynqmp-zcu102-linux-demo-2.c
+ * corresponds to configs/arm64/zynqmp-zcu102-linux-demo-2.c
  *
  * Copyright (c) Siemens AG, 2016
  *

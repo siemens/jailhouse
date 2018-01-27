@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for Linux inmate test on Orange Pi Zero board,
- * corresponds to configs/orangepi0-linux-demo.c
+ * corresponds to configs/arm/orangepi0-linux-demo.c
  *
  * Copyright (c) Siemens AG, 2016-2017
  *

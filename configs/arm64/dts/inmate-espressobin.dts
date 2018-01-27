@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for Linux inmate test on ESPRESSObin,
- * corresponds to configs/espressobin-linux-demo.c
+ * corresponds to configs/arm64/espressobin-linux-demo.c
  *
  * Copyright (c) Siemens AG, 2016-2017
  *

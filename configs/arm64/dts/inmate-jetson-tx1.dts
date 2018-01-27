@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Device tree for Linux inmate test on Jetson TX1 board,
- * corresponds to configs/jetson-tx1-linux-demo.c
+ * corresponds to configs/arm64/jetson-tx1-linux-demo.c
  *
  * Copyright (c) OTH Regensburg, 2017
  *
