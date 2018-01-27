@@ -10,8 +10,6 @@
 # the COPYING file in the top-level directory.
 #
 
-subdir-y := dts
-
 LINUXINCLUDE := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
 		-I$(src)/../hypervisor/include \
 		-I$(src)/../include
@@ -30,6 +28,10 @@ CONFIGS = $(shell cd $(src); ls $(SRCARCH)/*.c)
 always := $(CONFIGS:.c=.cell)
 
 targets += $(CONFIGS:.c=.o) $(CONFIGS:.c=.cell)
+
+DTS = $(shell cd $(src); ls $(SRCARCH)/dts/*.dts 2>/dev/null)
+always += $(DTS:.dts=.dtb)
+targets += $(DTS:.dts=.dtb)
 
 # prevent deleting intermediate files which would cause rebuilds
 .SECONDARY: $(addprefix $(obj)/,$(CONFIGS:.c=.o))
