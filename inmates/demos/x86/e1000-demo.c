@@ -11,7 +11,7 @@
  *
  *
  * Append "-device e1000,addr=19,netdev=..." to the QEMU command line for
- * testing in the virtual machine. Adjust configs/e1000-demo.c for real
+ * testing in the virtual machine. Adjust configs/x86/e1000-demo.c for real
  * machines as needed.
  */
 
