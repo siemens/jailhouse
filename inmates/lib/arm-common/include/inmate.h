@@ -39,6 +39,8 @@
 #ifndef _JAILHOUSE_INMATE_H
 #define _JAILHOUSE_INMATE_H
 
+#define PAGE_SIZE	(4 * 1024ULL)
+
 typedef signed char s8;
 typedef unsigned char u8;
 
