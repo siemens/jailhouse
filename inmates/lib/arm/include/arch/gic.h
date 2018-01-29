@@ -40,11 +40,13 @@
 
 static inline void gic_setup_irq_stack(void)
 {
-	static __attribute__((aligned(0x1000))) u32 irq_stack[1024];
+	static __attribute__((aligned(PAGE_SIZE))) u8 irq_stack[PAGE_SIZE];
 
-	asm volatile (".arch_extension virt\n");
-	asm volatile ("msr	SP_irq, %0\n" : : "r" (irq_stack));
-	asm volatile ("cpsie	i\n");
+	asm volatile (
+		".arch_extension virt\n\t"
+		"msr	SP_irq, %0\n\t"
+		"cpsie	i\n\t"
+		: : "r" (irq_stack + sizeof(irq_stack)));
 }
 
 #endif /* !__ASSEMBLY__ */
