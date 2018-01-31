@@ -44,8 +44,8 @@
 				      connector of the Jetson TK1 */
 /* Do not enable the clock in the inmate, as enabling the clock requires access
  * to the tegra-car (Clock and Reset Controller) */
-#define CON_CLOCK_REG  0
-#define CON_GATE_NR    0
+#define CON_CLOCK_REG	0
+#define CON_GATE_NR	0
 
 #define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0x50041000)
@@ -70,6 +70,18 @@
 
 #define CON_CLOCK_REG	0xe615014c
 #define CON_GATE_NR	15
+
+#define GIC_VERSION	2
+#define GICD_V2_BASE	((void *)0xf1001000)
+#define GICC_V2_BASE	((void *)0xf1002000)
+
+#elif defined(CONFIG_MACH_EMCON_RZG1H)
+#define CON_TYPE	"SCIFA"
+#define CON_BASE	0xe6c40000
+#define CON_DIVIDER	0x1b
+
+#define CON_CLOCK_REG	0xe6150138
+#define CON_GATE_NR	4
 
 #define GIC_VERSION	2
 #define GICD_V2_BASE	((void *)0xf1001000)
@@ -100,5 +112,5 @@
 #endif
 
 #ifndef TIMER_IRQ
-#define TIMER_IRQ      27
+#define TIMER_IRQ	27
 #endif
