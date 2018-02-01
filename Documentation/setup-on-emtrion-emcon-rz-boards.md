@@ -25,9 +25,15 @@ Install and start Jailhouse on emCON-RZ/G1x
 First we need access to the RootFS of the Linux running on the emCON-RZ/G1x. We assume that you
 have mounted this on your development workstation through sshfs or nfs.
 
-Copy the Jailhouse config file to the hypervisor include directory:
+Now in your Jailhouse source directory, create a file include/jailhouse/config.h.
 
-cp -av ci/jailhouse-config-emcon-rzg.h include/jailhouse/config.h
+If you own an emCON-RZ/G1E or emCON-RZ/G1M put the following line to this file:
+
+#define CONFIG_MACH_EMCON_RZG		1
+
+If you own an emCON-RZ/G1H put the following line to this file:
+
+#define CONFIG_MACH_EMCON_RZG1H		1
 
 Then you can compile and install Jailhouse using this command on the development workstation:
 

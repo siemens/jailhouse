@@ -29,6 +29,8 @@ Possible debug outputs for arm and arm64:
     - JAILHOUSE_CON1_TYPE_PL011     /* AMBA PL011 UART */
     - JAILHOUSE_CON1_TYPE_XUARTPS   /* Xilinx UART */
     - JAILHOUSE_CON1_TYPE_MVEBU     /* Marvell UART */
+    - JAILHOUSE_CON1_TYPE_HSCIF     /* Renesas HSCIF UART */
+    - JAILHOUSE_CON1_TYPE_SCIFA     /* Renesas SCIFA UART */
 
 Possible access modes, to be or'ed:
 
