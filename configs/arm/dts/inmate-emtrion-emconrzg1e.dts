@@ -14,7 +14,9 @@
  */
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/power/r8a7745-sysc.h>
+
+#define R8A7745_PD_CA7_CPU1		6
+#define R8A7745_PD_ALWAYS_ON		32
 
 /dts-v1/;
 
@@ -37,18 +39,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu@1 {
 			enable-method = "psci";
 			device_type = "cpu";
 			compatible = "arm,cortex-a7";
-			reg = <0x0>;
-			clock-frequency = <0x3b9aca00>;
-			power-domains = <0x2 0x5>;
-			clocks = <0x3>;
-			operating-points = <0xf4240 0xf4240>;
-			next-level-cache = <0x4>;
-			linux,phandle = <0x5>;
-			phandle = <0x5>;
+			reg = <1>;
+			clock-frequency = <1000000000>;
+			power-domains = <&sysc R8A7745_PD_CA7_CPU1>;
 		};
 	};
 
@@ -116,15 +113,10 @@
 	pfc: pin-controller@e6060000 {
 		compatible = "renesas,pfc-r8a7745";
 		reg = <0x0 0xe6060000 0x0 0x11c>;
-		#gpio-range-cells = <0x3>;
-		linux,phandle = <0x7>;
-		phandle = <0x7>;
 
 		serial4 {
 			renesas,groups = "scif4_data_c";
 			renesas,function = "scif4";
-			linux,phandle = <0x12>;
-			phandle = <0x12>;
 		};
 
 		sdhi0_pins: sd0 {
@@ -163,7 +155,6 @@
 		status = "okay";
 		clocks = <&scif4_clk 0>;
 		clock-names = "peripheral_clk";
-		pinctrl-0 = <0x12>;
 		pinctrl-names = "default";
 	};
 
