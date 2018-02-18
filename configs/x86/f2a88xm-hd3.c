@@ -14,7 +14,7 @@
  * by Valentine Sinitsyn <valentine.sinitsyn@gmail.com>.
  *
  * NOTE: This config expects the following to be appended to your kernel cmdline
- *       "memmap=0x4200000$0x3b000000"
+ *       "memmap=82M$0x3a000000"
  */
 
 #include <jailhouse/types.h>
@@ -35,8 +35,8 @@ struct {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
 		.hypervisor_memory = {
-			.phys_start = 0x3b000000,
-			.size = 0x4000000,
+			.phys_start = 0x3a000000,
+			.size = 0x600000,
 		},
 		.debug_console = {
 			.address = 0x3f8,

@@ -149,12 +149,12 @@ Software requirements
     additional cell. This currently has to be pre-allocated during boot-up.
     On x86 this is typically done by adding
 
-        memmap=66M$0x3b000000
+        memmap=82M$0x3a000000
 
     as parameter to the command line of the virtual machine's kernel. Note that
     if you plan to put this parameter in GRUB2 variables in /etc/default/grub,
     then you will need three escape characters before the dollar
-    (e.g. ```GRUB_CMDLINE_LINUX_DEFAULT="memmap=66M\\\$0x3b000000"```).
+    (e.g. ```GRUB_CMDLINE_LINUX_DEFAULT="memmap=82M\\\$0x3a000000"```).
 
 #### ARM architecture:
 

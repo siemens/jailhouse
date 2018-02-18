@@ -683,7 +683,7 @@ def parse_kernel_cmdline():
 
 
 def alloc_mem(regions, size):
-    mem = [0x3b000000, size]
+    mem = [0x3a000000, size]
     for r in regions:
         if (
             r.typestr == 'System RAM' and

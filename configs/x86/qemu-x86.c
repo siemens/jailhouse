@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Test configuration for QEMU Q35 VM, 1 GB RAM, 4 cores,
- * 6 MB hypervisor, 60 MB inmates (-4K shared mem device)
+ * 6 MB hypervisor, 74 MB inmates, 1MB shared mem devices
  *
  * Copyright (c) Siemens AG, 2013-2016
  *
@@ -13,7 +13,7 @@
  * the COPYING file in the top-level directory.
  *
  * See README.md for QEMU command lines on Intel and AMD.
- * Guest kernel command line appendix: memmap=66M$0x3b000000
+ * Guest kernel command line appendix: memmap=82M$0x3a000000
  */
 
 #include <jailhouse/types.h>
@@ -34,7 +34,7 @@ struct {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
 		.hypervisor_memory = {
-			.phys_start = 0x3b000000,
+			.phys_start = 0x3a000000,
 			.size = 0x600000,
 		},
 		.debug_console = {
@@ -78,14 +78,14 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
-			.size = 0x3b000000,
+			.size = 0x3a000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
 		/* RAM (inmates) */ {
-			.phys_start = 0x3b600000,
-			.virt_start = 0x3b600000,
-			.size = 0x3b00000,
+			.phys_start = 0x3a600000,
+			.virt_start = 0x3a600000,
+			.size = 0x4b00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},

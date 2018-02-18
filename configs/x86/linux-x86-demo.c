@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for Linux inmate, 1 CPU, ~60 MB RAM, ~1MB shmem, serial ports
+ * Configuration for Linux inmate, 1 CPU, 74 MB RAM, ~1MB shmem, serial ports
  *
  * Copyright (c) Siemens AG, 2013-2015
  *
@@ -57,7 +57,7 @@ struct {
 
 	.mem_regions = {
 		/* low RAM */ {
-			.phys_start = 0x3b600000,
+			.phys_start = 0x3a600000,
 			.virt_start = 0,
 			.size = 0x00100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -70,9 +70,9 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_COMM_REGION,
 		},
 		/* high RAM */ {
-			.phys_start = 0x3b700000,
+			.phys_start = 0x3a700000,
 			.virt_start = 0x00200000,
-			.size = 0x3a00000,
+			.size = 0x4a00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
