@@ -113,8 +113,7 @@
 #define ESR_IL_SHIFT		25
 #define ESR_IL(hsr)		((hsr) >> ESR_IL_SHIFT & 0x1)
 /* Instruction specific syndrom */
-#define ESR_ISS_MASK		0x1ffffff
-#define ESR_ISS(esr)		((esr) & ESR_ISS_MASK)
+#define ESR_ISS(esr)		((esr) & BIT_MASK(24, 0))
 /* Exception classes values */
 #define ESR_EC_UNKNOWN		0x00
 #define ESR_EC_WFx		0x01
