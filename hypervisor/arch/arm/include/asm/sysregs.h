@@ -113,8 +113,8 @@
 #define  HSR_IL_SHIFT		25
 #define  HSR_IL(hsr)		((hsr) >> HSR_IL_SHIFT & 0x1)
 /* Instruction specific */
-#define  HSR_ICC_MASK		0x1ffffff
-#define  HSR_ICC(hsr)		((hsr) & HSR_ICC_MASK)
+#define  HSR_ISS_MASK		0x1ffffff
+#define  HSR_ISS(hsr)		((hsr) & HSR_ISS_MASK)
 /* Exception classes values */
 #define  HSR_EC_UNK		0x00
 #define  HSR_EC_WFI		0x01
@@ -134,8 +134,8 @@
 #define  HSR_EC_DABT		0x24
 #define  HSR_EC_DABT_HYP		0x25
 /* Condition code */
-#define  HSR_ICC_CV_BIT		(1 << 24)
-#define  HSR_ICC_COND(icc)	((icc) >> 20 & 0xf)
+#define  HSR_ISS_CV_BIT		(1 << 24)
+#define  HSR_ISS_COND(iss)	((iss) >> 20 & 0xf)
 
 #define  HSR_MATCH_MCR_MRC(hsr, crn, opc1, crm, opc2)		\
 	(((hsr) & (BIT_MASK(19, 10) | BIT_MASK(4, 1))) ==	\

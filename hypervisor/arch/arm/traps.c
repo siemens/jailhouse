@@ -51,7 +51,7 @@ static const unsigned short cc_map[16] = {
 static bool arch_failed_condition(struct trap_context *ctx)
 {
 	u32 class = HSR_EC(ctx->hsr);
-	u32 icc = HSR_ICC(ctx->hsr);
+	u32 iss = HSR_ISS(ctx->hsr);
 	u32 cpsr, flags, cond;
 
 	arm_read_banked_reg(SPSR_hyp, cpsr);
@@ -65,8 +65,8 @@ static bool arch_failed_condition(struct trap_context *ctx)
 		return false;
 
 	/* Is condition field valid? */
-	if (icc & HSR_ICC_CV_BIT) {
-		cond = HSR_ICC_COND(icc);
+	if (iss & HSR_ISS_CV_BIT) {
+		cond = HSR_ISS_COND(iss);
 	} else {
 		/* This can happen in Thumb mode: examine IT state. */
 		unsigned long it = PSR_IT(cpsr);

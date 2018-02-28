@@ -76,15 +76,15 @@ int arch_handle_dabt(struct trap_context *ctx)
 	unsigned long hpfar;
 	unsigned long hdfar;
 	/* Decode the syndrome fields */
-	u32 icc		= HSR_ICC(ctx->hsr);
-	u32 isv		= icc >> 24;
-	u32 sas		= icc >> 22 & 0x3;
-	u32 sse		= icc >> 21 & 0x1;
-	u32 srt		= icc >> 16 & 0xf;
-	u32 ea		= icc >> 9 & 0x1;
-	u32 cm		= icc >> 8 & 0x1;
-	u32 s1ptw	= icc >> 7 & 0x1;
-	u32 is_write	= icc >> 6 & 0x1;
+	u32 iss		= HSR_ISS(ctx->hsr);
+	u32 isv		= iss >> 24;
+	u32 sas		= iss >> 22 & 0x3;
+	u32 sse		= iss >> 21 & 0x1;
+	u32 srt		= iss >> 16 & 0xf;
+	u32 ea		= iss >> 9 & 0x1;
+	u32 cm		= iss >> 8 & 0x1;
+	u32 s1ptw	= iss >> 7 & 0x1;
+	u32 is_write	= iss >> 6 & 0x1;
 	u32 size	= 1 << sas;
 
 	arm_read_sysreg(HPFAR, hpfar);
