@@ -263,6 +263,9 @@ static int arch_handle_hvc(struct trap_context *ctx)
 	unsigned long *regs = ctx->regs;
 	unsigned long code = regs[0];
 
+	if (HSR_ISS(ctx->hsr) != JAILHOUSE_HVC_CODE)
+		return TRAP_FORBIDDEN;
+
 	regs[0] = hypercall(code, regs[1], regs[2]);
 
 	if (code == JAILHOUSE_HC_DISABLE && regs[0] == 0)

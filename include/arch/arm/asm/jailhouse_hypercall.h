@@ -36,6 +36,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define JAILHOUSE_HVC_CODE		0x4a48
+
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \
 					"hvc #0x4a48"
 #define JAILHOUSE_CALL_NUM_RESULT	"r0"
