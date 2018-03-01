@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2018
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -23,6 +23,10 @@
 /* create 64-bit mask with all bits in [last:first] set */
 #define BIT_MASK(last, first) \
 	((0xffffffffffffffffULL >> (64 - ((last) + 1 - (first)))) << (first))
+
+/* extract the field value at [last:first] from an input of up to 64 bits */
+#define GET_FIELD(value, last, first) \
+	(((value) & BIT_MASK((last), (first))) >> (first))
 
 #define MAX(a, b)		((a) >= (b) ? (a) : (b))
 #define MIN(a, b)		((a) <= (b) ? (a) : (b))
