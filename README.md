@@ -170,7 +170,7 @@ Software requirements
     additional cell. This currently has to be pre-allocated during boot-up.
     On ARM this can be obtained by reducing the amount of memory seen by the
     kernel (through the `mem=` kernel boot parameter) or by modifying the
-    Device Tree.
+    Device Tree (i.e. the `reserved-memory` node).
 
 
 Build & Installation

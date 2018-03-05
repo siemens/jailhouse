@@ -48,6 +48,15 @@ Otherwise, use the ```msg_reply_timeout``` field in the cell config to specify
 the number of idle loops the root cell must wait for a reply before considering
 the cell as failing.
 
+**Q: Which open-source OSs can be currently run in non-root cells?**
+
+A: The following open-source OSs have been currently ported to Jailhouse:
+* [Linux](Documentation/non-root-linux.txt)
+* [FreeRTOS](https://github.com/siemens/freertos-cell)
+* [ERIKA3 RTOS](http://www.erika-enterprise.com/wiki/index.php?title=ERIKA3_on_the_Jailhouse_hypervisor)
+* [Zephyr](https://www.zephyrproject.org)
+
+
 Debugging
 ---------
 
