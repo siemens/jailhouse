@@ -83,6 +83,7 @@ Please note Jailhouse developers may ask you for these logs, shall you come for
 help to jailhouse-dev mailing list, because they are extremely useful to analyze
 machine hangs. So please have the logs at hand, if possible.
 
+
 Development
 -----------
 
@@ -91,4 +92,3 @@ Development
 Run ```make docs``` to create automatic documentation (it needs Doxygen
 installed). The documentation will be generated inside the
 ```Documentation/generated/``` directory.
-

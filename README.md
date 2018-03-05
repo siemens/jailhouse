@@ -130,6 +130,7 @@ Hardware requirements (preliminary)
 
     - Xilinx ZCU102 (ZynqMP evaluation board)
 
+
 Software requirements
 ---------------------
 
