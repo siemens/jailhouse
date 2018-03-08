@@ -18,6 +18,7 @@
 #include <asm/gic.h>
 #include <asm/mmio.h>
 #include <asm/psci.h>
+#include <asm/sip.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
 #include <asm/processor.h>
@@ -36,10 +37,14 @@ static int handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
-	if (!IS_PSCI_32(regs[0]) && !IS_PSCI_64(regs[0]))
+	if (IS_PSCI_32(regs[0]) || IS_PSCI_64(regs[0])) {
+		regs[0] = psci_dispatch(ctx);
+	} else if (IS_SIP_32(regs[0]) || IS_SIP_64(regs[0])) {
+		/* This can be ignored */
+		regs[0] = SIP_NOT_SUPPORTED;
+	} else {
 		return TRAP_UNHANDLED;
-
-	regs[0] = psci_dispatch(ctx);
+	}
 
 	arch_skip_instruction(ctx);
 
