@@ -120,6 +120,8 @@ Hardware requirements (preliminary)
     - ARM Versatile Express with Cortex-A15 or A7 cores
       (includes ARM Fast Model)
 
+    - emtrion emCON-RZ/G1x series based on Renesas RZ/G ([see more](Documentation/setup-on-emtrion-emcon-rz-boards.md))
+
   - Supported ARM64 boards:
 
     - AMD Seattle / SoftIron Overdrive 3000
