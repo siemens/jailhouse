@@ -39,6 +39,10 @@ Source code:
  - https://github.com/siemens/jailhouse.git
  - git@github.com:siemens/jailhouse.git
 
+Demo and testing images:
+
+ - https://github.com/siemens/jailhouse-images
+
 Frequently Asked Questions (FAQ):
 
  - See [FAQ file](FAQ.md)
@@ -248,6 +252,10 @@ as reference, e.g. configs/x86/apic-demo.c or configs/x86/e1000-demo.c.
 
 x86 Demonstration in QEMU/KVM
 -----------------------------
+
+**NOTE**: You can also build and execute the following demo steps with the
+help of the jailhouse-images side project at
+https://github.com/siemens/jailhouse-images.
 
 The included system configuration qemu-x86.c can be used to run Jailhouse in
 QEMU/KVM virtual machine on x86 hosts (Intel and AMD are supported). Currently
