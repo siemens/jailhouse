@@ -31,6 +31,7 @@
 
 static unsigned int gic_num_lr;
 static unsigned int gic_num_priority_bits;
+static unsigned int last_gicr;
 static u32 gic_version;
 
 static void *gicr_base;
@@ -122,6 +123,10 @@ static int gicv3_init(void)
 			system_config->platform_info.arm.gicr_base, GICR_SIZE);
 	if (!gicr_base)
 		return -ENOMEM;
+
+	last_gicr = system_config->root_cell.cpu_set_size * 8 - 1;
+	while (!cpu_id_valid(last_gicr))
+		last_gicr--;
 
 	return 0;
 }
@@ -308,8 +313,12 @@ static enum mmio_result gicv3_handle_redist_access(void *arg,
 	struct per_cpu *cpu_data = arg;
 
 	switch (mmio->address) {
-	case GICR_IIDR:
 	case GICR_TYPER:
+		mmio_perform_access(cpu_data->gicr.base, mmio);
+		if (cpu_data->cpu_id == last_gicr)
+				mmio->value |= GICR_TYPER_Last;
+		return MMIO_HANDLED;
+	case GICR_IIDR:
 	case 0xffd0 ... 0xfffc: /* ID registers */
 		/*
 		 * Read-only registers that might be used by a cell to find the
