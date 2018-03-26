@@ -562,7 +562,7 @@ class IOMemRegionTree:
                 continue
 
             # generally blacklisted, unless we find an HPET behind it
-            if (s == 'reserved'):
+            if (s.lower() == 'reserved'):
                 regions.extend(IOMemRegionTree.find_hpet_regions(tree))
                 continue
 
