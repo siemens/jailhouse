@@ -15,6 +15,7 @@ import argparse
 import ctypes
 import errno
 import fcntl
+import gzip
 import os
 import struct
 import sys
@@ -248,6 +249,8 @@ class X86:
     def setup(self, args, config):
         self._cpu_reset_address = config.cpu_reset_address
 
+        self.kernel_image = args.kernel.read()
+
         self._zero_page = X86ZeroPage(args.kernel, args.initrd,
                                       args.kernel_decomp_factor, config)
 
@@ -303,8 +306,11 @@ jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
 class ARMCommon:
     def setup(self, args, config):
         self._cpu_reset_address = config.cpu_reset_address
-        kernel_size = page_align(os.fstat(args.kernel.fileno()).st_size)
-        kernel_load_offset = self.get_kernel_offset(args.kernel)
+
+        (self.kernel_image,
+         self._kernel_gz) = self.get_uncompressed_kernel(args.kernel)
+        kernel_size = page_align(len(self.kernel_image))
+        kernel_load_offset = self.get_kernel_offset(self.kernel_image)
         image_size = kernel_load_offset + kernel_size + self.kernel_alignment()
 
         ramdisk_size = 0
@@ -392,13 +398,17 @@ Modified device tree written. Start Linux with the following commands \
 jailhouse cell create %s\n\
 jailhouse cell load %s linux-loader.bin -a 0x%x -s "%s" -a 0x%x %s -a 0x%x ' %
               (args.config.name, config.name, self.loader_address(),
-               self.params.decode(), self.params_address(), args.kernel.name,
+               self.params.decode(), self.params_address(),
+               args.kernel.name + '-unzipped' if self._kernel_gz else '',
                self._kernel_addr), end='')
         if args.initrd:
             print('%s -a 0x%x ' % (args.initrd.name, self._ramdisk_addr),
                   end='')
         print('%s -a 0x%x' % (args.write_params.name, self._dtb_addr))
         print('jailhouse cell start %s' % config.name)
+        if self._kernel_gz:
+            print('\nNote that %s is zipped and requires decompression first.'
+                  % args.kernel.name)
 
     def loader_address(self):
         return self._cpu_reset_address
@@ -423,6 +433,10 @@ class ARM(ARMCommon):
         return self._cpu_reset_address + 0x100
 
     @staticmethod
+    def get_uncompressed_kernel(kernel):
+        return (kernel.read(), False)
+
+    @staticmethod
     def kernel_alignment():
         return 0x1000
 
@@ -442,13 +456,21 @@ class ARM64(ARMCommon):
         return self._cpu_reset_address + 0x1000
 
     @staticmethod
+    def get_uncompressed_kernel(kernel):
+        try:
+            unzipped = gzip.GzipFile(fileobj=kernel)
+            return (unzipped.read(), True)
+        except IOError:
+            kernel.seek(0)
+            return (kernel.read(), False)
+
+    @staticmethod
     def kernel_alignment():
         return 0x200000
 
     @staticmethod
-    def get_kernel_offset(kernel):
-        kernel.seek(8)
-        (text_offset,) = struct.unpack_from('<Q', kernel.read(8))
+    def get_kernel_offset(kernel_image):
+        (text_offset,) = struct.unpack_from('<8xQ', kernel_image)
         return text_offset
 
     @staticmethod
@@ -837,8 +859,7 @@ else:
 
     cell = JailhouseCell(config)
     cell.load(open(linux_loader, mode='rb').read(), arch.loader_address())
-    args.kernel.seek(0)
-    cell.load(args.kernel.read(), arch.kernel_address())
+    cell.load(arch.kernel_image, arch.kernel_address())
     if arch.dtb_address():
         cell.load(arch.dtb.get(), arch.dtb_address())
     if args.initrd:
