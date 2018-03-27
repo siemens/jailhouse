@@ -251,7 +251,7 @@ class X86:
 
         self.kernel_image = args.kernel.read()
 
-        self._zero_page = X86ZeroPage(args.kernel, args.initrd,
+        self._zero_page = X86ZeroPage(self.kernel_image, args.initrd,
                                       args.kernel_decomp_factor, config)
 
         setup_data = x86_gen_setup_data(config)
@@ -616,8 +616,8 @@ class X86SetupHeader:
     BASE_OFFSET = 0x1f0
     _HEADER_FORMAT = 'xB2xI8xH14xB7xII8xI4xI20xI4xQQ'
 
-    def __init__(self, kernel):
-        kernel.seek(X86SetupHeader.BASE_OFFSET)
+    def __init__(self, kernel_image):
+        base = X86SetupHeader.BASE_OFFSET
         parse_size = struct.calcsize(X86SetupHeader._HEADER_FORMAT)
         (self.setup_sects,
          self.syssize,
@@ -631,11 +631,10 @@ class X86SetupHeader:
          self.setup_data,
          self.pref_address) = \
             struct.unpack(X86SetupHeader._HEADER_FORMAT,
-                          kernel.read(parse_size))
+                          kernel_image[base:base+parse_size])
 
         self.size = 0x202 + (self.jump >> 8) - X86SetupHeader.BASE_OFFSET
-        kernel.seek(X86SetupHeader.BASE_OFFSET)
-        self.data = bytearray(kernel.read(self.size))
+        self.data = bytearray(kernel_image[base:base+self.size])
 
     def set_value_in_data(self, fmt, offset, value):
         struct.pack_into(fmt, self.data, offset - X86SetupHeader.BASE_OFFSET,
@@ -695,8 +694,8 @@ def get_kernel_compression_method(payload_magic):
 
 # see linux/Documentation/x86/zero-page.txt
 class X86ZeroPage:
-    def __init__(self, kernel, initrd, kernel_decomp_factor, config):
-        self.setup_header = X86SetupHeader(kernel)
+    def __init__(self, kernel_image, initrd, kernel_decomp_factor, config):
+        self.setup_header = X86SetupHeader(kernel_image)
 
         prot_image_offs = (self.setup_header.setup_sects + 1) * 512
         prot_image_size = self.setup_header.syssize * 16
@@ -710,11 +709,11 @@ class X86ZeroPage:
         ramdisk_size = 0
         ramdisk_load_addr = 0
         if initrd:
-            kernel_size = os.fstat(kernel.fileno()).st_size
+            kernel_size = len(kernel_image)
             ramdisk_size = os.fstat(initrd.fileno()).st_size
 
-            kernel.seek(prot_image_offs + self.setup_header.payload_offset)
-            payload_magic = bytearray(kernel.read(4))
+            offs = prot_image_offs + self.setup_header.payload_offset
+            payload_magic = bytearray(kernel_image[offs:offs+4])
             compression_method = get_kernel_compression_method(payload_magic)
 
             # Unless specified, derive decompression factor from method
