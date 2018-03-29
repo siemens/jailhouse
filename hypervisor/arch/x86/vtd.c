@@ -224,13 +224,15 @@ static unsigned int inv_queue_write(void *inv_queue, unsigned int index,
 static void vtd_submit_iq_request(void *reg_base, void *inv_queue,
 				  const struct vtd_entry *inv_request)
 {
-	volatile u32 completed = 0;
 	struct vtd_entry inv_wait = {
 		.lo_word = VTD_REQ_INV_WAIT | VTD_INV_WAIT_SW |
 			VTD_INV_WAIT_FN | (1UL << VTD_INV_WAIT_SDATA_SHIFT),
-		.hi_word = paging_hvirt2phys(&completed),
+		.hi_word = paging_hvirt2phys(
+				&per_cpu(this_cpu_id())->vtd_iq_completed),
 	};
 	unsigned int index;
+
+	this_cpu_data()->vtd_iq_completed = 0;
 
 	spin_lock(&inv_queue_lock);
 
@@ -242,7 +244,7 @@ static void vtd_submit_iq_request(void *reg_base, void *inv_queue,
 
 	mmio_write64_field(reg_base + VTD_IQT_REG, VTD_IQT_QT_MASK, index);
 
-	while (!completed)
+	while (!this_cpu_data()->vtd_iq_completed)
 		cpu_relax();
 
 	spin_unlock(&inv_queue_lock);

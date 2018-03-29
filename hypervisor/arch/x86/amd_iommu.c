@@ -408,11 +408,10 @@ static void amd_iommu_invalidate_pages(struct amd_iommu *iommu,
 
 static void amd_iommu_completion_wait(struct amd_iommu *iommu)
 {
+	long addr = paging_hvirt2phys(&per_cpu(this_cpu_id())->amd_iommu_sem);
 	union buf_entry completion_wait = {{ 0 }};
-	volatile u64 sem = 1;
-	long addr;
 
-	addr = paging_hvirt2phys(&sem);
+	this_cpu_data()->amd_iommu_sem = 1;
 
 	completion_wait.raw32[0] = (addr & BIT_MASK(31, 3)) |
 		CMD_COMPL_WAIT_STORE;
@@ -423,7 +422,7 @@ static void amd_iommu_completion_wait(struct amd_iommu *iommu)
 	mmio_write64(iommu->mmio_base + AMD_CMD_BUF_TAIL_REG,
 		     iommu->cmd_tail_ptr);
 
-	wait_for_zero(&sem, -1);
+	wait_for_zero(&this_cpu_data()->amd_iommu_sem, -1);
 }
 
 static void amd_iommu_init_fault_nmi(void)

@@ -87,6 +87,12 @@ struct per_cpu {
 	/** Cached PDPTEs, used by VMX for PAE guest paging mode. */
 	unsigned long pdpte[4];
 
+	/* IOMMU request completion flags */
+	union {
+		volatile u32 vtd_iq_completed;
+		volatile u64 amd_iommu_sem;
+	};
+
 	/** True when CPU is initialized by hypervisor. */
 	bool initialized;
 	union {
