@@ -214,9 +214,9 @@ error_out:
 	return err;
 }
 
-void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
-	vcpu_activate_vmm(cpu_data);
+	vcpu_activate_vmm(this_cpu_data());
 }
 
 void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)

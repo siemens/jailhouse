@@ -96,12 +96,11 @@ int arch_cpu_init(struct per_cpu *cpu_data);
 
 /**
  * Perform architecture-specific activation of the hypervisor mode.
- * @param cpu_data	Data structure of the calling CPU.
  *
  * @note This function does not return to the caller but rather resumes Linux
  * in guest mode at the point arch_entry() would return to.
  */
-void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data);
+void __attribute__((noreturn)) arch_cpu_activate_vmm(void);
 
 /**
  * Perform architecture-specific restoration of the CPU state on setup

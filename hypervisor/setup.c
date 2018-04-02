@@ -233,7 +233,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 		printk("Activating hypervisor\n");
 
 	/* point of no return */
-	arch_cpu_activate_vmm(cpu_data);
+	arch_cpu_activate_vmm();
 }
 
 /** Hypervisor description header. */

@@ -56,9 +56,9 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	return arm_cpu_init(cpu_data);
 }
 
-void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
-	struct registers *regs = guest_regs(cpu_data);
+	struct registers *regs = guest_regs(this_cpu_data());
 
 	/* return to the caller in Linux */
 	arm_write_sysreg(ELR_EL2, regs->usr[30]);

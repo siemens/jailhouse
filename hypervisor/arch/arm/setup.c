@@ -94,8 +94,10 @@ cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
 		  "r" (cpu_data->linux_flags));
 }
 
-void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	/* Return to the kernel */
 	cpu_prepare_return_el1(cpu_data, 0);
 
