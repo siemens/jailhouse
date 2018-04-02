@@ -465,8 +465,9 @@ void vcpu_exit(struct per_cpu *cpu_data)
 	write_msr(MSR_VM_HSAVE_PA, 0);
 }
 
-void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) vcpu_activate_vmm(void)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
 	unsigned long vmcb_pa, host_stack;
 
 	vmcb_pa = paging_hvirt2phys(&cpu_data->vmcb);

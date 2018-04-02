@@ -707,7 +707,7 @@ void vcpu_exit(struct per_cpu *cpu_data)
 	cpu_data->linux_cr4 &= ~X86_CR4_VMXE;
 }
 
-void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
+void __attribute__((noreturn)) vcpu_activate_vmm(void)
 {
 	/* We enter Linux at the point arch_entry would return to as well.
 	 * rax is cleared to signal success to the caller. */
@@ -721,7 +721,7 @@ void __attribute__((noreturn)) vcpu_activate_vmm(struct per_cpu *cpu_data)
 		"vmlaunch\n\t"
 		"pop %%rbp"
 		: /* no output */
-		: "a" (0), "D" (cpu_data->linux_reg)
+		: "a" (0), "D" (this_cpu_data()->linux_reg)
 		: "memory", "r15", "r14", "r13", "r12", "rbx", "rbp", "cc");
 
 	panic_printk("FATAL: vmlaunch failed, error %d\n",
