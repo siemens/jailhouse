@@ -223,7 +223,7 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 	if (error) {
 		if (master)
 			shutdown();
-		arch_cpu_restore(cpu_data, error);
+		arch_cpu_restore(cpu_id, error);
 		return error;
 	}
 

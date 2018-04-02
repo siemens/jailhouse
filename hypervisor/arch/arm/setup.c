@@ -141,8 +141,9 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	arch_shutdown_mmu(cpu_data);
 }
 
-void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
+void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
+	struct per_cpu *cpu_data = per_cpu(cpu_id);
 	struct registers *ctx = guest_regs(cpu_data);
 
 	/*

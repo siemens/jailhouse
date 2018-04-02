@@ -98,14 +98,14 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	shutdown_func((struct per_cpu *)paging_hvirt2phys(cpu_data));
 }
 
-void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
+void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
-	struct registers *regs = guest_regs(cpu_data);
+	struct registers *regs = guest_regs(per_cpu(cpu_id));
 
 	/* Jailhouse initialization failed; return to the caller in EL1 */
 	arm_write_sysreg(ELR_EL2, regs->usr[30]);
 
 	regs->usr[0] = return_code;
 
-	arch_shutdown_self(cpu_data);
+	arch_shutdown_self(per_cpu(cpu_id));
 }

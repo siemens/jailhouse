@@ -761,7 +761,7 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	cpu_data->linux_fs.selector = vmcs_read16(GUEST_FS_SELECTOR);
 	cpu_data->linux_gs.selector = vmcs_read16(GUEST_GS_SELECTOR);
 
-	arch_cpu_restore(cpu_data, 0);
+	arch_cpu_restore(this_cpu_id(), 0);
 
 	stack--;
 	*stack = linux_ip;

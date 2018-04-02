@@ -105,13 +105,13 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(void);
 /**
  * Perform architecture-specific restoration of the CPU state on setup
  * failures or after disabling the hypervisor.
- * @param cpu_data	Data structure of the calling CPU.
+ * @param cpu_id	ID of the calling CPU.
  * @param return_code	Return value to pass to Linux.
  *
  * @note Depending on the architectural implementation, this function may not
  * return to the caller but rather jump to the target Linux context.
  */
-void arch_cpu_restore(struct per_cpu *cpu_data, int return_code);
+void arch_cpu_restore(unsigned int cpu_id, int return_code);
 
 /** @} */
 #endif /* !_JAILHOUSE_ENTRY_H */

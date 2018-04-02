@@ -519,7 +519,7 @@ void __attribute__((noreturn)) vcpu_deactivate_vmm(void)
 	asm volatile("mov %%fs,%0" : "=m" (cpu_data->linux_fs.selector));
 	asm volatile("mov %%gs,%0" : "=m" (cpu_data->linux_gs.selector));
 
-	arch_cpu_restore(cpu_data, 0);
+	arch_cpu_restore(this_cpu_id(), 0);
 
 	stack--;
 	*stack = linux_ip;

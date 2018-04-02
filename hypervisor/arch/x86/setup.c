@@ -210,7 +210,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 
 error_out:
-	arch_cpu_restore(cpu_data, err);
+	arch_cpu_restore(this_cpu_id(), err);
 	return err;
 }
 
@@ -219,9 +219,10 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 	vcpu_activate_vmm();
 }
 
-void arch_cpu_restore(struct per_cpu *cpu_data, int return_code)
+void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
 	static spinlock_t tss_lock;
+	struct per_cpu *cpu_data = per_cpu(cpu_id);
 	unsigned int tss_idx;
 	u64 *linux_gdt;
 
