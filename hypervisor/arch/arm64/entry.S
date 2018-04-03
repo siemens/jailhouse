@@ -141,7 +141,6 @@ el2_entry:
 	 * percpu data = pool + cpuid * percpu_size
 	 */
 	madd	x1, x2, x0, x1
-	msr	tpidr_el2, x1
 
 	/* set up the stack and push the root cell's callee saved registers */
 	add	sp, x1, #PERCPU_STACK_END
@@ -391,8 +390,6 @@ shutdown_el2:
 	msr	ttbr0_el2, xzr
 	msr	tcr_el2, xzr
 	isb
-
-	msr	tpidr_el2, xzr
 
 	/* Prepare continuation as vmreturn(guest_registers). */
 	add	x0, x0, #(PERCPU_STACK_END - 32 * 8)
