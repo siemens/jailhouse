@@ -202,8 +202,13 @@ static void vmcb_setup(struct per_cpu *cpu_data)
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_MSR_PROT;
 	vmcb->general1_intercepts |= GENERAL1_INTERCEPT_SHUTDOWN_EVT;
 
-	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMRUN; /* Required */
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMRUN;
 	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMMCALL;
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMLOAD;
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_VMSAVE;
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_STGI;
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_CLGI;
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_SKINIT;
 
 	/*
 	 * We only intercept #DB and #AC to prevent that malicious guests can
