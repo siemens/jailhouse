@@ -101,4 +101,15 @@ void timer_start(u64 timeout);
 
 #include "../inmate_common.h"
 
+/*
+ * To ease the debugging, we can send a spurious hypercall, which should return
+ * -ENOSYS, but appear in the hypervisor stats for this cell.
+ */
+static inline void heartbeat(void)
+{
+#ifndef CONFIG_BARE_METAL
+	jailhouse_call(0xdeadbeef);
+#endif
+}
+
 #endif /* !_JAILHOUSE_INMATE_H */

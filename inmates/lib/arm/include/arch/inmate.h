@@ -36,19 +36,4 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * To ease the debugging, we can send a spurious hypercall, which should return
- * -ENOSYS, but appear in the hypervisor stats for this cell.
- */
-static inline void heartbeat(void)
-{
-#ifndef CONFIG_BARE_METAL
-	asm volatile (
-	".arch_extension virt\n"
-	"mov	r0, %0\n"
-	"hvc	#0\n"
-	: : "r" (0xbea7) : "r0");
-#endif
-}
-
 void __attribute__((interrupt("IRQ"), used)) vector_irq(void);
