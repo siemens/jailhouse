@@ -18,8 +18,6 @@
 
 #ifndef __ASSEMBLY__
 
-#include <jailhouse/cell.h>
-#include <jailhouse/paging.h>
 #include <asm/percpu.h>
 
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
