@@ -142,7 +142,7 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 		irqchip_handle_irq(cpu_data);
 		break;
 	case EXIT_REASON_TRAP:
-		arch_handle_trap(cpu_data, regs);
+		arch_handle_trap(regs);
 		break;
 
 	case EXIT_REASON_UNDEF:

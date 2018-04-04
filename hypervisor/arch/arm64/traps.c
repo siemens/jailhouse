@@ -175,8 +175,7 @@ static const trap_handler trap_handlers[0x40] =
 	[ESR_EC_DABT_LOW]	= arch_handle_dabt,
 };
 
-static void arch_handle_trap(struct per_cpu *cpu_data,
-			     struct registers *guest_regs)
+static void arch_handle_trap(struct registers *guest_regs)
 {
 	struct trap_context ctx;
 	trap_handler handler;
@@ -220,7 +219,7 @@ struct registers *arch_handle_exit(struct per_cpu *cpu_data,
 		break;
 
 	case EXIT_REASON_EL1_ABORT:
-		arch_handle_trap(cpu_data, regs);
+		arch_handle_trap(regs);
 		break;
 
 	case EXIT_REASON_EL2_ABORT:

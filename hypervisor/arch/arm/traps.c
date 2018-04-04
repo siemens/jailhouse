@@ -421,7 +421,7 @@ static const trap_handler trap_handlers[0x40] =
 	[HSR_EC_DABT]		= arch_handle_dabt,
 };
 
-void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs)
+void arch_handle_trap(struct registers *guest_regs)
 {
 	struct trap_context ctx;
 	u32 exception_class;
