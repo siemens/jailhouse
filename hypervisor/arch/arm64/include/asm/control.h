@@ -18,8 +18,6 @@
 
 #include <asm/percpu.h>
 
-void arch_cpu_tlb_flush(struct per_cpu *cpu_data);
-void arch_cell_caches_flush(struct cell *cell);
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
 		     unsigned int count_event);
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
