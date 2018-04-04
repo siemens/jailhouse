@@ -23,8 +23,7 @@
 void arch_handle_sgi(u32 irqn, unsigned int count_event);
 bool arch_handle_phys_irq(u32 irqn, unsigned int count_event);
 
-struct registers* arch_handle_exit(struct per_cpu *cpu_data,
-				   struct registers *regs);
+struct registers* arch_handle_exit(struct registers *regs);
 
 void arch_shutdown_self(struct per_cpu *cpu_data);
 

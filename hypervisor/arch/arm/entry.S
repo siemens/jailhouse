@@ -125,8 +125,7 @@ hyp_trap:
 vmexit_common:
 	push	{r0}
 
-	arm_read_sysreg(TPIDR_EL2, r0)
-	mov	r1, sp
+	mov	r0, sp
 	bl	arch_handle_exit
 
 

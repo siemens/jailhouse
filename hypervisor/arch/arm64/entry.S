@@ -298,8 +298,7 @@ bootstrap_vectors:
 
 	mov	x29, xzr	/* reset fp,lr */
 	mov	x30, xzr
-	mrs	x0, tpidr_el2
-	mov	x1, sp
+	mov	x0, sp
 	bl	arch_handle_exit
 	b	.
 .endm

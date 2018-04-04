@@ -208,10 +208,9 @@ static void arch_dump_exit(struct registers *regs, const char *reason)
 	dump_hyp_stack(&ctx);
 }
 
-struct registers *arch_handle_exit(struct per_cpu *cpu_data,
-				   struct registers *regs)
+struct registers *arch_handle_exit(struct registers *regs)
 {
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
 	switch (regs->exit_reason) {
 	case EXIT_REASON_EL1_IRQ:

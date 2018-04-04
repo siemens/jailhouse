@@ -482,10 +482,9 @@ static void arch_dump_abt(bool is_data)
 	panic_printk("Physical address: 0x%08x HSR: 0x%08x\n", hxfar, hsr);
 }
 
-struct registers* arch_handle_exit(struct per_cpu *cpu_data,
-				   struct registers *regs)
+struct registers* arch_handle_exit(struct registers *regs)
 {
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
 	switch (regs->exit_reason) {
 	case EXIT_REASON_IRQ:
