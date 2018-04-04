@@ -154,9 +154,10 @@ static void check_events(struct per_cpu *cpu_data)
 		arm_cpu_reset(cpu_data->cpu_on_entry);
 }
 
-void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
-		     unsigned int count_event)
+void arch_handle_sgi(u32 irqn, unsigned int count_event)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	switch (irqn) {
 	case SGI_INJECT:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] += count_event;
@@ -176,9 +177,10 @@ void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
  * Handle the maintenance interrupt, the rest is injected into the cell.
  * Return true when the IRQ has been handled by the hyp.
  */
-bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn,
-			  unsigned int count_event)
+bool arch_handle_phys_irq(u32 irqn, unsigned int count_event)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
+
 	if (irqn == system_config->platform_info.arm.maintenance_irq) {
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE] +=
 			count_event;

@@ -489,7 +489,7 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 
 	switch (regs->exit_reason) {
 	case EXIT_REASON_IRQ:
-		irqchip_handle_irq(cpu_data);
+		irqchip_handle_irq();
 		break;
 	case EXIT_REASON_TRAP:
 		arch_handle_trap(regs);

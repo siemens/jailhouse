@@ -20,12 +20,11 @@
 
 #include <asm/percpu.h>
 
-void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
-		     unsigned int count_event);
+void arch_handle_sgi(u32 irqn, unsigned int count_event);
+bool arch_handle_phys_irq(u32 irqn, unsigned int count_event);
+
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 				   struct registers *regs);
-bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn,
-			  unsigned int count_event);
 
 void arch_shutdown_self(struct per_cpu *cpu_data);
 

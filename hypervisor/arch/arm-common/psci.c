@@ -83,7 +83,7 @@ long psci_dispatch(struct trap_context *ctx)
 	case PSCI_CPU_SUSPEND_64:
 		if (!irqchip_has_pending_irqs()) {
 			asm volatile("wfi" : : : "memory");
-			irqchip_handle_irq(cpu_data);
+			irqchip_handle_irq();
 		}
 		return 0;
 

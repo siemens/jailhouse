@@ -175,7 +175,7 @@ static enum mmio_result gic_handle_dist_access(void *arg,
 	return ret;
 }
 
-void irqchip_handle_irq(struct per_cpu *cpu_data)
+void irqchip_handle_irq(void)
 {
 	unsigned int count_event = 1;
 	bool handled = false;
@@ -190,11 +190,10 @@ void irqchip_handle_irq(struct per_cpu *cpu_data)
 
 		/* Handle IRQ */
 		if (is_sgi(irq_id)) {
-			arch_handle_sgi(cpu_data, irq_id, count_event);
+			arch_handle_sgi(irq_id, count_event);
 			handled = true;
 		} else {
-			handled = arch_handle_phys_irq(cpu_data, irq_id,
-						       count_event);
+			handled = arch_handle_phys_irq(irq_id, count_event);
 		}
 		count_event = 0;
 
