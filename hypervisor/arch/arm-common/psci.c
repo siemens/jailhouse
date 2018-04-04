@@ -17,8 +17,7 @@
 #include <asm/psci.h>
 #include <asm/traps.h>
 
-static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
-				struct trap_context *ctx)
+static long psci_emulate_cpu_on(struct trap_context *ctx)
 {
 	unsigned long mask = IS_PSCI_64(ctx->regs[0]) ? (u64)-1L : (u32)-1;
 	struct per_cpu *target_data;
@@ -26,7 +25,7 @@ static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 	unsigned int cpu;
 	long result;
 
-	cpu = arm_cpu_by_mpidr(cpu_data->cell, ctx->regs[1] & mask);
+	cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1] & mask);
 	if (cpu == -1)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
@@ -54,10 +53,9 @@ static long psci_emulate_cpu_on(struct per_cpu *cpu_data,
 	return result;
 }
 
-static long psci_emulate_affinity_info(struct per_cpu *cpu_data,
-				       struct trap_context *ctx)
+static long psci_emulate_affinity_info(struct trap_context *ctx)
 {
-	unsigned int cpu = arm_cpu_by_mpidr(cpu_data->cell, ctx->regs[1]);
+	unsigned int cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1]);
 
 	if (cpu == -1)
 		/* Virtual id not in set */
@@ -69,7 +67,6 @@ static long psci_emulate_affinity_info(struct per_cpu *cpu_data,
 
 long psci_dispatch(struct trap_context *ctx)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
 	u32 function_id = ctx->regs[0];
 
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_PSCI]++;
@@ -95,11 +92,11 @@ long psci_dispatch(struct trap_context *ctx)
 	case PSCI_CPU_ON_32:
 	case PSCI_CPU_ON_64:
 	case PSCI_CPU_ON_V0_1_UBOOT:
-		return psci_emulate_cpu_on(cpu_data, ctx);
+		return psci_emulate_cpu_on(ctx);
 
 	case PSCI_AFFINITY_INFO_32:
 	case PSCI_AFFINITY_INFO_64:
-		return psci_emulate_affinity_info(cpu_data, ctx);
+		return psci_emulate_affinity_info(ctx);
 
 	default:
 		return PSCI_NOT_SUPPORTED;
