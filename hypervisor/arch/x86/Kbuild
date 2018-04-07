@@ -16,11 +16,7 @@
 
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
-BUILT_IN_OBJECTS := built-in-amd.o built-in-intel.o
-
-always := $(BUILT_IN_OBJECTS)
-
-obj-y := $(BUILT_IN_OBJECTS)
+always := lib-amd.a lib-intel.a
 
 common-objs-y := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
 		 paging.o pci.o i8042.o vcpu.o vga.o ivshmem.o
@@ -32,5 +28,16 @@ common-objs-y += ioapic.o
 
 common-objs-$(CONFIG_TEST_DEVICE) += test-device.o
 
-built-in-amd-y := svm.o amd_iommu.o svm-vmexit.o $(common-objs-y)
-built-in-intel-y := vmx.o vtd.o vmx-vmexit.o $(common-objs-y) cat.o
+amd-objs := svm.o amd_iommu.o svm-vmexit.o $(common-objs-y)
+intel-objs := vmx.o vtd.o vmx-vmexit.o $(common-objs-y) cat.o
+
+targets += $(amd-objs) $(intel-objs)
+
+quiet_cmd_link_archive = AR      $@
+cmd_link_archive = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) $@ $^
+
+$(obj)/lib-amd.a: $(addprefix $(obj)/,$(amd-objs))
+	$(call if_changed,link_archive)
+
+$(obj)/lib-intel.a: $(addprefix $(obj)/,$(intel-objs))
+	$(call if_changed,link_archive)

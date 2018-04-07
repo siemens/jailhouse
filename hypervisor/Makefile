@@ -93,16 +93,15 @@ subdir-y := arch/$(SRCARCH)
 define BUILD_JAILHOUSE_template
 always += jailhouse$(1).bin
 
-$$(obj)/arch/$$(SRCARCH)/built-in$(1).o: $$(obj)/arch/$$(SRCARCH)
+$$(obj)/arch/$$(SRCARCH)/lib$(1).a: $$(obj)/arch/$$(SRCARCH)
 	@true
 
-hypervisor$(1)-y := arch/$$(SRCARCH)/built-in$(1).o $$(CORE_OBJECTS) \
-	hypervisor.lds
+hypervisor$(1)-y := arch/$$(SRCARCH)/lib$(1).a $$(CORE_OBJECTS) hypervisor.lds
 targets += $$(hypervisor$(1)-y)
 
 HYPERVISOR$(1)_OBJS = $$(addprefix $$(obj)/,$$(hypervisor$(1)-y))
 
-LDFLAGS_hypervisor$(1).o := -T
+LDFLAGS_hypervisor$(1).o := --whole-archive -T
 
 targets += hypervisor$(1).o
 $$(obj)/hypervisor$(1).o: $$(src)/hypervisor.lds $$(HYPERVISOR$(1)_OBJS)
