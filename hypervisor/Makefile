@@ -26,7 +26,8 @@ LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fno-pic -fno-common \
-		 -fno-stack-protector -fno-builtin-ffsl
+		 -fno-stack-protector -fno-builtin-ffsl \
+		 -D__LINUX_COMPILER_TYPES_H
 
 include $(src)/arch/$(SRCARCH)/Makefile
 
