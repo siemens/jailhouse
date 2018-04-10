@@ -182,8 +182,8 @@ if cpu_vendor == 'GenuineIntel':
     check_feature('VT-x (VMX)', 'vmx' in cpu_features)
 
     feature = msr.read(MSR.IA32_FEATURE_CONTROL)
-    check_feature('  VMX without TXT',
-                  (feature & (1 << 0)) == 0 or feature & (1 << 2))
+    check_feature('  VMX outside SMX', feature & (1 << 2))
+    check_feature('  VMX inside SMX', feature & (1 << 1), True)
     check_feature('  IA32_TRUE_*_CLTS',
                   msr.read(MSR.IA32_VMX_BASIC) & (1 << 55))
 
