@@ -40,6 +40,9 @@
 #ifdef CONFIG_ARM
 #include <asm/virt.h>
 #endif
+#ifdef CONFIG_X86
+#include <asm/msr.h>
+#endif
 
 #include "cell.h"
 #include "jailhouse.h"
@@ -390,6 +393,19 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		pr_err("jailhouse: HYP mode not available\n");
 		err = -ENODEV;
 		goto error_put_module;
+	}
+#endif
+#ifdef CONFIG_X86
+	if (boot_cpu_has(X86_FEATURE_VMX)) {
+		u64 features;
+
+		rdmsrl(MSR_IA32_FEATURE_CONTROL, features);
+		if ((features &
+		     FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX) == 0) {
+			pr_err("jailhouse: VT-x disabled by Firmware/BIOS\n");
+			err = -ENODEV;
+			goto error_put_module;
+		}
 	}
 #endif
 
