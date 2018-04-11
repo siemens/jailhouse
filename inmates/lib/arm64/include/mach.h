@@ -70,6 +70,14 @@
 #define GICD_V2_BASE	((void *)0x50041000)
 #define GICC_V2_BASE	((void *)0x50042000)
 
+#elif defined(CONFIG_MACH_JETSON_TX2)
+#define CON_TYPE	"8250"
+#define CON_BASE	0x3100000
+
+#define GIC_VERSION	2
+#define GICD_V2_BASE	((void *)0x03881000)
+#define GICC_V2_BASE	((void *)0x03882000)
+
 #elif defined(CONFIG_MACH_ZYNQMP_ZCU102)
 #define CON_TYPE	"XUARTPS"
 #define CON_BASE	0xff010000
