@@ -64,9 +64,13 @@ General configuration parameters
 
 #### ARM64
 
-##### Nvidia Jetson TK1
+##### Nvidia Jetson TX1
 
     #define CONFIG_MACH_JETSON_TX1 1
+
+##### Nvidia Jetson TX2
+
+    #define CONFIG_MACH_JETSON_TX2 1
 
 ##### Xilinx Zynq UltraScale+ MPSoC ZCU102
 

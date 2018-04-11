@@ -132,7 +132,7 @@ Hardware requirements (preliminary)
 
     - LeMaker HiKey
 
-    - NVIDIA Jetson TX1
+    - NVIDIA Jetson TX1 and TX2
 
     - Xilinx ZCU102 (ZynqMP evaluation board)
 
