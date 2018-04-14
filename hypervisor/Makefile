@@ -34,8 +34,6 @@ ifneq ($(wildcard $(INC_CONFIG_H)),)
 KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif
 
-GCOV_PROFILE := n
-
 CORE_OBJECTS = setup.o printk.o paging.o control.o lib.o mmio.o pci.o ivshmem.o
 CORE_OBJECTS += uart.o uart-8250.o
 

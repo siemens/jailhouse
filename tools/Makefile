@@ -10,6 +10,8 @@
 # the COPYING file in the top-level directory.
 #
 
+-include $(GEN_CONFIG_MK)
+
 # includes installation-related variables and definitions
 include $(src)/../scripts/include.mk
 
@@ -20,8 +22,6 @@ KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes -Werror \
 	-DJAILHOUSE_VERSION=\"$(shell cat $(src)/../VERSION)\" $(EXTRA_CFLAGS)
 LDFLAGS :=
-GCOV_PROFILE := n
-OBJECT_FILES_NON_STANDARD := y
 
 # force no-pie for distro compilers that enable pie by default
 KBUILD_CFLAGS += $(call cc-option, -fno-pie)

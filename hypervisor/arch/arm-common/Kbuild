@@ -12,7 +12,6 @@
 
 -include $(GEN_CONFIG_MK)
 
-GCOV_PROFILE := n
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
 OBJS-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o setup.o

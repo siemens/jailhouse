@@ -41,17 +41,17 @@ GEN_VERSION_H := $(obj)/hypervisor/include/generated/version.h
 $(GEN_VERSION_H): $(src)/Makefile FORCE
 	$(call filechk,version)
 
+subdir-y := driver hypervisor configs inmates tools
+
+subdir-ccflags-y := -Werror
+
 # Do not generate files by creating dependencies if we are cleaning up
 ifeq ($(filter %/Makefile.clean,$(MAKEFILE_LIST)),)
 
-$(obj)/hypervisor $(obj)/inmates: $(GEN_CONFIG_MK)
+$(addprefix $(obj)/,$(subdir-y)): $(GEN_CONFIG_MK)
 
 $(obj)/driver $(obj)/hypervisor: $(GEN_VERSION_H)
 
 endif
-
-subdir-y := driver hypervisor configs inmates tools
-
-subdir-ccflags-y := -Werror
 
 clean-dirs := Documentation/generated hypervisor/include/generated

@@ -14,7 +14,6 @@
 
 -include $(GEN_CONFIG_MK)
 
-GCOV_PROFILE := n
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
 BUILT_IN_OBJECTS := built-in-amd.o built-in-intel.o

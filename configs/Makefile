@@ -10,6 +10,8 @@
 # the COPYING file in the top-level directory.
 #
 
+-include $(GEN_CONFIG_MK)
+
 LINUXINCLUDE := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
 		-I$(src)/../hypervisor/include \
 		-I$(src)/../include
@@ -20,8 +22,6 @@ KBUILD_CFLAGS += -include $(obj)/../include/jailhouse/config.h
 endif
 
 OBJCOPYFLAGS := -O binary
-
-GCOV_PROFILE := n
 
 CONFIGS = $(shell cd $(src); ls $(SRCARCH)/*.c)
 
