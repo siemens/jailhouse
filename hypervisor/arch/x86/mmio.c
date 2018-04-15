@@ -219,7 +219,7 @@ error_noinst:
 
 error_unsupported:
 	panic_printk("FATAL: unsupported instruction "
-		     "(0x%02x [0x%02x] 0x%02x 0x%02x)\n",
+		     "(0x%02x 0x%02x 0x%02x 0x%02x)\n",
 		     op[0].raw, op[1].raw, op[2].raw, op[3].raw);
 	goto error;
 
