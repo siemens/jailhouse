@@ -77,15 +77,6 @@ int arch_entry(unsigned int cpu_id);
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data);
 
 /**
- * Map the root cell's memory regions.
- *
- * @return 0 on success, negative error code otherwise.
- *
- * Invoked by the architecture-specific setup code.
- */
-int map_root_memory_regions(void);
-
-/**
  * Perform architecture-specific early setup steps.
  *
  * @return 0 on success, negative error code otherwise.

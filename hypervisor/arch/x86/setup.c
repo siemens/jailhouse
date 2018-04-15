@@ -225,10 +225,6 @@ int arch_init_late(void)
 	if (err)
 		return err;
 
-	err = map_root_memory_regions();
-	if (err)
-		return err;
-
 	err = ioapic_init();
 	if (err)
 		return err;

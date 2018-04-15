@@ -59,12 +59,6 @@ int arm_cpu_init(struct per_cpu *cpu_data)
 
 int arm_init_late(void)
 {
-	int err;
-
 	/* Setup the SPI bitmap */
-	err = irqchip_cell_init(&root_cell);
-	if (err)
-		return err;
-
-	return map_root_memory_regions();
+	return irqchip_cell_init(&root_cell);
 }

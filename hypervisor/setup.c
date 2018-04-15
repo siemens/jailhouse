@@ -129,26 +129,10 @@ failed:
 	error = err;
 }
 
-int map_root_memory_regions(void)
-{
-	const struct jailhouse_memory *mem;
-	unsigned int n;
-	int err;
-
-	for_each_mem_region(mem, root_cell.config, n) {
-		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
-			err = mmio_subpage_register(&root_cell, mem);
-		else
-			err = arch_map_memory_region(&root_cell, mem);
-		if (err)
-			return err;
-	}
-	return 0;
-}
-
 static void init_late(void)
 {
-	unsigned int cpu, expected_cpus = 0;
+	unsigned int n, cpu, expected_cpus = 0;
+	const struct jailhouse_memory *mem;
 
 	for_each_cpu(cpu, root_cell.cpu_set)
 		expected_cpus++;
@@ -164,6 +148,15 @@ static void init_late(void)
 	error = pci_init();
 	if (error)
 		return;
+
+	for_each_mem_region(mem, root_cell.config, n) {
+		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
+			error = mmio_subpage_register(&root_cell, mem);
+		else
+			error = arch_map_memory_region(&root_cell, mem);
+		if (error)
+			return;
+	}
 
 	config_commit(&root_cell);
 
