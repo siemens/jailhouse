@@ -26,9 +26,11 @@ common-objs-y := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
 		 paging.o pci.o i8042.o vcpu.o vga.o ivshmem.o
 
 # units initialization order as defined by linking order:
-# iommu, ioapic, [cat], <generic units>
+# iommu, ioapic, [test-device], [cat], <generic units>
 
 common-objs-y += ioapic.o
+
+common-objs-$(CONFIG_TEST_DEVICE) += test-device.o
 
 built-in-amd-y := svm.o amd_iommu.o svm-vmexit.o $(common-objs-y)
 built-in-intel-y := vmx.o vtd.o vmx-vmexit.o $(common-objs-y) cat.o
