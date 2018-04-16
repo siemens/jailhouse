@@ -38,21 +38,24 @@
 
 #include <inmate.h>
 
-#define X86_FEATURE_VMX	(1 << 5)
+#define X86_FEATURE_VMX		(1 << 5)
 
-bool jailhouse_use_vmcall;
+bool jailhouse_use_vmcall = true;
+
+#define AUTHENTIC_AMD(n)	(((const u32 *)"AuthenticAMD")[n])
 
 void hypercall_init(void)
 {
-	u32 eax = 1, ecx = 0;
+	u32 eax, ebx, ecx, edx;
 
-	asm volatile(
-		"cpuid"
-		: "=c" (ecx)
-		: "a" (eax), "c" (ecx)
-		: "rbx", "rdx", "memory"
+	asm volatile("cpuid"
+		: "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
+		: "a" (0)
+		: "memory"
 	);
 
-	if (ecx & X86_FEATURE_VMX)
-		jailhouse_use_vmcall = true;
+	if (ebx == AUTHENTIC_AMD(0) &&
+	    edx == AUTHENTIC_AMD(1) &&
+	    ecx == AUTHENTIC_AMD(2))
+		jailhouse_use_vmcall = false;
 }
