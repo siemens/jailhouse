@@ -35,7 +35,8 @@ endif
 OBJCOPYFLAGS := -O binary
 LDFLAGS += --gc-sections -T
 
-subdir-y := lib/$(SRCARCH) demos/$(SRCARCH) tools/$(SRCARCH)
+subdir-y := lib/$(SRCARCH) demos/$(SRCARCH) tests/$(SRCARCH) tools/$(SRCARCH)
 
-# demos and tools depend on the library
-$(obj)/demos/$(SRCARCH) $(obj)/tools/$(SRCARCH): $(obj)/lib/$(SRCARCH)
+# demos, tests and tools depend on the library
+$(obj)/demos/$(SRCARCH) $(obj)/tests/$(SRCARCH) $(obj)/tools/$(SRCARCH): \
+	$(obj)/lib/$(SRCARCH)
