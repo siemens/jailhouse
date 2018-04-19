@@ -31,9 +31,11 @@ SECTIONS
 	.data		: { *(.data) }
 
 	. = ALIGN(8);
-	__init_array_start = .;
-	.init_array	: { *(SORT(.init_array.*)) *(.init_array) }
-	__init_array_end = .;
+	.init_array	: {
+		__init_array_start = .;
+		*(SORT(.init_array.*)) *(.init_array)
+		__init_array_end = .;
+	}
 
 	ARCH_SECTIONS
 
