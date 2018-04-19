@@ -17,6 +17,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
+#include <jailhouse/unit.h>
 #include <jailhouse/utils.h>
 #include <asm/bitops.h>
 #include <asm/spinlock.h>
@@ -302,6 +303,7 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 {
 	const struct jailhouse_memory *mem;
 	unsigned int cpu, n;
+	struct unit *unit;
 
 	for_each_cpu(cpu, cell->cpu_set) {
 		arch_park_cpu(cpu);
@@ -326,6 +328,8 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 			remap_to_root_cell(mem, WARN_ON_ERROR);
 	}
 
+	for_each_unit_reverse(unit)
+		unit->cell_exit(cell);
 	pci_cell_exit(cell);
 	arch_cell_destroy(cell);
 
@@ -342,6 +346,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	struct jailhouse_cell_desc *cfg;
 	unsigned long cfg_total_size;
 	struct cell *cell, *last;
+	struct unit *unit;
 	void *cfg_mapping;
 	int err;
 
@@ -427,6 +432,15 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_arch_destroy;
 
+	for_each_unit(unit) {
+		err = unit->cell_init(cell);
+		if (err) {
+			for_each_unit_before_reverse(unit, unit)
+				unit->cell_exit(cell);
+			goto err_pci_exit;
+		}
+	}
+
 	/*
 	 * Shrinking: the new cell's CPUs are parked, then removed from the root
 	 * cell, assigned to the new cell and get their stats cleared.
@@ -488,6 +502,8 @@ err_destroy_cell:
 	cell_destroy_internal(cpu_data, cell);
 	/* cell_destroy_internal already calls arch_cell_destroy & cell_exit */
 	goto err_free_cell;
+err_pci_exit:
+	pci_cell_exit(cell);
 err_arch_destroy:
 	arch_cell_destroy(cell);
 err_cell_exit:
@@ -694,9 +710,14 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
  */
 void shutdown(void)
 {
+	struct unit *unit;
+
 	pci_prepare_handover();
 	arch_shutdown();
 	pci_shutdown();
+
+	for_each_unit_reverse(unit)
+		unit->shutdown();
 }
 
 static int hypervisor_disable(struct per_cpu *cpu_data)

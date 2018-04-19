@@ -37,6 +37,12 @@ SECTIONS
 		__init_array_end = .;
 	}
 
+	.units		: {
+		__unit_array_start = .;
+		*(.units);
+		__unit_array_end = .;
+	}
+
 	ARCH_SECTIONS
 
 	/* The console section shall only contain the hypervisor console. This

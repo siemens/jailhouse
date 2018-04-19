@@ -15,6 +15,7 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/unit.h>
 #include <asm/percpu.h>
 
 /**
@@ -28,11 +29,14 @@
 int mmio_cell_init(struct cell *cell)
 {
 	const struct jailhouse_memory *mem;
+	const struct unit *unit;
 	unsigned int n;
 	void *pages;
 
 	cell->max_mmio_regions = arch_mmio_count_regions(cell) +
 		pci_mmio_count_regions(cell);
+	for_each_unit(unit)
+		cell->max_mmio_regions += unit->mmio_count_regions(cell);
 
 	for_each_mem_region(mem, cell->config, n)
 		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))

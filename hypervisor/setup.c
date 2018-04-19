@@ -18,6 +18,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/control.h>
 #include <jailhouse/string.h>
+#include <jailhouse/unit.h>
 #include <generated/version.h>
 #include <asm/spinlock.h>
 
@@ -133,6 +134,7 @@ static void init_late(void)
 {
 	unsigned int n, cpu, expected_cpus = 0;
 	const struct jailhouse_memory *mem;
+	struct unit *unit;
 
 	for_each_cpu(cpu, root_cell.cpu_set)
 		expected_cpus++;
@@ -148,6 +150,13 @@ static void init_late(void)
 	error = pci_init();
 	if (error)
 		return;
+
+	for_each_unit(unit) {
+		printk("Initializing unit: %s\n", unit->name);
+		error = unit->init();
+		if (error)
+			return;
+	}
 
 	for_each_mem_region(mem, root_cell.config, n) {
 		if (JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
