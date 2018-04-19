@@ -26,8 +26,8 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[57];
-	struct jailhouse_irqchip irqchips[2];
+	struct jailhouse_memory mem_regions[61];
+	struct jailhouse_irqchip irqchips[3];
 } __attribute__((packed)) config = {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
@@ -274,10 +274,24 @@ struct {
                         .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
                                 JAILHOUSE_MEM_EXECUTE,
                 },
+		/* VIC CAR */{
+                        .phys_start = 0x05560000,
+                        .virt_start = 0x05560000,
+                        .size = 0x10000,
+                        .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+                                JAILHOUSE_MEM_EXECUTE,
+                },
 		/* CSITE */ {
 			.phys_start = 0x08000000,
 			.virt_start = 0x08000000,
 			.size = 0x2000000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE,
+		},
+		/* SCE VIC registers */ {
+			.phys_start = 0x0b020000,
+			.virt_start = 0x0b020000,
+			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
@@ -292,6 +306,13 @@ struct {
 			.phys_start = 0x0b230000,
 			.virt_start = 0x0b230000,
 			.size = 0x10000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE,
+		},
+		/* AON VIC registers */ {
+			.phys_start = 0x0c020000,
+			.virt_start = 0x0c020000,
+			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
@@ -327,6 +348,13 @@ struct {
 			.phys_start = 0x0c360000,
 			.virt_start = 0x0c360000,
 			.size = 0x40000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_EXECUTE,
+		},
+		/* BPMP VIC registers */ {
+			.phys_start = 0x0d020000,
+			.virt_start = 0x0d020000,
+			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
@@ -484,7 +512,14 @@ struct {
 			.address = 0x03881000,
 			.pin_base = 160,
 			.pin_bitmap = {
-				0xffffffff, 0xffffffff
+				0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+			},
+		},
+		/* GIC */ {
+			.address = 0x03881000,
+			.pin_base = 288,
+			.pin_bitmap = {
+				0xffffffff,
 			},
 		},
 	},
