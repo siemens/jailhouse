@@ -10,11 +10,4 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/cell.h>
-
-int cat_init(void);
-
 void cat_update(void);
-
-int cat_cell_init(struct cell *cell);
-void cat_cell_exit(struct cell *cell);

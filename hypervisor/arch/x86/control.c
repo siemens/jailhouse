@@ -48,10 +48,6 @@ int arch_cell_create(struct cell *cell)
 	if (err)
 		goto error_iommu_exit;
 
-	err = cat_cell_init(cell);
-	if (err)
-		goto error_ioapic_exit;
-
 	comm_region->pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 	comm_region->pci_mmconfig_base =
@@ -64,8 +60,6 @@ int arch_cell_create(struct cell *cell)
 
 	return 0;
 
-error_ioapic_exit:
-	ioapic_cell_exit(cell);
 error_iommu_exit:
 	iommu_cell_exit(cell);
 error_vm_exit:
@@ -118,7 +112,6 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 
 void arch_cell_destroy(struct cell *cell)
 {
-	cat_cell_exit(cell);
 	ioapic_cell_exit(cell);
 	iommu_cell_exit(cell);
 	vcpu_cell_exit(cell);
@@ -224,6 +217,10 @@ static void x86_enter_wait_for_sipi(struct per_cpu *cpu_data)
 {
 	cpu_data->init_signaled = false;
 	cpu_data->wait_for_sipi = true;
+}
+
+void __attribute__((weak)) cat_update(void)
+{
 }
 
 void x86_check_events(void)

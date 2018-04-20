@@ -17,12 +17,16 @@
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
 BUILT_IN_OBJECTS := built-in-amd.o built-in-intel.o
-COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
-		  paging.o pci.o ioapic.o i8042.o vcpu.o vga.o ivshmem.o
 
 always := $(BUILT_IN_OBJECTS)
 
 obj-y := $(BUILT_IN_OBJECTS)
 
-built-in-amd-y := $(COMMON_OBJECTS) svm.o amd_iommu.o svm-vmexit.o cat-stubs.o
-built-in-intel-y := $(COMMON_OBJECTS) vmx.o vtd.o vmx-vmexit.o cat.o
+COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
+		  paging.o pci.o ioapic.o i8042.o vcpu.o vga.o ivshmem.o
+
+# units initialization order as defined by linking order:
+# [cat], <generic units>
+
+built-in-amd-y := svm.o amd_iommu.o svm-vmexit.o $(COMMON_OBJECTS)
+built-in-intel-y := vmx.o vtd.o vmx-vmexit.o $(COMMON_OBJECTS) cat.o

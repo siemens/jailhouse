@@ -12,6 +12,7 @@
 
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/unit.h>
 #include <jailhouse/utils.h>
 #include <asm/cat.h>
 
@@ -134,7 +135,7 @@ static bool shrink_root_cell_mask(u64 cell_mask)
 	return true;
 }
 
-int cat_cell_init(struct cell *cell)
+static int cat_cell_init(struct cell *cell)
 {
 	const struct jailhouse_cache *cache;
 
@@ -183,7 +184,7 @@ int cat_cell_init(struct cell *cell)
 	return 0;
 }
 
-void cat_cell_exit(struct cell *cell)
+static void cat_cell_exit(struct cell *cell)
 {
 	/*
 	 * Only release the mask of cells with an own partition.
@@ -205,7 +206,7 @@ void cat_cell_exit(struct cell *cell)
 	}
 }
 
-int cat_init(void)
+static int cat_init(void)
 {
 	int err;
 
@@ -220,3 +221,7 @@ int cat_init(void)
 
 	return err;
 }
+
+DEFINE_UNIT_SHUTDOWN_STUB(cat);
+DEFINE_UNIT_MMIO_COUNT_REGIONS_STUB(cat);
+DEFINE_UNIT(cat, "Cache Allocation Technology");
