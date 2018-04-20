@@ -77,17 +77,13 @@ struct pending_irqs {
 	volatile unsigned int tail;
 };
 
-unsigned int irqchip_mmio_count_regions(struct cell *cell);
-
 int irqchip_cpu_init(struct per_cpu *cpu_data);
 int irqchip_get_cpu_target(unsigned int cpu_id);
 u64 irqchip_get_cluster_target(unsigned int cpu_id);
 void irqchip_cpu_reset(struct per_cpu *cpu_data);
 void irqchip_cpu_shutdown(struct per_cpu *cpu_data);
 
-int irqchip_cell_init(struct cell *cell);
 void irqchip_cell_reset(struct cell *cell);
-void irqchip_cell_exit(struct cell *cell);
 
 void irqchip_config_commit(struct cell *cell_added_removed);
 

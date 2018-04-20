@@ -172,19 +172,7 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 
 int arch_cell_create(struct cell *cell)
 {
-	int err;
-
-	err = arm_paging_cell_init(cell);
-	if (err)
-		return err;
-
-	err = irqchip_cell_init(cell);
-	if (err) {
-		arm_paging_cell_destroy(cell);
-		return err;
-	}
-
-	return 0;
+	return arm_paging_cell_init(cell);
 }
 
 void arch_cell_destroy(struct cell *cell)
@@ -195,8 +183,6 @@ void arch_cell_destroy(struct cell *cell)
 
 	for_each_cpu(cpu, cell->cpu_set)
 		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
-
-	irqchip_cell_exit(cell);
 
 	arm_paging_cell_destroy(cell);
 }

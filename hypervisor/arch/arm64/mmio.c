@@ -18,7 +18,6 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/printk.h>
 #include <asm/bitops.h>
-#include <asm/irqchip.h>
 #include <asm/percpu.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
@@ -27,7 +26,7 @@
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return irqchip_mmio_count_regions(cell);
+	return 0;
 }
 
 static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)

@@ -18,6 +18,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <jailhouse/unit.h>
 #include <asm/control.h>
 #include <asm/gic.h>
 #include <asm/irqchip.h>
@@ -392,7 +393,7 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	}
 }
 
-int irqchip_cell_init(struct cell *cell)
+static int irqchip_cell_init(struct cell *cell)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	const struct jailhouse_irqchip *chip;
@@ -450,7 +451,7 @@ void irqchip_cell_reset(struct cell *cell)
 	}
 }
 
-void irqchip_cell_exit(struct cell *cell)
+static void irqchip_cell_exit(struct cell *cell)
 {
 	const struct jailhouse_irqchip *chip;
 	unsigned int n, pos;
@@ -500,7 +501,7 @@ void irqchip_config_commit(struct cell *cell_added_removed)
 	}
 }
 
-unsigned int irqchip_mmio_count_regions(struct cell *cell)
+static unsigned int irqchip_mmio_count_regions(struct cell *cell)
 {
 	unsigned int regions = 1; /* GICD */
 
@@ -510,3 +511,12 @@ unsigned int irqchip_mmio_count_regions(struct cell *cell)
 
 	return regions;
 }
+
+static int irqchip_init(void)
+{
+	/* Setup the SPI bitmap */
+	return irqchip_cell_init(&root_cell);
+}
+
+DEFINE_UNIT_SHUTDOWN_STUB(irqchip);
+DEFINE_UNIT(irqchip, "irqchip");
