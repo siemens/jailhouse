@@ -93,6 +93,7 @@ define BUILD_JAILHOUSE_template
 always += jailhouse$(1).bin
 
 $$(obj)/arch/$$(SRCARCH)/built-in$(1).o: $$(obj)/arch/$$(SRCARCH)
+	@true
 
 hypervisor$(1)-y := arch/$$(SRCARCH)/built-in$(1).o $$(CORE_OBJECTS) \
 	hypervisor.lds
