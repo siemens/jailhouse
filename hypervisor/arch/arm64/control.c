@@ -88,11 +88,6 @@ void arch_panic_park(void)
 }
 #endif
 
-int arch_cell_create(struct cell *cell)
-{
-	return arm_paging_cell_init(cell);
-}
-
 void arch_cell_destroy(struct cell *cell)
 {
 	unsigned int cpu;

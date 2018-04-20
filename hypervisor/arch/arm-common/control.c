@@ -193,6 +193,11 @@ bool arch_handle_phys_irq(struct per_cpu *cpu_data, u32 irqn,
 	return false;
 }
 
+int arch_cell_create(struct cell *cell)
+{
+	return arm_paging_cell_init(cell);
+}
+
 void arch_cell_reset(struct cell *cell)
 {
 	unsigned int first = first_cpu(cell->cpu_set);

@@ -170,11 +170,6 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 	return regs;
 }
 
-int arch_cell_create(struct cell *cell)
-{
-	return arm_paging_cell_init(cell);
-}
-
 void arch_cell_destroy(struct cell *cell)
 {
 	unsigned int cpu;
