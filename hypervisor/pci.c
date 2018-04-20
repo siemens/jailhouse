@@ -355,26 +355,6 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 	return PCI_ACCESS_PERFORM;
 }
 
-/**
- * Initialization of PCI subsystem.
- *
- * @return 0 on success, negative error code otherwise.
- */
-int pci_init(void)
-{
-	mmcfg_start = system_config->platform_info.pci_mmconfig_base;
-	end_bus = system_config->platform_info.pci_mmconfig_end_bus;
-	mmcfg_size = (end_bus + 1) * 256 * 4096;
-
-	if (mmcfg_start != 0 && !system_config->platform_info.pci_is_virtual) {
-		pci_space = paging_map_device(mmcfg_start, mmcfg_size);
-		if (!pci_space)
-			return -ENOMEM;
-	}
-
-	return pci_cell_init(&root_cell);
-}
-
 static enum mmio_result pci_msix_access_handler(void *arg,
 						struct mmio_access *mmio)
 {
@@ -844,6 +824,26 @@ error:
 	else
 		panic_printk("\n");
 	panic_stop();
+}
+
+/**
+ * Initialization of PCI subsystem.
+ *
+ * @return 0 on success, negative error code otherwise.
+ */
+int pci_init(void)
+{
+	mmcfg_start = system_config->platform_info.pci_mmconfig_base;
+	end_bus = system_config->platform_info.pci_mmconfig_end_bus;
+	mmcfg_size = (end_bus + 1) * 256 * 4096;
+
+	if (mmcfg_start != 0 && !system_config->platform_info.pci_is_virtual) {
+		pci_space = paging_map_device(mmcfg_start, mmcfg_size);
+		if (!pci_space)
+			return -ENOMEM;
+	}
+
+	return pci_cell_init(&root_cell);
 }
 
 /**
