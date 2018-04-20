@@ -169,15 +169,3 @@ struct registers* arch_handle_exit(struct per_cpu *cpu_data,
 
 	return regs;
 }
-
-void arch_cell_destroy(struct cell *cell)
-{
-	unsigned int cpu;
-
-	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
-
-	for_each_cpu(cpu, cell->cpu_set)
-		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
-
-	arm_paging_cell_destroy(cell);
-}

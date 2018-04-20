@@ -216,6 +216,19 @@ void arch_cell_reset(struct cell *cell)
 	irqchip_cell_reset(cell);
 }
 
+void arch_cell_destroy(struct cell *cell)
+{
+	unsigned int cpu;
+
+	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
+
+	/* All CPUs are handed back to the root cell in suspended mode. */
+	for_each_cpu(cpu, cell->cpu_set)
+		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
+
+	arm_paging_cell_destroy(cell);
+}
+
 /* Note: only supports synchronous flushing as triggered by config_commit! */
 void arch_flush_cell_vcpu_caches(struct cell *cell)
 {
