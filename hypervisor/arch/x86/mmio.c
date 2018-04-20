@@ -77,12 +77,12 @@ struct mmio_instruction x86_mmio_parse(unsigned long pc,
 				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	struct mmio_instruction inst = { .inst_len = 0 };
+	unsigned int n, skip_len = 0;
 	bool has_immediate = false;
 	union opcode op[4] = { };
 	bool does_write = false;
 	bool has_rex_w = false;
 	bool has_rex_r = false;
-	unsigned int n;
 
 	if (!ctx_update(&ctx, &pc, 0, pg_structs))
 		goto error_noinst;
@@ -151,29 +151,24 @@ restart:
 	switch (op[2].modrm.mod) {
 	case 0:
 		if (op[2].modrm.rm == 5) { /* 32-bit displacement */
-			inst.inst_len += 4;
-			/* walk displacement bytes, to point to immediate */
-			if (has_immediate &&
-			    !ctx_update(&ctx, &pc, 4, pg_structs))
-				goto error_noinst;
+			skip_len = 4;
 			break;
 		} else if (op[2].modrm.rm != 4) { /* no SIB */
 			break;
 		}
-
 
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 
 		op[3].raw = *ctx.inst;
 		if (op[3].sib.base == 5)
-			inst.inst_len += 4;
+			skip_len = 4;
 		break;
 	case 1:
 	case 2:
 		if (op[2].modrm.rm == 4) /* SIB */
 			goto error_unsupported;
-		inst.inst_len += op[2].modrm.mod == 1 ? 1 : 4;
+		skip_len = op[2].modrm.mod == 1 ? 1 : 4;
 		break;
 	default:
 		goto error_unsupported;
@@ -186,14 +181,22 @@ restart:
 	else
 		inst.in_reg_num = 15 - op[2].modrm.reg;
 
-	if (has_immediate)
+	if (has_immediate) {
+		/* walk any not yet retrieved displacement bytes */
+		if (!ctx_update(&ctx, &pc, skip_len, pg_structs))
+			goto error_noinst;
+
+		/* retrieve immediate value */
 		for (n = 0; n < IMMEDIATE_SIZE; n++) {
 			if (!ctx_update(&ctx, &pc, 1, pg_structs))
 				goto error_noinst;
 			inst.out_val |= (unsigned long)*ctx.inst << (n * 8);
 		}
-	else if (does_write)
-		inst.out_val = guest_regs->by_index[inst.in_reg_num];
+	} else {
+		inst.inst_len += skip_len;
+		if (does_write)
+			inst.out_val = guest_regs->by_index[inst.in_reg_num];
+	}
 
 final:
 	if (does_write != is_write)
