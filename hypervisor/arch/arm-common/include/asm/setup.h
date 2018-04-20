@@ -14,4 +14,3 @@
 
 int arm_init_early(void);
 int arm_cpu_init(struct per_cpu *cpu_data);
-int arm_init_late(void);

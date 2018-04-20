@@ -78,11 +78,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	return arm_cpu_init(cpu_data);
 }
 
-int arch_init_late(void)
-{
-	return arm_init_late();
-}
-
 static inline void __attribute__((always_inline))
 cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
 {

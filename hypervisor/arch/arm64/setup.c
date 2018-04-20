@@ -56,11 +56,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	return arm_cpu_init(cpu_data);
 }
 
-int arch_init_late(void)
-{
-	return arm_init_late();
-}
-
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)
 {
 	struct registers *regs = guest_regs(cpu_data);

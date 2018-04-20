@@ -95,16 +95,6 @@ int arch_init_early(void);
 int arch_cpu_init(struct per_cpu *cpu_data);
 
 /**
- * Perform architecture-specific late setup steps.
- *
- * @return 0 on success, negative error code otherwise.
- *
- * @note This is called over the master CPU that performs CPU-unrelated setup
- * steps.
- */
-int arch_init_late(void);
-
-/**
  * Perform architecture-specific activation of the hypervisor mode.
  * @param cpu_data	Data structure of the calling CPU.
  *

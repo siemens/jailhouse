@@ -50,8 +50,3 @@ int arm_cpu_init(struct per_cpu *cpu_data)
 
 	return irqchip_cpu_init(cpu_data);
 }
-
-int arm_init_late(void)
-{
-	return 0;
-}
