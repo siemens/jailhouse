@@ -23,22 +23,6 @@ static unsigned int cbm_max, freed_mask;
 static int cos_max = -1;
 static u64 orig_root_mask;
 
-int cat_init(void)
-{
-	int err;
-
-	if (cpuid_ebx(7, 0) & X86_FEATURE_CAT &&
-	    cpuid_ebx(0x10, 0) & (1 << CAT_RESID_L3)) {
-		cbm_max = cpuid_eax(0x10, CAT_RESID_L3) & CAT_CBM_LEN_MASK;
-		cos_max = cpuid_edx(0x10, CAT_RESID_L3) & CAT_COS_MAX_MASK;
-	}
-
-	err = cat_cell_init(&root_cell);
-	orig_root_mask = root_cell.arch.cat_mask;
-
-	return err;
-}
-
 void cat_update(void)
 {
 	struct cell *cell = this_cell();
@@ -219,4 +203,20 @@ void cat_cell_exit(struct cell *cell)
 		       root_cell.arch.cat_mask);
 		cat_update_cell(&root_cell);
 	}
+}
+
+int cat_init(void)
+{
+	int err;
+
+	if (cpuid_ebx(7, 0) & X86_FEATURE_CAT &&
+	    cpuid_ebx(0x10, 0) & (1 << CAT_RESID_L3)) {
+		cbm_max = cpuid_eax(0x10, CAT_RESID_L3) & CAT_CBM_LEN_MASK;
+		cos_max = cpuid_edx(0x10, CAT_RESID_L3) & CAT_COS_MAX_MASK;
+	}
+
+	err = cat_cell_init(&root_cell);
+	orig_root_mask = root_cell.arch.cat_mask;
+
+	return err;
 }
