@@ -26,7 +26,7 @@ COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
 		  paging.o pci.o i8042.o vcpu.o vga.o ivshmem.o
 
 # units initialization order as defined by linking order:
-# ioapic, [cat], <generic units>
+# iommu, ioapic, [cat], <generic units>
 
 COMMON_OBJECTS += ioapic.o
 

@@ -18,7 +18,6 @@
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
 #include <asm/bitops.h>
-#include <asm/iommu.h>
 #include <asm/vcpu.h>
 
 #define IDT_PRESENT_INT		0x00008e00
@@ -217,7 +216,7 @@ error_out:
 
 int arch_init_late(void)
 {
-	return iommu_init();
+	return 0;
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(struct per_cpu *cpu_data)

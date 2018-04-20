@@ -22,6 +22,7 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <jailhouse/unit.h>
 #include <asm/amd_iommu.h>
 #include <asm/apic.h>
 #include <asm/iommu.h>
@@ -148,21 +149,12 @@ static struct amd_iommu {
 
 static unsigned int iommu_units_count;
 
-/*
- * Interrupt remapping is not emulated on AMD,
- * thus we have no MMIO to intercept.
- */
-unsigned int iommu_mmio_count_regions(struct cell *cell)
-{
-	return 0;
-}
-
 bool iommu_cell_emulates_ir(struct cell *cell)
 {
 	return false;
 }
 
-int iommu_cell_init(struct cell *cell)
+static int amd_iommu_cell_init(struct cell *cell)
 {
 	// HACK for QEMU
 	if (iommu_units_count == 0)
@@ -386,7 +378,7 @@ void iommu_remove_pci_device(struct pci_device *device)
 	amd_iommu_inv_dte(iommu, bdf);
 }
 
-void iommu_cell_exit(struct cell *cell)
+static void amd_iommu_cell_exit(struct cell *cell)
 {
 }
 
@@ -782,7 +774,7 @@ static void amd_iommu_enable_command_processing(struct amd_iommu *iommu)
 	mmio_write64(iommu->mmio_base + AMD_CONTROL_REG, ctrl_reg);
 }
 
-int iommu_init(void)
+static int amd_iommu_init(void)
 {
 	struct jailhouse_iommu *iommu;
 	struct amd_iommu *entry;
@@ -822,7 +814,7 @@ int iommu_init(void)
 		iommu_units_count++;
 	}
 
-	return iommu_cell_init(&root_cell);
+	return amd_iommu_cell_init(&root_cell);
 }
 
 void iommu_prepare_shutdown(void)
@@ -838,3 +830,7 @@ void iommu_prepare_shutdown(void)
 		mmio_write64(iommu->mmio_base + AMD_CONTROL_REG, ctrl_reg);
 	}
 }
+
+DEFINE_UNIT_SHUTDOWN_STUB(amd_iommu);
+DEFINE_UNIT_MMIO_COUNT_REGIONS_STUB(amd_iommu);
+DEFINE_UNIT(amd_iommu, "AMD IOMMU");

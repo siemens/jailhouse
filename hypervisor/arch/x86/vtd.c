@@ -19,6 +19,7 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <jailhouse/unit.h>
 #include <asm/apic.h>
 #include <asm/iommu.h>
 #include <asm/bitops.h>
@@ -204,7 +205,7 @@ static DEFINE_SPINLOCK(inv_queue_lock);
 static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_IOMMU_UNITS];
 static bool dmar_units_initialized;
 
-unsigned int iommu_mmio_count_regions(struct cell *cell)
+static unsigned int vtd_mmio_count_regions(struct cell *cell)
 {
 	return cell == &root_cell ? iommu_count_units() : 0;
 }
@@ -707,7 +708,9 @@ void iommu_remove_pci_device(struct pci_device *device)
 	page_free(&mem_pool, context_entry_table, 1);
 }
 
-int iommu_cell_init(struct cell *cell)
+static void vtd_cell_exit(struct cell *cell);
+
+static int vtd_cell_init(struct cell *cell)
 {
 	const struct jailhouse_irqchip *irqchip =
 		jailhouse_cell_irqchips(cell->config);
@@ -730,7 +733,7 @@ int iommu_cell_init(struct cell *cell)
 			result = vtd_reserve_int_remap_region(irqchip->id,
 							      ioapic->pins);
 		if (result < 0) {
-			iommu_cell_exit(cell);
+			vtd_cell_exit(cell);
 			return result;
 		}
 	}
@@ -870,7 +873,7 @@ update_irte:
 	return base_index + vector;
 }
 
-void iommu_cell_exit(struct cell *cell)
+static void vtd_cell_exit(struct cell *cell)
 {
 	page_free(&mem_pool, cell->arch.vtd.pg_structs.root_table, 1);
 
@@ -981,7 +984,7 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 	return 0;
 }
 
-int iommu_init(void)
+static int vtd_init(void)
 {
 	unsigned long version, caps, ecaps, ctrls, sllps_caps = ~0UL;
 	unsigned int units, pt_levels, num_did, n;
@@ -1083,7 +1086,7 @@ int iommu_init(void)
 	if (!(sllps_caps & VTD_CAP_SLLPS2M))
 		vtd_paging[dmar_pt_levels - 2].page_size = 0;
 
-	return iommu_cell_init(&root_cell);
+	return vtd_cell_init(&root_cell);
 }
 
 void iommu_prepare_shutdown(void)
@@ -1106,3 +1109,6 @@ bool iommu_cell_emulates_ir(struct cell *cell)
 {
 	return cell->arch.vtd.ir_emulation;
 }
+
+DEFINE_UNIT_SHUTDOWN_STUB(vtd);
+DEFINE_UNIT(vtd, "VT-d");

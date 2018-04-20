@@ -40,10 +40,6 @@ int arch_cell_create(struct cell *cell)
 	if (err)
 		return err;
 
-	err = iommu_cell_init(cell);
-	if (err)
-		goto error_vm_exit;
-
 	comm_region->pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 	comm_region->pci_mmconfig_base =
@@ -55,10 +51,6 @@ int arch_cell_create(struct cell *cell)
 	comm_region->apic_khz = system_config->platform_info.x86.apic_khz;
 
 	return 0;
-
-error_vm_exit:
-	vcpu_cell_exit(cell);
-	return err;
 }
 
 int arch_map_memory_region(struct cell *cell,
@@ -106,7 +98,6 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 
 void arch_cell_destroy(struct cell *cell)
 {
-	iommu_cell_exit(cell);
 	vcpu_cell_exit(cell);
 }
 
