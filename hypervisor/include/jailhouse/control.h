@@ -271,9 +271,9 @@ void arch_cell_reset(struct cell *cell);
 void arch_config_commit(struct cell *cell_added_removed);
 
 /**
- * Shutdown architecture-specific subsystems while disabling the hypervisor.
+ * Architecture-specific preparations before shutting down the hypervisor.
  */
-void arch_shutdown(void);
+void arch_prepare_shutdown(void);
 
 /**
  * Performs the architecture-specifc steps to stop the current CPU on panic.

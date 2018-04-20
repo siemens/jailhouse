@@ -121,11 +121,10 @@ void arch_config_commit(struct cell *cell_added_removed)
 	ioapic_config_commit(cell_added_removed);
 }
 
-void arch_shutdown(void)
+void arch_prepare_shutdown(void)
 {
 	ioapic_prepare_handover();
-
-	iommu_shutdown();
+	iommu_prepare_shutdown();
 }
 
 void arch_suspend_cpu(unsigned int cpu_id)

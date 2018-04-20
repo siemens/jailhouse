@@ -713,7 +713,7 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 	return -ENOSYS;
 }
 
-void iommu_shutdown(void)
+void iommu_prepare_shutdown(void)
 {
 	struct amd_iommu *iommu;
 	u64 ctrl_reg;

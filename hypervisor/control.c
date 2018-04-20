@@ -706,7 +706,7 @@ void shutdown(void)
 	struct unit *unit;
 
 	pci_prepare_handover();
-	arch_shutdown();
+	arch_prepare_shutdown();
 
 	for_each_unit_reverse(unit)
 		unit->shutdown();

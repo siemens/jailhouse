@@ -238,6 +238,6 @@ void __attribute__((noreturn)) arch_panic_stop(void)
 void arch_panic_park(void) __attribute__((alias("arm_cpu_park")));
 #endif
 
-void arch_shutdown(void)
+void arch_prepare_shutdown(void)
 {
 }

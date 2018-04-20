@@ -1086,7 +1086,7 @@ static void vtd_restore_ir(unsigned int unit_no, void *reg_base)
 			     unit->fault_event_regs[n]);
 }
 
-void iommu_shutdown(void)
+void iommu_prepare_shutdown(void)
 {
 	void *reg_base = dmar_reg_base;
 	unsigned int n;

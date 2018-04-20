@@ -49,7 +49,7 @@ void iommu_cell_exit(struct cell *cell);
 
 void iommu_config_commit(struct cell *cell_added_removed);
 
-void iommu_shutdown(void);
+void iommu_prepare_shutdown(void);
 
 struct per_cpu *iommu_select_fault_reporting_cpu(void);
 void iommu_check_pending_faults(void);
