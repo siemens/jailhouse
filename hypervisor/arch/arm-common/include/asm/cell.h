@@ -13,8 +13,6 @@
 #ifndef _JAILHOUSE_ASM_CELL_H
 #define _JAILHOUSE_ASM_CELL_H
 
-#ifndef __ASSEMBLY__
-
 #include <jailhouse/paging.h>
 
 struct arch_cell {
@@ -23,5 +21,4 @@ struct arch_cell {
 	u32 irq_bitmap[1024/32];
 };
 
-#endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_CELL_H */
