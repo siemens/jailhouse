@@ -192,19 +192,6 @@ static void ioapic_mask_cell_pins(struct cell_ioapic *ioapic,
 	}
 }
 
-int ioapic_init(void)
-{
-	int err;
-
-	err = ioapic_cell_init(&root_cell);
-	if (err)
-		return err;
-
-	ioapic_prepare_handover();
-
-	return 0;
-}
-
 void ioapic_prepare_handover(void)
 {
 	struct cell_ioapic *ioapic;
@@ -457,6 +444,19 @@ void ioapic_config_commit(struct cell *cell_added_removed)
 				panic_stop();
 			}
 		}
+}
+
+int ioapic_init(void)
+{
+	int err;
+
+	err = ioapic_cell_init(&root_cell);
+	if (err)
+		return err;
+
+	ioapic_prepare_handover();
+
+	return 0;
 }
 
 void ioapic_shutdown(void)
