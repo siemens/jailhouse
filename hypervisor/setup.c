@@ -147,10 +147,6 @@ static void init_late(void)
 	if (error)
 		return;
 
-	error = pci_init();
-	if (error)
-		return;
-
 	for_each_unit(unit) {
 		printk("Initializing unit: %s\n", unit->name);
 		error = unit->init();

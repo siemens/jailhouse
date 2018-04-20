@@ -330,7 +330,6 @@ static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
 
 	for_each_unit_reverse(unit)
 		unit->cell_exit(cell);
-	pci_cell_exit(cell);
 	arch_cell_destroy(cell);
 
 	config_commit(cell);
@@ -428,16 +427,12 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (err)
 		goto err_cell_exit;
 
-	err = pci_cell_init(cell);
-	if (err)
-		goto err_arch_destroy;
-
 	for_each_unit(unit) {
 		err = unit->cell_init(cell);
 		if (err) {
 			for_each_unit_before_reverse(unit, unit)
 				unit->cell_exit(cell);
-			goto err_pci_exit;
+			goto err_arch_destroy;
 		}
 	}
 
@@ -502,8 +497,6 @@ err_destroy_cell:
 	cell_destroy_internal(cpu_data, cell);
 	/* cell_destroy_internal already calls arch_cell_destroy & cell_exit */
 	goto err_free_cell;
-err_pci_exit:
-	pci_cell_exit(cell);
 err_arch_destroy:
 	arch_cell_destroy(cell);
 err_cell_exit:
@@ -714,7 +707,6 @@ void shutdown(void)
 
 	pci_prepare_handover();
 	arch_shutdown();
-	pci_shutdown();
 
 	for_each_unit_reverse(unit)
 		unit->shutdown();

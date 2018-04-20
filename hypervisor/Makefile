@@ -94,7 +94,7 @@ always += jailhouse$(1).bin
 
 $$(obj)/arch/$$(SRCARCH)/built-in$(1).o: $$(obj)/arch/$$(SRCARCH)
 
-hypervisor$(1)-y := $$(CORE_OBJECTS) arch/$$(SRCARCH)/built-in$(1).o \
+hypervisor$(1)-y := arch/$$(SRCARCH)/built-in$(1).o $$(CORE_OBJECTS) \
 	hypervisor.lds
 targets += $$(hypervisor$(1)-y)
 

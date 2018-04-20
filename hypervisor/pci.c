@@ -17,6 +17,7 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
+#include <jailhouse/unit.h>
 #include <jailhouse/utils.h>
 
 #define MSIX_VECTOR_CTRL_DWORD		3
@@ -69,7 +70,7 @@ static void *pci_space;
 static u64 mmcfg_start, mmcfg_size;
 static u8 end_bus;
 
-unsigned int pci_mmio_count_regions(struct cell *cell)
+static unsigned int pci_mmio_count_regions(struct cell *cell)
 {
 	const struct jailhouse_pci_device *dev_infos =
 		jailhouse_cell_pci_devices(cell->config);
@@ -647,6 +648,8 @@ static void pci_remove_physical_device(struct pci_device *device)
 	mmio_region_unregister(cell, device->info->msix_address);
 }
 
+static void pci_cell_exit(struct cell *cell);
+
 /**
  * Perform PCI-specific initialization for a new cell.
  * @param cell	Cell to be initialized.
@@ -655,7 +658,7 @@ static void pci_remove_physical_device(struct pci_device *device)
  *
  * @see pci_cell_exit
  */
-int pci_cell_init(struct cell *cell)
+static int pci_cell_init(struct cell *cell)
 {
 	unsigned int devlist_pages = PAGES(cell->config->num_pci_devices *
 					   sizeof(struct pci_device));
@@ -751,7 +754,7 @@ static void pci_return_device_to_root_cell(struct pci_device *device)
  *
  * @see pci_cell_init
  */
-void pci_cell_exit(struct cell *cell)
+static void pci_cell_exit(struct cell *cell)
 {
 	unsigned int devlist_pages = PAGES(cell->config->num_pci_devices *
 					   sizeof(struct pci_device));
@@ -831,7 +834,7 @@ error:
  *
  * @return 0 on success, negative error code otherwise.
  */
-int pci_init(void)
+static int pci_init(void)
 {
 	mmcfg_start = system_config->platform_info.pci_mmconfig_base;
 	end_bus = system_config->platform_info.pci_mmconfig_end_bus;
@@ -849,7 +852,7 @@ int pci_init(void)
 /**
  * Shut down the PCI layer during hypervisor deactivation.
  */
-void pci_shutdown(void)
+static void pci_shutdown(void)
 {
 	const struct jailhouse_pci_capability *cap;
 	struct pci_device *device;
@@ -873,3 +876,5 @@ void pci_shutdown(void)
 					 PCI_CMD_INTX_OFF, 2);
 	}
 }
+
+DEFINE_UNIT(pci, "PCI");

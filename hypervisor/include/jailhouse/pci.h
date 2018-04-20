@@ -145,10 +145,6 @@ struct pci_device {
 	union pci_msix_vector msix_vector_array[PCI_EMBEDDED_MSIX_VECTS];
 };
 
-unsigned int pci_mmio_count_regions(struct cell *cell);
-
-int pci_init(void);
-
 u32 pci_read_config(u16 bdf, u16 address, unsigned int size);
 void pci_write_config(u16 bdf, u16 address, u32 value, unsigned int size);
 
@@ -161,16 +157,13 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 
 void pci_reset_device(struct pci_device *device);
 
-int pci_cell_init(struct cell *cell);
 void pci_cell_reset(struct cell *cell);
-void pci_cell_exit(struct cell *cell);
 
 void pci_config_commit(struct cell *cell_added_removed);
 
 unsigned int pci_enabled_msi_vectors(struct pci_device *device);
 
 void pci_prepare_handover(void);
-void pci_shutdown(void);
 
 /**
  * Read from PCI config space via architecture-specific method.
