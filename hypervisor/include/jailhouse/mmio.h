@@ -177,7 +177,5 @@ int mmio_subpage_register(struct cell *cell,
 void mmio_subpage_unregister(struct cell *cell,
 			     const struct jailhouse_memory *mem);
 
-unsigned int arch_mmio_count_regions(struct cell *cell);
-
 /** @} */
 #endif /* !_JAILHOUSE_MMIO_H */

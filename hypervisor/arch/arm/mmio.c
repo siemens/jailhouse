@@ -18,11 +18,6 @@
 #include <asm/processor.h>
 #include <asm/traps.h>
 
-unsigned int arch_mmio_count_regions(struct cell *cell)
-{
-	return 0;
-}
-
 /* Taken from the ARM ARM pseudocode for taking a data abort */
 static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 {

@@ -24,11 +24,6 @@
 
 /* AARCH64_TODO: consider merging this with the AArch32 version */
 
-unsigned int arch_mmio_count_regions(struct cell *cell)
-{
-	return 0;
-}
-
 static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 {
 	int err __attribute__((unused)) = trace_error(-EINVAL);
