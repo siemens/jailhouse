@@ -43,5 +43,5 @@ always := lib.a inmate.lds
 
 ccflags-y := -ffunction-sections
 
-lib-y := $(COMMON_OBJECTS)
+lib-y := $(common-objs-y)
 lib-y += header.o

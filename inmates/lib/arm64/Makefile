@@ -41,5 +41,5 @@ include $(INMATES_LIB)/../arm-common/Makefile.lib
 
 always := lib.a inmate.lds
 
-lib-y				:= $(COMMON_OBJECTS)
-lib-y				+= header.o
+lib-y := $(common-objs-y)
+lib-y += header.o

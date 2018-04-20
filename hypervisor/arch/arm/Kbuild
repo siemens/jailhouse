@@ -17,9 +17,9 @@ KBUILD_AFLAGS := $(subst -include asm/unified.h,,$(KBUILD_AFLAGS))
 always := built-in.o
 
 # units initialization order as defined by linking order:
-# irqchip (COMMON_OBJECTS), [vexpress], <generic units>
+# irqchip (common-objs-y), [vexpress], <generic units>
 
-obj-y := $(COMMON_OBJECTS)
+obj-y := $(common-objs-y)
 obj-y += entry.o setup.o control.o traps.o mmio.o lib.o
 obj-y += mmu_hyp.o caches.o
 

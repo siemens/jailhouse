@@ -14,9 +14,9 @@
 
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
-OBJS-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o setup.o
-OBJS-y += irqchip.o pci.o ivshmem.o uart-pl011.o uart-xuartps.o uart-mvebu.o
-OBJS-y += uart-hscif.o uart-scifa.o uart-imx.o
-OBJS-y += gic-v2.o gic-v3.o
+objs-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o setup.o
+objs-y += irqchip.o pci.o ivshmem.o uart-pl011.o uart-xuartps.o uart-mvebu.o
+objs-y += uart-hscif.o uart-scifa.o uart-imx.o
+objs-y += gic-v2.o gic-v3.o
 
-COMMON_OBJECTS = $(addprefix ../arm-common/,$(OBJS-y))
+common-objs-y = $(addprefix ../arm-common/,$(objs-y))
