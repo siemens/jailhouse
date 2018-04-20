@@ -15,7 +15,6 @@
 #include <jailhouse/mmio.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
-#include <asm/ioapic.h>
 #include <asm/iommu.h>
 #include <asm/vcpu.h>
 
@@ -224,5 +223,5 @@ error:
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return ioapic_mmio_count_regions(cell) + iommu_mmio_count_regions(cell);
+	return iommu_mmio_count_regions(cell);
 }

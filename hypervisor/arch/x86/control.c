@@ -44,10 +44,6 @@ int arch_cell_create(struct cell *cell)
 	if (err)
 		goto error_vm_exit;
 
-	err = ioapic_cell_init(cell);
-	if (err)
-		goto error_iommu_exit;
-
 	comm_region->pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 	comm_region->pci_mmconfig_base =
@@ -60,8 +56,6 @@ int arch_cell_create(struct cell *cell)
 
 	return 0;
 
-error_iommu_exit:
-	iommu_cell_exit(cell);
 error_vm_exit:
 	vcpu_cell_exit(cell);
 	return err;
@@ -112,7 +106,6 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 
 void arch_cell_destroy(struct cell *cell)
 {
-	ioapic_cell_exit(cell);
 	iommu_cell_exit(cell);
 	vcpu_cell_exit(cell);
 }
@@ -133,7 +126,6 @@ void arch_shutdown(void)
 	ioapic_prepare_handover();
 
 	iommu_shutdown();
-	ioapic_shutdown();
 }
 
 void arch_suspend_cpu(unsigned int cpu_id)

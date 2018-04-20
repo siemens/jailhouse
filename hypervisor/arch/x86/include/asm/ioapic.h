@@ -86,21 +86,11 @@ struct cell_ioapic {
 	u32 pin_bitmap[(IOAPIC_MAX_PINS + 31) / 32];
 };
 
-static inline unsigned int ioapic_mmio_count_regions(struct cell *cell)
-{
-	return cell->config->num_irqchips;
-}
-
-int ioapic_init(void);
 void ioapic_prepare_handover(void);
 
 int ioapic_get_or_add_phys(const struct jailhouse_irqchip *irqchip,
 			   struct phys_ioapic **phys_ioapic_ptr);
 
-int ioapic_cell_init(struct cell *cell);
 void ioapic_cell_reset(struct cell *cell);
-void ioapic_cell_exit(struct cell *cell);
 
 void ioapic_config_commit(struct cell *cell_added_removed);
-
-void ioapic_shutdown(void);

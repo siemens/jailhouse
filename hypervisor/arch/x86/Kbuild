@@ -23,10 +23,12 @@ always := $(BUILT_IN_OBJECTS)
 obj-y := $(BUILT_IN_OBJECTS)
 
 COMMON_OBJECTS := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
-		  paging.o pci.o ioapic.o i8042.o vcpu.o vga.o ivshmem.o
+		  paging.o pci.o i8042.o vcpu.o vga.o ivshmem.o
 
 # units initialization order as defined by linking order:
-# [cat], <generic units>
+# ioapic, [cat], <generic units>
+
+COMMON_OBJECTS += ioapic.o
 
 built-in-amd-y := svm.o amd_iommu.o svm-vmexit.o $(COMMON_OBJECTS)
 built-in-intel-y := vmx.o vtd.o vmx-vmexit.o $(COMMON_OBJECTS) cat.o
