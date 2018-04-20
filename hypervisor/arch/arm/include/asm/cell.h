@@ -24,9 +24,5 @@ struct arch_cell {
 	u32 irq_bitmap[1024/32];
 };
 
-/** PCI-related cell states. */
-struct pci_cell {
-};
-
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_CELL_H */
