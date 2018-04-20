@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2018
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -130,12 +130,12 @@ restart:
 		does_write = true;
 		break;
 	case X86_OP_MOV_MEM_TO_AX:
-		inst.inst_len = ctx.count + 4;
+		inst.inst_len += 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
-		inst.inst_len = ctx.count + 4;
+		inst.inst_len += 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.out_val = guest_regs->by_index[15];
 		does_write = true;
@@ -179,7 +179,6 @@ restart:
 		goto error_unsupported;
 	}
 
-	inst.inst_len += ctx.count;
 	if (has_rex_r)
 		inst.in_reg_num = 7 - op[2].modrm.reg;
 	else if (op[2].modrm.reg == 4)
@@ -199,6 +198,8 @@ restart:
 final:
 	if (does_write != is_write)
 		goto error_inconsitent;
+
+	inst.inst_len += ctx.count;
 
 	return inst;
 
