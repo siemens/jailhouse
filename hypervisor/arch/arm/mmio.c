@@ -15,14 +15,13 @@
 #include <jailhouse/printk.h>
 #include <asm/bitops.h>
 #include <asm/irqchip.h>
-#include <asm/mach.h>
 #include <asm/percpu.h>
 #include <asm/processor.h>
 #include <asm/traps.h>
 
 unsigned int arch_mmio_count_regions(struct cell *cell)
 {
-	return irqchip_mmio_count_regions(cell) + mach_mmio_regions;
+	return irqchip_mmio_count_regions(cell);
 }
 
 /* Taken from the ARM ARM pseudocode for taking a data abort */

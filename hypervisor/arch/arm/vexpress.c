@@ -14,16 +14,19 @@
 
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
+#include <jailhouse/unit.h>
 #include <asm/control.h>
-#include <asm/mach.h>
 
 #define SYSREGS_BASE		0x1c010000
 
 #define VEXPRESS_FLAGSSET	0x30
 
-const unsigned int mach_mmio_regions = 1;
-
 static unsigned long root_entry;
+
+static unsigned int vexpress_mmio_count_regions(struct cell *cell)
+{
+	return 1;
+}
 
 static enum mmio_result
 sysregs_access_handler(void *arg, struct mmio_access *mmio)
@@ -56,28 +59,14 @@ sysregs_access_handler(void *arg, struct mmio_access *mmio)
 	return MMIO_HANDLED;
 }
 
-int mach_init(void)
-{
-	void *sysregs_base;
-
-	sysregs_base = paging_map_device(SYSREGS_BASE, PAGE_SIZE);
-	if (!sysregs_base)
-		return -ENOMEM;
-	root_entry = mmio_read32(sysregs_base + VEXPRESS_FLAGSSET);
-	paging_unmap_device(SYSREGS_BASE, sysregs_base, PAGE_SIZE);
-
-	mach_cell_init(&root_cell);
-
-	return 0;
-}
-
-void mach_cell_init(struct cell *cell)
+static int vexpress_cell_init(struct cell *cell)
 {
 	mmio_region_register(cell, (unsigned long)SYSREGS_BASE, PAGE_SIZE,
 			     sysregs_access_handler, NULL);
+	return 0;
 }
 
-void mach_cell_exit(struct cell *cell)
+static void vexpress_cell_exit(struct cell *cell)
 {
 	unsigned int cpu;
 
@@ -88,3 +77,21 @@ void mach_cell_exit(struct cell *cell)
 		arch_reset_cpu(cpu);
 	}
 }
+
+static int vexpress_init(void)
+{
+	void *sysregs_base;
+
+	sysregs_base = paging_map_device(SYSREGS_BASE, PAGE_SIZE);
+	if (!sysregs_base)
+		return -ENOMEM;
+	root_entry = mmio_read32(sysregs_base + VEXPRESS_FLAGSSET);
+	paging_unmap_device(SYSREGS_BASE, sysregs_base, PAGE_SIZE);
+
+	vexpress_cell_init(&root_cell);
+
+	return 0;
+}
+
+DEFINE_UNIT_SHUTDOWN_STUB(vexpress);
+DEFINE_UNIT(vexpress, "VExpress");

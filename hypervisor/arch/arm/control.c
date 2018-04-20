@@ -17,7 +17,6 @@
 #include <jailhouse/string.h>
 #include <asm/control.h>
 #include <asm/irqchip.h>
-#include <asm/mach.h>
 #include <asm/psci.h>
 #include <asm/sysregs.h>
 
@@ -185,8 +184,6 @@ int arch_cell_create(struct cell *cell)
 		return err;
 	}
 
-	mach_cell_init(cell);
-
 	return 0;
 }
 
@@ -199,7 +196,6 @@ void arch_cell_destroy(struct cell *cell)
 	for_each_cpu(cpu, cell->cpu_set)
 		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
-	mach_cell_exit(cell);
 	irqchip_cell_exit(cell);
 
 	arm_paging_cell_destroy(cell);

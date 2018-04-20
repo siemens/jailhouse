@@ -15,7 +15,6 @@
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
 #include <asm/control.h>
-#include <asm/mach.h>
 #include <asm/mmu_hyp.h>
 #include <asm/setup.h>
 #include <asm/sysregs.h>
@@ -81,12 +80,6 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 int arch_init_late(void)
 {
-	int err;
-
-	err = mach_init();
-	if (err)
-		return err;
-
 	return arm_init_late();
 }
 
