@@ -309,6 +309,34 @@ int irqchip_send_sgi(struct sgi *sgi)
 
 int irqchip_cpu_init(struct per_cpu *cpu_data)
 {
+	int err;
+
+	/* Only execute once, on master CPU */
+	if (!irqchip_is_init) {
+		switch (system_config->platform_info.arm.gic_version) {
+		case 2:
+			irqchip = gicv2_irqchip;
+			break;
+		case 3:
+			irqchip = gicv3_irqchip;
+			break;
+		default:
+			return trace_error(-EINVAL);
+		}
+
+		gicd_base = paging_map_device(
+				system_config->platform_info.arm.gicd_base,
+				irqchip.gicd_size);
+		if (!gicd_base)
+			return -ENOMEM;
+
+		err = irqchip.init();
+		if (err)
+			return err;
+
+		irqchip_is_init = true;
+	}
+
 	return irqchip.cpu_init(cpu_data);
 }
 
@@ -470,40 +498,6 @@ void irqchip_config_commit(struct cell *cell_added_removed)
 		if (irqchip_irq_in_cell(&root_cell, n))
 			irqchip.adjust_irq_target(&root_cell, n);
 	}
-}
-
-int irqchip_init(void)
-{
-	int err;
-
-	/* Only executed on master CPU */
-	if (irqchip_is_init)
-		return 0;
-
-	switch (system_config->platform_info.arm.gic_version) {
-	case 2:
-		irqchip = gicv2_irqchip;
-		break;
-	case 3:
-		irqchip = gicv3_irqchip;
-		break;
-	default:
-		return trace_error(-EINVAL);
-	}
-
-	gicd_base =
-		paging_map_device(system_config->platform_info.arm.gicd_base,
-				  irqchip.gicd_size);
-	if (!gicd_base)
-		return -ENOMEM;
-
-	err = irqchip.init();
-	if (err)
-		return err;
-
-	irqchip_is_init = true;
-
-	return 0;
 }
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell)

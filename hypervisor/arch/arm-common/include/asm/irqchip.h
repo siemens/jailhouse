@@ -79,7 +79,6 @@ struct pending_irqs {
 
 unsigned int irqchip_mmio_count_regions(struct cell *cell);
 
-int irqchip_init(void);
 int irqchip_cpu_init(struct per_cpu *cpu_data);
 int irqchip_get_cpu_target(unsigned int cpu_id);
 u64 irqchip_get_cluster_target(unsigned int cpu_id);

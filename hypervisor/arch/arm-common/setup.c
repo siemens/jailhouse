@@ -44,15 +44,9 @@ int arm_init_early(void)
 
 int arm_cpu_init(struct per_cpu *cpu_data)
 {
-	int err;
-
 	cpu_data->mpidr = phys_processor_id();
 
 	arm_paging_vcpu_init(&root_cell.arch.mm);
-
-	err = irqchip_init();
-	if (err)
-		return err;
 
 	return irqchip_cpu_init(cpu_data);
 }
