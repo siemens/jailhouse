@@ -75,6 +75,7 @@ x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write)
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN,
 				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	bool addr64 = !!(vcpu_vendor_get_efer() & EFER_LMA);
 	struct mmio_instruction inst = { .inst_len = 0 };
 	u64 pc = vcpu_vendor_get_rip();
 	unsigned int n, skip_len = 0;
@@ -130,12 +131,12 @@ restart:
 		does_write = true;
 		break;
 	case X86_OP_MOV_MEM_TO_AX:
-		inst.inst_len += 4;
+		inst.inst_len += addr64 ? 8 : 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
-		inst.inst_len += 4;
+		inst.inst_len += addr64 ? 8 : 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.out_val = guest_regs->by_index[15];
 		does_write = true;
