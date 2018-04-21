@@ -483,8 +483,7 @@ static bool apic_invalid_lvt_delivery_mode(unsigned int reg, u32 val)
 	return true;
 }
 
-unsigned int apic_mmio_access(unsigned long rip,
-			      const struct guest_paging_structures *pg_structs,
+unsigned int apic_mmio_access(const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write)
 {
 	struct mmio_instruction inst;
@@ -495,7 +494,7 @@ unsigned int apic_mmio_access(unsigned long rip,
 		return 0;
 	}
 
-	inst = x86_mmio_parse(rip, pg_structs, is_write);
+	inst = x86_mmio_parse(pg_structs, is_write);
 	if (inst.inst_len == 0)
 		return 0;
 	if (inst.access_size != 4) {

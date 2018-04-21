@@ -827,8 +827,7 @@ static bool svm_handle_apic_access(struct vmcb *vmcb)
 
 	vcpu_get_guest_paging_structs(&pg_structs);
 
-	inst_len = apic_mmio_access(vmcb->rip, &pg_structs, offset >> 4,
-				    is_write);
+	inst_len = apic_mmio_access(&pg_structs, offset >> 4, is_write);
 	if (!inst_len)
 		goto out_err;
 
@@ -1034,14 +1033,19 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 	iobm->size = IOPM_PAGES * PAGE_SIZE;
 }
 
-void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
-{
-	struct vmcb *vmcb = &this_cpu_data()->vmcb;
+#define VCPU_VENDOR_GET_REGISTER(__reg__)	\
+u64 vcpu_vendor_get_##__reg__(void)		\
+{						\
+	return this_cpu_data()->vmcb.__reg__;	\
+}
 
-	x_state->efer = vmcb->efer;
-	x_state->rflags = vmcb->rflags;
-	x_state->cs = vmcb->cs.selector;
-	x_state->rip = vmcb->rip;
+VCPU_VENDOR_GET_REGISTER(efer);
+VCPU_VENDOR_GET_REGISTER(rflags);
+VCPU_VENDOR_GET_REGISTER(rip);
+
+u16 vcpu_vendor_get_cs(void)
+{
+	return this_cpu_data()->vmcb.cs.selector;
 }
 
 /* GIF must be set for interrupts to be delivered (APMv2, Sect. 15.17) */

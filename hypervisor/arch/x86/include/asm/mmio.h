@@ -34,14 +34,13 @@ struct mmio_instruction {
 
 /**
  * Parse instruction causing an intercepted MMIO access on a cell CPU.
- * @param pc		Program counter of the access instruction.
  * @param pg_structs	Currently active guest (cell) paging structures.
  * @param is_write	True if write access, false for read.
  *
  * @return MMIO instruction information. mmio_instruction::inst_len is 0 on
  * 	   invalid or unsupported access.
  */
-struct mmio_instruction x86_mmio_parse(unsigned long pc,
-	const struct guest_paging_structures *pg_structs, bool is_write);
+struct mmio_instruction
+x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write);
 
 /** @} */

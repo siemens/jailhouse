@@ -156,20 +156,14 @@ void vcpu_cell_exit(struct cell *cell)
 void vcpu_handle_hypercall(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	bool long_mode = !!(vcpu_vendor_get_efer() & EFER_LMA);
+	unsigned long arg_mask = long_mode ? (u64)-1 : (u32)-1;
 	unsigned long code = guest_regs->rax;
-	struct vcpu_execution_state x_state;
-	unsigned long arg_mask;
-	bool long_mode;
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_HYPERCALL);
 
-	vcpu_vendor_get_execution_state(&x_state);
-
-	long_mode = !!(x_state.efer & EFER_LMA);
-	arg_mask = long_mode ? (u64)-1 : (u32)-1;
-
-	if ((!long_mode && (x_state.rflags & X86_RFLAGS_VM)) ||
-	    (x_state.cs & 3) != 0) {
+	if ((!long_mode && (vcpu_vendor_get_rflags() & X86_RFLAGS_VM)) ||
+	    (vcpu_vendor_get_cs() & 3) != 0) {
 		guest_regs->rax = -EPERM;
 		return;
 	}
@@ -179,7 +173,7 @@ void vcpu_handle_hypercall(void)
 	if (guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown hypercall %ld, RIP: 0x%016llx\n",
 		       this_cpu_id(), code,
-		       x_state.rip - X86_INST_LEN_HYPERCALL);
+		       vcpu_vendor_get_rip() - X86_INST_LEN_HYPERCALL);
 
 	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0)
 		vcpu_deactivate_vmm();
@@ -221,15 +215,13 @@ bool vcpu_handle_mmio_access(void)
 	struct guest_paging_structures pg_structs;
 	struct mmio_access mmio = {.size = 0};
 	struct vcpu_mmio_intercept intercept;
-	struct vcpu_execution_state x_state;
 	struct mmio_instruction inst;
 
-	vcpu_vendor_get_execution_state(&x_state);
 	vcpu_vendor_get_mmio_intercept(&intercept);
 
 	vcpu_get_guest_paging_structs(&pg_structs);
 
-	inst = x86_mmio_parse(x_state.rip, &pg_structs, intercept.is_write);
+	inst = x86_mmio_parse(&pg_structs, intercept.is_write);
 	if (!inst.inst_len)
 		goto invalid_access;
 

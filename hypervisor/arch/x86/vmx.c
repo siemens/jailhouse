@@ -1067,9 +1067,7 @@ static bool vmx_handle_apic_access(void)
 
 		vcpu_get_guest_paging_structs(&pg_structs);
 
-		inst_len = apic_mmio_access(vmcs_read64(GUEST_RIP),
-					    &pg_structs, offset >> 4,
-					    is_write);
+		inst_len = apic_mmio_access(&pg_structs, offset >> 4, is_write);
 		if (!inst_len)
 			break;
 
@@ -1242,12 +1240,19 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 	iobm->size = PIO_BITMAP_PAGES * PAGE_SIZE;
 }
 
-void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state)
+#define VCPU_VENDOR_GET_REGISTER(__reg__, __field__)	\
+u64 vcpu_vendor_get_##__reg__(void)			\
+{							\
+	return vmcs_read64(__field__);			\
+}
+
+VCPU_VENDOR_GET_REGISTER(efer, GUEST_IA32_EFER);
+VCPU_VENDOR_GET_REGISTER(rflags, GUEST_RFLAGS);
+VCPU_VENDOR_GET_REGISTER(rip, GUEST_RIP);
+
+u16 vcpu_vendor_get_cs(void)
 {
-	x_state->efer = vmcs_read64(GUEST_IA32_EFER);
-	x_state->rflags = vmcs_read64(GUEST_RFLAGS);
-	x_state->cs = vmcs_read16(GUEST_CS_SELECTOR);
-	x_state->rip = vmcs_read64(GUEST_RIP);
+	return vmcs_read16(GUEST_CS_SELECTOR);
 }
 
 void enable_irq(void)

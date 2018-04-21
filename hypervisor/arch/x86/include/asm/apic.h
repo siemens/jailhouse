@@ -162,8 +162,7 @@ void apic_send_irq(struct apic_irq_message irq_msg);
 
 void apic_irq_handler(void);
 
-unsigned int apic_mmio_access(unsigned long rip,
-			      const struct guest_paging_structures *pg_structs,
+unsigned int apic_mmio_access(const struct guest_paging_structures *pg_structs,
 			      unsigned int reg, bool is_write);
 
 bool x2apic_handle_write(void);

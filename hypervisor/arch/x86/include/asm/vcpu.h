@@ -30,13 +30,6 @@ struct vcpu_io_bitmap {
 	u32 size;
 };
 
-struct vcpu_execution_state {
-	u64 efer;
-	u64 rflags;
-	u16 cs;
-	u64 rip;
-};
-
 struct vcpu_io_intercept {
 	u16 port;
 	unsigned int size;
@@ -100,7 +93,11 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len);
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *out);
 
-void vcpu_vendor_get_execution_state(struct vcpu_execution_state *x_state);
+u64 vcpu_vendor_get_efer(void);
+u64 vcpu_vendor_get_rflags(void);
+u64 vcpu_vendor_get_rip(void);
+u16 vcpu_vendor_get_cs(void);
+
 void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io);
 void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio);
 

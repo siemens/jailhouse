@@ -51,8 +51,7 @@ struct parse_context {
 	const u8 *inst;
 };
 
-static bool ctx_update(struct parse_context *ctx,
-		       unsigned long *pc, unsigned int advance,
+static bool ctx_update(struct parse_context *ctx, u64 *pc, unsigned int advance,
 		       const struct guest_paging_structures *pg)
 {
 	ctx->inst += advance;
@@ -70,13 +69,14 @@ static bool ctx_update(struct parse_context *ctx,
 	return true;
 }
 
-struct mmio_instruction x86_mmio_parse(unsigned long pc,
-	const struct guest_paging_structures *pg_structs, bool is_write)
+struct mmio_instruction
+x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write)
 {
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN,
 				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	struct mmio_instruction inst = { .inst_len = 0 };
+	u64 pc = vcpu_vendor_get_rip();
 	unsigned int n, skip_len = 0;
 	bool has_immediate = false;
 	union opcode op[4] = { };
