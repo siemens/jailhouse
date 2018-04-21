@@ -155,19 +155,16 @@ restart:
 
 	switch (op[2].modrm.mod) {
 	case 0:
-		if (op[2].modrm.rm == 5) { /* 32-bit displacement */
+		if (op[2].modrm.rm == 4) { /* SIB */
+			if (!ctx_update(&ctx, &pc, 1, pg_structs))
+				goto error_noinst;
+
+			op[3].raw = *ctx.inst;
+			if (op[3].sib.base == 5)
+				skip_len = 4;
+		} else if (op[2].modrm.rm == 5) { /* 32-bit displacement */
 			skip_len = 4;
-			break;
-		} else if (op[2].modrm.rm != 4) { /* no SIB */
-			break;
 		}
-
-		if (!ctx_update(&ctx, &pc, 1, pg_structs))
-			goto error_noinst;
-
-		op[3].raw = *ctx.inst;
-		if (op[3].sib.base == 5)
-			skip_len = 4;
 		break;
 	case 1:
 	case 2:
