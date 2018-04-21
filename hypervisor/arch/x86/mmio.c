@@ -148,6 +148,11 @@ restart:
 		goto error_noinst;
 
 	op[2].raw = *ctx.inst;
+
+	/* ensure that we are actually talking about mov imm,<mem> */
+	if (op[0].raw == X86_OP_MOV_IMMEDIATE_TO_MEM && op[2].modrm.reg != 0)
+		goto error_unsupported;
+
 	switch (op[2].modrm.mod) {
 	case 0:
 		if (op[2].modrm.rm == 5) { /* 32-bit displacement */
