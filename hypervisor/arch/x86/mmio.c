@@ -171,9 +171,9 @@ restart:
 		break;
 	case 1:
 	case 2:
-		if (op[2].modrm.rm == 4) /* SIB */
-			goto error_unsupported;
 		skip_len = op[2].modrm.mod == 1 ? 1 : 4;
+		if (op[2].modrm.rm == 4) /* SIB */
+			skip_len++;
 		break;
 	default:
 		goto error_unsupported;
@@ -187,7 +187,7 @@ restart:
 		inst.in_reg_num = 15 - op[2].modrm.reg;
 
 	if (has_immediate) {
-		/* walk any not yet retrieved displacement bytes */
+		/* walk any not yet retrieved SIB or displacement bytes */
 		if (!ctx_update(&ctx, &pc, skip_len, pg_structs))
 			goto error_noinst;
 
