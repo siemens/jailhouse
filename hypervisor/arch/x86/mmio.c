@@ -197,6 +197,10 @@ restart:
 				goto error_noinst;
 			inst.out_val |= (unsigned long)*ctx.inst << (n * 8);
 		}
+
+		/* sign-extend immediate if the target is 64-bit */
+		if (has_rex_w)
+			inst.out_val = (s64)(s32)inst.out_val;
 	} else {
 		inst.inst_len += skip_len;
 		if (does_write)
