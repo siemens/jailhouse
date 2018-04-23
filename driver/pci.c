@@ -341,6 +341,19 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	if (!vpci_node)
 		goto out;
 
+	if (config->platform_info.pci_domain != (u16)-1) {
+		prop = alloc_prop("linux,pci-domain", sizeof(u32));
+		if (!prop)
+			goto out;
+
+		prop_val = prop->value;
+		prop_val[0] = cpu_to_be32(config->platform_info.pci_domain);
+
+		if (of_changeset_add_property(&overlay_changeset, vpci_node,
+					      prop) < 0)
+			goto out;
+	}
+
 	prop = alloc_prop("interrupt-map",
 			  sizeof(u32) * (8 + gic_address_cells) * 4);
 	if (!prop)
