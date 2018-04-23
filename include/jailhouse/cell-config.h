@@ -43,7 +43,7 @@
  * Incremented on any layout or semantic change of system or cell config.
  * Also update HEADER_REVISION in tools.
  */
-#define JAILHOUSE_CONFIG_REVISION	8
+#define JAILHOUSE_CONFIG_REVISION	9
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -240,6 +240,7 @@ struct jailhouse_system {
 		__u64 pci_mmconfig_base;
 		__u8 pci_mmconfig_end_bus;
 		__u8 pci_is_virtual;
+		__u16 pci_domain;
 		union {
 			struct {
 				__u16 pm_timer_address;

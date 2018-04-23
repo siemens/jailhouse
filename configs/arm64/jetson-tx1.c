@@ -46,6 +46,7 @@ struct {
 			.pci_mmconfig_base = 0x48000000,
 			.pci_mmconfig_end_bus = 0,
 			.pci_is_virtual = 1,
+			.pci_domain = -1,
 
 			.arm = {
 				.gic_version = 2,

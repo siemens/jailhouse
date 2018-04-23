@@ -109,11 +109,12 @@ class Sysconfig:
     MMCFGBASE_SIZE = 8
     MMCFGENDBUS_SIZE = 1
     PCIISVIRT_SIZE = 1
+    PCIDOMAIN_SIZE = 2
     X86_PADDING = 18
     X86_MAX_IOMMU_UNITS = 8
     X86_IOMMU_SIZE = 20
 
-    HEADER_REVISION = 8
+    HEADER_REVISION = 9
     HEADER_FORMAT = '6sH'
 
     def __init__(self, path):
@@ -132,7 +133,7 @@ class Sysconfig:
                          Sysconfig.HEADER_REVISION_SIZE + Sysconfig.HVMEM_SIZE +
                          Sysconfig.DBGCON_SIZE + Sysconfig.MMCFGBASE_SIZE +
                          Sysconfig.MMCFGENDBUS_SIZE + Sysconfig.PCIISVIRT_SIZE +
-                         Sysconfig.X86_PADDING)
+                         Sysconfig.PCIDOMAIN_SIZE + Sysconfig.X86_PADDING)
 
         keys = 'base size amd_bdf amd_base_cap amd_features'
         IOMMU = collections.namedtuple('IOMMU', keys)
