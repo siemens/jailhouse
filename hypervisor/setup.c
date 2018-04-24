@@ -165,8 +165,8 @@ static void init_late(void)
 }
 
 /*
- * This is the entry point, called by the Linux driver on each CPU
- * when initializing Jailhouse.
+ * This is the architecture independent C entry point, which is called by
+ * arch_entry. This routine is called on each CPU when initializing Jailhouse.
  */
 int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 {
