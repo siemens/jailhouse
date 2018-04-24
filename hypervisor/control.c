@@ -876,7 +876,7 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 	case JAILHOUSE_HC_DEBUG_CONSOLE_PUTC:
 		if (!(cpu_data->cell->config->flags &
 		      JAILHOUSE_CELL_DEBUG_CONSOLE))
-			return -EPERM;
+			return trace_error(-EPERM);
 		printk("%c", (char)arg1);
 		return 0;
 	default:
