@@ -14,8 +14,8 @@
 				#size-cells = <2>;
 				#interrupt-cells = <1>;
 				interrupt-map-mask = <0 0 0 7>;
-				reg = <0xbad 0xbad 0x0 0x100000>;
-				ranges = <0x02000000 0xbad 0xbad 0xbad 0xbad 0x0 0xbad>;
+				ranges = <0 0 0 0 0 0 0>;
+				status = "disabled";
 			};
 		};
 	};
