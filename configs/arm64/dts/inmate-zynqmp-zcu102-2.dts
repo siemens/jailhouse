@@ -66,7 +66,7 @@
 		#interrupt-cells = <3>;
 	};
 
-	vpci@fc000000 {
+	pci@fc000000 {
 		compatible = "pci-host-ecam-generic";
 		device_type = "pci";
 		bus-range = <0 0>;

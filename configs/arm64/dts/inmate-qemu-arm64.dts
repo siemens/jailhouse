@@ -84,7 +84,7 @@
 		clock-names = "uartclk", "apb_pclk";
 	};
 
-	vpci@7000000 {
+	pci@7000000 {
 		compatible = "pci-host-ecam-generic";
 		device_type = "pci";
 		bus-range = <0 0>;

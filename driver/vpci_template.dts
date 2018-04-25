@@ -6,7 +6,7 @@
 			#address-cells = <2>;
 			#size-cells = <2>;
 
-			vpci@0 {
+			pci@0 {
 				compatible = "pci-host-ecam-generic";
 				device_type = "pci";
 				bus-range = <0 0>;

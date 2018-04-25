@@ -80,7 +80,7 @@
 		status = "okay";
 	};
 
-	vpci@48000000 {
+	pci@48000000 {
 		compatible = "pci-host-ecam-generic";
 		device_type = "pci";
 		bus-range = <0 0>;

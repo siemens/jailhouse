@@ -301,7 +301,7 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	if (of_property_read_u32(gic, "#address-cells", &gic_address_cells) < 0)
 		gic_address_cells = 0;
 
-	vpci = of_find_node_by_name(overlay, "vpci");
+	vpci = of_find_node_by_name(overlay, "pci");
 	if (!vpci)
 		goto out;
 

@@ -97,7 +97,7 @@
 		clocks = <&apb1_gates 23>;
 	};
 
-	vpci@2000000 {
+	pci@2000000 {
 		compatible = "pci-host-ecam-generic";
 		device_type = "pci";
 		bus-range = <0 0>;
