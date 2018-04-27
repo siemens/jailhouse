@@ -19,8 +19,6 @@
 #include <asm/paging.h>
 #include <asm/processor.h>
 
-#include <jailhouse/hypercall.h>
-
 #define NUM_ENTRY_REGS			6
 
 #define STACK_SIZE			PAGE_SIZE
