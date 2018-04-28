@@ -60,16 +60,26 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	memcpy(&cpu_data->linux_reg, (void *)cpu_data->linux_sp,
 	       NUM_ENTRY_REGS * sizeof(unsigned long));
 
-	err = switch_exception_level(cpu_data);
+	/* set up per-CPU page table */
+	cpu_data->pg_structs.hv_paging = true;
+	cpu_data->pg_structs.root_paging = hv_paging_structs.root_paging;
+	cpu_data->pg_structs.root_table =
+		(page_table_t)cpu_data->root_table_page;
+
+	err = paging_create_hvpt_link(&cpu_data->pg_structs, JAILHOUSE_BASE);
 	if (err)
 		return err;
 
-	/*
-	 * Save pointer in the thread local storage
-	 * Must be done early in order to handle aborts and errors in the setup
-	 * code.
-	 */
-	arm_write_sysreg(TPIDR_EL2, cpu_data);
+	/* set up private mapping of per-CPU data structure */
+	err = paging_create(&cpu_data->pg_structs, paging_hvirt2phys(cpu_data),
+			    sizeof(*cpu_data), LOCAL_CPU_BASE,
+			    PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
+	if (err)
+		return err;
+
+	err = switch_exception_level(cpu_data);
+	if (err)
+		return err;
 
 	/* Setup guest traps */
 	arm_write_sysreg(HCR, HCR_VM_BIT | HCR_IMO_BIT | HCR_FMO_BIT |
@@ -127,7 +137,6 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 
 	/* Free the guest */
 	arm_write_sysreg(HCR, 0);
-	arm_write_sysreg(TPIDR_EL2, 0);
 	arm_write_sysreg(VTCR_EL2, 0);
 
 	/* Remove stage-2 mappings */

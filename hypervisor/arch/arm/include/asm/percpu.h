@@ -22,6 +22,11 @@ struct per_cpu {
 	/** Stack used while in hypervisor mode. */
 	u8 stack[PAGE_SIZE];
 
+	/** Per-CPU root page table. */
+	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+	/** Per-CPU paging structures. */
+	struct paging_structures pg_structs;
+
 	/** Linux stack pointer, used for handover to the hypervisor. */
 	unsigned long linux_sp;
 	unsigned long linux_ret;
@@ -86,20 +91,18 @@ struct per_cpu {
 
 static inline struct per_cpu *this_cpu_data(void)
 {
-	struct per_cpu *cpu_data;
-
-	arm_read_sysreg(TPIDR_EL2, cpu_data);
-	return cpu_data;
+	return (struct per_cpu *)LOCAL_CPU_BASE;
 }
 
-#define DEFINE_PER_CPU_ACCESSOR(field)					\
-static inline typeof(((struct per_cpu *)0)->field) this_##field(void)	\
-{									\
-	return this_cpu_data()->field;					\
+static inline unsigned int this_cpu_id(void)
+{
+	return this_cpu_data()->cpu_id;
 }
 
-DEFINE_PER_CPU_ACCESSOR(cpu_id)
-DEFINE_PER_CPU_ACCESSOR(cell)
+static inline struct cell *this_cell(void)
+{
+	return this_cpu_data()->cell;
+}
 
 static inline struct per_cpu *per_cpu(unsigned int cpu)
 {

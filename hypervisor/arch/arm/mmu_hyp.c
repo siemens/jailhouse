@@ -65,13 +65,13 @@ static int set_id_map(int i, unsigned long address, unsigned long size)
 	return 0;
 }
 
-static void create_id_maps(void)
+static void create_id_maps(struct paging_structures *pg_structs)
 {
 	unsigned long i;
 	bool conflict;
 
 	for (i = 0; i < ARRAY_SIZE(id_maps); i++) {
-		conflict = (paging_virt2phys(&hv_paging_structs,
+		conflict = (paging_virt2phys(pg_structs,
 				id_maps[i].addr, PAGE_PRESENT_FLAGS) !=
 				INVALID_PHYS_ADDR);
 		if (conflict) {
@@ -81,7 +81,7 @@ static void create_id_maps(void)
 			 * This extraction should be implemented in the core.
 			 */
 		} else {
-			paging_create(&hv_paging_structs, id_maps[i].addr,
+			paging_create(pg_structs, id_maps[i].addr,
 				PAGE_SIZE, id_maps[i].addr, id_maps[i].flags,
 				PAGING_NON_COHERENT);
 		}
@@ -89,7 +89,7 @@ static void create_id_maps(void)
 	}
 }
 
-static void destroy_id_maps(void)
+static void destroy_id_maps(struct paging_structures *pg_structs)
 {
 	unsigned long i;
 
@@ -97,7 +97,7 @@ static void destroy_id_maps(void)
 		if (id_maps[i].conflict) {
 			/* TODO: Switch back to the original flags */
 		} else {
-			paging_destroy(&hv_paging_structs, id_maps[i].addr,
+			paging_destroy(pg_structs, id_maps[i].addr,
 				       PAGE_SIZE, PAGING_NON_COHERENT);
 		}
 	}
@@ -141,7 +141,7 @@ cpu_switch_el2(virt2phys_t virt2phys)
  * setup. The stack is all the same usable, since it is id-mapped as well.
  */
 static void __attribute__((naked, section(".trampoline")))
-setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
+setup_mmu_el2(unsigned long phys_cpu_data, phys2virt_t phys2virt, u64 ttbr)
 {
 	u32 tcr = T0SZ
 		| (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)
@@ -190,18 +190,15 @@ setup_mmu_el2(struct per_cpu *cpu_data, phys2virt_t phys2virt, u64 ttbr)
 	 * Must not touch anything else than the stack
 	 */
 	asm volatile(
+		/* Convert sp to per-cpu mapping */
+		"add	sp, %0\n\t"
+		/* Translate LR */
 		"mov	r0, lr\n\t"
-		"blx	%0\n\t"
-		/* Save virt_lr */
-		"push	{r0}\n\t"
-		/* Translate phys_sp */
-		"mov	r0, sp\n\t"
-		"blx	%0\n\t"
+		"blx	%1\n\t"
 		/* Jump back to virtual addresses */
-		"mov	sp, r0\n\t"
-		"pop	{pc}\n\t"
-		:
-		: "r" (phys2virt)
+		"bx	r0\n\t"
+		: : "r" (LOCAL_CPU_BASE - phys_cpu_data),
+		    "r" (phys2virt)
 		: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
 }
 
@@ -261,7 +258,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	phys2virt_t phys2virt = paging_phys2hvirt;
 	virt2phys_t virt2phys = paging_hvirt2phys;
 	unsigned long phys_bootstrap = virt2phys(&bootstrap_vectors);
-	struct per_cpu *phys_cpu_data = (struct per_cpu *)virt2phys(cpu_data);
+	unsigned long phys_cpu_data = virt2phys(cpu_data);
 	unsigned long trampoline_phys = virt2phys((void *)&trampoline_start);
 	unsigned long trampoline_size = &trampoline_end - &trampoline_start;
 	unsigned long stack_phys = virt2phys(cpu_data->stack);
@@ -276,7 +273,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	 * paging struct won't be easily accessible when initializing el2, only
 	 * the CPU datas will be readable at their physical address
 	 */
-	ttbr_el2 = (u64)virt2phys(hv_paging_structs.root_table) & TTBR_MASK;
+	ttbr_el2 = (u64)virt2phys(cpu_data->pg_structs.root_table) & TTBR_MASK;
 
 	/*
 	 * Mirror the mmu setup code, so that we are able to jump to the virtual
@@ -288,7 +285,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 		return -E2BIG;
 	if (set_id_map(1, stack_phys, PAGE_SIZE) != 0)
 		return -E2BIG;
-	create_id_maps();
+	create_id_maps(&cpu_data->pg_structs);
 
 	/*
 	 * Before doing anything hairy, we need to sync the caches with memory:
@@ -326,7 +323,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	arm_write_sysreg(HVBAR, &hyp_vectors);
 
 	/* Remove the identity mapping */
-	destroy_id_maps();
+	destroy_id_maps(&cpu_data->pg_structs);
 
 	return 0;
 }

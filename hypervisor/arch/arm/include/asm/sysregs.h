@@ -141,7 +141,6 @@
 	(((hsr) & (BIT_MASK(19, 16) | BIT_MASK(4, 1))) ==	\
 	 (((opc1) << 16) | ((crm) << 1)))
 
-#define TPIDR_EL2	SYSREG_32(4, c13, c0, 2)
 #define TTBR0_EL2	SYSREG_64(4, c2)
 #define TCR_EL2		SYSREG_32(4, c2, c0, 2)
 #define VTTBR_EL2	SYSREG_64(6, c2)

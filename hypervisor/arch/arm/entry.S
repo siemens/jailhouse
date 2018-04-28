@@ -29,7 +29,8 @@ arch_entry:
 	 * TODO: handle aff1 and aff2
 	 */
 	mla	r1, r4, r0, r1
-	add	r4, r1, #PERCPU_LINUX_SP
+	movw	r2, #PERCPU_LINUX_SP
+	add	r4, r1, r2
 
 	/*
 	 * Save SP, LR, CPSR
