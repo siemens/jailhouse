@@ -64,8 +64,11 @@ arch_entry:
 
 	adrp	x1, __page_pool
 	ldrh	w2, [x0, #HEADER_MAX_CPUS]
-	lsl	x2, x2, #PERCPU_SIZE_SHIFT_ASM
-	add	x1, x1, x2
+	mov	x3, #PERCPU_SIZE_ASM
+	/*
+	 * sysconfig = pool + max_cpus * percpu_size
+	 */
+	madd	x1, x2, x3, x1
 	ldr	x14, [x1, #SYSCONFIG_DEBUG_CONSOLE_PHYS]
 
 	ldr	x13, =JAILHOUSE_BASE
@@ -133,9 +136,9 @@ el2_entry:
 
 	mov	x0, x16		/* preserved cpuid, will be passed to entry */
 	adrp	x1, __page_pool
-	mov	x2, #(1 << PERCPU_SIZE_SHIFT_ASM)
+	mov	x2, #PERCPU_SIZE_ASM
 	/*
-	 * percpu data = pool + cpuid * shift
+	 * percpu data = pool + cpuid * percpu_size
 	 */
 	madd	x1, x2, x0, x1
 	msr	tpidr_el2, x1
