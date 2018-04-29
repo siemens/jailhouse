@@ -23,10 +23,6 @@
 
 #define STACK_SIZE			PAGE_SIZE
 
-/* Round up sizeof(struct per_cpu) to the next power of two. */
-#define PERCPU_SIZE_SHIFT \
-	(BITS_PER_LONG - __builtin_clzl(sizeof(struct per_cpu) - 1))
-
 /**
  * @defgroup Per-CPU Per-CPU Subsystem
  *
@@ -215,14 +211,9 @@ DEFINE_PER_CPU_ACCESSOR(cell)
  */
 static inline struct per_cpu *per_cpu(unsigned int cpu)
 {
-	struct per_cpu *cpu_data;
+	extern u8 __page_pool[];
 
-	asm volatile(
-		"lea __page_pool(%%rip),%0\n\t"
-		"add %1,%0\n\t"
-		: "=&q" (cpu_data)
-		: "qm" ((unsigned long)cpu << PERCPU_SIZE_SHIFT));
-	return cpu_data;
+	return (struct per_cpu *)(__page_pool + cpu * sizeof(struct per_cpu));
 }
 
 /** @} **/

@@ -25,9 +25,9 @@ arch_entry:
 	push %r14
 	push %r15
 
-	/* Locate the per_cpu region for the given CPU ID*/
+	/* Locate the per_cpu region for the given CPU ID */
 	mov %rdi,%rsi
-	shl $PERCPU_SIZE_SHIFT_ASM,%rsi
+	imul $PERCPU_SIZE_ASM,%rsi,%rsi
 	lea __page_pool(%rip),%rax
 	add %rax,%rsi
 
