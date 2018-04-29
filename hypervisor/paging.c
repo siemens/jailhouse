@@ -588,8 +588,6 @@ int paging_init(void)
 
 	arch_paging_init();
 
-	hv_paging_structs.root_paging = hv_paging;
-
 	/* Replicate hypervisor mapping of Linux */
 	err = paging_create(&hv_paging_structs,
 			     paging_hvirt2phys(&hypervisor_header),

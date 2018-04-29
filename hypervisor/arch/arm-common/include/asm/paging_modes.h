@@ -15,7 +15,6 @@
 #include <jailhouse/paging.h>
 
 /* Long-descriptor paging */
-extern const struct paging *hv_paging;
 extern const struct paging *cell_paging;
 
 #endif /* !__ASSEMBLY__ */

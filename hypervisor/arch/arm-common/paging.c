@@ -213,7 +213,6 @@ const static struct paging arm_s2_paging_alt[] = {
 	}
 };
 
-const struct paging *hv_paging = arm_paging;
 const struct paging *cell_paging;
 
 void arch_paging_init(void)
@@ -226,4 +225,6 @@ void arch_paging_init(void)
 		cell_paging = arm_s2_paging_alt;
 	else
 		cell_paging = arm_paging;
+
+	hv_paging_structs.root_paging = arm_paging;
 }

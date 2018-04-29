@@ -17,7 +17,7 @@
 
 #define X86_FLAG_HUGEPAGE	0x80
 
-struct paging hv_paging[MAX_PAGE_TABLE_LEVELS];
+static struct paging hv_paging[MAX_PAGE_TABLE_LEVELS];
 
 static bool x86_64_entry_valid(pt_entry_t pte, unsigned long flags)
 {
@@ -162,6 +162,8 @@ void arch_paging_init(void)
 	memcpy(hv_paging, x86_64_paging, sizeof(x86_64_paging));
 	if (!(cpuid_edx(0x80000001, 0) & X86_FEATURE_GBPAGES))
 		hv_paging[1].page_size = 0;
+
+	hv_paging_structs.root_paging = hv_paging;
 }
 
 static bool i386_entry_valid(pt_entry_t pte, unsigned long flags)
