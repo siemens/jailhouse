@@ -152,6 +152,8 @@ struct paging {
 
 /** Describes the root of hierarchical paging structures. */
 struct paging_structures {
+	/** True if used for hypervisor itself. */
+	bool hv_paging;
 	/** Pointer to array of paging parameters and callbacks, first element
 	 * describing the root level, NULL if paging is disabled. */
 	const struct paging *root_paging;

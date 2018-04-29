@@ -45,6 +45,7 @@ static __attribute__((aligned(PAGE_SIZE))) u8 hv_paging_root[PAGE_SIZE];
 
 /** Descriptor of the hypervisor paging structures. */
 struct paging_structures hv_paging_structs = {
+	.hv_paging = true,
 	.root_table = (page_table_t)hv_paging_root,
 };
 
@@ -240,8 +241,9 @@ static void flush_pt_entry(pt_entry_t pte, enum paging_coherent coherent)
 		arch_paging_flush_cpu_caches(pte, sizeof(*pte));
 }
 
-static int split_hugepage(const struct paging *paging, pt_entry_t pte,
-			  unsigned long virt, enum paging_coherent coherent)
+static int split_hugepage(bool hv_paging, const struct paging *paging,
+			  pt_entry_t pte, unsigned long virt,
+			  enum paging_coherent coherent)
 {
 	unsigned long phys = paging->get_phys(pte, virt);
 	struct paging_structures sub_structs;
@@ -256,6 +258,7 @@ static int split_hugepage(const struct paging *paging, pt_entry_t pte,
 
 	flags = paging->get_flags(pte);
 
+	sub_structs.hv_paging = hv_paging;
 	sub_structs.root_paging = paging + 1;
 	sub_structs.root_table = page_alloc(&mem_pool, 1);
 	if (!sub_structs.root_table)
@@ -314,6 +317,8 @@ int paging_create(const struct paging_structures *pg_structs,
 				if (paging->page_size > PAGE_SIZE) {
 					sub_structs.root_paging = paging;
 					sub_structs.root_table = pt;
+					sub_structs.hv_paging =
+						pg_structs->hv_paging;
 					paging_destroy(&sub_structs, virt,
 						       paging->page_size,
 						       coherent);
@@ -323,7 +328,8 @@ int paging_create(const struct paging_structures *pg_structs,
 				break;
 			}
 			if (paging->entry_valid(pte, PAGE_PRESENT_FLAGS)) {
-				err = split_hugepage(paging, pte, virt,
+				err = split_hugepage(pg_structs->hv_paging,
+						     paging, pte, virt,
 						     coherent);
 				if (err)
 					return err;
@@ -339,7 +345,7 @@ int paging_create(const struct paging_structures *pg_structs,
 			}
 			paging++;
 		}
-		if (pg_structs == &hv_paging_structs)
+		if (pg_structs->hv_paging)
 			arch_paging_flush_page_tlbs(virt);
 
 		phys += paging->page_size;
@@ -386,13 +392,14 @@ int paging_destroy(const struct paging_structures *pg_structs,
 			if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
 				break;
 			if (paging->get_phys(pte, virt) != INVALID_PHYS_ADDR) {
-				if (paging->page_size > size) {
-					err = split_hugepage(paging, pte, virt,
-							     coherent);
-					if (err)
-						return err;
-				} else
+				if (paging->page_size <= size)
 					break;
+
+				err = split_hugepage(pg_structs->hv_paging,
+						     paging, pte, virt,
+						     coherent);
+				if (err)
+					return err;
 			}
 			pt[++n] = paging_phys2hvirt(paging->get_next_pt(pte));
 			paging++;
@@ -410,7 +417,7 @@ int paging_destroy(const struct paging_structures *pg_structs,
 			paging--;
 			pte = paging->get_entry(pt[--n], virt);
 		}
-		if (pg_structs == &hv_paging_structs)
+		if (pg_structs->hv_paging)
 			arch_paging_flush_page_tlbs(virt);
 
 		if (page_size > size)
