@@ -23,8 +23,7 @@ arch_entry:
 	push	{r0 - r12}
 
 	ldr	r1, =__page_pool
-	mov	r4, #1
-	lsl	r4, #PERCPU_SIZE_SHIFT_ASM
+	mov	r4, #PERCPU_SIZE_ASM
 	/*
 	 * percpu data = pool + cpuid * shift
 	 * TODO: handle aff1 and aff2
