@@ -18,8 +18,6 @@
 
 #include <asm/percpu.h>
 
-extern struct paging_structures parking_mm;
-
 void arch_cpu_tlb_flush(struct per_cpu *cpu_data);
 void arch_cell_caches_flush(struct cell *cell);
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,

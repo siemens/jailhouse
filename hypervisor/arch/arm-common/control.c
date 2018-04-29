@@ -32,7 +32,7 @@ void arm_cpu_park(void)
 	spin_unlock(&cpu_data->control_lock);
 
 	arm_cpu_reset(0);
-	arm_paging_vcpu_init(&parking_mm);
+	arm_paging_vcpu_init(&parking_pt);
 }
 
 void arm_cpu_kick(unsigned int cpu_id)

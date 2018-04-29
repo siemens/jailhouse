@@ -37,7 +37,7 @@
  *
  * TODO: implement larger PARange support for AArch32
  */
-#define ARM_CELL_ROOT_PT_SZ	1
+#define CELL_ROOT_PT_PAGES	1
 
 #if MAX_PAGE_TABLE_LEVELS < 3
 #define T0SZ			0

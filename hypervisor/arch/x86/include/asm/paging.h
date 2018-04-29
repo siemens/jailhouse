@@ -41,6 +41,8 @@
 
 #define NUM_TEMPORARY_PAGES	16
 
+#define CELL_ROOT_PT_PAGES	1
+
 #ifndef __ASSEMBLY__
 
 typedef unsigned long *pt_entry_t;

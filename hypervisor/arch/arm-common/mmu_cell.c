@@ -97,7 +97,7 @@ int arm_paging_cell_init(struct cell *cell)
 
 	cell->arch.mm.root_paging = cell_paging;
 	cell->arch.mm.root_table =
-		page_alloc_aligned(&mem_pool, ARM_CELL_ROOT_PT_SZ);
+		page_alloc_aligned(&mem_pool, CELL_ROOT_PT_PAGES);
 
 	if (!cell->arch.mm.root_table)
 		return -ENOMEM;
@@ -107,7 +107,7 @@ int arm_paging_cell_init(struct cell *cell)
 
 void arm_paging_cell_destroy(struct cell *cell)
 {
-	page_free(&mem_pool, cell->arch.mm.root_table, ARM_CELL_ROOT_PT_SZ);
+	page_free(&mem_pool, cell->arch.mm.root_table, CELL_ROOT_PT_PAGES);
 }
 
 void arm_paging_vcpu_init(struct paging_structures *pg_structs)

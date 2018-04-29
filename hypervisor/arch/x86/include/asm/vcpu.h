@@ -43,8 +43,6 @@ struct vcpu_mmio_intercept {
 	bool is_write;
 };
 
-extern struct paging_structures parking_pt;
-
 int vcpu_early_init(void);
 
 int vcpu_vendor_early_init(void);

@@ -22,8 +22,6 @@
 #include <jailhouse/paging.h>
 #include <asm/percpu.h>
 
-extern struct paging_structures parking_mm;
-
 void arch_handle_sgi(struct per_cpu *cpu_data, u32 irqn,
 		     unsigned int count_event);
 void arch_handle_trap(struct per_cpu *cpu_data, struct registers *guest_regs);

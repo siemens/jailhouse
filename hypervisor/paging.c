@@ -48,6 +48,9 @@ struct paging_structures hv_paging_structs = {
 	.root_table = (page_table_t)hv_paging_root,
 };
 
+/** Descriptor of paging structures used when parking CPUs. */
+struct paging_structures parking_pt;
+
 /**
  * Trivial implementation of paging::get_phys (for non-terminal levels)
  * @param pte See paging::get_phys.
@@ -587,6 +590,11 @@ int paging_init(void)
 		set_bit(n, remap_pool.used_bitmap);
 
 	arch_paging_init();
+
+	parking_pt.root_table = page_alloc_aligned(&mem_pool,
+						   CELL_ROOT_PT_PAGES);
+	if (!parking_pt.root_table)
+		return -ENOMEM;
 
 	/* Replicate hypervisor mapping of Linux */
 	err = paging_create(&hv_paging_structs,

@@ -33,8 +33,6 @@ static u8 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE] = {
 	0xfc  /*    jmp 1b */
 };
 
-struct paging_structures parking_pt;
-
 int vcpu_early_init(void)
 {
 	int err;
@@ -44,9 +42,6 @@ int vcpu_early_init(void)
 		return err;
 
 	/* Map guest parking code (shared between cells and CPUs) */
-	parking_pt.root_table = page_alloc(&mem_pool, 1);
-	if (!parking_pt.root_table)
-		return -ENOMEM;
 	return paging_create(&parking_pt, paging_hvirt2phys(parking_code),
 			     PAGE_SIZE, 0, PAGE_READONLY_FLAGS | PAGE_FLAG_US,
 			     PAGING_NON_COHERENT);

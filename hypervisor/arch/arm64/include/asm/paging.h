@@ -184,7 +184,7 @@ unsigned int get_cpu_parange(void);
  * page table */
 #define T0SZ_CELL		T0SZ(cpu_parange)
 #define SL0_CELL		((cpu_parange >= 44) ? SL0_L0 : SL0_L1)
-#define ARM_CELL_ROOT_PT_SZ				\
+#define CELL_ROOT_PT_PAGES				\
 	({ unsigned int ret = 1;			\
 	   if (cpu_parange > 39 && cpu_parange < 44)	\
 		ret = 1 << (cpu_parange - 39);		\

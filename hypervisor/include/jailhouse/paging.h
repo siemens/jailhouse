@@ -180,6 +180,7 @@ extern struct page_pool mem_pool;
 extern struct page_pool remap_pool;
 
 extern struct paging_structures hv_paging_structs;
+extern struct paging_structures parking_pt;
 
 unsigned long paging_get_phys_invalid(pt_entry_t pte, unsigned long virt);
 
