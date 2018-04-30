@@ -618,7 +618,7 @@ void iommu_check_pending_faults(void)
 {
 	struct amd_iommu *iommu;
 
-	if (this_cpu_data()->cpu_id != fault_reporting_cpu_id)
+	if (this_cpu_id() != fault_reporting_cpu_id)
 		return;
 
 	for_each_iommu(iommu) {
