@@ -41,6 +41,13 @@ struct public_per_cpu {
 	/** Statistic counters. */
 	u32 stats[JAILHOUSE_NUM_CPU_STATS];
 
+	/** State of the shutdown process. Possible values:
+	 * @li SHUTDOWN_NONE: no shutdown in progress
+	 * @li SHUTDOWN_STARTED: shutdown in progress
+	 * @li negative error code: shutdown failed
+	 */
+	int shutdown_state;
+
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
 
@@ -60,12 +67,6 @@ struct per_cpu {
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
 
-	/** State of the shutdown process. Possible values:
-	 * @li SHUTDOWN_NONE: no shutdown in progress
-	 * @li SHUTDOWN_STARTED: shutdown in progress
-	 * @li negative error code: shutdown failed
-	 */
-	int shutdown_state;
 	/** True if CPU violated a cell boundary or cause some other failure in
 	 *  guest mode. */
 	bool failed;

@@ -769,19 +769,19 @@ static int hypervisor_disable(struct per_cpu *cpu_data)
 	 */
 	spin_lock(&shutdown_lock);
 
-	if (cpu_data->shutdown_state == SHUTDOWN_NONE) {
+	if (cpu_data->public.shutdown_state == SHUTDOWN_NONE) {
 		state = num_cells == 1 ? SHUTDOWN_STARTED : -EBUSY;
 		for_each_cpu(cpu, root_cell.cpu_set)
-			per_cpu(cpu)->shutdown_state = state;
+			public_per_cpu(cpu)->shutdown_state = state;
 	}
 
-	if (cpu_data->shutdown_state == SHUTDOWN_STARTED) {
+	if (cpu_data->public.shutdown_state == SHUTDOWN_STARTED) {
 		do_common_shutdown = true;
 		waiting_cpus++;
 		ret = 0;
 	} else {
-		ret = cpu_data->shutdown_state;
-		cpu_data->shutdown_state = SHUTDOWN_NONE;
+		ret = cpu_data->public.shutdown_state;
+		cpu_data->public.shutdown_state = SHUTDOWN_NONE;
 	}
 
 	spin_unlock(&shutdown_lock);
