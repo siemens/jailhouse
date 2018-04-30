@@ -48,11 +48,10 @@ int arch_unmap_memory_region(struct cell *cell,
 			      PAGING_COHERENT);
 }
 
-unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
-				     unsigned long gphys, unsigned long flags)
+unsigned long arch_paging_gphys2phys(unsigned long gphys, unsigned long flags)
 {
 	/* Translate IPA->PA */
-	return paging_virt2phys(&cpu_data->cell->arch.mm, gphys, flags);
+	return paging_virt2phys(&this_cell()->arch.mm, gphys, flags);
 }
 
 void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)

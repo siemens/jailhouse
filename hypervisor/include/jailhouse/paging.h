@@ -223,7 +223,6 @@ unsigned long paging_virt2phys(const struct paging_structures *pg_structs,
 
 /**
  * Translate guest-physical (cell) address into host-physical address.
- * @param cpu_data	CPU to use for the translation.
  * @param gphys		Guest-physical address to translate.
  * @param flags		Access flags to validate during the translation.
  *
@@ -235,8 +234,7 @@ unsigned long paging_virt2phys(const struct paging_structures *pg_structs,
  * @see paging_hvirt2phys
  * @see paging_virt2phys
  */
-unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
-				     unsigned long gphys, unsigned long flags);
+unsigned long arch_paging_gphys2phys(unsigned long gphys, unsigned long flags);
 
 int paging_create(const struct paging_structures *pg_structs,
 		  unsigned long phys, unsigned long size, unsigned long virt,

@@ -434,7 +434,7 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 
 	while (1) {
 		/* map guest page table */
-		phys = arch_paging_gphys2phys(this_cpu_data(), page_table_gphys,
+		phys = arch_paging_gphys2phys(page_table_gphys,
 					      PAGE_READONLY_FLAGS);
 		if (phys == INVALID_PHYS_ADDR)
 			return INVALID_PHYS_ADDR;
@@ -535,7 +535,7 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 		else
 			gphys = gaddr;
 
-		phys = arch_paging_gphys2phys(this_cpu_data(), gphys, flags);
+		phys = arch_paging_gphys2phys(gphys, flags);
 		if (phys == INVALID_PHYS_ADDR)
 			return NULL;
 		/* map guest page */

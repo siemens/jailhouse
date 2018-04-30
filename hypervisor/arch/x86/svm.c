@@ -231,11 +231,10 @@ static void vmcb_setup(struct per_cpu *cpu_data)
 	svm_set_cell_config(cpu_data->cell, vmcb);
 }
 
-unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
-				     unsigned long gphys,
+unsigned long arch_paging_gphys2phys(unsigned long gphys,
 				     unsigned long flags)
 {
-	return paging_virt2phys(&cpu_data->cell->arch.svm.npt_iommu_structs,
+	return paging_virt2phys(&this_cell()->arch.svm.npt_iommu_structs,
 				gphys, flags);
 }
 

@@ -326,10 +326,9 @@ int vcpu_vendor_early_init(void)
 	return vcpu_cell_init(&root_cell);
 }
 
-unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
-				     unsigned long gphys, unsigned long flags)
+unsigned long arch_paging_gphys2phys(unsigned long gphys, unsigned long flags)
 {
-	return paging_virt2phys(&cpu_data->cell->arch.vmx.ept_structs, gphys,
+	return paging_virt2phys(&this_cell()->arch.vmx.ept_structs, gphys,
 				flags);
 }
 
