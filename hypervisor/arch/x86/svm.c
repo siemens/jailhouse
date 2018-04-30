@@ -228,7 +228,7 @@ static void vmcb_setup(struct per_cpu *cpu_data)
 	/* Explicitly mark all of the state as new */
 	vmcb->clean_bits = 0;
 
-	svm_set_cell_config(cpu_data->cell, vmcb);
+	svm_set_cell_config(cpu_data->public.cell, vmcb);
 }
 
 unsigned long arch_paging_gphys2phys(unsigned long gphys,
@@ -630,7 +630,7 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	/* Almost all of the guest state changed */
 	vmcb->clean_bits = 0;
 
-	svm_set_cell_config(cpu_data->cell, vmcb);
+	svm_set_cell_config(cpu_data->public.cell, vmcb);
 
 	vmcb_pa = paging_hvirt2phys(&per_cpu(this_cpu_id())->vmcb);
 	asm volatile("vmload %%rax" : : "a" (vmcb_pa) : "memory");

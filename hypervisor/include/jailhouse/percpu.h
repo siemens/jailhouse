@@ -35,6 +35,8 @@ struct public_per_cpu {
 
 	/** Logical CPU ID (same as Linux). */
 	unsigned int cpu_id;
+	/** Owning cell. */
+	struct cell *cell;
 
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -54,9 +56,6 @@ struct per_cpu {
 
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
-
-	/** Owning cell. */
-	struct cell *cell;
 
 	/** Statistic counters. */
 	u32 stats[JAILHOUSE_NUM_CPU_STATS];
@@ -122,7 +121,7 @@ static inline unsigned int this_cpu_id(void)
  */
 static inline struct cell *this_cell(void)
 {
-	return this_cpu_data()->cell;
+	return this_cpu_public()->cell;
 }
 
 /**

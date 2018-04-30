@@ -309,7 +309,7 @@ static void cell_destroy_internal(struct cell *cell)
 		arch_park_cpu(cpu);
 
 		set_bit(cpu, root_cell.cpu_set->bitmap);
-		per_cpu(cpu)->cell = &root_cell;
+		public_per_cpu(cpu)->cell = &root_cell;
 		per_cpu(cpu)->failed = false;
 		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
 	}
@@ -350,7 +350,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	int err;
 
 	/* We do not support creation over non-root cells. */
-	if (cpu_data->cell != &root_cell)
+	if (cpu_data->public.cell != &root_cell)
 		return -EPERM;
 
 	cell_suspend(&root_cell);
@@ -444,7 +444,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		arch_park_cpu(cpu);
 
 		clear_bit(cpu, root_cell.cpu_set->bitmap);
-		per_cpu(cpu)->cell = cell;
+		public_per_cpu(cpu)->cell = cell;
 		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
 	}
 
@@ -520,7 +520,7 @@ static int cell_management_prologue(enum management_task task,
 				    struct cell **cell_ptr)
 {
 	/* We do not support management commands over non-root cells. */
-	if (cpu_data->cell != &root_cell)
+	if (cpu_data->public.cell != &root_cell)
 		return -EPERM;
 
 	cell_suspend(&root_cell);
@@ -689,7 +689,7 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 {
 	struct cell *cell;
 
-	if (cpu_data->cell != &root_cell)
+	if (cpu_data->public.cell != &root_cell)
 		return -EPERM;
 
 	/*
@@ -738,7 +738,7 @@ static int hypervisor_disable(struct per_cpu *cpu_data)
 	int state, ret;
 
 	/* We do not support shutdown over non-root cells. */
-	if (cpu_data->cell != &root_cell)
+	if (cpu_data->public.cell != &root_cell)
 		return -EPERM;
 
 	/*
@@ -842,8 +842,8 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 	 * its cell_suspend(root_cell + this_cell) will not return before we
 	 * left this hypercall.
 	 */
-	if (cpu_data->cell != &root_cell &&
-	    !cell_owns_cpu(cpu_data->cell, cpu_id))
+	if (cpu_data->public.cell != &root_cell &&
+	    !cell_owns_cpu(cpu_data->public.cell, cpu_id))
 		return -EPERM;
 
 	if (type == JAILHOUSE_CPU_INFO_STATE) {
@@ -892,7 +892,7 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 		return cpu_get_info(cpu_data, arg1, arg2);
 	case JAILHOUSE_HC_DEBUG_CONSOLE_PUTC:
 		if (!CELL_FLAGS_VIRTUAL_CONSOLE_PERMITTED(
-			cpu_data->cell->config->flags))
+			cpu_data->public.cell->config->flags))
 			return trace_error(-EPERM);
 		printk("%c", (char)arg1);
 		return 0;

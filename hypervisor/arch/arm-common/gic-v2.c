@@ -40,7 +40,7 @@ static bool gicv2_targets_in_cell(struct cell *cell, u8 targets)
 
 	for (cpu = 0; cpu < ARRAY_SIZE(gicv2_target_cpu_map); cpu++)
 		if (targets & gicv2_target_cpu_map[cpu] &&
-		    per_cpu(cpu)->cell != cell)
+		    public_per_cpu(cpu)->cell != cell)
 			return false;
 
 	return true;

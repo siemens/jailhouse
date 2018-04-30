@@ -106,7 +106,7 @@ static void cpu_init(struct per_cpu *cpu_data)
 	if (!cpu_id_valid(cpu_data->public.cpu_id))
 		goto failed;
 
-	cpu_data->cell = &root_cell;
+	cpu_data->public.cell = &root_cell;
 
 	/* set up per-CPU page table */
 	cpu_data->pg_structs.hv_paging = true;

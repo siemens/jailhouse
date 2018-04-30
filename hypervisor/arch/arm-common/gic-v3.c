@@ -340,7 +340,7 @@ static enum mmio_result gicv3_handle_redist_access(void *arg,
 	case GICR_SGI_BASE + GICR_ICACTIVER:
 	case REG_RANGE(GICR_SGI_BASE + GICR_IPRIORITYR, 8, 4):
 	case REG_RANGE(GICR_SGI_BASE + GICR_ICFGR, 2, 4):
-		if (this_cell() != cpu_data->cell) {
+		if (this_cell() != cpu_data->public.cell) {
 			/* ignore access to foreign redistributors */
 			return MMIO_HANDLED;
 		}
