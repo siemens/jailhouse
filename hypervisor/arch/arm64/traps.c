@@ -210,7 +210,7 @@ static void arch_dump_exit(union registers *regs, const char *reason)
 
 union registers *arch_handle_exit(union registers *regs)
 {
-	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+	this_cpu_public()->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
 	switch (regs->exit_reason) {
 	case EXIT_REASON_EL1_IRQ:

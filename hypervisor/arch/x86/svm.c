@@ -885,6 +885,7 @@ unsigned long vcpu_vendor_get_guest_cr4(void)
 
 void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
+	struct public_per_cpu *cpu_public = &cpu_data->public;
 	struct vmcb *vmcb = &cpu_data->vmcb;
 	bool res = false;
 
@@ -893,7 +894,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 	/* Restore GS value expected by per_cpu data accessors */
 	write_msr(MSR_GS_BASE, (unsigned long)cpu_data);
 
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+	cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 	/*
 	 * All guest state is marked unmodified; individual handlers must clear
 	 * the bits as needed.
@@ -906,7 +907,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			     vmcb->exitcode);
 		break;
 	case VMEXIT_NMI:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
 		/* Temporarily enable GIF to consume pending NMI */
 		asm volatile("stgi; clgi" : : : "memory");
 		x86_check_events();
@@ -915,7 +916,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		vcpu_handle_hypercall();
 		goto vmentry;
 	case VMEXIT_CR0_SEL_WRITE:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
 		if (svm_handle_cr(cpu_data))
 			goto vmentry;
 		break;
@@ -923,7 +924,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		vcpu_handle_cpuid();
 		goto vmentry;
 	case VMEXIT_MSR:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
 		if (!vmcb->exitinfo1)
 			res = vcpu_handle_msr_read();
 		else
@@ -936,24 +937,24 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		     vmcb->exitinfo2 >= XAPIC_BASE &&
 		     vmcb->exitinfo2 < XAPIC_BASE + PAGE_SIZE) {
 			/* APIC access in non-AVIC mode */
-			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
+			cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
 			if (svm_handle_apic_access(vmcb))
 				goto vmentry;
 		} else {
 			/* General MMIO (IOAPIC, PCI etc) */
-			cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
+			cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 			if (vcpu_handle_mmio_access())
 				goto vmentry;
 		}
 		break;
 	case VMEXIT_IOIO:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
 		if (vcpu_handle_io_access())
 			goto vmentry;
 		break;
 	case VMEXIT_EXCEPTION_DB:
 	case VMEXIT_EXCEPTION_AC:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_EXCEPTION]++;
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_EXCEPTION]++;
 		/* Reinject exception, including error code if needed. */
 		vmcb->eventinj = (vmcb->exitcode - VMEXIT_EXCEPTION_DE) |
 			SVM_EVENTINJ_EXCEPTION | SVM_EVENTINJ_VALID;

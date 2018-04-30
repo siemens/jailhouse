@@ -53,7 +53,7 @@ int arch_handle_dabt(struct trap_context *ctx)
 	mmio.address = hpfar << 8;
 	mmio.address |= hdfar & 0xfff;
 
-	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
+	this_cpu_public()->stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 
 	/*
 	 * Invalid instruction syndrome means multiple access or writeback,

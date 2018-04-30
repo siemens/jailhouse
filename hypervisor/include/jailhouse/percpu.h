@@ -38,6 +38,9 @@ struct public_per_cpu {
 	/** Owning cell. */
 	struct cell *cell;
 
+	/** Statistic counters. */
+	u32 stats[JAILHOUSE_NUM_CPU_STATS];
+
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
 
@@ -56,9 +59,6 @@ struct per_cpu {
 
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
-
-	/** Statistic counters. */
-	u32 stats[JAILHOUSE_NUM_CPU_STATS];
 
 	/** State of the shutdown process. Possible values:
 	 * @li SHUTDOWN_NONE: no shutdown in progress

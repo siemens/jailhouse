@@ -160,11 +160,12 @@ void arch_handle_sgi(u32 irqn, unsigned int count_event)
 
 	switch (irqn) {
 	case SGI_INJECT:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] += count_event;
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] +=
+			count_event;
 		irqchip_inject_pending();
 		break;
 	case SGI_EVENT:
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
 			count_event;
 		check_events(cpu_data);
 		break;
@@ -179,18 +180,18 @@ void arch_handle_sgi(u32 irqn, unsigned int count_event)
  */
 bool arch_handle_phys_irq(u32 irqn, unsigned int count_event)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	struct public_per_cpu *cpu_public = this_cpu_public();
 
 	if (irqn == system_config->platform_info.arm.maintenance_irq) {
-		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE] +=
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE] +=
 			count_event;
 		irqchip_inject_pending();
 
 		return true;
 	}
 
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ] += count_event;
-	irqchip_set_pending(cpu_data, irqn);
+	cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ] += count_event;
+	irqchip_set_pending(this_cpu_data(), irqn);
 
 	return false;
 }

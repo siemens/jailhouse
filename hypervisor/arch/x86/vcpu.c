@@ -332,7 +332,7 @@ void vcpu_handle_cpuid(void)
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	u32 function = guest_regs->rax;
 
-	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_CPUID]++;
+	this_cpu_data()->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_CPUID]++;
 
 	switch (function) {
 	case JAILHOUSE_CPUID_SIGNATURE:

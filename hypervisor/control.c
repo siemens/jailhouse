@@ -311,7 +311,8 @@ static void cell_destroy_internal(struct cell *cell)
 		set_bit(cpu, root_cell.cpu_set->bitmap);
 		public_per_cpu(cpu)->cell = &root_cell;
 		per_cpu(cpu)->failed = false;
-		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
+		memset(public_per_cpu(cpu)->stats, 0,
+		       sizeof(public_per_cpu(cpu)->stats));
 	}
 
 	for_each_mem_region(mem, cell->config, n) {
@@ -445,7 +446,8 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 		clear_bit(cpu, root_cell.cpu_set->bitmap);
 		public_per_cpu(cpu)->cell = cell;
-		memset(per_cpu(cpu)->stats, 0, sizeof(per_cpu(cpu)->stats));
+		memset(public_per_cpu(cpu)->stats, 0,
+		       sizeof(public_per_cpu(cpu)->stats));
 	}
 
 	/*
@@ -852,7 +854,7 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 	} else if (type >= JAILHOUSE_CPU_INFO_STAT_BASE &&
 		type - JAILHOUSE_CPU_INFO_STAT_BASE < JAILHOUSE_NUM_CPU_STATS) {
 		type -= JAILHOUSE_CPU_INFO_STAT_BASE;
-		return per_cpu(cpu_id)->stats[type] & BIT_MASK(30, 0);
+		return public_per_cpu(cpu_id)->stats[type] & BIT_MASK(30, 0);
 	} else
 		return -EINVAL;
 }
@@ -871,7 +873,7 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
-	cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_HYPERCALL]++;
+	cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_HYPERCALL]++;
 
 	switch (code) {
 	case JAILHOUSE_HC_DISABLE:

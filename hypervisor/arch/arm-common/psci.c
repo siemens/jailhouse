@@ -67,7 +67,7 @@ static long psci_emulate_affinity_info(struct trap_context *ctx)
 
 long psci_dispatch(struct trap_context *ctx)
 {
-	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_PSCI]++;
+	this_cpu_public()->stats[JAILHOUSE_CPU_STAT_VMEXITS_PSCI]++;
 
 	switch (ctx->regs[0]) {
 	case PSCI_VERSION:
