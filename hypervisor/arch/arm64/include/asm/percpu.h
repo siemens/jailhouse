@@ -13,13 +13,8 @@
 #ifndef _JAILHOUSE_ASM_PERCPU_H
 #define _JAILHOUSE_ASM_PERCPU_H
 
-#include <jailhouse/types.h>
-
-#ifndef __ASSEMBLY__
-
 #include <jailhouse/cell.h>
 #include <asm/irqchip.h>
-#include <asm/spinlock.h>
 
 /* Round up sizeof(struct per_cpu) to the next power of two. */
 #define PERCPU_SIZE_SHIFT \
@@ -112,6 +107,5 @@ static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
 			- sizeof(struct registers));
 }
-#endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PERCPU_H */

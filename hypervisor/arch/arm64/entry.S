@@ -15,7 +15,6 @@
 
 #include <asm/asm-defines.h>
 #include <asm/paging.h>
-#include <asm/percpu.h>
 #include <asm/jailhouse_hypercall.h>
 #include <jailhouse/header.h>
 
