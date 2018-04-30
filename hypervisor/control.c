@@ -299,7 +299,7 @@ static int remap_to_root_cell(const struct jailhouse_memory *mem,
 	return err;
 }
 
-static void cell_destroy_internal(struct per_cpu *cpu_data, struct cell *cell)
+static void cell_destroy_internal(struct cell *cell)
 {
 	const struct jailhouse_memory *mem;
 	unsigned int cpu, n;
@@ -494,7 +494,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	return 0;
 
 err_destroy_cell:
-	cell_destroy_internal(cpu_data, cell);
+	cell_destroy_internal(cell);
 	/* cell_destroy_internal already calls arch_cell_destroy & cell_exit */
 	goto err_free_cell;
 err_arch_destroy:
@@ -661,7 +661,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 
 	printk("Closing cell \"%s\"\n", cell->config->name);
 
-	cell_destroy_internal(cpu_data, cell);
+	cell_destroy_internal(cell);
 
 	previous = &root_cell;
 	while (previous->next != cell)
