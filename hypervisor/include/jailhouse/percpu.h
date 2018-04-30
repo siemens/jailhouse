@@ -19,6 +19,7 @@
  * The per-CPU subsystem provides a CPU-local state structure and accessors.
  */
 
+#include <jailhouse/cell.h>
 #include <asm/percpu.h>
 
 /**
@@ -38,6 +39,37 @@ struct per_cpu {
 			union registers guest_regs;
 		};
 	};
+
+	/** Per-CPU root page table. */
+	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+	/** Per-CPU paging structures. */
+	struct paging_structures pg_structs;
+
+	/** Logical CPU ID (same as Linux). */
+	unsigned int cpu_id;
+	/** Owning cell. */
+	struct cell *cell;
+
+	/** Statistic counters. */
+	u32 stats[JAILHOUSE_NUM_CPU_STATS];
+
+	/** State of the shutdown process. Possible values:
+	 * @li SHUTDOWN_NONE: no shutdown in progress
+	 * @li SHUTDOWN_STARTED: shutdown in progress
+	 * @li negative error code: shutdown failed
+	 */
+	int shutdown_state;
+	/** True if CPU violated a cell boundary or cause some other failure in
+	 *  guest mode. */
+	bool failed;
+
+	/** Set to true for instructing the CPU to suspend. */
+	volatile bool suspend_cpu;
+	/** True if CPU is suspended. */
+	volatile bool cpu_suspended;
+	/** Set to true for a pending TLB flush for the paging layer that does
+	 *  host physical <-> guest physical memory mappings. */
+	bool flush_vcpu_caches;
 
 	ARCH_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));

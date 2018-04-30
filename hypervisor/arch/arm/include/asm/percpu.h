@@ -18,18 +18,11 @@
 #define STACK_SIZE			PAGE_SIZE
 
 #define ARCH_PERCPU_FIELDS						\
-	/** Per-CPU root page table. */					\
-	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE))); \
-	/** Per-CPU paging structures. */				\
-	struct paging_structures pg_structs;				\
-									\
 	/** Linux stack pointer, used for handover to the hypervisor. */ \
 	unsigned long linux_sp;						\
 	unsigned long linux_ret;					\
 	unsigned long linux_flags;					\
 	unsigned long linux_reg[NUM_ENTRY_REGS];			\
-									\
-	unsigned int cpu_id;						\
 									\
 	struct pending_irqs pending_irqs;				\
 									\
@@ -46,10 +39,6 @@
 		} gicr;							\
 	};								\
 									\
-	struct cell *cell;						\
-									\
-	u32 stats[JAILHOUSE_NUM_CPU_STATS];				\
-									\
 	bool initialized;						\
 									\
 	/**								\
@@ -64,24 +53,14 @@
 	 */								\
 	spinlock_t control_lock;					\
 									\
-	/** Set to true for instructing the CPU to suspend. */		\
-	volatile bool suspend_cpu;					\
 	/** True if CPU is waiting for power-on. */			\
 	volatile bool wait_for_poweron;					\
-	/** True if CPU is suspended. */				\
-	volatile bool cpu_suspended;					\
 	/** Set to true for pending reset. */				\
 	bool reset;							\
 	/** Set to true for pending park. */				\
 	bool park;							\
-	/** Set to true for a pending TLB flush for the paging layer	\
-	 *  that does host physical <-> guest physical memory		\
-	 *  mappings. */						\
-	bool flush_vcpu_caches;						\
 									\
 	unsigned long cpu_on_entry;					\
 	unsigned long cpu_on_context;					\
 									\
-	int shutdown_state;						\
-	unsigned long mpidr;						\
-	bool failed;
+	unsigned long mpidr;

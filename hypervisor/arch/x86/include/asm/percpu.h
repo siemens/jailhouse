@@ -24,15 +24,8 @@
 	/** Linux stack pointer, used for handover to hypervisor. */	\
 	unsigned long linux_sp;						\
 									\
-	/** Logical CPU ID (same as Linux). */				\
-	unsigned int cpu_id;						\
 	/** Physical APIC ID. */					\
 	u32 apic_id;							\
-	/** Owning cell. */						\
-	struct cell *cell;						\
-									\
-	/** Statistic counters. */					\
-	u32 stats[JAILHOUSE_NUM_CPU_STATS];				\
 									\
 	/** Linux states, used for handover to/from hypervisor. @{ */	\
 	struct desc_table_reg linux_gdtr;				\
@@ -89,40 +82,18 @@
 	 */								\
 	spinlock_t control_lock;					\
 									\
-	/** Set to true for instructing the CPU to suspend. */		\
-	volatile bool suspend_cpu;					\
 	/** True if CPU is waiting for SIPI. */				\
 	volatile bool wait_for_sipi;					\
-	/** True if CPU is suspended. */				\
-	volatile bool cpu_suspended;					\
 	/** Set to true for pending an INIT signal. */			\
 	bool init_signaled;						\
 	/** Pending SIPI vector; -1 if none is pending. */		\
 	int sipi_vector;						\
-	/** Set to true for a pending TLB flush for the paging layer	\
-	 *  that does host physical <-> guest physical memory		\
-	 *  mappings. */						\
-	bool flush_vcpu_caches;						\
 	/** Set to true for pending cache allocation updates (Intel	\
 	 *  only). */							\
 	bool update_cat;						\
-	/** State of the shutdown process. Possible values:		\
-	 * @li SHUTDOWN_NONE: no shutdown in progress			\
-	 * @li SHUTDOWN_STARTED: shutdown in progress			\
-	 * @li negative error code: shutdown failed			\
-	 */								\
-	int shutdown_state;						\
-	/** True if CPU violated a cell boundary or cause some other	\
-	 *  failure in guest mode. */					\
-	bool failed;							\
 									\
 	/** Number of iterations to clear pending APIC IRQs. */		\
 	unsigned int num_clear_apic_irqs;				\
-									\
-	/** Per-CPU paging structures. */				\
-	struct paging_structures pg_structs;				\
-	/** Per-CPU root page table. */					\
-	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE))); \
 									\
 	union {								\
 		struct {						\
