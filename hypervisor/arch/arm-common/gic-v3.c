@@ -212,7 +212,8 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	} while (!(typer & GICR_TYPER_Last));
 
 	if (!cpu_data->gicr.base) {
-		printk("GIC: No redist found for CPU%d\n", cpu_data->cpu_id);
+		printk("GIC: No redist found for CPU%d\n",
+		       cpu_data->public.cpu_id);
 		return -ENODEV;
 	}
 
@@ -315,7 +316,7 @@ static enum mmio_result gicv3_handle_redist_access(void *arg,
 	switch (mmio->address) {
 	case GICR_TYPER:
 		mmio_perform_access(cpu_data->gicr.base, mmio);
-		if (cpu_data->cpu_id == last_gicr)
+		if (cpu_data->public.cpu_id == last_gicr)
 				mmio->value |= GICR_TYPER_Last;
 		return MMIO_HANDLED;
 	case GICR_IIDR:

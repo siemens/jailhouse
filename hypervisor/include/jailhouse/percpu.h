@@ -33,6 +33,9 @@ struct public_per_cpu {
 	 *  page walks at any time. */
 	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 
+	/** Logical CPU ID (same as Linux). */
+	unsigned int cpu_id;
+
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
 
@@ -52,8 +55,6 @@ struct per_cpu {
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
 
-	/** Logical CPU ID (same as Linux). */
-	unsigned int cpu_id;
 	/** Owning cell. */
 	struct cell *cell;
 
@@ -111,7 +112,7 @@ static inline struct public_per_cpu *this_cpu_public(void)
  */
 static inline unsigned int this_cpu_id(void)
 {
-	return this_cpu_data()->cpu_id;
+	return this_cpu_public()->cpu_id;
 }
 
 /**

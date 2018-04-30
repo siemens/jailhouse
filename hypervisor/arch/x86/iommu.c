@@ -38,7 +38,7 @@ struct per_cpu *iommu_select_fault_reporting_cpu(void)
 
 	/* Save this value globally to avoid multiple reports of the same
 	 * case from different CPUs */
-	fault_reporting_cpu_id = target_data->cpu_id;
+	fault_reporting_cpu_id = target_data->public.cpu_id;
 
 	return target_data;
 }

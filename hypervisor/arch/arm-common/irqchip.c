@@ -115,7 +115,7 @@ void gic_handle_sgir_write(struct sgi *sgi)
 		for_each_cpu(cpu, cpu_data->cell->cpu_set) {
 			if (sgi->routing_mode == 1) {
 				/* Route to all (cell) CPUs but the caller. */
-				if (cpu == cpu_data->cpu_id)
+				if (cpu == cpu_data->public.cpu_id)
 					continue;
 			} else {
 				target = irqchip_get_cpu_target(cpu);
@@ -224,7 +224,7 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 {
 	struct pending_irqs *pending = &cpu_data->pending_irqs;
 	bool local_injection = (this_cpu_data() == cpu_data);
-	const u16 sender = this_cpu_data()->cpu_id;
+	const u16 sender = this_cpu_id();
 	unsigned int new_tail;
 	struct sgi sgi;
 
@@ -264,8 +264,9 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	if (local_injection) {
 		irqchip.enable_maint_irq(true);
 	} else {
-		sgi.targets = irqchip_get_cpu_target(cpu_data->cpu_id);
-		sgi.cluster_id = irqchip_get_cluster_target(cpu_data->cpu_id);
+		sgi.targets = irqchip_get_cpu_target(cpu_data->public.cpu_id);
+		sgi.cluster_id =
+			irqchip_get_cluster_target(cpu_data->public.cpu_id);
 		sgi.routing_mode = 0;
 		sgi.id = SGI_INJECT;
 

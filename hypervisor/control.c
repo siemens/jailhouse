@@ -411,7 +411,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		goto err_free_cell;
 
 	/* don't assign the CPU we are currently running on */
-	if (cell_owns_cpu(cell, cpu_data->cpu_id)) {
+	if (cell_owns_cpu(cell, cpu_data->public.cpu_id)) {
 		err = trace_error(-EBUSY);
 		goto err_cell_exit;
 	}
@@ -733,7 +733,7 @@ static int hypervisor_disable(struct per_cpu *cpu_data)
 {
 	static volatile unsigned int waiting_cpus;
 	static bool do_common_shutdown;
-	unsigned int this_cpu = cpu_data->cpu_id;
+	unsigned int this_cpu = cpu_data->public.cpu_id;
 	unsigned int cpu;
 	int state, ret;
 
