@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/types.h>
+#include <jailhouse/types.h>
 
 unsigned long long __aeabi_llsl(unsigned long long val, unsigned int shift);
 unsigned long long __aeabi_llsr(unsigned long long val, unsigned int shift);

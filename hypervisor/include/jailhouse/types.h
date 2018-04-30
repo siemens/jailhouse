@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013, 2014
+ * Copyright (c) Siemens AG, 2013-2018
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -30,6 +30,30 @@ struct cpu_set {
 	 * into a larger buffer. */
 	unsigned long bitmap[1];
 };
+
+typedef signed char s8;
+typedef unsigned char u8;
+
+typedef signed short s16;
+typedef unsigned short u16;
+
+typedef signed int s32;
+typedef unsigned int u32;
+
+typedef signed long long s64;
+typedef unsigned long long u64;
+
+typedef s8 __s8;
+typedef u8 __u8;
+
+typedef s16 __s16;
+typedef u16 __u16;
+
+typedef s32 __s32;
+typedef u32 __u32;
+
+typedef s64 __s64;
+typedef u64 __u64;
 
 #endif /* !__ASSEMBLY__ */
 
