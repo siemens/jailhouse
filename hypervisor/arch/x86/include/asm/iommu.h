@@ -45,7 +45,7 @@ void iommu_config_commit(struct cell *cell_added_removed);
 
 void iommu_prepare_shutdown(void);
 
-struct per_cpu *iommu_select_fault_reporting_cpu(void);
+struct public_per_cpu *iommu_select_fault_reporting_cpu(void);
 void iommu_check_pending_faults(void);
 
 bool iommu_cell_emulates_ir(struct cell *cell);
