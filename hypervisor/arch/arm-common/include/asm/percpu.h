@@ -33,22 +33,19 @@
 									\
 	struct pending_irqs pending_irqs;				\
 									\
-	unsigned long cpu_on_entry;					\
-	unsigned long cpu_on_context;
-
-#define ARCH_PERCPU_FIELDS						\
 	/**								\
 	 * Lock protecting CPU state changes done for control tasks.	\
 	 *								\
 	 * The lock protects the following fields (unless CPU is	\
 	 * suspended):							\
-	 * @li per_cpu::suspend_cpu					\
-	 * @li per_cpu::cpu_suspended (except for spinning on it to	\
-	 *                             become true)			\
-	 * @li per_cpu::flush_vcpu_caches				\
-	 * @li per_cpu::wait_for_poweron (except for CPU-local tests)	\
-	 * @li per_cpu::reset						\
-	 * @li per_cpu::park						\
+	 * @li public_per_cpu::suspend_cpu				\
+	 * @li public_per_cpu::cpu_suspended (except for spinning on it	\
+	 *                                    to become true)		\
+	 * @li public_per_cpu::flush_vcpu_caches			\
+	 * @li public_per_cpu::wait_for_poweron (except for CPU-local	\
+	 * 					 tests)			\
+	 * @li public_per_cpu::reset					\
+	 * @li public_per_cpu::park					\
 	 */								\
 	spinlock_t control_lock;					\
 									\
@@ -59,4 +56,5 @@
 	/** Set to true for pending park. */				\
 	bool park;							\
 									\
-	ARM_PERCPU_FIELDS;
+	unsigned long cpu_on_entry;					\
+	unsigned long cpu_on_context;

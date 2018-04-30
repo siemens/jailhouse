@@ -51,6 +51,14 @@ struct public_per_cpu {
 	 *  guest mode. */
 	bool failed;
 
+	/** Set to true for instructing the CPU to suspend. */
+	volatile bool suspend_cpu;
+	/** True if CPU is suspended. */
+	volatile bool cpu_suspended;
+	/** Set to true for a pending TLB flush for the paging layer that does
+	 *  host physical <-> guest physical memory mappings. */
+	bool flush_vcpu_caches;
+
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
 
@@ -69,14 +77,6 @@ struct per_cpu {
 
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
-
-	/** Set to true for instructing the CPU to suspend. */
-	volatile bool suspend_cpu;
-	/** True if CPU is suspended. */
-	volatile bool cpu_suspended;
-	/** Set to true for a pending TLB flush for the paging layer that does
-	 *  host physical <-> guest physical memory mappings. */
-	bool flush_vcpu_caches;
 
 	ARCH_PERCPU_FIELDS;
 

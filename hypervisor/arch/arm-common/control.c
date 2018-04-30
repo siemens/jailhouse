@@ -17,19 +17,19 @@
 #include <asm/control.h>
 #include <asm/psci.h>
 
-static void enter_cpu_off(struct per_cpu *cpu_data)
+static void enter_cpu_off(struct public_per_cpu *cpu_public)
 {
-	cpu_data->park = false;
-	cpu_data->wait_for_poweron = true;
+	cpu_public->park = false;
+	cpu_public->wait_for_poweron = true;
 }
 
 void arm_cpu_park(void)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	struct public_per_cpu *cpu_public = this_cpu_public();
 
-	spin_lock(&cpu_data->control_lock);
-	enter_cpu_off(cpu_data);
-	spin_unlock(&cpu_data->control_lock);
+	spin_lock(&cpu_public->control_lock);
+	enter_cpu_off(cpu_public);
+	spin_unlock(&cpu_public->control_lock);
 
 	arm_cpu_reset(0);
 	arm_paging_vcpu_init(&parking_pt);
@@ -48,7 +48,7 @@ void arm_cpu_kick(unsigned int cpu_id)
 
 void arch_suspend_cpu(unsigned int cpu_id)
 {
-	struct per_cpu *target_data = per_cpu(cpu_id);
+	struct public_per_cpu *target_data = public_per_cpu(cpu_id);
 	bool target_suspended;
 
 	spin_lock(&target_data->control_lock);
@@ -74,7 +74,7 @@ void arch_suspend_cpu(unsigned int cpu_id)
 
 void arch_resume_cpu(unsigned int cpu_id)
 {
-	struct per_cpu *target_data = per_cpu(cpu_id);
+	struct public_per_cpu *target_data = public_per_cpu(cpu_id);
 
 	/* take lock to avoid theoretical race with a pending suspension */
 	spin_lock(&target_data->control_lock);
@@ -86,88 +86,88 @@ void arch_resume_cpu(unsigned int cpu_id)
 
 void arch_reset_cpu(unsigned int cpu_id)
 {
-	per_cpu(cpu_id)->reset = true;
+	public_per_cpu(cpu_id)->reset = true;
 
 	arch_resume_cpu(cpu_id);
 }
 
 void arch_park_cpu(unsigned int cpu_id)
 {
-	per_cpu(cpu_id)->park = true;
+	public_per_cpu(cpu_id)->park = true;
 
 	arch_resume_cpu(cpu_id);
 }
 
-static void check_events(struct per_cpu *cpu_data)
+static void check_events(struct public_per_cpu *cpu_public)
 {
 	bool reset = false;
 
-	spin_lock(&cpu_data->control_lock);
+	spin_lock(&cpu_public->control_lock);
 
 	do {
-		if (cpu_data->suspend_cpu)
-			cpu_data->cpu_suspended = true;
+		if (cpu_public->suspend_cpu)
+			cpu_public->cpu_suspended = true;
 
-		spin_unlock(&cpu_data->control_lock);
+		spin_unlock(&cpu_public->control_lock);
 
-		while (cpu_data->suspend_cpu)
+		while (cpu_public->suspend_cpu)
 			cpu_relax();
 
-		spin_lock(&cpu_data->control_lock);
+		spin_lock(&cpu_public->control_lock);
 
-		if (!cpu_data->suspend_cpu) {
-			cpu_data->cpu_suspended = false;
+		if (!cpu_public->suspend_cpu) {
+			cpu_public->cpu_suspended = false;
 
-			if (cpu_data->park) {
-				enter_cpu_off(cpu_data);
+			if (cpu_public->park) {
+				enter_cpu_off(cpu_public);
 				break;
 			}
 
-			if (cpu_data->reset) {
-				cpu_data->reset = false;
-				if (cpu_data->public.cpu_on_entry !=
+			if (cpu_public->reset) {
+				cpu_public->reset = false;
+				if (cpu_public->cpu_on_entry !=
 				    PSCI_INVALID_ADDRESS) {
-					cpu_data->wait_for_poweron = false;
+					cpu_public->wait_for_poweron = false;
 					reset = true;
 				} else {
-					enter_cpu_off(cpu_data);
+					enter_cpu_off(cpu_public);
 				}
 				break;
 			}
 		}
-	} while (cpu_data->suspend_cpu);
+	} while (cpu_public->suspend_cpu);
 
-	if (cpu_data->flush_vcpu_caches) {
-		cpu_data->flush_vcpu_caches = false;
+	if (cpu_public->flush_vcpu_caches) {
+		cpu_public->flush_vcpu_caches = false;
 		arm_paging_vcpu_flush_tlbs();
 	}
 
-	spin_unlock(&cpu_data->control_lock);
+	spin_unlock(&cpu_public->control_lock);
 
 	/*
 	 * wait_for_poweron is only modified on this CPU, so checking outside of
 	 * control_lock is fine.
 	 */
-	if (cpu_data->wait_for_poweron)
+	if (cpu_public->wait_for_poweron)
 		arm_cpu_park();
 	else if (reset)
-		arm_cpu_reset(cpu_data->public.cpu_on_entry);
+		arm_cpu_reset(cpu_public->cpu_on_entry);
 }
 
 void arch_handle_sgi(u32 irqn, unsigned int count_event)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	struct public_per_cpu *cpu_public = this_cpu_public();
 
 	switch (irqn) {
 	case SGI_INJECT:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] +=
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] +=
 			count_event;
 		irqchip_inject_pending();
 		break;
 	case SGI_EVENT:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
 			count_event;
-		check_events(cpu_data);
+		check_events(cpu_public);
 		break;
 	default:
 		printk("WARN: unknown SGI received %d\n", irqn);
@@ -249,7 +249,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 		if (cpu == this_cpu_id())
 			arm_paging_vcpu_flush_tlbs();
 		else
-			per_cpu(cpu)->flush_vcpu_caches = true;
+			public_per_cpu(cpu)->flush_vcpu_caches = true;
 }
 
 void arch_config_commit(struct cell *cell_added_removed)

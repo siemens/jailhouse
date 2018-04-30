@@ -12,7 +12,7 @@
 
 #define NUM_ENTRY_REGS			13
 
-#define ARM_PERCPU_FIELDS						\
+#define ARCH_PERCPU_FIELDS						\
 	/** Linux stack pointer, used for handover to the hypervisor. */ \
 	unsigned long linux_sp;						\
 	unsigned long linux_ret;					\

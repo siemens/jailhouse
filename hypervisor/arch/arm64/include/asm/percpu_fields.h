@@ -10,5 +10,5 @@
  * the COPYING file in the top-level directory.
  */
 
-#define ARM_PERCPU_FIELDS						\
+#define ARCH_PERCPU_FIELDS						\
 	unsigned long id_aa64mmfr0;

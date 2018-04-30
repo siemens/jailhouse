@@ -42,7 +42,7 @@ static void cat_update_cell(struct cell *cell)
 		if (cpu == this_cpu_id())
 			cat_update();
 		else
-			per_cpu(cpu)->update_cat = true;
+			public_per_cpu(cpu)->update_cat = true;
 }
 
 static u32 get_free_cos(void)

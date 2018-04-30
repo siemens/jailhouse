@@ -20,7 +20,7 @@
 static long psci_emulate_cpu_on(struct trap_context *ctx)
 {
 	unsigned long mask = IS_PSCI_64(ctx->regs[0]) ? (u64)-1L : (u32)-1;
-	struct per_cpu *target_data;
+	struct public_per_cpu *target_data;
 	bool kick_cpu = false;
 	unsigned int cpu;
 	long result;
@@ -30,13 +30,13 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
 
-	target_data = per_cpu(cpu);
+	target_data = public_per_cpu(cpu);
 
 	spin_lock(&target_data->control_lock);
 
 	if (target_data->wait_for_poweron) {
-		target_data->public.cpu_on_entry = ctx->regs[2] & mask;
-		target_data->public.cpu_on_context = ctx->regs[3] & mask;
+		target_data->cpu_on_entry = ctx->regs[2] & mask;
+		target_data->cpu_on_context = ctx->regs[3] & mask;
 		target_data->reset = true;
 		kick_cpu = true;
 
@@ -61,7 +61,7 @@ static long psci_emulate_affinity_info(struct trap_context *ctx)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
 
-	return per_cpu(cpu)->wait_for_poweron ?
+	return public_per_cpu(cpu)->wait_for_poweron ?
 		PSCI_CPU_IS_OFF : PSCI_CPU_IS_ON;
 }
 

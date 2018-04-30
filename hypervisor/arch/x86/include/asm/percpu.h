@@ -22,7 +22,33 @@
 
 #define ARCH_PUBLIC_PERCPU_FIELDS					\
 	/** Physical APIC ID. */					\
-	u32 apic_id;
+	u32 apic_id;							\
+									\
+	/**								\
+	 * Lock protecting CPU state changes done for control tasks.	\
+	 *								\
+	 * The lock protects the following fields (unless CPU is	\
+	 * suspended):							\
+	 * @li public_per_cpu::suspend_cpu				\
+	 * @li public_per_cpu::cpu_suspended (except for spinning on it	\
+	 *                                   to become true)		\
+	 * @li public_per_cpu::wait_for_sipi				\
+	 * @li public_per_cpu::init_signaled				\
+	 * @li public_per_cpu::sipi_vector				\
+	 * @li public_per_cpu::flush_vcpu_caches			\
+	 * @li public_per_cpu::update_cat				\
+	 */								\
+	spinlock_t control_lock;					\
+									\
+	/** True if CPU is waiting for SIPI. */				\
+	volatile bool wait_for_sipi;					\
+	/** Set to true for pending an INIT signal. */			\
+	bool init_signaled;						\
+	/** Pending SIPI vector; -1 if none is pending. */		\
+	int sipi_vector;						\
+	/** Set to true for pending cache allocation updates (Intel	\
+	 *  only). */							\
+	bool update_cat;
 
 #define ARCH_PERCPU_FIELDS						\
 	/** Linux stack pointer, used for handover to hypervisor. */	\
@@ -67,32 +93,6 @@
 		/** SVM initialization state */				\
 		enum {SVMOFF = 0, SVMON} svm_state;			\
 	};								\
-									\
-	/**								\
-	 * Lock protecting CPU state changes done for control tasks.	\
-	 *								\
-	 * The lock protects the following fields (unless CPU is	\
-	 * suspended):							\
-	 * @li per_cpu::suspend_cpu					\
-	 * @li per_cpu::cpu_suspended (except for spinning on it to	\
-	 *                             become true)			\
-	 * @li per_cpu::wait_for_sipi					\
-	 * @li per_cpu::init_signaled					\
-	 * @li per_cpu::sipi_vector					\
-	 * @li per_cpu::flush_vcpu_caches				\
-	 * @li per_cpu::update_cat					\
-	 */								\
-	spinlock_t control_lock;					\
-									\
-	/** True if CPU is waiting for SIPI. */				\
-	volatile bool wait_for_sipi;					\
-	/** Set to true for pending an INIT signal. */			\
-	bool init_signaled;						\
-	/** Pending SIPI vector; -1 if none is pending. */		\
-	int sipi_vector;						\
-	/** Set to true for pending cache allocation updates (Intel	\
-	 *  only). */							\
-	bool update_cat;						\
 									\
 	/** Number of iterations to clear pending APIC IRQs. */		\
 	unsigned int num_clear_apic_irqs;				\
