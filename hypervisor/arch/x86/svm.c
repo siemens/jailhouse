@@ -28,7 +28,7 @@
 #include <asm/control.h>
 #include <asm/iommu.h>
 #include <asm/paging.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 #include <asm/processor.h>
 #include <asm/svm.h>
 #include <asm/vcpu.h>

@@ -12,7 +12,7 @@
 
 #include <jailhouse/gen-defines.h>
 #include <jailhouse/utils.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 void common(void);
 

@@ -14,7 +14,7 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
 #include <asm/bitops.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 #include <asm/processor.h>
 #include <asm/traps.h>
 

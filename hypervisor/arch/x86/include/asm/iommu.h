@@ -19,7 +19,7 @@
 #include <jailhouse/pci.h>
 #include <jailhouse/types.h>
 #include <asm/apic.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 extern unsigned int fault_reporting_cpu_id;
 

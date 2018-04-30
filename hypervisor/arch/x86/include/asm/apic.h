@@ -15,7 +15,7 @@
 
 #include <jailhouse/paging.h>
 #include <jailhouse/utils.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 /* currently our limit due to fixed-size APID ID map */
 #define APIC_MAX_PHYS_ID		254

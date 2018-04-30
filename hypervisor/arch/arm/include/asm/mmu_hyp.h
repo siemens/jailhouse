@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 int switch_exception_level(struct per_cpu *cpu_data);
 

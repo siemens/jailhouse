@@ -17,7 +17,7 @@
 #include <jailhouse/cell-config.h>
 #include <jailhouse/entry.h>
 #include <jailhouse/paging.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 #include <asm/processor.h>
 
 #define X86_CR0_HOST_STATE \

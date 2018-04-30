@@ -10,9 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef _JAILHOUSE_ASM_PERCPU_H
-#define _JAILHOUSE_ASM_PERCPU_H
-
 #include <jailhouse/cell.h>
 #include <asm/irqchip.h>
 
@@ -106,5 +103,3 @@ static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
 			- sizeof(struct registers));
 }
-
-#endif /* !_JAILHOUSE_ASM_PERCPU_H */

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2017
+ * Copyright (c) Siemens AG, 2013-2018
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,7 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/percpu.h>
+#ifndef _JAILHOUSE_PERCPU_H
+#define _JAILHOUSE_PERCPU_H
 
-int arm_init_early(void);
-int arm_cpu_init(struct per_cpu *cpu_data);
+#include <asm/percpu.h>
+
+#endif /* !_JAILHOUSE_PERCPU_H */

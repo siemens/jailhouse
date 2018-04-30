@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 struct exception_frame;
 

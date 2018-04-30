@@ -14,7 +14,7 @@
 
 #include <jailhouse/paging.h>
 #include <jailhouse/gen-defines.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 void common(void);
 

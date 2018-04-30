@@ -12,7 +12,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 void enable_mmu_el2(u64 ttbr0_el2);
 void __attribute__((noreturn)) shutdown_el2(struct per_cpu *cpu_data);

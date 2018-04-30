@@ -11,7 +11,7 @@
  */
 
 #include <jailhouse/control.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 #include <asm/paging.h>
 
 /**

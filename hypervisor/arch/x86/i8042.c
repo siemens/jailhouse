@@ -14,7 +14,7 @@
 #include <jailhouse/utils.h>
 #include <asm/i8042.h>
 #include <asm/io.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 #include <jailhouse/cell-config.h>
 

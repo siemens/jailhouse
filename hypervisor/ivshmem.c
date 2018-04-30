@@ -27,7 +27,7 @@
 #include <jailhouse/string.h>
 #include <jailhouse/utils.h>
 #include <jailhouse/processor.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 #define VIRTIO_VENDOR_ID	0x1af4
 #define IVSHMEM_DEVICE_ID	0x1110

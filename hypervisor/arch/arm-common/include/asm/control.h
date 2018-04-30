@@ -18,7 +18,7 @@
 
 #ifndef __ASSEMBLY__
 
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 void arch_handle_sgi(u32 irqn, unsigned int count_event);
 bool arch_handle_phys_irq(u32 irqn, unsigned int count_event);

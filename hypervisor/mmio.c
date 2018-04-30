@@ -16,7 +16,7 @@
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/unit.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 
 /**
  * Perform MMIO-specific initialization for a new cell.

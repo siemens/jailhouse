@@ -12,9 +12,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef _JAILHOUSE_ASM_PERCPU_H
-#define _JAILHOUSE_ASM_PERCPU_H
-
 #include <jailhouse/cell.h>
 #include <asm/svm.h>
 #include <asm/vmx.h>
@@ -207,5 +204,3 @@ static inline struct per_cpu *per_cpu(unsigned int cpu)
 }
 
 /** @} **/
-
-#endif /* !_JAILHOUSE_ASM_PERCPU_H */

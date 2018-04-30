@@ -23,7 +23,7 @@
 #include <asm/i8042.h>
 #include <asm/ioapic.h>
 #include <asm/pci.h>
-#include <asm/percpu.h>
+#include <jailhouse/percpu.h>
 #include <asm/vcpu.h>
 
 static u8 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE] = {
