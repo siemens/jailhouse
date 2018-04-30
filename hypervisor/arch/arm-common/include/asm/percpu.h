@@ -15,6 +15,8 @@
 
 #define STACK_SIZE			PAGE_SIZE
 
+#define ARCH_PUBLIC_PERCPU_FIELDS	/* none */
+
 #define ARCH_PERCPU_FIELDS						\
 	struct pending_irqs pending_irqs;				\
 									\

@@ -27,6 +27,11 @@
  * @{
  */
 
+/** Per-CPU states accessible across all CPUs. */
+struct public_per_cpu {
+	ARCH_PUBLIC_PERCPU_FIELDS;
+} __attribute__((aligned(PAGE_SIZE)));
+
 /** Per-CPU states. */
 struct per_cpu {
 	/* Must be first field! */
@@ -72,6 +77,9 @@ struct per_cpu {
 	bool flush_vcpu_caches;
 
 	ARCH_PERCPU_FIELDS;
+
+	/* Must be last field! */
+	struct public_per_cpu public;
 } __attribute__((aligned(PAGE_SIZE)));
 
 /**
@@ -82,6 +90,16 @@ struct per_cpu {
 static inline struct per_cpu *this_cpu_data(void)
 {
 	return (struct per_cpu *)LOCAL_CPU_BASE;
+}
+
+/**
+ * Retrieve the publicly accessible data structure of the current CPU.
+ *
+ * @return Pointer to public per-CPU data structure.
+ */
+static inline struct public_per_cpu *this_cpu_public(void)
+{
+	return &this_cpu_data()->public;
 }
 
 /**
@@ -115,6 +133,17 @@ static inline struct per_cpu *per_cpu(unsigned int cpu)
 	extern u8 __page_pool[];
 
 	return (struct per_cpu *)(__page_pool + cpu * sizeof(struct per_cpu));
+}
+
+/**
+ * Retrieve the publicly accessible data structure of the specified CPU.
+ * @param cpu	ID of the target CPU.
+ *
+ * @return Pointer to public per-CPU data structure.
+ */
+static inline struct public_per_cpu *public_per_cpu(unsigned int cpu)
+{
+	return &per_cpu(cpu)->public;
 }
 
 /** @} **/

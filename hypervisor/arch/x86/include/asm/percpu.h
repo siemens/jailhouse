@@ -20,6 +20,8 @@
 
 #define STACK_SIZE			PAGE_SIZE
 
+#define ARCH_PUBLIC_PERCPU_FIELDS	/* none */
+
 #define ARCH_PERCPU_FIELDS						\
 	/** Linux stack pointer, used for handover to hypervisor. */	\
 	unsigned long linux_sp;						\
