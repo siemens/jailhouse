@@ -151,7 +151,7 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 	}
 
 	apic_to_cpu_id[apic_id] = cpu_id;
-	cpu_data->apic_id = apic_id;
+	cpu_data->public.apic_id = apic_id;
 
 	cpu_data->sipi_vector = -1;
 
@@ -206,7 +206,7 @@ int apic_init(void)
 	return 0;
 }
 
-void apic_send_nmi_ipi(struct per_cpu *target_data)
+void apic_send_nmi_ipi(struct public_per_cpu *target_data)
 {
 	apic_ops.send_ipi(target_data->apic_id,
 			  APIC_ICR_DLVR_NMI |
@@ -390,7 +390,8 @@ static void apic_send_ipi(unsigned int target_cpu_id, u32 orig_icr_hi,
 				   icr_lo & APIC_ICR_VECTOR_MASK);
 		break;
 	default:
-		apic_ops.send_ipi(per_cpu(target_cpu_id)->apic_id, icr_lo);
+		apic_ops.send_ipi(public_per_cpu(target_cpu_id)->apic_id,
+				  icr_lo);
 	}
 }
 

@@ -80,7 +80,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 			/* make sure the value is written before we kick
 			 * the remote core */
 			memory_barrier();
-			apic_send_nmi_ipi(per_cpu(cpu));
+			apic_send_nmi_ipi(public_per_cpu(cpu));
 		}
 }
 
@@ -138,7 +138,7 @@ void arch_suspend_cpu(unsigned int cpu_id)
 		 * The target CPU, in turn, will leave the guest and handle the
 		 * request in the event loop.
 		 */
-		apic_send_nmi_ipi(target_data);
+		apic_send_nmi_ipi(&target_data->public);
 
 		while (!target_data->cpu_suspended)
 			cpu_relax();
@@ -192,7 +192,7 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 	spin_unlock(&target_data->control_lock);
 
 	if (send_nmi)
-		apic_send_nmi_ipi(target_data);
+		apic_send_nmi_ipi(&target_data->public);
 }
 
 /* control_lock has to be held */

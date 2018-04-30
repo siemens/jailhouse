@@ -305,7 +305,7 @@ static void vtd_init_fault_nmi(void)
 	target_data = iommu_select_fault_reporting_cpu();
 
 	/* We only support 8-bit APIC IDs. */
-	msi.native.destination = (u8)target_data->apic_id;
+	msi.native.destination = (u8)target_data->public.apic_id;
 
 	for (n = 0; n < dmar_units; n++, reg_base += DMAR_MMIO_SIZE) {
 		/* Mask events */
@@ -334,7 +334,7 @@ static void vtd_init_fault_nmi(void)
 	 * not be reported. Address this by triggering an NMI on the new
 	 * reporting CPU.
 	 */
-	apic_send_nmi_ipi(target_data);
+	apic_send_nmi_ipi(&target_data->public);
 }
 
 static void *vtd_get_fault_rec_reg_addr(void *reg_base)

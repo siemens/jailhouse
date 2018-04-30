@@ -20,14 +20,13 @@
 
 #define STACK_SIZE			PAGE_SIZE
 
-#define ARCH_PUBLIC_PERCPU_FIELDS	/* none */
+#define ARCH_PUBLIC_PERCPU_FIELDS					\
+	/** Physical APIC ID. */					\
+	u32 apic_id;
 
 #define ARCH_PERCPU_FIELDS						\
 	/** Linux stack pointer, used for handover to hypervisor. */	\
 	unsigned long linux_sp;						\
-									\
-	/** Physical APIC ID. */					\
-	u32 apic_id;							\
 									\
 	/** Linux states, used for handover to/from hypervisor. @{ */	\
 	struct desc_table_reg linux_gdtr;				\
