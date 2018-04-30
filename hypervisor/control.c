@@ -77,19 +77,19 @@ bool cpu_id_valid(unsigned long cpu_id)
  * Suspend all CPUs assigned to the cell except the one executing
  * the function (if it is in the cell's CPU set) to prevent races.
  */
-static void cell_suspend(struct cell *cell, struct per_cpu *cpu_data)
+static void cell_suspend(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu_except(cpu, cell->cpu_set, cpu_data->cpu_id)
+	for_each_cpu_except(cpu, cell->cpu_set, this_cpu_id())
 		arch_suspend_cpu(cpu);
 }
 
-static void cell_resume(struct per_cpu *cpu_data)
+static void cell_resume(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu_except(cpu, cpu_data->cell->cpu_set, cpu_data->cpu_id)
+	for_each_cpu_except(cpu, cell->cpu_set, this_cpu_id())
 		arch_resume_cpu(cpu);
 }
 
@@ -137,7 +137,7 @@ static bool cell_exchange_message(struct cell *cell, u32 message,
 		if (cell->config->msg_reply_timeout > 0 && --timeout == 0) {
 			printk("Timeout expired while waiting for reply from "
 			       "target cell\n");
-			cell_suspend(cell, this_cpu_data());
+			cell_suspend(cell);
 			cell->comm_page.comm_region.cell_state =
 				JAILHOUSE_CELL_FAILED;
 			return true;
@@ -353,7 +353,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
-	cell_suspend(&root_cell, cpu_data);
+	cell_suspend(&root_cell);
 
 	if (!cell_reconfig_ok(NULL)) {
 		err = -EPERM;
@@ -489,7 +489,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	paging_dump_stats("after cell creation");
 
-	cell_resume(cpu_data);
+	cell_resume(&root_cell);
 
 	return 0;
 
@@ -504,7 +504,7 @@ err_cell_exit:
 err_free_cell:
 	page_free(&mem_pool, cell, cell_pages);
 err_resume:
-	cell_resume(cpu_data);
+	cell_resume(&root_cell);
 
 	return err;
 }
@@ -523,30 +523,30 @@ static int cell_management_prologue(enum management_task task,
 	if (cpu_data->cell != &root_cell)
 		return -EPERM;
 
-	cell_suspend(&root_cell, cpu_data);
+	cell_suspend(&root_cell);
 
 	for_each_cell(*cell_ptr)
 		if ((*cell_ptr)->config->id == id)
 			break;
 
 	if (!*cell_ptr) {
-		cell_resume(cpu_data);
+		cell_resume(&root_cell);
 		return -ENOENT;
 	}
 
 	/* root cell cannot be managed */
 	if (*cell_ptr == &root_cell) {
-		cell_resume(cpu_data);
+		cell_resume(&root_cell);
 		return -EINVAL;
 	}
 
 	if ((task == CELL_DESTROY && !cell_reconfig_ok(*cell_ptr)) ||
 	    !cell_shutdown_ok(*cell_ptr)) {
-		cell_resume(cpu_data);
+		cell_resume(&root_cell);
 		return -EPERM;
 	}
 
-	cell_suspend(*cell_ptr, cpu_data);
+	cell_suspend(*cell_ptr);
 
 	return 0;
 }
@@ -601,7 +601,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	printk("Started cell \"%s\"\n", cell->config->name);
 
 out_resume:
-	cell_resume(cpu_data);
+	cell_resume(&root_cell);
 
 	return err;
 }
@@ -645,7 +645,7 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	printk("Cell \"%s\" can be loaded\n", cell->config->name);
 
 out_resume:
-	cell_resume(cpu_data);
+	cell_resume(&root_cell);
 
 	return err;
 }
@@ -674,7 +674,7 @@ static int cell_destroy(struct per_cpu *cpu_data, unsigned long id)
 
 	cell_reconfig_completed();
 
-	cell_resume(cpu_data);
+	cell_resume(&root_cell);
 
 	return 0;
 }
