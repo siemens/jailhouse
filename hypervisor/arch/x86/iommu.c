@@ -27,18 +27,18 @@ unsigned int iommu_count_units(void)
 
 struct per_cpu *iommu_select_fault_reporting_cpu(void)
 {
-	struct per_cpu *cpu_data;
+	struct per_cpu *target_data;
 	unsigned int n;
 
 	/* This assumes that at least one bit is set somewhere because we
 	 * don't support configurations where Linux is left with no CPUs. */
 	for (n = 0; root_cell.cpu_set->bitmap[n] == 0; n++)
 		/* Empty loop */;
-	cpu_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[n]));
+	target_data = per_cpu(ffsl(root_cell.cpu_set->bitmap[n]));
 
 	/* Save this value globally to avoid multiple reports of the same
 	 * case from different CPUs */
-	fault_reporting_cpu_id = cpu_data->cpu_id;
+	fault_reporting_cpu_id = target_data->cpu_id;
 
-	return cpu_data;
+	return target_data;
 }
