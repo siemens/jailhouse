@@ -65,12 +65,10 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
-	union registers *regs = guest_regs(this_cpu_data());
-
 	/* return to the caller in Linux */
-	arm_write_sysreg(ELR_EL2, regs->usr[30]);
+	arm_write_sysreg(ELR_EL2, this_cpu_data()->guest_regs.usr[30]);
 
-	vmreturn(regs);
+	vmreturn(&this_cpu_data()->guest_regs);
 }
 
 /* disable the hypervisor on the current CPU */
@@ -107,12 +105,12 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 
 void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
-	union registers *regs = guest_regs(per_cpu(cpu_id));
+	struct per_cpu *cpu_data = per_cpu(cpu_id);
 
 	/* Jailhouse initialization failed; return to the caller in EL1 */
-	arm_write_sysreg(ELR_EL2, regs->usr[30]);
+	arm_write_sysreg(ELR_EL2, cpu_data->guest_regs.usr[30]);
 
-	regs->usr[0] = return_code;
+	cpu_data->guest_regs.usr[0] = return_code;
 
-	arch_shutdown_self(per_cpu(cpu_id));
+	arch_shutdown_self(cpu_data);
 }

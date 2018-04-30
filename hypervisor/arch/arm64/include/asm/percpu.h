@@ -13,9 +13,9 @@
 #include <jailhouse/cell.h>
 #include <asm/irqchip.h>
 
+#define STACK_SIZE			PAGE_SIZE
+
 #define ARCH_PERCPU_FIELDS						\
-	u8 stack[PAGE_SIZE];						\
-									\
 	/** Per-CPU root page table. */					\
 	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE))); \
 	/** Per-CPU paging structures. */				\
@@ -75,7 +75,3 @@
 									\
 	unsigned long cpu_on_entry;					\
 	unsigned long cpu_on_context;
-
-#define guest_regs(__cpu_data) \
-	((union registers *)((__cpu_data)->stack + sizeof((__cpu_data)->stack) \
-			- sizeof(union registers)))

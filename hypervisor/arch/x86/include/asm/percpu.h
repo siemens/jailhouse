@@ -21,16 +21,6 @@
 #define STACK_SIZE			PAGE_SIZE
 
 #define ARCH_PERCPU_FIELDS						\
-	union {								\
-		/** Stack used while in hypervisor mode. */		\
-		u8 stack[STACK_SIZE];					\
-		struct {						\
-			u8 __fill[STACK_SIZE - sizeof(union registers)]; \
-			/** Guest registers saved on stack during VM exit. */ \
-			union registers guest_regs;			\
-		};							\
-	};								\
-									\
 	/** Linux stack pointer, used for handover to hypervisor. */	\
 	unsigned long linux_sp;						\
 									\

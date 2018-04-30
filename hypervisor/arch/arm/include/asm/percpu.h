@@ -15,10 +15,9 @@
 
 #define NUM_ENTRY_REGS			13
 
+#define STACK_SIZE			PAGE_SIZE
+
 #define ARCH_PERCPU_FIELDS						\
-	/** Stack used while in hypervisor mode. */			\
-	u8 stack[PAGE_SIZE];						\
-									\
 	/** Per-CPU root page table. */					\
 	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE))); \
 	/** Per-CPU paging structures. */				\
@@ -86,7 +85,3 @@
 	int shutdown_state;						\
 	unsigned long mpidr;						\
 	bool failed;
-
-#define guest_regs(__cpu_data) \
-	((union registers *)((__cpu_data)->stack + sizeof((__cpu_data)->stack) \
-			- sizeof(union registers)))

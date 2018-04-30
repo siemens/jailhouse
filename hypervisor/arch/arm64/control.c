@@ -20,9 +20,6 @@
 
 void arm_cpu_reset(unsigned long pc)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
-	union registers *regs = guest_regs(cpu_data);
-
 	/* put the cpu in a reset state */
 	/* AARCH64_TODO: handle big endian support */
 	arm_write_sysreg(SPSR_EL2, RESET_PSR);
@@ -31,7 +28,7 @@ void arm_cpu_reset(unsigned long pc)
 	arm_write_sysreg(PMCR_EL0, 0);
 
 	/* wipe any other state to avoid leaking information accross cells */
-	memset(regs, 0, sizeof(union registers));
+	memset(&this_cpu_data()->guest_regs, 0, sizeof(union registers));
 
 	/* AARCH64_TODO: wipe floating point registers */
 
@@ -74,11 +71,11 @@ void arm_cpu_reset(unsigned long pc)
 	arm_write_sysreg(ELR_EL2, pc);
 
 	/* transfer the context that may have been passed to PSCI_CPU_ON */
-	regs->usr[1] = cpu_data->cpu_on_context;
+	this_cpu_data()->guest_regs.usr[1] = this_cpu_data()->cpu_on_context;
 
-	arm_paging_vcpu_init(&cpu_data->cell->arch.mm);
+	arm_paging_vcpu_init(&this_cell()->arch.mm);
 
-	irqchip_cpu_reset(cpu_data);
+	irqchip_cpu_reset(this_cpu_data());
 }
 
 #ifdef CONFIG_CRASH_CELL_ON_PANIC

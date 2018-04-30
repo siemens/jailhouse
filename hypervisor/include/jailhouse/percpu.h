@@ -28,6 +28,17 @@
 
 /** Per-CPU states. */
 struct per_cpu {
+	/* Must be first field! */
+	union {
+		/** Stack used while in hypervisor mode. */
+		u8 stack[STACK_SIZE];
+		struct {
+			u8 __fill[STACK_SIZE - sizeof(union registers)];
+			/** Guest registers saved on stack during VM exit. */
+			union registers guest_regs;
+		};
+	};
+
 	ARCH_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
 

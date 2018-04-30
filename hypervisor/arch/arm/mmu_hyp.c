@@ -336,7 +336,7 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	unsigned long stack_phys = virt2phys(cpu_data->stack);
 	unsigned long trampoline_phys = virt2phys((void *)&trampoline_start);
 	union registers *regs_phys =
-			(union registers *)virt2phys(guest_regs(cpu_data));
+			(union registers *)virt2phys(&cpu_data->guest_regs);
 
 	/* Jump to the identity-mapped trampoline page before shutting down */
 	void (*shutdown_fun_phys)(union registers*, unsigned long);

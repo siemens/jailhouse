@@ -136,7 +136,6 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
 	struct per_cpu *cpu_data = per_cpu(cpu_id);
-	union registers *ctx = guest_regs(cpu_data);
 
 	/*
 	 * If we haven't reached switch_exception_level yet, there is nothing to
@@ -153,7 +152,7 @@ void arch_cpu_restore(unsigned int cpu_id, int return_code)
 	 */
 	cpu_prepare_return_el1(cpu_data, return_code);
 
-	memcpy(&ctx->usr, &cpu_data->linux_reg,
+	memcpy(&cpu_data->guest_regs.usr, &cpu_data->linux_reg,
 	       NUM_ENTRY_REGS * sizeof(unsigned long));
 
 	arch_shutdown_self(cpu_data);

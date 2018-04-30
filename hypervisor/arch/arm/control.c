@@ -22,13 +22,10 @@
 
 void arm_cpu_reset(unsigned long pc)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
-	struct cell *cell = cpu_data->cell;
-	union registers *regs = guest_regs(cpu_data);
 	u32 sctlr;
 
 	/* Wipe all banked and usr regs */
-	memset(regs, 0, sizeof(union registers));
+	memset(&this_cpu_data()->guest_regs, 0, sizeof(union registers));
 
 	arm_write_banked_reg(SP_usr, 0);
 	arm_write_banked_reg(SP_svc, 0);
@@ -91,11 +88,11 @@ void arm_cpu_reset(unsigned long pc)
 	arm_write_banked_reg(ELR_hyp, pc);
 
 	/* transfer the context that may have been passed to PSCI_CPU_ON */
-	regs->usr[1] = cpu_data->cpu_on_context;
+	this_cpu_data()->guest_regs.usr[1] = this_cpu_data()->cpu_on_context;
 
-	arm_paging_vcpu_init(&cell->arch.mm);
+	arm_paging_vcpu_init(&this_cell()->arch.mm);
 
-	irqchip_cpu_reset(cpu_data);
+	irqchip_cpu_reset(this_cpu_data());
 }
 
 #ifdef CONFIG_CRASH_CELL_ON_PANIC
