@@ -278,7 +278,7 @@ bootstrap_vectors:
 
 .macro handle_vmexit exit_reason
 	.align	7
-	/* Fill the struct registers. Should comply with NUM_USR_REGS */
+	/* Fill the union registers. Should comply with NUM_USR_REGS */
 	stp	x29, x30, [sp, #-16]!
 	stp	x27, x28, [sp, #-16]!
 	stp	x25, x26, [sp, #-16]!
@@ -398,7 +398,7 @@ shutdown_el2:
 
 	.globl vmreturn
 vmreturn:
-	/* x0: struct registers* */
+	/* x0: union registers* */
 	mov	sp, x0
 	ldp	x1, x0, [sp], #16	/* x1 is the exit_reason */
 	ldp	x1, x2, [sp], #16

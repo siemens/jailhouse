@@ -421,7 +421,7 @@ static const trap_handler trap_handlers[0x40] =
 	[HSR_EC_DABT]		= arch_handle_dabt,
 };
 
-static void arch_handle_trap(struct registers *guest_regs)
+static void arch_handle_trap(union registers *guest_regs)
 {
 	struct trap_context ctx;
 	u32 exception_class;
@@ -455,7 +455,7 @@ static void arch_handle_trap(struct registers *guest_regs)
 	}
 }
 
-static void arch_dump_exit(struct registers *regs, const char *reason)
+static void arch_dump_exit(union registers *regs, const char *reason)
 {
 	unsigned long pc;
 	unsigned int n;
@@ -482,7 +482,7 @@ static void arch_dump_abt(bool is_data)
 	panic_printk("Physical address: 0x%08x HSR: 0x%08x\n", hxfar, hsr);
 }
 
-struct registers* arch_handle_exit(struct registers *regs)
+union registers* arch_handle_exit(union registers *regs)
 {
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 

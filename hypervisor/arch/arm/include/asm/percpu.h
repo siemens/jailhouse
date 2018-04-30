@@ -86,9 +86,9 @@ struct per_cpu {
 	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));
 
-static inline struct registers *guest_regs(struct per_cpu *cpu_data)
+static inline union registers *guest_regs(struct per_cpu *cpu_data)
 {
 	/* Assumes that the trap handler is entered with an empty stack */
-	return (struct registers *)(cpu_data->stack + sizeof(cpu_data->stack)
-			- sizeof(struct registers));
+	return (union registers *)(cpu_data->stack + sizeof(cpu_data->stack)
+			- sizeof(union registers));
 }

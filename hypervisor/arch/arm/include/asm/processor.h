@@ -29,10 +29,12 @@
 
 #ifndef __ASSEMBLY__
 
-struct registers {
-	unsigned long exit_reason;
-	/* r0 - r12 and lr. The other registers are banked. */
-	unsigned long usr[NUM_USR_REGS];
+union registers {
+	struct {
+		unsigned long exit_reason;
+		/* r0 - r12 and lr. The other registers are banked. */
+		unsigned long usr[NUM_USR_REGS];
+	};
 };
 
 #define ARM_PARKING_CODE		\

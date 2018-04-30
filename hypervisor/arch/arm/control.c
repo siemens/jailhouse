@@ -24,11 +24,11 @@ void arm_cpu_reset(unsigned long pc)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct cell *cell = cpu_data->cell;
-	struct registers *regs = guest_regs(cpu_data);
+	union registers *regs = guest_regs(cpu_data);
 	u32 sctlr;
 
 	/* Wipe all banked and usr regs */
-	memset(regs, 0, sizeof(struct registers));
+	memset(regs, 0, sizeof(union registers));
 
 	arm_write_banked_reg(SP_usr, 0);
 	arm_write_banked_reg(SP_svc, 0);

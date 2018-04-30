@@ -136,7 +136,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
 	struct per_cpu *cpu_data = per_cpu(cpu_id);
-	struct registers *ctx = guest_regs(cpu_data);
+	union registers *ctx = guest_regs(cpu_data);
 
 	/*
 	 * If we haven't reached switch_exception_level yet, there is nothing to

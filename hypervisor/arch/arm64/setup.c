@@ -65,7 +65,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
-	struct registers *regs = guest_regs(this_cpu_data());
+	union registers *regs = guest_regs(this_cpu_data());
 
 	/* return to the caller in Linux */
 	arm_write_sysreg(ELR_EL2, regs->usr[30]);
@@ -107,7 +107,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 
 void arch_cpu_restore(unsigned int cpu_id, int return_code)
 {
-	struct registers *regs = guest_regs(per_cpu(cpu_id));
+	union registers *regs = guest_regs(per_cpu(cpu_id));
 
 	/* Jailhouse initialization failed; return to the caller in EL1 */
 	arm_write_sysreg(ELR_EL2, regs->usr[30]);

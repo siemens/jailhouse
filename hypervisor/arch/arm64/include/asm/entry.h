@@ -17,4 +17,4 @@
 void enable_mmu_el2(u64 ttbr0_el2);
 void __attribute__((noreturn)) shutdown_el2(struct per_cpu *cpu_data);
 
-void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
+void __attribute__((noreturn)) vmreturn(union registers *guest_regs);

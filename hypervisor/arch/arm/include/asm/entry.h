@@ -17,4 +17,4 @@
 extern unsigned long bootstrap_vectors;
 extern unsigned long hyp_vectors;
 
-void __attribute__((noreturn)) vmreturn(struct registers *guest_regs);
+void __attribute__((noreturn)) vmreturn(union registers *guest_regs);

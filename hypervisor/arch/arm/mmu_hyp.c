@@ -206,7 +206,7 @@ setup_mmu_el2(unsigned long phys_cpu_data, phys2virt_t phys2virt, u64 ttbr)
  * Shutdown the MMU and returns to EL1 with the kernel context stored in `regs'
  */
 static void __attribute__((naked, section(".trampoline")))
-shutdown_el2(struct registers *regs, unsigned long vectors)
+shutdown_el2(union registers *regs, unsigned long vectors)
 {
 	u32 sctlr_el2;
 
@@ -335,11 +335,11 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	virt2phys_t virt2phys = paging_hvirt2phys;
 	unsigned long stack_phys = virt2phys(cpu_data->stack);
 	unsigned long trampoline_phys = virt2phys((void *)&trampoline_start);
-	struct registers *regs_phys =
-			(struct registers *)virt2phys(guest_regs(cpu_data));
+	union registers *regs_phys =
+			(union registers *)virt2phys(guest_regs(cpu_data));
 
 	/* Jump to the identity-mapped trampoline page before shutting down */
-	void (*shutdown_fun_phys)(struct registers*, unsigned long);
+	void (*shutdown_fun_phys)(union registers*, unsigned long);
 	shutdown_fun_phys = (void*)virt2phys(shutdown_el2);
 
 	/*

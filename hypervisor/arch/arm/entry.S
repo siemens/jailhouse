@@ -44,7 +44,7 @@ arch_entry:
 	mov	sp, r1
 	add	sp, #PERCPU_STACK_END
 	/*
-	 * Keep some space for a struct registers, in case setup fails and needs
+	 * Keep some space for a union registers, in case setup fails and needs
 	 * to return to the driver through the arch_shutdown_self path.
 	 */
 	sub	sp, #((NUM_USR_REGS + 1) * 4)
@@ -100,7 +100,7 @@ hyp_vectors:
 	b	hyp_fiq
 
 .macro handle_vmexit exit_reason
-	/* Fill the struct registers. Should comply with NUM_USR_REGS */
+	/* Fill the union registers. Should comply with NUM_USR_REGS */
 	push	{r0-r12, lr}
 	mov	r0, #\exit_reason
 	b	vmexit_common

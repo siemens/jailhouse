@@ -21,7 +21,7 @@
 void arm_cpu_reset(unsigned long pc)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
-	struct registers *regs = guest_regs(cpu_data);
+	union registers *regs = guest_regs(cpu_data);
 
 	/* put the cpu in a reset state */
 	/* AARCH64_TODO: handle big endian support */
@@ -31,7 +31,7 @@ void arm_cpu_reset(unsigned long pc)
 	arm_write_sysreg(PMCR_EL0, 0);
 
 	/* wipe any other state to avoid leaking information accross cells */
-	memset(regs, 0, sizeof(struct registers));
+	memset(regs, 0, sizeof(union registers));
 
 	/* AARCH64_TODO: wipe floating point registers */
 

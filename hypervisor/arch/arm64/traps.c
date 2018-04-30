@@ -146,7 +146,7 @@ static void dump_hyp_stack(const struct trap_context *ctx)
 					sizeof(this_cpu_data()->stack));
 }
 
-static void fill_trap_context(struct trap_context *ctx, struct registers *regs)
+static void fill_trap_context(struct trap_context *ctx, union registers *regs)
 {
 	arm_read_sysreg(SPSR_EL2, ctx->spsr);
 	switch (SPSR_EL(ctx->spsr)) {	/* exception level */
@@ -175,7 +175,7 @@ static const trap_handler trap_handlers[0x40] =
 	[ESR_EC_DABT_LOW]	= arch_handle_dabt,
 };
 
-static void arch_handle_trap(struct registers *guest_regs)
+static void arch_handle_trap(union registers *guest_regs)
 {
 	struct trap_context ctx;
 	trap_handler handler;
@@ -198,7 +198,7 @@ static void arch_handle_trap(struct registers *guest_regs)
 	}
 }
 
-static void arch_dump_exit(struct registers *regs, const char *reason)
+static void arch_dump_exit(union registers *regs, const char *reason)
 {
 	struct trap_context ctx;
 
@@ -208,7 +208,7 @@ static void arch_dump_exit(struct registers *regs, const char *reason)
 	dump_hyp_stack(&ctx);
 }
 
-struct registers *arch_handle_exit(struct registers *regs)
+union registers *arch_handle_exit(union registers *regs)
 {
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
