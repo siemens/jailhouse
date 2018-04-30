@@ -31,7 +31,10 @@
 		} gicr;							\
 	};								\
 									\
-	struct pending_irqs pending_irqs;
+	struct pending_irqs pending_irqs;				\
+									\
+	unsigned long cpu_on_entry;					\
+	unsigned long cpu_on_context;
 
 #define ARCH_PERCPU_FIELDS						\
 	/**								\
@@ -52,8 +55,5 @@
 	bool reset;							\
 	/** Set to true for pending park. */				\
 	bool park;							\
-									\
-	unsigned long cpu_on_entry;					\
-	unsigned long cpu_on_context;					\
 									\
 	ARM_PERCPU_FIELDS;

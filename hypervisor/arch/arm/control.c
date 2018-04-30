@@ -88,7 +88,7 @@ void arm_cpu_reset(unsigned long pc)
 	arm_write_banked_reg(ELR_hyp, pc);
 
 	/* transfer the context that may have been passed to PSCI_CPU_ON */
-	this_cpu_data()->guest_regs.usr[1] = this_cpu_data()->cpu_on_context;
+	this_cpu_data()->guest_regs.usr[1] = this_cpu_public()->cpu_on_context;
 
 	arm_paging_vcpu_init(&this_cell()->arch.mm);
 

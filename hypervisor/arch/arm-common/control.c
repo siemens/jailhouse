@@ -125,7 +125,7 @@ static void check_events(struct per_cpu *cpu_data)
 
 			if (cpu_data->reset) {
 				cpu_data->reset = false;
-				if (cpu_data->cpu_on_entry !=
+				if (cpu_data->public.cpu_on_entry !=
 				    PSCI_INVALID_ADDRESS) {
 					cpu_data->wait_for_poweron = false;
 					reset = true;
@@ -151,7 +151,7 @@ static void check_events(struct per_cpu *cpu_data)
 	if (cpu_data->wait_for_poweron)
 		arm_cpu_park();
 	else if (reset)
-		arm_cpu_reset(cpu_data->cpu_on_entry);
+		arm_cpu_reset(cpu_data->public.cpu_on_entry);
 }
 
 void arch_handle_sgi(u32 irqn, unsigned int count_event)
@@ -218,9 +218,9 @@ void arch_cell_reset(struct cell *cell)
 	 * All CPUs but the first are initially suspended.  The first CPU
 	 * starts at cpu_reset_address, defined in the cell configuration.
 	 */
-	per_cpu(first)->cpu_on_entry = cell->config->cpu_reset_address;
+	public_per_cpu(first)->cpu_on_entry = cell->config->cpu_reset_address;
 	for_each_cpu_except(cpu, cell->cpu_set, first)
-		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
+		public_per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
 	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
 
@@ -235,7 +235,7 @@ void arch_cell_destroy(struct cell *cell)
 
 	/* All CPUs are handed back to the root cell in suspended mode. */
 	for_each_cpu(cpu, cell->cpu_set)
-		per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
+		public_per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
 	arm_paging_cell_destroy(cell);
 }

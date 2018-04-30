@@ -35,8 +35,8 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 	spin_lock(&target_data->control_lock);
 
 	if (target_data->wait_for_poweron) {
-		target_data->cpu_on_entry = ctx->regs[2] & mask;
-		target_data->cpu_on_context = ctx->regs[3] & mask;
+		target_data->public.cpu_on_entry = ctx->regs[2] & mask;
+		target_data->public.cpu_on_context = ctx->regs[3] & mask;
 		target_data->reset = true;
 		kick_cpu = true;
 
