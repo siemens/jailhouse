@@ -239,8 +239,8 @@ unsigned long arch_paging_gphys2phys(struct per_cpu *cpu_data,
 				     unsigned long gphys, unsigned long flags);
 
 int paging_create(const struct paging_structures *pg_structs,
-		    unsigned long phys, unsigned long size, unsigned long virt,
-		    unsigned long flags, enum paging_coherent coherent);
+		  unsigned long phys, unsigned long size, unsigned long virt,
+		  unsigned long flags, enum paging_coherent coherent);
 int paging_destroy(const struct paging_structures *pg_structs,
 		   unsigned long virt, unsigned long size,
 		   enum paging_coherent coherent);

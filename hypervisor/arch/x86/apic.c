@@ -513,7 +513,7 @@ unsigned int apic_mmio_access(const struct guest_paging_structures *pg_structs,
 			if (!apic_handle_icr_write(val, dest))
 				return 0;
 		} else if (reg == APIC_REG_LDR &&
-			 val != 1UL << (this_cpu_id() + XAPIC_DEST_SHIFT)) {
+			   val != 1UL << (this_cpu_id() + XAPIC_DEST_SHIFT)) {
 			panic_printk("FATAL: Unsupported change to LDR: %x\n",
 				     val);
 			return 0;
