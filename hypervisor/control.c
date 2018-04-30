@@ -310,7 +310,7 @@ static void cell_destroy_internal(struct cell *cell)
 
 		set_bit(cpu, root_cell.cpu_set->bitmap);
 		public_per_cpu(cpu)->cell = &root_cell;
-		per_cpu(cpu)->failed = false;
+		public_per_cpu(cpu)->failed = false;
 		memset(public_per_cpu(cpu)->stats, 0,
 		       sizeof(public_per_cpu(cpu)->stats));
 	}
@@ -602,7 +602,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	arch_cell_reset(cell);
 
 	for_each_cpu(cpu, cell->cpu_set) {
-		per_cpu(cpu)->failed = false;
+		public_per_cpu(cpu)->failed = false;
 		arch_reset_cpu(cpu);
 	}
 
@@ -630,7 +630,7 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	 * suspension mode.
 	 */
 	for_each_cpu(cpu, cell->cpu_set) {
-		per_cpu(cpu)->failed = false;
+		public_per_cpu(cpu)->failed = false;
 		arch_park_cpu(cpu);
 	}
 
@@ -849,7 +849,7 @@ static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 		return -EPERM;
 
 	if (type == JAILHOUSE_CPU_INFO_STATE) {
-		return per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
+		return public_per_cpu(cpu_id)->failed ? JAILHOUSE_CPU_FAILED :
 			JAILHOUSE_CPU_RUNNING;
 	} else if (type >= JAILHOUSE_CPU_INFO_STAT_BASE &&
 		type - JAILHOUSE_CPU_INFO_STAT_BASE < JAILHOUSE_NUM_CPU_STATS) {
@@ -943,9 +943,9 @@ void panic_park(void)
 	panic_printk("Parking CPU %d (Cell: \"%s\")\n", this_cpu_id(),
 		     cell->config->name);
 
-	this_cpu_data()->failed = true;
+	this_cpu_public()->failed = true;
 	for_each_cpu(cpu, cell->cpu_set)
-		if (!per_cpu(cpu)->failed) {
+		if (!public_per_cpu(cpu)->failed) {
 			cell_failed = false;
 			break;
 		}

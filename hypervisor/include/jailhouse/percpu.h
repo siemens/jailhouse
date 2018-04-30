@@ -47,6 +47,9 @@ struct public_per_cpu {
 	 * @li negative error code: shutdown failed
 	 */
 	int shutdown_state;
+	/** True if CPU violated a cell boundary or cause some other failure in
+	 *  guest mode. */
+	bool failed;
 
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -66,10 +69,6 @@ struct per_cpu {
 
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
-
-	/** True if CPU violated a cell boundary or cause some other failure in
-	 *  guest mode. */
-	bool failed;
 
 	/** Set to true for instructing the CPU to suspend. */
 	volatile bool suspend_cpu;

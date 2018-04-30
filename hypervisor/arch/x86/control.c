@@ -231,7 +231,7 @@ void x86_check_events(void)
 		cpu_data->cpu_suspended = false;
 
 		if (cpu_data->sipi_vector >= 0) {
-			if (!cpu_data->failed) {
+			if (!cpu_data->public.failed) {
 				cpu_data->wait_for_sipi = false;
 				sipi_vector = cpu_data->sipi_vector;
 			}
