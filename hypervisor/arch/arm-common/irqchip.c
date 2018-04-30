@@ -235,8 +235,7 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 		return;
 	}
 
-	if (local_injection &&
-	    irqchip.inject_irq(cpu_data, irq_id, sender) != -EBUSY)
+	if (local_injection && irqchip.inject_irq(irq_id, sender) != -EBUSY)
 		return;
 
 	spin_lock(&pending->lock);
@@ -283,7 +282,7 @@ void irqchip_inject_pending(struct per_cpu *cpu_data)
 		irq_id = pending->irqs[pending->head];
 		sender = pending->sender[pending->head];
 
-		if (irqchip.inject_irq(cpu_data, irq_id, sender) == -EBUSY) {
+		if (irqchip.inject_irq(irq_id, sender) == -EBUSY) {
 			/*
 			 * The list registers are full, trigger maintenance
 			 * interrupt and leave.

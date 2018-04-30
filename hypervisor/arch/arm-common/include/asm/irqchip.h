@@ -48,7 +48,7 @@ struct irqchip {
 	int	(*send_sgi)(struct sgi *sgi);
 	u32	(*read_iar_irqn)(void);
 	void	(*eoi_irq)(u32 irqn, bool deactivate);
-	int	(*inject_irq)(struct per_cpu *cpu_data, u16 irq_id, u16 sender);
+	int	(*inject_irq)(u16 irq_id, u16 sender);
 	void	(*enable_maint_irq)(bool enable);
 	bool	(*has_pending_irqs)(void);
 	int	(*get_pending_irq)(void);

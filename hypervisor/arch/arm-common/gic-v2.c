@@ -266,7 +266,7 @@ static int gicv2_send_sgi(struct sgi *sgi)
 	return 0;
 }
 
-static int gicv2_inject_irq(struct per_cpu *cpu_data, u16 irq_id, u16 sender)
+static int gicv2_inject_irq(u16 irq_id, u16 sender)
 {
 	int i;
 	int first_free = -1;

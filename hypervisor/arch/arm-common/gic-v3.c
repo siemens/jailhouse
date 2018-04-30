@@ -495,7 +495,7 @@ static void gicv3_eoi_irq(u32 irq_id, bool deactivate)
 		arm_write_sysreg(ICC_DIR_EL1, irq_id);
 }
 
-static int gicv3_inject_irq(struct per_cpu *cpu_data, u16 irq_id, u16 sender)
+static int gicv3_inject_irq(u16 irq_id, u16 sender)
 {
 	int i;
 	int free_lr = -1;
