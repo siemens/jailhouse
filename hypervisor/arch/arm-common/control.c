@@ -161,7 +161,7 @@ void arch_handle_sgi(u32 irqn, unsigned int count_event)
 	switch (irqn) {
 	case SGI_INJECT:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_VSGI] += count_event;
-		irqchip_inject_pending(cpu_data);
+		irqchip_inject_pending();
 		break;
 	case SGI_EVENT:
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
@@ -184,7 +184,7 @@ bool arch_handle_phys_irq(u32 irqn, unsigned int count_event)
 	if (irqn == system_config->platform_info.arm.maintenance_irq) {
 		cpu_data->stats[JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE] +=
 			count_event;
-		irqchip_inject_pending(cpu_data);
+		irqchip_inject_pending();
 
 		return true;
 	}

@@ -92,7 +92,7 @@ void irqchip_handle_irq(void);
 
 bool irqchip_has_pending_irqs(void);
 
-void irqchip_inject_pending(struct per_cpu *cpu_data);
+void irqchip_inject_pending(void);
 void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id);
 
 bool irqchip_irq_in_cell(struct cell *cell, unsigned int irq_id);

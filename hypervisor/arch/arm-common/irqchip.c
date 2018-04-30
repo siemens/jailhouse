@@ -273,9 +273,9 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	}
 }
 
-void irqchip_inject_pending(struct per_cpu *cpu_data)
+void irqchip_inject_pending(void)
 {
-	struct pending_irqs *pending = &cpu_data->pending_irqs;
+	struct pending_irqs *pending = &this_cpu_data()->pending_irqs;
 	u16 irq_id, sender;
 
 	while (pending->head != pending->tail) {
