@@ -86,28 +86,6 @@ struct per_cpu {
 	bool failed;
 } __attribute__((aligned(PAGE_SIZE)));
 
-static inline struct per_cpu *this_cpu_data(void)
-{
-	return (struct per_cpu *)LOCAL_CPU_BASE;
-}
-
-static inline unsigned int this_cpu_id(void)
-{
-	return this_cpu_data()->cpu_id;
-}
-
-static inline struct cell *this_cell(void)
-{
-	return this_cpu_data()->cell;
-}
-
-static inline struct per_cpu *per_cpu(unsigned int cpu)
-{
-	extern u8 __page_pool[];
-
-	return (struct per_cpu *)(__page_pool + cpu * sizeof(struct per_cpu));
-}
-
 static inline struct registers *guest_regs(struct per_cpu *cpu_data)
 {
 	/* Assumes that the trap handler is entered with an empty stack */
