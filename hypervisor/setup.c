@@ -112,7 +112,7 @@ static void cpu_init(struct per_cpu *cpu_data)
 	cpu_data->pg_structs.hv_paging = true;
 	cpu_data->pg_structs.root_paging = hv_paging_structs.root_paging;
 	cpu_data->pg_structs.root_table =
-		(page_table_t)cpu_data->root_table_page;
+		(page_table_t)cpu_data->public.root_table_page;
 
 	err = paging_create_hvpt_link(&cpu_data->pg_structs, JAILHOUSE_BASE);
 	if (err)

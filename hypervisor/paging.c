@@ -628,7 +628,7 @@ int paging_init(void)
 
 	hv_paging_structs.hv_paging = true;
 	hv_paging_structs.root_table =
-		(page_table_t)per_cpu(0)->root_table_page;
+		(page_table_t)public_per_cpu(0)->root_table_page;
 
 	arch_paging_init();
 

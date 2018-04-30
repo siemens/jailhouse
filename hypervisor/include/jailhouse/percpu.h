@@ -29,6 +29,10 @@
 
 /** Per-CPU states accessible across all CPUs. */
 struct public_per_cpu {
+	/** Per-CPU root page table. Public because it has to be accessible for
+	 *  page walks at any time. */
+	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
+
 	ARCH_PUBLIC_PERCPU_FIELDS;
 } __attribute__((aligned(PAGE_SIZE)));
 
@@ -45,8 +49,6 @@ struct per_cpu {
 		};
 	};
 
-	/** Per-CPU root page table. */
-	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 	/** Per-CPU paging structures. */
 	struct paging_structures pg_structs;
 
