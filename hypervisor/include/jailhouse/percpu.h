@@ -26,6 +26,11 @@
  * @{
  */
 
+/** Per-CPU states. */
+struct per_cpu {
+	ARCH_PERCPU_FIELDS;
+} __attribute__((aligned(PAGE_SIZE)));
+
 /**
  * Retrieve the data structure of the current CPU.
  *
