@@ -1,29 +1,21 @@
 /*
- * Jailhouse, a Linux-based partitioning hypervisor
+ * Jailhouse AArch64 support
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *
  * Authors:
- *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Antonios Motakis <antonios.motakis@huawei.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
 
-#include <jailhouse/cell.h>
 #include <asm/irqchip.h>
-
-#define NUM_ENTRY_REGS			13
+#include <asm/percpu_fields.h>
 
 #define STACK_SIZE			PAGE_SIZE
 
 #define ARCH_PERCPU_FIELDS						\
-	/** Linux stack pointer, used for handover to the hypervisor. */ \
-	unsigned long linux_sp;						\
-	unsigned long linux_ret;					\
-	unsigned long linux_flags;					\
-	unsigned long linux_reg[NUM_ENTRY_REGS];			\
-									\
 	struct pending_irqs pending_irqs;				\
 									\
 	union {								\
@@ -39,7 +31,7 @@
 		} gicr;							\
 	};								\
 									\
-	bool initialized;						\
+	unsigned long mpidr;						\
 									\
 	/**								\
 	 * Lock protecting CPU state changes done for control tasks.	\
@@ -63,4 +55,4 @@
 	unsigned long cpu_on_entry;					\
 	unsigned long cpu_on_context;					\
 									\
-	unsigned long mpidr;
+	ARM_PERCPU_FIELDS;
