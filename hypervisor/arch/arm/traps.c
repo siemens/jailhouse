@@ -471,15 +471,15 @@ static void arch_dump_exit(struct registers *regs, const char *reason)
 static void arch_dump_abt(bool is_data)
 {
 	u32 hxfar;
-	u32 esr;
+	u32 hsr;
 
-	arm_read_sysreg(ESR_EL2, esr);
+	arm_read_sysreg(HSR, hsr);
 	if (is_data)
 		arm_read_sysreg(HDFAR, hxfar);
 	else
 		arm_read_sysreg(HIFAR, hxfar);
 
-	panic_printk("Physical address: 0x%08x ESR: 0x%08x\n", hxfar, esr);
+	panic_printk("Physical address: 0x%08x HSR: 0x%08x\n", hxfar, hsr);
 }
 
 struct registers* arch_handle_exit(struct per_cpu *cpu_data,

@@ -104,8 +104,7 @@
 #define CLIDR_EL1	SYSREG_32(1, c0, c0, 1)
 #define CSSELR_EL1	SYSREG_32(2, c0, c0, 0)
 #define SCTLR_EL2	SYSREG_32(4, c1, c0, 0)
-#define ESR_EL2		SYSREG_32(4, c5, c2, 0)
-#define HSR		ESR_EL2 /* AArch32 name */
+#define HSR		SYSREG_32(4, c5, c2, 0)
 /* exception class */
 #define  HSR_EC(hsr)		GET_FIELD((hsr), 31, 26)
 /* instruction length */
@@ -220,7 +219,7 @@
 #define HMAIR1		SYSREG_32(4, c10, c2, 1)
 #define HVBAR		SYSREG_32(4, c12, c0, 0)
 
-/* Mapped to ESR, IFSR32 and FAR in AArch64 */
+/* Mapped to HSR, IFSR32 and FAR in AArch64 */
 #define DFSR		SYSREG_32(0, c5, c0, 0)
 #define DFAR		SYSREG_32(0, c6, c0, 0)
 #define IFSR		SYSREG_32(0, c5, c0, 1)
