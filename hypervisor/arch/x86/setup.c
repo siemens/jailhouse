@@ -212,6 +212,19 @@ error_out:
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
+	unsigned int cpu_id = this_cpu_id();
+
+	/*
+	 * Switch the stack to the private mapping before deactivating the
+	 * common one.
+	 */
+	asm volatile(
+		"add %0,%%rsp"
+		: : "g" (LOCAL_CPU_BASE - (unsigned long)per_cpu(cpu_id)));
+
+	/* Revoke full per_cpu access now that everything is set up. */
+	paging_map_all_per_cpu(cpu_id, false);
+
 	vcpu_activate_vmm();
 }
 

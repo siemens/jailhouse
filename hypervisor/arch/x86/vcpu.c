@@ -156,6 +156,7 @@ void vcpu_handle_hypercall(void)
 		(cs_attr & VCPU_CS_L);
 	unsigned long arg_mask = long_mode ? (u64)-1 : (u32)-1;
 	unsigned long code = guest_regs->rax;
+	unsigned int cpu_id = this_cpu_id();
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_HYPERCALL);
 
@@ -169,15 +170,26 @@ void vcpu_handle_hypercall(void)
 				    guest_regs->rsi & arg_mask);
 	if (guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown hypercall %ld, RIP: 0x%016llx\n",
-		       this_cpu_id(), code,
+		       cpu_id, code,
 		       vcpu_vendor_get_rip() - X86_INST_LEN_HYPERCALL);
 
 	if (code == JAILHOUSE_HC_DISABLE && guest_regs->rax == 0) {
-		/* migrate the stack back to the common mapping */
+		/*
+		 * Restore full per_cpu region access so that we can switch
+		 * back to the common stack mapping and to Linux page tables.
+		 */
+		paging_map_all_per_cpu(cpu_id, true);
+
+		/*
+		 * Switch the stack back to the common mapping.
+		 * Preexisting pointers to the stack remain valid until we also
+		 * switch the page tables in arch_cpu_restore.
+		 */
 		asm volatile(
 			"sub %0,%%rsp"
 			: : "g" (LOCAL_CPU_BASE -
-				 (unsigned long)per_cpu(this_cpu_id())));
+				 (unsigned long)per_cpu(cpu_id)));
+
 		vcpu_deactivate_vmm();
 	}
 }
