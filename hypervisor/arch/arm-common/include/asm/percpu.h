@@ -46,6 +46,9 @@
 	 * @li per_cpu::cpu_suspended (except for spinning on it to	\
 	 *                             become true)			\
 	 * @li per_cpu::flush_vcpu_caches				\
+	 * @li per_cpu::wait_for_poweron (except for CPU-local tests)	\
+	 * @li per_cpu::reset						\
+	 * @li per_cpu::park						\
 	 */								\
 	spinlock_t control_lock;					\
 									\

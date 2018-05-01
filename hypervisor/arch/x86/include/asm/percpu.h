@@ -80,6 +80,7 @@
 	 * @li per_cpu::init_signaled					\
 	 * @li per_cpu::sipi_vector					\
 	 * @li per_cpu::flush_vcpu_caches				\
+	 * @li per_cpu::update_cat					\
 	 */								\
 	spinlock_t control_lock;					\
 									\
