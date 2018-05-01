@@ -586,6 +586,21 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 	return (void *)page_base;
 }
 
+int paging_map_all_per_cpu(unsigned int cpu, bool enable)
+{
+	struct per_cpu *cpu_data = per_cpu(cpu);
+
+	/*
+	 * Note that the physical address does not matter for !enable because
+	 * we mark all pages non-present in that case.
+	 */
+	return paging_create(&hv_paging_structs, paging_hvirt2phys(cpu_data),
+			sizeof(struct per_cpu) - sizeof(struct public_per_cpu),
+			(unsigned long)cpu_data,
+			enable ? PAGE_DEFAULT_FLAGS : PAGE_NONPRESENT_FLAGS,
+			PAGING_NON_COHERENT);
+}
+
 /**
  * Initialize the page mapping subsystem.
  *
@@ -645,6 +660,16 @@ int paging_init(void)
 			     PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
 	if (err)
 		return err;
+
+	/*
+	 * Make sure any permission changes on the per_cpu region can be
+	 * performed without allocations of page table pages.
+	 */
+	for (n = 0; n < hypervisor_header.max_cpus; n++) {
+		err = paging_map_all_per_cpu(n, true);
+		if (err)
+			return err;
+	}
 
 	if (CON_IS_MMIO(system_config->debug_console.flags)) {
 		vaddr = (unsigned long)hypervisor_header.debug_console_base;

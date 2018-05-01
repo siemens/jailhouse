@@ -255,6 +255,8 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 			     unsigned long gaddr, unsigned int num,
 			     unsigned long flags);
 
+int paging_map_all_per_cpu(unsigned int cpu, bool enable);
+
 int paging_init(void);
 
 /**
