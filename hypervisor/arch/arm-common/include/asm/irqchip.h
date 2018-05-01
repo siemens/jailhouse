@@ -82,7 +82,8 @@ int irqchip_cpu_init(struct per_cpu *cpu_data);
 int irqchip_get_cpu_target(unsigned int cpu_id);
 u64 irqchip_get_cluster_target(unsigned int cpu_id);
 void irqchip_cpu_reset(struct per_cpu *cpu_data);
-void irqchip_cpu_shutdown(struct per_cpu *cpu_data);
+
+void irqchip_cpu_shutdown(struct public_per_cpu *cpu_public);
 
 void irqchip_cell_reset(struct cell *cell);
 
@@ -94,7 +95,7 @@ void irqchip_handle_irq(void);
 bool irqchip_has_pending_irqs(void);
 
 void irqchip_inject_pending(void);
-void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id);
+void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id);
 
 bool irqchip_irq_in_cell(struct cell *cell, unsigned int irq_id);
 

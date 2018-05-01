@@ -29,11 +29,11 @@
 			/** Physical redistributor address. */		\
 			unsigned long phys_addr;			\
 		} gicr;							\
-	};
+	};								\
+									\
+	struct pending_irqs pending_irqs;
 
 #define ARCH_PERCPU_FIELDS						\
-	struct pending_irqs pending_irqs;				\
-									\
 	/**								\
 	 * Lock protecting CPU state changes done for control tasks.	\
 	 *								\

@@ -191,7 +191,7 @@ bool arch_handle_phys_irq(u32 irqn, unsigned int count_event)
 	}
 
 	cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_VIRQ] += count_event;
-	irqchip_set_pending(this_cpu_data(), irqn);
+	irqchip_set_pending(cpu_public, irqn);
 
 	return false;
 }

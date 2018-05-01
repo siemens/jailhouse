@@ -104,18 +104,18 @@ restrict_bitmask_access(struct mmio_access *mmio, unsigned int reg_index,
 
 void gic_handle_sgir_write(struct sgi *sgi)
 {
-	struct per_cpu *cpu_data = this_cpu_data();
+	struct public_per_cpu *cpu_public = this_cpu_public();
 	unsigned int cpu, target;
 	u64 cluster;
 
 	if (sgi->routing_mode == 2)
 		/* Route to the caller itself */
-		irqchip_set_pending(cpu_data, sgi->id);
+		irqchip_set_pending(cpu_public, sgi->id);
 	else
-		for_each_cpu(cpu, cpu_data->public.cell->cpu_set) {
+		for_each_cpu(cpu, this_cell()->cpu_set) {
 			if (sgi->routing_mode == 1) {
 				/* Route to all (cell) CPUs but the caller. */
-				if (cpu == cpu_data->public.cpu_id)
+				if (cpu == cpu_public->cpu_id)
 					continue;
 			} else {
 				target = irqchip_get_cpu_target(cpu);
@@ -127,7 +127,7 @@ void gic_handle_sgir_write(struct sgi *sgi)
 					continue;
 			}
 
-			irqchip_set_pending(per_cpu(cpu), sgi->id);
+			irqchip_set_pending(public_per_cpu(cpu), sgi->id);
 		}
 }
 
@@ -220,15 +220,15 @@ bool irqchip_has_pending_irqs(void)
 	return irqchip.has_pending_irqs();
 }
 
-void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
+void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id)
 {
-	struct pending_irqs *pending = &cpu_data->pending_irqs;
-	bool local_injection = (this_cpu_data() == cpu_data);
+	struct pending_irqs *pending = &cpu_public->pending_irqs;
+	bool local_injection = (this_cpu_public() == cpu_public);
 	const u16 sender = this_cpu_id();
 	unsigned int new_tail;
 	struct sgi sgi;
 
-	if (!cpu_data) {
+	if (!cpu_public) {
 		/* Injection via GICD */
 		mmio_write32(gicd_base + GICD_ISPENDR + (irq_id / 32) * 4,
 			     1 << (irq_id % 32));
@@ -264,9 +264,9 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 	if (local_injection) {
 		irqchip.enable_maint_irq(true);
 	} else {
-		sgi.targets = irqchip_get_cpu_target(cpu_data->public.cpu_id);
+		sgi.targets = irqchip_get_cpu_target(cpu_public->cpu_id);
 		sgi.cluster_id =
-			irqchip_get_cluster_target(cpu_data->public.cpu_id);
+			irqchip_get_cluster_target(cpu_public->cpu_id);
 		sgi.routing_mode = 0;
 		sgi.id = SGI_INJECT;
 
@@ -276,7 +276,7 @@ void irqchip_set_pending(struct per_cpu *cpu_data, u16 irq_id)
 
 void irqchip_inject_pending(void)
 {
-	struct pending_irqs *pending = &this_cpu_data()->pending_irqs;
+	struct pending_irqs *pending = &this_cpu_public()->pending_irqs;
 	u16 irq_id, sender;
 
 	while (pending->head != pending->tail) {
@@ -352,14 +352,15 @@ u64 irqchip_get_cluster_target(unsigned int cpu_id)
 
 void irqchip_cpu_reset(struct per_cpu *cpu_data)
 {
-	cpu_data->pending_irqs.head = cpu_data->pending_irqs.tail = 0;
+	cpu_data->public.pending_irqs.head = 0;
+	cpu_data->public.pending_irqs.tail = 0;
 
 	irqchip.cpu_reset(cpu_data);
 }
 
-void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
+void irqchip_cpu_shutdown(struct public_per_cpu *cpu_public)
 {
-	struct pending_irqs *pending = &cpu_data->pending_irqs;
+	struct pending_irqs *pending = &cpu_public->pending_irqs;
 	int irq_id;
 
 	/*
@@ -368,7 +369,7 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	 * executed during the setup phase. It returns an error if the
 	 * initialization do not take place yet.
 	 */
-	if (irqchip.cpu_shutdown(&cpu_data->public) < 0)
+	if (irqchip.cpu_shutdown(cpu_public) < 0)
 		return;
 
 	/*

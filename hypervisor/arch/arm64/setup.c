@@ -77,7 +77,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 	void (*shutdown_func)(struct per_cpu *) =
 		(void (*)(struct per_cpu *))paging_hvirt2phys(shutdown_el2);
 
-	irqchip_cpu_shutdown(cpu_data);
+	irqchip_cpu_shutdown(&cpu_data->public);
 
 	/* Free the guest */
 	arm_write_sysreg(HCR_EL2, HCR_RW_BIT);

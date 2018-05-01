@@ -116,7 +116,7 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 
 void arch_shutdown_self(struct per_cpu *cpu_data)
 {
-	irqchip_cpu_shutdown(cpu_data);
+	irqchip_cpu_shutdown(&cpu_data->public);
 
 	/* Free the guest */
 	arm_write_sysreg(HCR, 0);
