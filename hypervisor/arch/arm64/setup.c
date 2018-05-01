@@ -65,6 +65,19 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
+	unsigned int cpu_id = this_cpu_id();
+
+	/*
+	 * Switch the stack to the private mapping before deactivating the
+	 * common one.
+	 */
+	asm volatile(
+		"add sp, sp, %0"
+		: : "g" (LOCAL_CPU_BASE - (unsigned long)per_cpu(cpu_id)));
+
+	/* Revoke full per_cpu access now that everything is set up. */
+	paging_map_all_per_cpu(cpu_id, false);
+
 	/* return to the caller in Linux */
 	arm_write_sysreg(ELR_EL2, this_cpu_data()->guest_regs.usr[30]);
 
