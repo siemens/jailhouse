@@ -264,8 +264,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 	struct per_cpu *phys_cpu_data = (struct per_cpu *)virt2phys(cpu_data);
 	unsigned long trampoline_phys = virt2phys((void *)&trampoline_start);
 	unsigned long trampoline_size = &trampoline_end - &trampoline_start;
-	unsigned long stack_virt = (unsigned long)cpu_data->stack;
-	unsigned long stack_phys = virt2phys((void *)stack_virt);
+	unsigned long stack_phys = virt2phys(cpu_data->stack);
 	u64 ttbr_el2;
 
 	/* Check the paging structures as well as the MMU initialisation */
@@ -337,8 +336,7 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	static DEFINE_SPINLOCK(map_lock);
 
 	virt2phys_t virt2phys = paging_hvirt2phys;
-	void *stack_virt = cpu_data->stack;
-	unsigned long stack_phys = virt2phys((void *)stack_virt);
+	unsigned long stack_phys = virt2phys(cpu_data->stack);
 	unsigned long trampoline_phys = virt2phys((void *)&trampoline_start);
 	struct registers *regs_phys =
 			(struct registers *)virt2phys(guest_regs(cpu_data));
