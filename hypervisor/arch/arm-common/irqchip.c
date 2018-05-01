@@ -368,7 +368,7 @@ void irqchip_cpu_shutdown(struct per_cpu *cpu_data)
 	 * executed during the setup phase. It returns an error if the
 	 * initialization do not take place yet.
 	 */
-	if (irqchip.cpu_shutdown(cpu_data) < 0)
+	if (irqchip.cpu_shutdown(&cpu_data->public) < 0)
 		return;
 
 	/*

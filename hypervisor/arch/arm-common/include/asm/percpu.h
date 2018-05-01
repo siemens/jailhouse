@@ -16,23 +16,23 @@
 #define STACK_SIZE			PAGE_SIZE
 
 #define ARCH_PUBLIC_PERCPU_FIELDS					\
-	unsigned long mpidr;
-
-#define ARCH_PERCPU_FIELDS						\
-	struct pending_irqs pending_irqs;				\
+	unsigned long mpidr;						\
 									\
 	union {								\
 		/** Only GICv2: per-cpu initialization completed. */	\
 		bool gicc_initialized;					\
-		/** Only GICv3 */					\
+		/** Only GICv3: Redistributor parameters. */		\
 		struct {						\
-			/** mapped redistributor base. When non-NULL,	\
+			/** Mapped redistributor base. When non-NULL,	\
 			 *  per-cpu initialization completed. */	\
 			void *base;					\
-			/** physical redistributor address */		\
+			/** Physical redistributor address. */		\
 			unsigned long phys_addr;			\
 		} gicr;							\
-	};								\
+	};
+
+#define ARCH_PERCPU_FIELDS						\
+	struct pending_irqs pending_irqs;				\
 									\
 	/**								\
 	 * Lock protecting CPU state changes done for control tasks.	\

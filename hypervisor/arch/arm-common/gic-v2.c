@@ -143,7 +143,7 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	 */
 	gicv2_clear_pending_irqs();
 
-	cpu_data->gicc_initialized = true;
+	cpu_data->public.gicc_initialized = true;
 
 	/*
 	 * Get the CPU interface ID for this cpu. It can be discovered by
@@ -166,12 +166,12 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	return 0;
 }
 
-static int gicv2_cpu_shutdown(struct per_cpu *cpu_data)
+static int gicv2_cpu_shutdown(struct public_per_cpu *cpu_public)
 {
 	u32 gicc_ctlr = 0;
 	u32 gich_vmcr;
 
-	if (!cpu_data->gicc_initialized)
+	if (!cpu_public->gicc_initialized)
 		return -ENODEV;
 
 	mmio_write32(gich_base + GICH_HCR, 0);

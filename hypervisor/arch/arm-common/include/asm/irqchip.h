@@ -21,6 +21,7 @@
 #ifndef __ASSEMBLY__
 
 struct per_cpu;
+struct public_per_cpu;
 
 struct sgi {
 	/*
@@ -40,7 +41,7 @@ struct irqchip {
 	int	(*init)(void);
 	int	(*cpu_init)(struct per_cpu *cpu_data);
 	void	(*cpu_reset)(struct per_cpu *cpu_data);
-	int	(*cpu_shutdown)(struct per_cpu *cpu_data);
+	int	(*cpu_shutdown)(struct public_per_cpu *cpu_public);
 	int	(*cell_init)(struct cell *cell);
 	void	(*cell_exit)(struct cell *cell);
 	void	(*adjust_irq_target)(struct cell *cell, u16 irq_id);
