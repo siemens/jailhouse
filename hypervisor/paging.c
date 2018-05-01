@@ -41,13 +41,8 @@ struct page_pool remap_pool = {
 	.pages = BITS_PER_PAGE * NUM_REMAP_BITMAP_PAGES,
 };
 
-static __attribute__((aligned(PAGE_SIZE))) u8 hv_paging_root[PAGE_SIZE];
-
 /** Descriptor of the hypervisor paging structures. */
-struct paging_structures hv_paging_structs = {
-	.hv_paging = true,
-	.root_table = (page_table_t)hv_paging_root,
-};
+struct paging_structures hv_paging_structs;
 
 /** Descriptor of paging structures used when parking CPUs. */
 struct paging_structures parking_pt;
@@ -630,6 +625,10 @@ int paging_init(void)
 		hypervisor_header.max_cpus * NUM_TEMPORARY_PAGES;
 	for (n = 0; n < remap_pool.used_pages; n++)
 		set_bit(n, remap_pool.used_bitmap);
+
+	hv_paging_structs.hv_paging = true;
+	hv_paging_structs.root_table =
+		(page_table_t)per_cpu(0)->root_table_page;
 
 	arch_paging_init();
 
