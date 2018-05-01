@@ -13,8 +13,6 @@
 #ifndef _JAILHOUSE_PAGING_H
 #define _JAILHOUSE_PAGING_H
 
-#include <jailhouse/entry.h>
-#include <jailhouse/types.h>
 #include <asm/paging.h>
 
 /**
@@ -37,6 +35,11 @@
  * Location of per-CPU temporary mapping region in hypervisor address space.
  */
 #define TEMPORARY_MAPPING_BASE	REMAP_BASE
+
+#ifndef __ASSEMBLY__
+
+#include <jailhouse/entry.h>
+#include <jailhouse/types.h>
 
 /** Page pool state. */
 struct page_pool {
@@ -346,6 +349,8 @@ void paging_dump_stats(const char *when);
  *
  * @see arch_paging_flush_page_tlbs
  */
+
+#endif /* !__ASSEMBLY__ */
 
 /** @} */
 #endif /* !_JAILHOUSE_PAGING_H */
