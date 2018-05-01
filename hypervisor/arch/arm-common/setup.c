@@ -38,7 +38,7 @@ int arm_init_early(void)
 
 int arm_cpu_init(struct per_cpu *cpu_data)
 {
-	cpu_data->mpidr = phys_processor_id();
+	cpu_data->public.mpidr = phys_processor_id();
 
 	arm_paging_vcpu_init(&root_cell.arch.mm);
 

@@ -15,7 +15,8 @@
 
 #define STACK_SIZE			PAGE_SIZE
 
-#define ARCH_PUBLIC_PERCPU_FIELDS	/* none */
+#define ARCH_PUBLIC_PERCPU_FIELDS					\
+	unsigned long mpidr;
 
 #define ARCH_PERCPU_FIELDS						\
 	struct pending_irqs pending_irqs;				\
@@ -32,8 +33,6 @@
 			unsigned long phys_addr;			\
 		} gicr;							\
 	};								\
-									\
-	unsigned long mpidr;						\
 									\
 	/**								\
 	 * Lock protecting CPU state changes done for control tasks.	\

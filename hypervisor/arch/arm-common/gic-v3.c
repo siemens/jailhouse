@@ -186,7 +186,7 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	if (gic_version != 3 && gic_version != 4)
 		return trace_error(-ENODEV);
 
-	mpidr = cpu_data->mpidr;
+	mpidr = cpu_data->public.mpidr;
 	aff = (MPIDR_AFFINITY_LEVEL(mpidr, 3) << 24 |
 	       MPIDR_AFFINITY_LEVEL(mpidr, 2) << 16 |
 	       MPIDR_AFFINITY_LEVEL(mpidr, 1) << 8 |
@@ -218,7 +218,7 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	}
 
 	/* Make sure we can handle Aff0 with the TargetList of ICC_SGI1R_EL1. */
-	if ((cpu_data->mpidr & MPIDR_AFF0_MASK) >= 16)
+	if ((cpu_data->public.mpidr & MPIDR_AFF0_MASK) >= 16)
 		return trace_error(-EIO);
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
@@ -300,7 +300,7 @@ static int gicv3_cpu_shutdown(struct per_cpu *cpu_data)
 static void gicv3_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
 	void *irouter = gicd_base + GICD_IROUTER + 8 * irq_id;
-	u64 mpidr = per_cpu(first_cpu(cell->cpu_set))->mpidr;
+	u64 mpidr = public_per_cpu(first_cpu(cell->cpu_set))->mpidr;
 	u32 route = arm_cpu_by_mpidr(cell,
 				     mmio_read64(irouter) & MPIDR_CPUID_MASK);
 
@@ -467,7 +467,7 @@ static enum mmio_result gicv3_handle_irq_route(struct mmio_access *mmio,
 		 * Note that we do not support Interrupt Routing Mode = 1.
 		 */
 		for_each_cpu(cpu, cell->cpu_set)
-			if ((per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK) ==
+			if ((public_per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK) ==
 			    mmio->value) {
 				mmio_perform_access(gicd_base, mmio);
 				return MMIO_HANDLED;
@@ -639,12 +639,12 @@ static enum mmio_result gicv3_handle_dist_access(struct mmio_access *mmio)
 
 static int gicv3_get_cpu_target(unsigned int cpu_id)
 {
-	return 1 << per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
+	return 1 << public_per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
 }
 
 static u64 gicv3_get_cluster_target(unsigned int cpu_id)
 {
-	return per_cpu(cpu_id)->mpidr & MPIDR_CLUSTERID_MASK;
+	return public_per_cpu(cpu_id)->mpidr & MPIDR_CLUSTERID_MASK;
 }
 
 const struct irqchip gicv3_irqchip = {

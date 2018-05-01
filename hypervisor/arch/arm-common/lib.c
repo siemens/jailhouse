@@ -28,7 +28,7 @@ unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr)
 	unsigned int cpu;
 
 	for_each_cpu(cpu, cell->cpu_set)
-		if (mpidr == (per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK))
+		if (mpidr == (public_per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK))
 			return cpu;
 
 	return -1;
