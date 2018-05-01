@@ -91,6 +91,9 @@ void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
 
+	/* Revoke full per_cpu access now that everything is set up. */
+	paging_map_all_per_cpu(this_cpu_id(), false);
+
 	/* Return to the kernel */
 	cpu_prepare_return_el1(cpu_data, 0);
 
