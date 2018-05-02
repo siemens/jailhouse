@@ -399,7 +399,7 @@ jailhouse cell create %s\n\
 jailhouse cell load %s linux-loader.bin -a 0x%x -s "%s" -a 0x%x %s -a 0x%x ' %
               (args.config.name, config.name, self.loader_address(),
                self.params.decode(), self.params_address(),
-               args.kernel.name + '-unzipped' if self._kernel_gz else '',
+               args.kernel.name + ('-unzipped' if self._kernel_gz else ''),
                self._kernel_addr), end='')
         if args.initrd:
             print('%s -a 0x%x ' % (args.initrd.name, self._ramdisk_addr),
