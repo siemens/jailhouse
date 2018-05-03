@@ -84,6 +84,7 @@ x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write)
 	bool does_write = false;
 	bool has_rex_w = false;
 	bool has_rex_r = false;
+	bool has_addrsz_prefix = false;
 
 	if (!ctx_update(&ctx, &pc, 0, pg_structs))
 		goto error_noinst;
@@ -103,6 +104,11 @@ restart:
 		goto restart;
 	}
 	switch (op[0].raw) {
+	case X86_PREFIX_ADDR_SZ:
+		if (!ctx_update(&ctx, &pc, 1, pg_structs))
+			goto error_noinst;
+		has_addrsz_prefix = true;
+		goto restart;
 	case X86_OP_MOVZX_OPC1:
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
@@ -131,12 +137,12 @@ restart:
 		does_write = true;
 		break;
 	case X86_OP_MOV_MEM_TO_AX:
-		inst.inst_len += addr64 ? 8 : 4;
+		inst.inst_len += (addr64 ^ has_addrsz_prefix) ? 8 : 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
-		inst.inst_len += addr64 ? 8 : 4;
+		inst.inst_len += (addr64 ^ has_addrsz_prefix) ? 8 : 4;
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.out_val = guest_regs->by_index[15];
 		does_write = true;
