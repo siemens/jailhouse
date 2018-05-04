@@ -37,6 +37,8 @@ HELPERS := \
 	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
+MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
+
 always := $(BINARIES)
 
 HAS_PYTHON_MAKO := \
@@ -93,7 +95,11 @@ install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 install-completion: jailhouse-completion.bash $(DESTDIR)$(completionsdir)
 	$(INSTALL_DATA) $< $(DESTDIR)$(completionsdir)/jailhouse
 
-install: install-bin install-libexec install-data install-completion
+install-man8: $(MAN8_PAGES) $(DESTDIR)$(man8dir)
+	$(INSTALL_DATA) $^
+
+install: install-bin install-libexec install-data install-completion \
+	 install-man8
 
 $(obj)/no_python_mako:
 	@echo -ne "WARNING: Could not create the helper script to generate" \
