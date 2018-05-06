@@ -128,6 +128,9 @@ restart:
 		inst.access_size = has_rex_w ? 8 : 4;
 		does_write = true;
 		break;
+	case X86_OP_MOVB_FROM_MEM:
+		inst.access_size = 1;
+		break;
 	case X86_OP_MOV_FROM_MEM:
 		inst.access_size = has_rex_w ? 8 : 4;
 		break;

@@ -54,7 +54,12 @@ void inmate_main(void)
 	/* MOV_FROM_MEM (8b), 32-bit data, 32-bit address */
 	asm volatile("movl (%%ebx), %%eax"
 		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL((u32)reg64, (u32)pattern);
+	EXPECT_EQUAL(reg64, (u32)pattern);
+
+	/* MOV_FROM_MEM (8a), 8-bit data */
+	asm volatile("movb (%%rbx), %%al"
+		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
+	EXPECT_EQUAL(reg64, (u8)pattern);
 
 	/* MOVZXB (0f b6), to 64-bit, mod=0, reg=0, rm=3 */
 	asm volatile("movzxb (%%rbx), %%rax"
@@ -106,6 +111,11 @@ void inmate_main(void)
 	asm volatile("movq %%rax, cmdline+0x101ef8(%%rip)"
 		: : "a" (pattern));
 	EXPECT_EQUAL(*comm_page_reg, pattern);
+
+	/* MOV_TO_MEM (88), 8-bit data */
+	asm volatile("movb %%al, (%%rbx)"
+		: : "a" (0x42), "b" (mmio_reg));
+	EXPECT_EQUAL(*comm_page_reg, (pattern & 0xffffffffffffff00) | 0x42);
 
 	/* IMMEDIATE_TO_MEM (c7), 64-bit data, mod=0, reg=0, rm=3 */
 	asm volatile("movq %0, (%%rbx)"
