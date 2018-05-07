@@ -88,6 +88,12 @@ static inline void cpu_relax(void)
 	asm volatile("" : : : "memory");
 }
 
+static inline void __attribute__((noreturn)) halt(void)
+{
+	while (1)
+		asm volatile("wfi" : : : "memory");
+}
+
 typedef void (*irq_handler_t)(unsigned int);
 void gic_setup(irq_handler_t handler);
 void gic_enable_irq(unsigned int irq);

@@ -106,6 +106,12 @@ static inline void cpu_relax(void)
 	asm volatile("rep; nop" : : : "memory");
 }
 
+static inline void __attribute__((noreturn)) halt(void)
+{
+	while (1)
+		asm volatile ("hlt" : : : "memory");
+}
+
 static inline void outb(u8 v, u16 port)
 {
 	asm volatile("outb %0,%1" : : "a" (v), "dN" (port));
