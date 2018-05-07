@@ -285,11 +285,15 @@ Communication region layout
 - - - - - - - - - - - - - -
 
     +------------------------------+ - begin of communication region
-    |   Message to Cell (32 bit)   |   (lower address)
+    |  Signature "JHCOMM" (6 byte) |   (lower address)
     +------------------------------+
-    |  Message from Cell (32 bit)  |
+    |     ABI Revision (16 bit)    |
     +------------------------------+
     |     Cell State (32 bit)      |
+    +------------------------------+
+    |   Message to Cell (32 bit)   |
+    +------------------------------+
+    |  Message from Cell (32 bit)  |
     +------------------------------+
     |      Reserved (32 bit)       |
     +------------------------------+
@@ -300,6 +304,10 @@ All fields use the native endianness of the system. The format is of the
 Platform Information part is architecture-specific. Its content is filled by
 the hypervisor during cell creation and shall be considered read-only until
 cell destruction.
+
+The ABI revision described here is 0. Future versions may not use a compatible
+layout or field semantic, except for the fields "Signature", "ABI Revision" and
+"Cell State".
 
 
 Logical Channel "Message"
@@ -370,6 +378,7 @@ defined:
  - Running, cell configurations locked (code 1)
  - Shut down (code 2), terminal state
  - Failed (code 3), terminal state
+ - Communication region ABI mismatch (code 4), terminal state
 
 Once a cell declared to have reached a terminal state, the hypervisor is free
 to destroy or restart that cell. On restart, it will also reset the state field
