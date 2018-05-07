@@ -695,6 +695,7 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 			case JAILHOUSE_CELL_RUNNING_LOCKED:
 			case JAILHOUSE_CELL_SHUT_DOWN:
 			case JAILHOUSE_CELL_FAILED:
+			case JAILHOUSE_CELL_FAILED_COMM_REV:
 				return state;
 			default:
 				return -EINVAL;
