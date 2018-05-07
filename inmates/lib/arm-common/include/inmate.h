@@ -39,6 +39,7 @@
 #ifndef _JAILHOUSE_INMATE_H
 #define _JAILHOUSE_INMATE_H
 
+#define COMM_REGION_BASE	0x80000000
 #define PAGE_SIZE	(4 * 1024ULL)
 
 typedef signed char s8;
