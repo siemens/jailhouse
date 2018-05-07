@@ -109,7 +109,7 @@ start32:
 	mov $bss_dwords,%ecx
 	rep stosl
 
-	mov $inmate_main,%ebx
+	mov $c_entry,%ebx
 
 call_entry:
 	mov $stack_top,%esp

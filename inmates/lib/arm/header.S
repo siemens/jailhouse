@@ -85,6 +85,6 @@ __reset_entry:
 
 2:	ldr	sp, =stack_top
 
-	b	inmate_main
+	b	c_entry
 
 	.ltorg

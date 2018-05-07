@@ -116,7 +116,7 @@ start64:
 	mov $bss_qwords,%rcx
 	rep stosq
 
-	mov $inmate_main,%rbx
+	mov $c_entry,%rbx
 
 call_entry:
 	mov $stack_top,%rsp

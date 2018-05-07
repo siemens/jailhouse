@@ -57,7 +57,7 @@ __reset_entry:
 
 	isb
 
-	b	inmate_main
+	b	c_entry
 
 handle_irq:
 	bl	vector_irq
