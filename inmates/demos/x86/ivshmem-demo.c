@@ -166,5 +166,5 @@ void inmate_main(void)
 		}
 	}
 out:
-	asm volatile("hlt");
+	halt();
 }
