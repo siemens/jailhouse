@@ -61,6 +61,12 @@ typedef enum { true = 1, false = 0 } bool;
 
 #define comm_region	((struct jailhouse_comm_region *)COMM_REGION_BASE)
 
+static inline void __attribute__((noreturn)) stop(void)
+{
+	arch_disable_irqs();
+	halt();
+}
+
 void printk(const char *fmt, ...);
 
 void *memset(void *s, int c, unsigned long n);
