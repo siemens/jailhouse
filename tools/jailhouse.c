@@ -359,13 +359,13 @@ static int cell_list(int argc, char *argv[])
 	}
 
 	if (num_entries > 0)
-		printf("%-8s%-24s%-16s%-24s%-24s\n",
+		printf("%-8s%-24s%-18s%-24s%-24s\n",
 		       "ID", "Name", "State", "Assigned CPUs", "Failed CPUs");
 	for (i = 0; i < num_entries; i++) {
 		id = (unsigned int)strtoul(namelist[i]->d_name, NULL, 10);
 
 		cinfo = get_cell_info(id);
-		printf("%-8d%-24s%-16s%-24s%-24s\n", cinfo->id.id, cinfo->id.name,
+		printf("%-8d%-24s%-18s%-24s%-24s\n", cinfo->id.id, cinfo->id.name,
 		       cinfo->state, cinfo->cpus_assigned_list, cinfo->cpus_failed_list);
 		cell_info_free(cinfo);
 		free(namelist[i]);
