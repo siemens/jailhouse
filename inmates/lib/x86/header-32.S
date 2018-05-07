@@ -62,6 +62,10 @@ __reset_entry:
 
 
 	.code32
+stop:	cli
+	hlt
+	jmp stop
+
 start32:
 	mov %cr4,%eax
 	or $X86_CR4_PSE,%eax
@@ -113,12 +117,7 @@ start32:
 
 call_entry:
 	mov $stack_top,%esp
-	call *%ebx
-
-stop:	cli
-	hlt
-	jmp stop
-
+	jmp *%ebx
 
 	.pushsection ".data"
 
