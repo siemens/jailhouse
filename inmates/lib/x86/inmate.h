@@ -101,6 +101,11 @@ typedef unsigned int u32;
 typedef signed long long s64;
 typedef unsigned long long u64;
 
+static inline void arch_disable_irqs(void)
+{
+	asm volatile("cli");
+}
+
 static inline void cpu_relax(void)
 {
 	asm volatile("rep; nop" : : : "memory");
