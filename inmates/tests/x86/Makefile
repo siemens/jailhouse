@@ -12,8 +12,11 @@
 
 include $(INMATES_LIB)/Makefile.lib
 
-INMATES := mmio-access.bin
+INMATES := mmio-access.bin mmio-access-32.bin
 
 mmio-access-y := mmio-access.o
+
+$(eval $(call DECLARE_32_BIT,mmio-access-32))
+mmio-access-32-y := mmio-access-32.o
 
 $(eval $(call DECLARE_TARGETS,$(INMATES)))
