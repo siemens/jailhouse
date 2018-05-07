@@ -134,7 +134,7 @@ static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
 					 const struct segment *segment)
 {
 	svm_segment->selector = segment->selector;
-	svm_segment->access_rights = ((segment->access_rights & 0xf000) >> 4) |
+	svm_segment->attributes = ((segment->access_rights & 0xf000) >> 4) |
 		(segment->access_rights & 0x00ff);
 	svm_segment->limit = segment->limit;
 	svm_segment->base = segment->base;
@@ -554,13 +554,13 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 		.selector = 0,
 		.base = 0,
 		.limit = 0xffff,
-		.access_rights = 0x0093,
+		.attributes = 0x0093,
 	};
 	static const struct svm_segment dtr_reset_state = {
 		.selector = 0,
 		.base = 0,
 		.limit = 0xffff,
-		.access_rights = 0,
+		.attributes = 0,
 	};
 	struct per_cpu *cpu_data = this_cpu_data();
 	struct vmcb *vmcb = &cpu_data->vmcb;
@@ -588,7 +588,7 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	}
 
 	vmcb->cs.limit = 0xffff;
-	vmcb->cs.access_rights = 0x009b;
+	vmcb->cs.attributes = 0x009b;
 
 	vmcb->ds = dataseg_reset_state;
 	vmcb->es = dataseg_reset_state;
@@ -599,12 +599,12 @@ void vcpu_vendor_reset(unsigned int sipi_vector)
 	vmcb->tr.selector = 0;
 	vmcb->tr.base = 0;
 	vmcb->tr.limit = 0xffff;
-	vmcb->tr.access_rights = 0x008b;
+	vmcb->tr.attributes = 0x008b;
 
 	vmcb->ldtr.selector = 0;
 	vmcb->ldtr.base = 0;
 	vmcb->ldtr.limit = 0xffff;
-	vmcb->ldtr.access_rights = 0x0082;
+	vmcb->ldtr.attributes = 0x0082;
 
 	vmcb->gdtr = dtr_reset_state;
 	vmcb->idtr = dtr_reset_state;
@@ -849,7 +849,7 @@ static void dump_guest_regs(union registers *guest_regs, struct vmcb *vmcb)
 	panic_printk("RDX: 0x%016lx RSI: 0x%016lx RDI: 0x%016lx\n",
 		     guest_regs->rdx, guest_regs->rsi, guest_regs->rdi);
 	panic_printk("CS: %x BASE: 0x%016llx AR-BYTES: %x EFER.LMA %d\n",
-		     vmcb->cs.selector, vmcb->cs.base, vmcb->cs.access_rights,
+		     vmcb->cs.selector, vmcb->cs.base, vmcb->cs.attributes,
 		     !!(vmcb->efer & EFER_LMA));
 	panic_printk("CR0: 0x%016llx CR3: 0x%016llx CR4: 0x%016llx\n",
 		     vmcb->cr0, vmcb->cr3, vmcb->cr4);
