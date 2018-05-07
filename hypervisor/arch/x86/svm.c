@@ -1043,9 +1043,17 @@ VCPU_VENDOR_GET_REGISTER(efer);
 VCPU_VENDOR_GET_REGISTER(rflags);
 VCPU_VENDOR_GET_REGISTER(rip);
 
-u16 vcpu_vendor_get_cs(void)
+u16 vcpu_vendor_get_cs_attr(void)
 {
-	return this_cpu_data()->vmcb.cs.selector;
+	/*
+	 * Build the CS segment attributes from the L and D/B extracted from
+	 * the segment attribute field and the CPL from its own field. The
+	 * latter is suggested by the AMD spec (Vol 2, 15.5.1). Present the
+	 * result in Intel format.
+	 */
+	u16 l_db = this_cpu_data()->vmcb.cs.attributes & BIT_MASK(10, 9);
+
+	return (this_cpu_data()->vmcb.cpl << 5) | (l_db << 4);
 }
 
 /* GIF must be set for interrupts to be delivered (APMv2, Sect. 15.17) */
