@@ -10,6 +10,7 @@
 *.dtb
 *.dtb.S
 *.dtb.*.tmp
+*.8
 Module.symvers
 modules.order
 driver/jailhouse.ko

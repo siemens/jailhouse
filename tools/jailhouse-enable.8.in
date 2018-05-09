@@ -6,7 +6,7 @@
 .\"    Source: Git 0.8
 .\"  Language: English
 .\"
-.TH "JAILHOUSE-ENABLE" "8" "14/04/2018" "Jailhouse 0\&.8\&.0" "Jailhouse Manual"
+.TH "JAILHOUSE-ENABLE" "8" "14/04/2018" "Jailhouse ${VERSION}" "Jailhouse Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

@@ -62,6 +62,11 @@ define cmd_gen_collect
 	chmod +x $@
 endef
 
+quiet_cmd_gen_man = GEN     $@
+define cmd_gen_man
+	sed 's/$${VERSION}/$(shell cat $(src)/../VERSION)/g' $< > $@
+endef
+
 targets += jailhouse.o
 
 $(obj)/jailhouse: $(obj)/jailhouse.o
@@ -80,6 +85,12 @@ $(obj)/jailhouse-gcov-extract: $(obj)/jailhouse-gcov-extract.o
 
 $(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse-config-collect.tmpl
 	$(call if_changed,gen_collect)
+
+targets += $(MAN8_PAGES)
+always +=  $(MAN8_PAGES)
+
+$(obj)/%.8: $(src)/%.8.in
+	$(call if_changed,gen_man)
 
 install-bin: $(BINARIES) $(DESTDIR)$(sbindir)
 	$(INSTALL_PROGRAM) $^
