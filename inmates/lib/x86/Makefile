@@ -44,8 +44,6 @@ TARGETS := header.o hypercall.o ioapic.o printk.o smp.o
 TARGETS += ../pci.o ../string.o ../cmdline.o ../setup.o
 TARGETS_64_ONLY := int.o mem.o pci.o timing.o
 
-ccflags-y := -ffunction-sections
-
 lib-y := $(TARGETS) $(TARGETS_64_ONLY)
 
 lib32-y := $(addprefix $(obj)/,$(TARGETS:.o=-32.o))
