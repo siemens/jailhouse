@@ -157,6 +157,9 @@ el2_entry:
 	 */
 	sub	sp, sp, 20 * 8
 
+	mrs	x29, id_aa64mmfr0_el1
+	str	x29, [x1, #PERCPU_ID_AA64MMFR0]
+
 	mov	x29, xzr	/* reset fp,lr */
 	mov	x30, xzr
 

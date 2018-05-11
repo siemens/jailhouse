@@ -178,32 +178,7 @@ typedef u64 *pt_entry_t;
 
 extern unsigned int cpu_parange;
 
-/* return the bits supported for the physical address range for this
- * machine; in arch_paging_init this value will be kept in
- * cpu_parange for later reference */
-static inline unsigned int get_cpu_parange(void)
-{
-	unsigned long id_aa64mmfr0;
-
-	arm_read_sysreg(ID_AA64MMFR0_EL1, id_aa64mmfr0);
-
-	switch (id_aa64mmfr0 & 0xf) {
-	case PARANGE_32B:
-		return 32;
-	case PARANGE_36B:
-		return 36;
-	case PARANGE_40B:
-		return 40;
-	case PARANGE_42B:
-		return 42;
-	case PARANGE_44B:
-		return 44;
-	case PARANGE_48B:
-		return 48;
-	default:
-		return 0;
-	}
-}
+unsigned int get_cpu_parange(void);
 
 /* The size of the cpu_parange, determines from which level we can
  * start from the S2 translations, and the size of the first level

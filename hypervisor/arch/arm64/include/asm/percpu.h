@@ -34,6 +34,7 @@ struct per_cpu {
 	u32 stats[JAILHOUSE_NUM_CPU_STATS];
 	int shutdown_state;
 	bool failed;
+	unsigned long id_aa64mmfr0;
 
 	struct pending_irqs pending_irqs;
 
