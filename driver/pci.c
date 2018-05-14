@@ -17,7 +17,9 @@
 #include <linux/of_fdt.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
+#ifdef CONFIG_OF_OVERLAY
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)
 #define of_overlay_apply(overlay, id)	(*id = of_overlay_create(overlay))
