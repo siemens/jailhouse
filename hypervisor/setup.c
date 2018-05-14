@@ -28,7 +28,7 @@ static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
 
 static DEFINE_SPINLOCK(init_lock);
 static unsigned int master_cpu_id = -1;
-static volatile unsigned int initialized_cpus;
+static volatile unsigned int entered_cpus, initialized_cpus;
 static volatile int error;
 
 static void init_early(unsigned int cpu_id)
@@ -174,6 +174,21 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 	bool master = false;
 
 	cpu_data->cpu_id = cpu_id;
+
+	spin_lock(&init_lock);
+
+	/*
+	 * If this CPU is last, make sure everything was committed before we
+	 * signal the other CPUs spinning on entered_cpus that they can
+	 * continue.
+	 */
+	memory_barrier();
+	entered_cpus++;
+
+	spin_unlock(&init_lock);
+
+	while (entered_cpus < hypervisor_header.online_cpus)
+		cpu_relax();
 
 	spin_lock(&init_lock);
 

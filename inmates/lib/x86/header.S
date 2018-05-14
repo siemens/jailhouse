@@ -89,6 +89,10 @@ start32:
 	ljmpl $INMATE_CS64,$start64
 
 	.code64
+stop:	cli
+	hlt
+	jmp stop
+
 start64:
 	xor %rbx,%rbx
 	xchg ap_entry,%rbx
@@ -116,16 +120,11 @@ start64:
 	mov $bss_qwords,%rcx
 	rep stosq
 
-	mov $inmate_main,%rbx
+	mov $c_entry,%rbx
 
 call_entry:
 	mov $stack_top,%rsp
-	callq *%rbx
-
-stop:	cli
-	hlt
-	jmp stop
-
+	jmp *%rbx
 
 	.pushsection ".data"
 

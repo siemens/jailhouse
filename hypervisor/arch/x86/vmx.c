@@ -1250,9 +1250,9 @@ VCPU_VENDOR_GET_REGISTER(efer, GUEST_IA32_EFER);
 VCPU_VENDOR_GET_REGISTER(rflags, GUEST_RFLAGS);
 VCPU_VENDOR_GET_REGISTER(rip, GUEST_RIP);
 
-u16 vcpu_vendor_get_cs(void)
+u16 vcpu_vendor_get_cs_attr(void)
 {
-	return vmcs_read16(GUEST_CS_SELECTOR);
+	return vmcs_read32(GUEST_CS_AR_BYTES);
 }
 
 void enable_irq(void)

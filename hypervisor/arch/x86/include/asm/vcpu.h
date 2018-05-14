@@ -93,10 +93,14 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len);
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *out);
 
+#define VCPU_CS_DPL_MASK	BIT_MASK(6, 5)
+#define VCPU_CS_L		(1 << 13)
+#define VCPU_CS_DB		(1 << 14)
+
 u64 vcpu_vendor_get_efer(void);
 u64 vcpu_vendor_get_rflags(void);
 u64 vcpu_vendor_get_rip(void);
-u16 vcpu_vendor_get_cs(void);
+u16 vcpu_vendor_get_cs_attr(void);
 
 void vcpu_vendor_get_io_intercept(struct vcpu_io_intercept *io);
 void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio);

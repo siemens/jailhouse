@@ -341,6 +341,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
 	unsigned int cfg_pages, cell_pages, cpu, n;
+	struct jailhouse_comm_region *comm_region;
 	const struct jailhouse_memory *mem;
 	struct jailhouse_cell_desc *cfg;
 	unsigned long cfg_total_size;
@@ -475,7 +476,11 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	config_commit(cell);
 
-	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
+	comm_region = &cell->comm_page.comm_region;
+	memcpy(comm_region->signature, COMM_REGION_MAGIC,
+	       sizeof(comm_region->signature));
+	comm_region->revision = COMM_REGION_ABI_REVISION;
+	comm_region->cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 
 	last = &root_cell;
 	while (last->next)
@@ -690,6 +695,7 @@ static int cell_get_state(struct per_cpu *cpu_data, unsigned long id)
 			case JAILHOUSE_CELL_RUNNING_LOCKED:
 			case JAILHOUSE_CELL_SHUT_DOWN:
 			case JAILHOUSE_CELL_FAILED:
+			case JAILHOUSE_CELL_FAILED_COMM_REV:
 				return state;
 			default:
 				return -EINVAL;

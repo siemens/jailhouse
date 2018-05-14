@@ -143,11 +143,14 @@
 
 #define X86_REX_CODE					4
 
+#define X86_PREFIX_ADDR_SZ				0x67
+
 #define X86_OP_MOVZX_OPC1				0x0f
 #define X86_OP_MOVZX_OPC2_B				0xb6
 #define X86_OP_MOVZX_OPC2_W				0xb7
 #define X86_OP_MOVB_TO_MEM				0x88
 #define X86_OP_MOV_TO_MEM				0x89
+#define X86_OP_MOVB_FROM_MEM				0x8a
 #define X86_OP_MOV_FROM_MEM				0x8b
 #define X86_OP_MOV_IMMEDIATE_TO_MEM			0xc7
 #define X86_OP_MOV_MEM_TO_AX    			0xa1

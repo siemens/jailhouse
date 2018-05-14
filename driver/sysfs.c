@@ -215,6 +215,8 @@ static ssize_t state_show(struct kobject *kobj, struct kobj_attribute *attr,
 		return sprintf(buffer, "shut down\n");
 	case JAILHOUSE_CELL_FAILED:
 		return sprintf(buffer, "failed\n");
+	case JAILHOUSE_CELL_FAILED_COMM_REV:
+		return sprintf(buffer, "Comm ABI mismatch\n");
 	default:
 		return sprintf(buffer, "invalid\n");
 	}

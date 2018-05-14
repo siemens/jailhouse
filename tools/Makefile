@@ -37,6 +37,8 @@ HELPERS := \
 	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
+MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
+
 always := $(BINARIES)
 
 HAS_PYTHON_MAKO := \
@@ -60,6 +62,11 @@ define cmd_gen_collect
 	chmod +x $@
 endef
 
+quiet_cmd_gen_man = GEN     $@
+define cmd_gen_man
+	sed 's/$${VERSION}/$(shell cat $(src)/../VERSION)/g' $< > $@
+endef
+
 targets += jailhouse.o
 
 $(obj)/jailhouse: $(obj)/jailhouse.o
@@ -79,6 +86,12 @@ $(obj)/jailhouse-gcov-extract: $(obj)/jailhouse-gcov-extract.o
 $(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse-config-collect.tmpl
 	$(call if_changed,gen_collect)
 
+targets += $(MAN8_PAGES)
+always +=  $(MAN8_PAGES)
+
+$(obj)/%.8: $(src)/%.8.in
+	$(call if_changed,gen_man)
+
 install-bin: $(BINARIES) $(DESTDIR)$(sbindir)
 	$(INSTALL_PROGRAM) $^
 
@@ -93,7 +106,11 @@ install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 install-completion: jailhouse-completion.bash $(DESTDIR)$(completionsdir)
 	$(INSTALL_DATA) $< $(DESTDIR)$(completionsdir)/jailhouse
 
-install: install-bin install-libexec install-data install-completion
+install-man8: $(MAN8_PAGES) $(DESTDIR)$(man8dir)
+	$(INSTALL_DATA) $^
+
+install: install-bin install-libexec install-data install-completion \
+	 install-man8
 
 $(obj)/no_python_mako:
 	@echo -ne "WARNING: Could not create the helper script to generate" \

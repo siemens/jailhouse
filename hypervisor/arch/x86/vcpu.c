@@ -156,14 +156,16 @@ void vcpu_cell_exit(struct cell *cell)
 void vcpu_handle_hypercall(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
-	bool long_mode = !!(vcpu_vendor_get_efer() & EFER_LMA);
+	u16 cs_attr = vcpu_vendor_get_cs_attr();
+	bool long_mode = (vcpu_vendor_get_efer() & EFER_LMA) &&
+		(cs_attr & VCPU_CS_L);
 	unsigned long arg_mask = long_mode ? (u64)-1 : (u32)-1;
 	unsigned long code = guest_regs->rax;
 
 	vcpu_skip_emulated_instruction(X86_INST_LEN_HYPERCALL);
 
 	if ((!long_mode && (vcpu_vendor_get_rflags() & X86_RFLAGS_VM)) ||
-	    (vcpu_vendor_get_cs() & 3) != 0) {
+	    (cs_attr & VCPU_CS_DPL_MASK) != 0) {
 		guest_regs->rax = -EPERM;
 		return;
 	}

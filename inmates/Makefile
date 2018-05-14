@@ -28,6 +28,7 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
 		 -fno-common -fno-stack-protector -ffreestanding \
+		 -ffunction-sections \
 		 -D__LINUX_COMPILER_TYPES_H
 ifneq ($(wildcard $(INC_CONFIG_H)),)
 KBUILD_CFLAGS += -include $(INC_CONFIG_H)

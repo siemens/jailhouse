@@ -39,6 +39,7 @@
 #ifndef _JAILHOUSE_INMATE_H
 #define _JAILHOUSE_INMATE_H
 
+#define COMM_REGION_BASE	0x80000000
 #define PAGE_SIZE	(4 * 1024ULL)
 
 typedef signed char s8;
@@ -86,6 +87,12 @@ static inline void mmio_write32(void *address, u32 value)
 static inline void cpu_relax(void)
 {
 	asm volatile("" : : : "memory");
+}
+
+static inline void __attribute__((noreturn)) halt(void)
+{
+	while (1)
+		asm volatile("wfi" : : : "memory");
 }
 
 typedef void (*irq_handler_t)(unsigned int);

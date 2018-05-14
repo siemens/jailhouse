@@ -25,6 +25,7 @@ sbindir		?= $(exec_prefix)/sbin
 libexecdir	?= $(exec_prefix)/libexec
 datarootdir	?= $(prefix)/share
 datadir		?= $(datarootdir)
+man8dir		?= $(datarootdir)/man/man8
 completionsdir	?= /usr/share/bash-completion/completions
 firmwaredir ?= /lib/firmware
 
@@ -32,6 +33,7 @@ firmwaredir ?= /lib/firmware
 INSTALL_DIRECTORIES := $(sbindir)		\
 		       $(libexecdir)		\
 		       $(datadir)		\
+		       $(man8dir)		\
 		       $(completionsdir)	\
 		       $(firmwaredir)
 

@@ -54,6 +54,5 @@ void inmate_main(void)
 	printk("Note: ACPI IRQs are broken for Linux now.\n");
 	asm volatile("sti");
 
-	while (1)
-		asm volatile("hlt");
+	halt();
 }

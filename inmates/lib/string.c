@@ -57,6 +57,16 @@ void *memset(void *s, int c, unsigned long n)
 	return s;
 }
 
+int memcmp(const void *s1, const void *s2, unsigned long n)
+{
+	const unsigned char *_s1 = s1, *_s2 = s2;
+
+	while (n-- > 0)
+		if (*_s1++ != *_s2++)
+			return _s1[-1] < _s2[-1] ? -1 : 1;
+	return 0;
+}
+
 unsigned long strlen(const char *s1)
 {
 	unsigned long len = 0;

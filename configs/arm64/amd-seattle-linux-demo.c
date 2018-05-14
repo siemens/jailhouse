@@ -21,7 +21,7 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[8];
+	struct jailhouse_memory mem_regions[9];
 	struct jailhouse_irqchip irqchips[2];
 	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
@@ -99,6 +99,12 @@ struct {
 			.size =           0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_IO |
 				JAILHOUSE_MEM_ROOTSHARED,
+		},
+		/* communication region */ {
+			.virt_start = 0x80000000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_COMM_REGION,
 		},
 	},
 

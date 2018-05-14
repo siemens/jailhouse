@@ -37,3 +37,8 @@
  */
 
 void __attribute__((used)) vector_irq(void);
+
+static inline void arch_disable_irqs(void)
+{
+	asm volatile("msr daifset, #3"); /* disable IRQs and FIQs */
+}

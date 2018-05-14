@@ -75,6 +75,5 @@ void inmate_main(void)
 	mmio_write16(hdbar + HDA_WAKEEN, 0x0f);
 	mmio_write32(hdbar + HDA_INTCTL, (1 << 31) | (1 << 30));
 
-	while (1)
-		asm volatile("hlt");
+	halt();
 }

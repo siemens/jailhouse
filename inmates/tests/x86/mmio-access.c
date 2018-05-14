@@ -51,8 +51,23 @@ void inmate_main(void)
 		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
 	EXPECT_EQUAL(reg64, (u32)pattern);
 
+	/* MOV_FROM_MEM (8b), 32-bit data, 32-bit address */
+	asm volatile("movl (%%ebx), %%eax"
+		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
+	EXPECT_EQUAL(reg64, (u32)pattern);
+
+	/* MOV_FROM_MEM (8a), 8-bit data */
+	asm volatile("movb (%%rbx), %%al"
+		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
+	EXPECT_EQUAL(reg64, (u8)pattern);
+
 	/* MOVZXB (0f b6), to 64-bit, mod=0, reg=0, rm=3 */
 	asm volatile("movzxb (%%rbx), %%rax"
+		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
+	EXPECT_EQUAL(reg64, (u8)pattern);
+
+	/* MOVZXB (0f b6), 32-bit data, 32-bit address */
+	asm volatile("movzxb (%%ebx), %%eax"
 		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
 	EXPECT_EQUAL(reg64, (u8)pattern);
 
@@ -70,6 +85,12 @@ void inmate_main(void)
 	asm volatile("movabs (0x101ff8), %%eax"
 		: "=a" (reg64) : "a" (0));
 	EXPECT_EQUAL(reg64, (u32)pattern);
+
+	reg64 = 0ULL;
+	/* MEM_TO_AX (a1), 32-bit data, 32-bit address */
+	asm volatile(".byte 0x67, 0x48, 0xa1, 0xf8, 0x1f, 0x10, 0x00"
+		: "=a" (reg64) : "a" (0));
+	EXPECT_EQUAL((u32)reg64, (u32)pattern);
 
 	printk("MMIO read test %s\n\n", all_passed ? "passed" : "FAILED");
 
@@ -91,6 +112,11 @@ void inmate_main(void)
 		: : "a" (pattern));
 	EXPECT_EQUAL(*comm_page_reg, pattern);
 
+	/* MOV_TO_MEM (88), 8-bit data */
+	asm volatile("movb %%al, (%%rbx)"
+		: : "a" (0x42), "b" (mmio_reg));
+	EXPECT_EQUAL(*comm_page_reg, (pattern & 0xffffffffffffff00) | 0x42);
+
 	/* IMMEDIATE_TO_MEM (c7), 64-bit data, mod=0, reg=0, rm=3 */
 	asm volatile("movq %0, (%%rbx)"
 		: : "i" (0x12345678), "b" (mmio_reg));
@@ -108,13 +134,32 @@ void inmate_main(void)
 	EXPECT_EQUAL(*comm_page_reg, 0x11223344ccddeeff);
 
 	mmio_write64(mmio_reg, 0x1122334455667788);
+	/* IMMEDIATE_TO_MEM (c7), 32-bit data, 32-bit address */
+	asm volatile("movl %0, (%%ebx)"
+		: : "i" (0xccddeeff), "b" (mmio_reg));
+	EXPECT_EQUAL(*comm_page_reg, 0x11223344ccddeeff);
+
+	mmio_write64(mmio_reg, 0x1122334455667788);
 	/* IMMEDIATE_TO_MEM (c7), 32-bit data, mod=1 (disp8), reg=0, rm=3 */
 	asm volatile("movl %0, 0x10(%%rbx)"
 		: : "i" (0xccddeeff), "b" (mmio_reg - 0x10));
 	EXPECT_EQUAL(*comm_page_reg, 0x11223344ccddeeff);
 
+	mmio_write64(mmio_reg, 0x1122334455667788);
+	/* IMMEDIATE_TO_MEM (c7), 32-bit data, 32-bit address */
+	asm volatile("movl %0, 0x10(%%ebx)"
+		: : "i" (0xccddeeff), "b" (mmio_reg - 0x10));
+	EXPECT_EQUAL(*comm_page_reg, 0x11223344ccddeeff);
+
+	mmio_write64(mmio_reg, 0x1122334455667788);
 	/* IMMEDIATE_TO_MEM (c7), 32-bit data, mod=2 (disp32), reg=0, rm=3 */
 	asm volatile("movl %0, 0x10000000(%%rbx)"
+		: : "i" (0xccddeeff), "b" (mmio_reg - 0x10000000));
+	EXPECT_EQUAL(*comm_page_reg, 0x11223344ccddeeff);
+
+	mmio_write64(mmio_reg, 0x1122334455667788);
+	/* IMMEDIATE_TO_MEM (c7), 32-bit data, 32-bit address */
+	asm volatile("movl %0, 0x10000000(%%ebx)"
 		: : "i" (0xccddeeff), "b" (mmio_reg - 0x10000000));
 	EXPECT_EQUAL(*comm_page_reg, 0x11223344ccddeeff);
 
@@ -133,6 +178,12 @@ void inmate_main(void)
 		: : "a" (0x12345678), "b" (mmio_reg - 0x10000000));
 	EXPECT_EQUAL(*comm_page_reg, 0x12345678);
 
+	mmio_write64(mmio_reg, 0x1122334455667788);
+	/* MOV_TO_MEM (89), 64-bit data, 32-bit address */
+	asm volatile("movq %%rax, 0x10000000(%%ebx)"
+		: : "a" (0x8765432112345678), "b" (mmio_reg - 0x10000000));
+	EXPECT_EQUAL(*comm_page_reg, 0x8765432112345678);
+
 	/* MOV_TO_MEM (89), 64-bit data, mod=0, reg=0, rm=4 (SIB) */
 	asm volatile("movq %%rax, (%%rbx,%%rcx)"
 		: : "a" (0x12345678), "b" (mmio_reg), "c" (0));
@@ -142,6 +193,12 @@ void inmate_main(void)
 	asm volatile("movq %%rax, 0x10000000(%%rbx,%%rcx)"
 		: : "a" (0x12345678), "b" (mmio_reg - 0x10000000), "c" (0));
 	EXPECT_EQUAL(*comm_page_reg, 0x12345678);
+
+	pattern = 0xdeadbeef;
+	/* AX_TO_MEM (a3), 32-bit data, 32-bit address */
+	asm volatile(".byte 0x67, 0x48, 0xa3, 0xf8, 0x1f, 0x10, 0x00"
+		: : "a" (pattern));
+	EXPECT_EQUAL(mmio_read32(mmio_reg), (u32)pattern);
 
 	printk("MMIO write test %s\n", all_passed ? "passed" : "FAILED");
 }

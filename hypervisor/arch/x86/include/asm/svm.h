@@ -44,7 +44,7 @@
 
 struct svm_segment {
 	u16 selector;
-	u16 access_rights;
+	u16 attributes;
 	u32 limit;
 	u64 base;
 } __attribute__((packed));

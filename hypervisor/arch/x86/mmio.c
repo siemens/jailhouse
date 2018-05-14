@@ -69,13 +69,22 @@ static bool ctx_update(struct parse_context *ctx, u64 *pc, unsigned int advance,
 	return true;
 }
 
+static unsigned int get_address_width(bool has_addrsz_prefix)
+{
+	u16 cs_attr = vcpu_vendor_get_cs_attr();
+	bool long_mode = (vcpu_vendor_get_efer() & EFER_LMA) &&
+		(cs_attr & VCPU_CS_L);
+
+	return long_mode ? (has_addrsz_prefix ? 4 : 8) :
+		(!!(cs_attr & VCPU_CS_DB) ^ has_addrsz_prefix) ? 4 : 2;
+}
+
 struct mmio_instruction
 x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write)
 {
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN,
 				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
-	bool addr64 = !!(vcpu_vendor_get_efer() & EFER_LMA);
 	struct mmio_instruction inst = { .inst_len = 0 };
 	u64 pc = vcpu_vendor_get_rip();
 	unsigned int n, skip_len = 0;
@@ -84,6 +93,7 @@ x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write)
 	bool does_write = false;
 	bool has_rex_w = false;
 	bool has_rex_r = false;
+	bool has_addrsz_prefix = false;
 
 	if (!ctx_update(&ctx, &pc, 0, pg_structs))
 		goto error_noinst;
@@ -103,6 +113,11 @@ restart:
 		goto restart;
 	}
 	switch (op[0].raw) {
+	case X86_PREFIX_ADDR_SZ:
+		if (!ctx_update(&ctx, &pc, 1, pg_structs))
+			goto error_noinst;
+		has_addrsz_prefix = true;
+		goto restart;
 	case X86_OP_MOVZX_OPC1:
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
@@ -122,6 +137,9 @@ restart:
 		inst.access_size = has_rex_w ? 8 : 4;
 		does_write = true;
 		break;
+	case X86_OP_MOVB_FROM_MEM:
+		inst.access_size = 1;
+		break;
 	case X86_OP_MOV_FROM_MEM:
 		inst.access_size = has_rex_w ? 8 : 4;
 		break;
@@ -131,12 +149,12 @@ restart:
 		does_write = true;
 		break;
 	case X86_OP_MOV_MEM_TO_AX:
-		inst.inst_len += addr64 ? 8 : 4;
+		inst.inst_len += get_address_width(has_addrsz_prefix);
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
-		inst.inst_len += addr64 ? 8 : 4;
+		inst.inst_len += get_address_width(has_addrsz_prefix);
 		inst.access_size = has_rex_w ? 8 : 4;
 		inst.out_val = guest_regs->by_index[15];
 		does_write = true;
