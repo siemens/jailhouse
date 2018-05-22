@@ -431,7 +431,7 @@ class ARM(ARMCommon):
     name = 'arm'
 
     def params_address(self):
-        return self._cpu_reset_address + 0x100
+        return self._cpu_reset_address + 0x1000
 
     @staticmethod
     def get_uncompressed_kernel(kernel):

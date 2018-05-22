@@ -48,7 +48,7 @@ SECTIONS {
 	. = CONFIG_INMATE_BASE;
 	.boot		: { *(.boot) }
 
-	. = CONFIG_INMATE_BASE + 0x100;
+	. = CONFIG_INMATE_BASE + 0x1000;
 	.cmdline	: {
 		*(.cmdline)
 		BYTE(0); /* empty string in case no buffer is provided */

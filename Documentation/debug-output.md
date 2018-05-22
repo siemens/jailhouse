@@ -151,7 +151,7 @@ inmate will initialise UART:
 Example configuration for MMIO based debug output on ARM using the 8250 driver:
 
     jailhouse cell load foocell inmate.bin \
-        -s "con-type=8250 con-base=0x70006000 con-divider=0xdd" -a 0x100
+        -s "con-type=8250 con-base=0x70006000 con-divider=0xdd" -a 0x1000
 
 Example configuration for MMIO based debug output on ARM64 using the PL011 driver:
 
