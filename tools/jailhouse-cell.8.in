@@ -60,14 +60,16 @@ Valid forms are:
 .RE
 .RS 4
 .sp
-The first example assumes "-a 0"\&.
+If no address is specified (e.g., inmate\&.bin in the above example), the
+address will default to 0x0.
 .sp
 The last example, loads in the order specified, three binary objects,
 the first one at offset 0, the second one at 0x1000000\&.
 Should inmate.bin be larger than 0x1000000, the upper part will be overridden
 by sharedobject\&.so\&.
 .sp
-Whatever load order, execution starts in the cell at offset 0 unless otherwise specified in the cell config (cpu_reset_address).\&.
+Whatever load order, execution starts in the cell at offset 0 unless otherwise
+specified in the cell config (cpu_reset_address).
 .sp
 This multi-image loading capability can be used to patch images and
 pass parameters to the image\&. The following explains how parameters are passed
