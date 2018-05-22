@@ -74,13 +74,8 @@ pass parameters to the image\&. The following explains how parameters are passed
 with the inmate library\&.
 .sp
 The inmate library assumes a command line string to be located at a fixed
-location that is architecture specific:
-.RE
-.RS 4
-- On x86 this is offset 0x100 (see inmates/lib/x86/inmate\&.lds)
-.RE
-.RS 4
-- On arm/arm64, this is offset 0x1000 (see for instance inmates/lib/arm64/inmate\&.lds\&.S)
+location. On all architectures, this is offset 0x1000 (see
+inmates/lib/ARCH/inmate\&.lds[.S])
 .RE
 .RS 4
 .sp
@@ -88,28 +83,26 @@ The command line string capacity is defined during compile time by CMDLINE_BUFFE
 in inmates/lib/cmdline\&.c or by defining a non weak instance of CMDLINE_BUFFER()\&.
 Please note that capacity includes trailing \\0.
 .sp
-Here is an example to pass  parameters stored in the file
-commandline.txt to the last example on an x86 system:
+Here is an example to pass parameters stored in the file commandline.txt to the
+inmate inmate\&.bin:
 .sp
-    OFFSET=0x100
+    CMDLINE_OFFSET=0x1000
     jailhouse cell load foocell \\
         inmate\&.bin \\
-        commanline\&.txt -a $OFFSET \\
+        commandline\&.txt -a $CMDLINE_OFFSET \\
         sharedobject\&.so -a 0x1000000 \\
         ramfs\&.bin -a 0x2000000
 .sp
-This command patches inmate.bin at offset 0x100 that corresponds to the "char* cmdline" location as
-controlled by the link script for inmates\&.
-.sp
-Note: on an arm/arm64 we would set OFFSET=0x1000
+This command patches inmate.bin at offset 0x1000 that corresponds to the "char
+*cmdline" location as controlled by the link script for inmates\&.
 .sp
 To be more practical and avoid using a text file, there is an image-as-string
 option:
 .sp
-    OFFSET=0x100
+    CMDLINE_OFFSET=0x1000
     jailhouse cell load foocell \\
         inmate\&.bin \\
-        -s "<command line parameters here>" -a $OFFSET \\
+        -s "<command line parameters here>" -a $CMDLINE_OFFSET \\
         sharedobject\&.so -a 0x1000000 \\
         ramfs\&.bin -a 0x2000000
 .sp
