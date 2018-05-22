@@ -41,7 +41,7 @@ SECTIONS
 	. = 0;
 	.boot		: { *(.boot) }
 
-	. = 0x100;
+	. = 0x1000;
 	.cmdline	: {
 		*(.cmdline)
 		BYTE(0); /* empty string in case no buffer is provided */

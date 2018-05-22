@@ -146,7 +146,7 @@ Example command line parameters for PIO based debug output on x86, where the
 inmate will initialise UART:
 
     jailhouse cell load foocell inmate.bin \
-        -s "con-base=0x3f8 con-divider=1" -a 0x100
+        -s "con-base=0x3f8 con-divider=1" -a 0x1000
 
 Example configuration for MMIO based debug output on ARM using the 8250 driver:
 

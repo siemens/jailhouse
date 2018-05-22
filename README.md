@@ -338,7 +338,7 @@ commands:
 
     jailhouse cell create /path/to/pci-demo.cell
     jailhouse cell load pci-demo /path/to/pci-demo.bin \
-        -s "con-base=0x2f8" -a 0x100
+        -s "con-base=0x2f8" -a 0x1000
     jailhouse cell start pci-demo
 
 The pci-demo will use the second serial port provided by QEMU. You will find
@@ -351,7 +351,7 @@ reload and restart the tiny-demo, issue the following commands:
 
     jailhouse cell start apic-demo
     jailhouse cell load pci-demo /path/to/pci-demo.bin \
-        -s "con-base=0x2f8" -a 0x100
+        -s "con-base=0x2f8" -a 0x1000
     jailhouse cell start pci-demo
 
 Finally, Jailhouse is can be stopped completely again:
