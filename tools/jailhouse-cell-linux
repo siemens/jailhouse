@@ -388,6 +388,9 @@ class ARMCommon:
             self.dtb.set_prop('/chosen', 'linux,initrd-end',
                               struct.pack(addr_format, end_addr))
 
+    def params_address(self):
+        return self._cpu_reset_address + 0x1000
+
     def write_params(self, args, config):
         args.write_params.write(self.dtb.get())
         args.write_params.close()
@@ -430,9 +433,6 @@ jailhouse cell load %s linux-loader.bin -a 0x%x -s "%s" -a 0x%x %s -a 0x%x ' %
 class ARM(ARMCommon):
     name = 'arm'
 
-    def params_address(self):
-        return self._cpu_reset_address + 0x1000
-
     @staticmethod
     def get_uncompressed_kernel(kernel):
         return (kernel.read(), False)
@@ -452,9 +452,6 @@ class ARM(ARMCommon):
 
 class ARM64(ARMCommon):
     name = 'arm64'
-
-    def params_address(self):
-        return self._cpu_reset_address + 0x1000
 
     @staticmethod
     def get_uncompressed_kernel(kernel):
