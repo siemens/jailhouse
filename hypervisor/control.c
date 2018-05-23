@@ -341,7 +341,6 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
 	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
 	unsigned int cfg_pages, cell_pages, cpu, n;
-	struct jailhouse_comm_region *comm_region;
 	const struct jailhouse_memory *mem;
 	struct jailhouse_cell_desc *cfg;
 	unsigned long cfg_total_size;
@@ -476,11 +475,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 
 	config_commit(cell);
 
-	comm_region = &cell->comm_page.comm_region;
-	memcpy(comm_region->signature, COMM_REGION_MAGIC,
-	       sizeof(comm_region->signature));
-	comm_region->revision = COMM_REGION_ABI_REVISION;
-	comm_region->cell_state = JAILHOUSE_CELL_SHUT_DOWN;
+	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 
 	last = &root_cell;
 	while (last->next)
@@ -558,6 +553,7 @@ static int cell_management_prologue(enum management_task task,
 
 static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 {
+	struct jailhouse_comm_region *comm_region;
 	const struct jailhouse_memory *mem;
 	unsigned int cpu, n;
 	struct cell *cell;
@@ -581,9 +577,18 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 		cell->loadable = false;
 	}
 
-	/* present a consistent Communication Region state to the cell */
-	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_RUNNING;
-	cell->comm_page.comm_region.msg_to_cell = JAILHOUSE_MSG_NONE;
+	/*
+	 * Present a consistent Communication Region state to the cell. Zero the
+	 * whole region as it might be dirty. This implies:
+	 *   - cell_state = JAILHOUSE_CELL_RUNNING (0)
+	 *   - msg_to_cell = JAILHOUSE_MSG_NONE (0)
+	 */
+	comm_region = &cell->comm_page.comm_region;
+	memset(&cell->comm_page, 0, sizeof(cell->comm_page));
+
+	comm_region->revision = COMM_REGION_ABI_REVISION;
+	memcpy(comm_region->signature, COMM_REGION_MAGIC,
+	       sizeof(comm_region->signature));
 
 	pci_cell_reset(cell);
 	arch_cell_reset(cell);
