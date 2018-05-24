@@ -247,7 +247,8 @@ class X86:
     name = 'x86'
 
     def setup(self, args, config):
-        self._cpu_reset_address = config.cpu_reset_address
+        if config.cpu_reset_address != 0:
+            raise RuntimeError('x86 requires cpu_reset_address=0')
 
         self.kernel_image = args.kernel.read()
 
@@ -285,10 +286,10 @@ jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
         print('jailhouse cell start %s' % config.name)
 
     def loader_address(self):
-        return self._cpu_reset_address
+        return 0
 
     def params_address(self):
-        return self._cpu_reset_address + 0x6000
+        return 0x6000
 
     def kernel_address(self):
         return self._zero_page.kernel_load_addr
