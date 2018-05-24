@@ -289,7 +289,7 @@ jailhouse cell load %s linux-loader.bin -a 0x%x %s -a 0x%x ' %
         return 0
 
     def params_address(self):
-        return 0x6000
+        return 0x1000
 
     def kernel_address(self):
         return self._zero_page.kernel_load_addr
