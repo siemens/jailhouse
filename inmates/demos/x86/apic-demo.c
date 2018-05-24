@@ -51,9 +51,8 @@ static void init_apic(void)
 	asm volatile("sti");
 }
 
-static void pollute_cache(void)
+static void pollute_cache(char *mem)
 {
-	char *mem = (char *)HEAP_BASE;
 	unsigned long cpu_cache_line_size, ebx;
 	unsigned long n;
 
@@ -71,12 +70,15 @@ void inmate_main(void)
 	bool terminate = false;
 	unsigned long tsc_freq;
 	bool cache_pollution;
+	char *mem;
 
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
 	cache_pollution = cmdline_parse_bool("pollute-cache");
-	if (cache_pollution)
+	if (cache_pollution) {
+		mem = alloc(PAGE_SIZE, PAGE_SIZE);
 		printk("Cache pollution enabled\n");
+	}
 
 	tsc_freq = tsc_init();
 	printk("Calibrated TSC frequency: %lu.%03u kHz\n", tsc_freq / 1000,
@@ -88,7 +90,7 @@ void inmate_main(void)
 		asm volatile("hlt");
 
 		if (cache_pollution)
-			pollute_cache();
+			pollute_cache(mem);
 
 		switch (comm_region->msg_to_cell) {
 		case JAILHOUSE_MSG_SHUTDOWN_REQUEST:

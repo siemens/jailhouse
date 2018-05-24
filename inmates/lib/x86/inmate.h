@@ -39,7 +39,6 @@
 #ifndef _JAILHOUSE_INMATE_H
 #define _JAILHOUSE_INMATE_H
 
-#define HEAP_BASE		((unsigned long)stack_top)
 #define COMM_REGION_BASE	0x100000
 
 #define INMATE_CS32		0x8

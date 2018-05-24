@@ -43,7 +43,7 @@
 #define PG_PS		0x80
 #define PG_PCD		0x10
 
-static unsigned long heap_pos = HEAP_BASE;
+static unsigned long heap_pos = (unsigned long)stack_top;
 
 void *alloc(unsigned long size, unsigned long align)
 {
