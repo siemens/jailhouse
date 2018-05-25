@@ -289,6 +289,7 @@ int paging_create(const struct paging_structures *pg_structs,
 	while (size > 0) {
 		const struct paging *paging = pg_structs->root_paging;
 		page_table_t pt = pg_structs->root_table;
+		struct paging_structures sub_structs;
 		pt_entry_t pte;
 		int err;
 
@@ -303,10 +304,13 @@ int paging_create(const struct paging_structures *pg_structs,
 				 * fail as we are working along hugepage
 				 * boundaries.
 				 */
-				if (paging->page_size > PAGE_SIZE)
-					paging_destroy(pg_structs, virt,
+				if (paging->page_size > PAGE_SIZE) {
+					sub_structs.root_paging = paging;
+					sub_structs.root_table = pt;
+					paging_destroy(&sub_structs, virt,
 						       paging->page_size,
 						       coherent);
+				}
 				paging->set_terminal(pte, phys, flags);
 				flush_pt_entry(pte, coherent);
 				break;
