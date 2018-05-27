@@ -67,6 +67,8 @@ static inline void __attribute__((noreturn)) stop(void)
 	halt();
 }
 
+void arch_init_early(void);
+
 void printk(const char *fmt, ...);
 
 void *alloc(unsigned long size, unsigned long align);
