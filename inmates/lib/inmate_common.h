@@ -69,6 +69,8 @@ static inline void __attribute__((noreturn)) stop(void)
 
 void printk(const char *fmt, ...);
 
+void *alloc(unsigned long size, unsigned long align);
+
 void *memset(void *s, int c, unsigned long n);
 void *memcpy(void *d, const void *s, unsigned long n);
 int memcmp(const void *s1, const void *s2, unsigned long n);
@@ -86,6 +88,7 @@ bool cmdline_parse_bool(const char *param);
 	const char cmdline[size] __attribute__((section(".cmdline")))
 
 extern const char cmdline[];
+extern const char stack_top[];
 
 void inmate_main(void);
 

@@ -36,7 +36,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-objs-y := ../string.o ../cmdline.o ../setup.o
+objs-y := ../string.o ../cmdline.o ../setup.o ../alloc.o
 objs-y += printk.o gic.o timer.o
 objs-y += uart-jailhouse.o uart-pl011.o uart-8250.o uart-8250-8.o
 objs-y += uart-xuartps.o uart-mvebu.o uart-hscif.o uart-scifa.o uart-imx.o

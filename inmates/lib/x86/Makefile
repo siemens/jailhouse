@@ -41,7 +41,7 @@ include $(INMATES_LIB)/Makefile.lib
 always := lib.a lib32.a
 
 TARGETS := header.o hypercall.o ioapic.o printk.o smp.o
-TARGETS += ../pci.o ../string.o ../cmdline.o ../setup.o
+TARGETS += ../alloc.o ../pci.o ../string.o ../cmdline.o ../setup.o
 TARGETS_64_ONLY := int.o mem.o pci.o timing.o
 
 lib-y := $(TARGETS) $(TARGETS_64_ONLY)
