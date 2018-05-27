@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) OTH Regensburg, 2017
+ * Copyright (c) OTH Regensburg, 2018
  *
  * Authors:
  *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -36,22 +36,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* The following definitions are inspired by
- * hypervisor/arch/arm64/include/asm/sysregs.h */
+#define ICC_IAR1_EL1		SYSREG_32(0, c12, c12, 0)
+#define ICC_EOIR1_EL1		SYSREG_32(0, c12, c12, 1)
+#define ICC_PMR_EL1		SYSREG_32(0, c4, c6, 0)
+#define ICC_CTLR_EL1		SYSREG_32(0, c12, c12, 4)
+#define ICC_IGRPEN1_EL1		SYSREG_32(0, c12, c12, 7)
 
-#ifndef __ASSEMBLY__
-
-#define __stringify_1(x...)     #x
-#define __stringify(x...)       __stringify_1(x)
-
-#define SYSREG_32(op1, crn, crm, op2)	s3_##op1 ##_##crn ##_##crm ##_##op2
-
-#define arm_write_sysreg(sysreg, val) \
-	asm volatile ("msr	"__stringify(sysreg)", %0\n" : : "r"((u64)(val)))
-
-#define arm_read_sysreg(sysreg, val) \
-	asm volatile ("mrs	%0,  "__stringify(sysreg)"\n" : "=r"((val)))
-
-#include <asm/sysregs_common.h>
-
-#endif /* __ASSEMBLY__ */
+#define ICC_IGRPEN1_EN		0x1

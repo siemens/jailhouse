@@ -54,6 +54,8 @@
 #define _arm_read_sysreg(size, ...) arm_read_sysreg_ ## size(__VA_ARGS__)
 #define arm_read_sysreg(...) _arm_read_sysreg(__VA_ARGS__)
 
+#include <asm/sysregs_common.h>
+
 #ifndef __ASSEMBLY__
 asm(".arch_extension virt\n");
 
