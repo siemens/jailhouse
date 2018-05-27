@@ -247,10 +247,6 @@ void delay_us(unsigned long microsecs);
 unsigned long apic_timer_init(unsigned int vector);
 void apic_timer_set(unsigned long timeout_ns);
 
-enum map_type { MAP_CACHED, MAP_UNCACHED };
-
-void map_range(void *start, unsigned long size, enum map_type map_type);
-
 u32 pci_read_config(u16 bdf, unsigned int addr, unsigned int size);
 void pci_write_config(u16 bdf, unsigned int addr, u32 value,
 		      unsigned int size);

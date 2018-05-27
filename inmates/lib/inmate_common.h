@@ -86,6 +86,10 @@ const char *cmdline_parse_str(const char *param, char *value_buffer,
 long long cmdline_parse_int(const char *param, long long default_value);
 bool cmdline_parse_bool(const char *param);
 
+enum map_type { MAP_CACHED, MAP_UNCACHED };
+
+void map_range(void *start, unsigned long size, enum map_type map_type);
+
 #define CMDLINE_BUFFER(size) \
 	const char cmdline[size] __attribute__((section(".cmdline")))
 
