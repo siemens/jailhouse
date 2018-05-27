@@ -45,6 +45,36 @@
 #define CNTV_CTL_EL0	SYSREG_32(0, c14, c3, 1)
 #define CNTPCT_EL0	SYSREG_64(0, c14)
 
+#define SCTLR		SYSREG_32(0, c1, c0, 0)
+#define  SCTLR_RR	(1 << 14)
+#define  SCTLR_I	(1 << 12)
+#define  SCTLR_C	(1 << 2)
+#define  SCTLR_M	(1 << 0)
+
+/* Enable MMU, round-robin replacement, data+instruction caches */
+#define SCTLR_MMU_CACHES	(SCTLR_RR | SCTLR_I | SCTLR_C | SCTLR_M)
+
+#define TTBR0		SYSREG_32(0, c2, c0, 0)
+#define TTBCR		SYSREG_32(0, c2, c0, 2)
+#define  TTBCR_IRGN0_WB_WA		(1 << 8)
+#define  TTBCR_ORGN0_WB_WA		(1 << 10)
+#define  TTBCR_SH0_INNER_SHAREABLE	(3 << 12)
+#define  TTBCR_EAE			(1 << 31)
+
+/*
+ * Enable extended address enable and set inner/outer caches to write-back
+ * write-allocate cacheable and shareability attribute to inner shareable
+ */
+#define TRANSL_CONT_REG TTBCR
+#define TRANSL_CONT_REG_SETTINGS \
+	TTBCR_EAE | TTBCR_IRGN0_WB_WA | TTBCR_ORGN0_WB_WA | \
+	TTBCR_SH0_INNER_SHAREABLE
+
+#define MAIR0		SYSREG_32(0, c10, c2, 0)
+#define MAIR1		SYSREG_32(0, c10, c2, 1)
+
+#define MAIR MAIR0
+
 #define SYSREG_32(...) 32, __VA_ARGS__
 #define SYSREG_64(...) 64, __VA_ARGS__
 
