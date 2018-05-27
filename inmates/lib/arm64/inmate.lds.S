@@ -36,11 +36,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <jailhouse/config.h>
-
-#ifndef CONFIG_INMATE_BASE
-#define CONFIG_INMATE_BASE 0x0
-#endif
+#include "../inmate_common.h"
 
 SECTIONS {
 	. = CONFIG_INMATE_BASE;

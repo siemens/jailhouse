@@ -36,6 +36,10 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef CONFIG_INMATE_BASE
+#define CONFIG_INMATE_BASE	0x0
+#endif
+
 #define NULL			((void *)0)
 
 #define NS_PER_USEC		1000UL
