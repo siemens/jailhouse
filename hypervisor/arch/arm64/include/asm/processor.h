@@ -51,8 +51,6 @@ static inline void memory_load_barrier(void)
 {
 }
 
-#define tlb_flush_guest()	asm volatile("tlbi vmalls12e1\n")
-
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_PROCESSOR_H */
