@@ -168,7 +168,8 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		goto kfree_config_out;
 	}
 
-	if (memcmp(config->signature, JAILHOUSE_CELL_DESC_SIGNATURE,
+	if (cell_params.config_size < sizeof(*config) ||
+	    memcmp(config->signature, JAILHOUSE_CELL_DESC_SIGNATURE,
 		   sizeof(config->signature)) != 0) {
 		pr_err("jailhouse: Not a cell configuration\n");
 		err = -EINVAL;
