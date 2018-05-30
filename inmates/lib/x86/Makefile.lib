@@ -39,6 +39,7 @@
 -include $(GEN_CONFIG_MK)
 
 KBUILD_CFLAGS += -m64 -mno-red-zone
+LINUXINCLUDE += -I$(INMATES_LIB)/include
 
 define DECLARE_TARGETS =
  _TARGETS = $(1)
