@@ -60,6 +60,9 @@ static void gic_v3_enable(unsigned int irqn)
 
 static int gic_v3_init(void)
 {
+	map_range(GICD_V3_BASE, PAGE_SIZE, MAP_UNCACHED);
+	map_range(GICR_V3_BASE, PAGE_SIZE, MAP_UNCACHED);
+
 	arm_write_sysreg(ICC_CTLR_EL1, 0);
 	arm_write_sysreg(ICC_PMR_EL1, 0xf0);
 	arm_write_sysreg(ICC_IGRPEN1_EL1, ICC_IGRPEN1_EN);

@@ -40,4 +40,5 @@
 
 void arch_init_early(void)
 {
+	arch_mmu_enable();
 }

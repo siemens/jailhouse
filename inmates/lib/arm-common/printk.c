@@ -111,6 +111,12 @@ static void console_init(void)
 	chip->clock_reg = (void *)(unsigned long)
 		cmdline_parse_int("con-clock-reg", CON_CLOCK_REG);
 
+	if (chip->base)
+		map_range(chip->base, PAGE_SIZE, MAP_UNCACHED);
+
+	if (chip->clock_reg)
+		map_range(chip->clock_reg, PAGE_SIZE, MAP_UNCACHED);
+
 	chip->init(chip);
 
 	if (chip->divider == 0) {

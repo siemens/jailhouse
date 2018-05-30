@@ -99,6 +99,8 @@ u64 timer_get_ticks(void);
 u64 timer_ticks_to_ns(u64 ticks);
 void timer_start(u64 timeout);
 
+void arch_mmu_enable(void);
+
 #include <asm/processor.h>
 #include <arch/inmate.h>
 

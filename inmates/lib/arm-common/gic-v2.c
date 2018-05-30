@@ -63,6 +63,9 @@ static void gic_v2_enable(unsigned int irqn)
 
 static int gic_v2_init(void)
 {
+	map_range(GICC_V2_BASE, PAGE_SIZE, MAP_UNCACHED);
+	map_range(GICD_V2_BASE, PAGE_SIZE, MAP_UNCACHED);
+
 	mmio_write32(GICC_V2_BASE + GICC_CTLR, GICC_CTLR_GRPEN1);
 	mmio_write32(GICC_V2_BASE + GICC_PMR, GICC_PMR_DEFAULT);
 	mmio_write32(GICD_V2_BASE + GICD_CTLR, GICD_CTLR_ENABLE);

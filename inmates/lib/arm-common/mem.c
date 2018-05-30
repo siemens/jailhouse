@@ -89,3 +89,35 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 	 */
 	synchronization_barrier();
 }
+
+void arch_mmu_enable(void)
+{
+	unsigned long mair, sctlr;
+
+	map_range((void*)CONFIG_INMATE_BASE, 0x10000, MAP_CACHED);
+	map_range((void*)COMM_REGION_BASE, PAGE_SIZE, MAP_CACHED);
+
+	/*
+	 * ARMv7: Use attributes 0 and 1 in MAIR0
+	 * ARMv8: Use attributes 0 and 1 in MAIR
+	 *
+	 * Attributes 0: inner/outer: normal memory, outer write-back
+	 *		 non-transient
+	 * Attributes 1: device memory
+	 */
+	mair = MAIR_ATTR(1, MAIR_ATTR_DEVICE) | MAIR_ATTR(0, MAIR_ATTR_WBRWA);
+	arm_write_sysreg(MAIR, mair);
+
+	arm_write_sysreg(TRANSL_CONT_REG, TRANSL_CONT_REG_SETTINGS);
+
+	arm_write_sysreg(TTBR0, page_directory);
+	/* This barrier ensures that TTBR0 is set before enabling the MMU. */
+	instruction_barrier();
+
+	arm_read_sysreg(SCTLR, sctlr);
+	sctlr |= SCTLR_MMU_CACHES;
+	arm_write_sysreg(SCTLR, sctlr);
+	/* This barrier ensures that the MMU is actually on */
+	instruction_barrier();
+	/* MMU is enabled from now on */
+}
