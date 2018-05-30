@@ -84,11 +84,6 @@ static inline void mmio_write32(void *address, u32 value)
 	*(volatile u32 *)address = value;
 }
 
-static inline void cpu_relax(void)
-{
-	asm volatile("" : : : "memory");
-}
-
 static inline void __attribute__((noreturn)) halt(void)
 {
 	while (1)
@@ -104,6 +99,7 @@ u64 timer_get_ticks(void);
 u64 timer_ticks_to_ns(u64 ticks);
 void timer_start(u64 timeout);
 
+#include <asm/processor.h>
 #include <arch/inmate.h>
 
 #include "../inmate_common.h"
