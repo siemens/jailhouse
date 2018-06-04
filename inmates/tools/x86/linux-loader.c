@@ -36,10 +36,11 @@ struct setup_data {
 	u8	cpu_ids[SMP_MAX_CPUS];
 } __attribute__((packed));
 
-/* actually not used as command line but for the  zero page and setup data */
-CMDLINE_BUFFER(3*PAGE_SIZE);
-
-static struct boot_params boot_params __attribute__((alias("cmdline")));
+/* We use the cmdline section for zero page and setup data. */
+static union {
+	struct boot_params params;
+	char __reservation[PAGE_SIZE * 3];
+} boot __attribute__((section(".cmdline")));
 
 void inmate_main(void)
 {
@@ -47,11 +48,11 @@ void inmate_main(void)
 	struct setup_data *setup_data;
 	void *kernel;
 
-	kernel = (void *)(unsigned long)boot_params.kernel_alignment;
+	kernel = (void *)(unsigned long)boot.params.kernel_alignment;
 
-	map_range(kernel, boot_params.init_size, MAP_CACHED);
+	map_range(kernel, boot.params.init_size, MAP_CACHED);
 
-	setup_data = (struct setup_data *)boot_params.setup_data;
+	setup_data = (struct setup_data *)boot.params.setup_data;
 	setup_data->pm_timer_address = comm_region->pm_timer_address;
 	setup_data->pci_mmconfig_base = comm_region->pci_mmconfig_base;
 	setup_data->tsc_khz = comm_region->tsc_khz;
@@ -62,5 +63,5 @@ void inmate_main(void)
 	memcpy(setup_data->cpu_ids, smp_cpu_ids, SMP_MAX_CPUS);
 
 	entry = kernel + 0x200;
-	entry(0, &boot_params);
+	entry(0, &boot.params);
 }
