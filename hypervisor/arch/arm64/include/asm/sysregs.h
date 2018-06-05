@@ -29,9 +29,9 @@
 #define RESET_PSR	(PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT \
 			| PSR_MODE_EL1h)
 
-#define MPIDR_CPUID_MASK	0xff00ffffff
-#define MPIDR_CLUSTERID_MASK	0xff00ffff00
-#define MPIDR_AFF0_MASK		0x00000000ff
+#define MPIDR_CPUID_MASK	0xff00ffffffUL
+#define MPIDR_CLUSTERID_MASK	0xff00ffff00UL
+#define MPIDR_AFF0_MASK		0x00000000ffUL
 #define MPIDR_U_BIT		(1 << 30)
 #define MPIDR_MP_BIT		(1 << 31)
 

@@ -10,4 +10,4 @@
  * the COPYING file in the top-level directory.
  */
 
-#define JAILHOUSE_BASE			0xffffc0200000
+#define JAILHOUSE_BASE			__JH_CONST_UL(0xffffc0200000)
