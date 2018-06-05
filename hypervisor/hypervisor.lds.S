@@ -10,10 +10,10 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/header.h>
+
 #include <asm/paging.h>
 #include <asm/sections.h>
-
-#include <asm/jailhouse_header.h>
 
 SECTIONS
 {

@@ -10,11 +10,5 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifdef __ASSEMBLY__
-#define __MAKE_UL(x)	x
-#else /* !__ASSEMBLY__ */
-#define __MAKE_UL(x)	x ## UL
-#endif
-
-#define JAILHOUSE_BASE			__MAKE_UL(0xfffffffff0000000)
+#define JAILHOUSE_BASE			__JH_CONST_UL(0xfffffffff0000000)
 #define JAILHOUSE_BORROW_ROOT_PT	1

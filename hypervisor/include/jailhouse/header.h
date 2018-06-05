@@ -17,7 +17,14 @@
 #define HYP_STUB_ABI_LEGACY 0
 #define HYP_STUB_ABI_OPCODE 1
 
-#ifndef __ASSEMBLY__
+
+#ifdef __ASSEMBLY__
+
+#define __JH_CONST_UL(x)	x
+
+#else /* !__ASSEMBLY__ */
+
+#define __JH_CONST_UL(x)	x ## UL
 
 /**
  * @ingroup Setup
@@ -88,4 +95,4 @@ struct jailhouse_header {
 	unsigned int arm_linux_hyp_abi;
 };
 
-#endif
+#endif /* !__ASSEMBLY__ */
