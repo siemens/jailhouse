@@ -442,7 +442,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 						hv_mem->size,
 						"Jailhouse hypervisor");
 	if (!hypervisor_mem_res) {
-		pr_err("jailhouse: mem_region_request failed for hypervisor "
+		pr_err("jailhouse: request_mem_region failed for hypervisor "
 		       "memory.\n");
 		pr_notice("jailhouse: Did you reserve the memory with "
 			  "\"memmap=\" or \"mem=\"?\n");
