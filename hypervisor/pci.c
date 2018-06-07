@@ -551,12 +551,8 @@ void pci_reset_device(struct pci_device *device)
 		return;
 	}
 
-	/*
-	 * Silence INTx of the physical device by setting the mask bit.
-	 * This is a deviation from the specified reset state.
-	 */
-	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
-			 PCI_CMD_INTX_OFF, 2);
+	/* Make sure we can reach the MSI-X registers. */
+	pci_write_config(device->info->bdf, PCI_CFG_COMMAND, PCI_CMD_MEM, 2);
 
 	for_each_pci_cap(cap, device, n) {
 		if (cap->id == PCI_CAP_MSI || cap->id == PCI_CAP_MSIX)
@@ -568,6 +564,13 @@ void pci_reset_device(struct pci_device *device)
 				mmio_write32(&device->msix_table[n].raw[3],
 					     device->msix_vectors[n].raw[3]);
 	}
+
+	/*
+	 * Silence INTx of the physical device by setting the mask bit.
+	 * This is a deviation from the specified reset state.
+	 */
+	pci_write_config(device->info->bdf, PCI_CFG_COMMAND,
+			 PCI_CMD_INTX_OFF, 2);
 }
 
 static int pci_add_physical_device(struct cell *cell, struct pci_device *device)
