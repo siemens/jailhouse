@@ -39,8 +39,6 @@
 #include <inmate.h>
 #include <uart.h>
 
-#define UART_CLK	24000000
-
 #define UARTDR		0x00
 #define UARTFR		0x18
 #define UARTIBRD	0x24
@@ -60,20 +58,15 @@
 
 static void uart_init(struct uart_chip *chip)
 {
-#ifdef CONFIG_MACH_VEXPRESS
-	/* 115200 8N1 */
-	/* FIXME: Can be improved with an implementation of __aeabi_uidiv */
-	u32 bauddiv = UART_CLK / (16 * 115200);
-
-	mmio_write16(chip->base + UARTCR, 0);
-	while (mmio_read8(chip->base + UARTFR) & UARTFR_BUSY)
-		cpu_relax();
-
-	mmio_write8(chip->base + UARTLCR_H, UARTLCR_H_WLEN);
-	mmio_write16(chip->base + UARTIBRD, bauddiv);
-	mmio_write16(chip->base + UARTCR, (UARTCR_EN | UARTCR_TXE | UARTCR_RXE |
-					   UARTCR_Out1 | UARTCR_Out2));
-#endif
+	if (chip->divider) {
+		mmio_write16(chip->base + UARTCR, 0);
+		while (mmio_read8(chip->base + UARTFR) & UARTFR_BUSY)
+			cpu_relax();
+		mmio_write16(chip->base + UARTIBRD, chip->divider);
+		mmio_write8(chip->base + UARTLCR_H, UARTLCR_H_WLEN);
+		mmio_write16(chip->base + UARTCR, UARTCR_EN | UARTCR_TXE |
+						  UARTCR_Out1 | UARTCR_Out2);
+	}
 }
 
 static bool uart_is_busy(struct uart_chip *chip)
