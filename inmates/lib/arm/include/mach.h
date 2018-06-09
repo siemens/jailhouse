@@ -95,20 +95,6 @@
 #define GICD_V2_BASE	((void *)0x01c81000)
 #define GICC_V2_BASE	((void *)0x01c82000)
 
-#elif defined(CONFIG_MACH_VEXPRESS)
-#define CON_TYPE	"PL011"
-#define CON_BASE	0x1c090000
-
-#define GIC_VERSION	2
-#define GICD_V2_BASE	((void *)0x2c001000)
-#define GICC_V2_BASE	((void *)0x2c002000)
-
-/*
-#define GIC_VERSION	3
-#define GICD_V3_BASE	((void *)0x2f000000)
-#define GICR_V3_BASE	((void *)0x2f100000)
-*/
-
 #endif
 
 #ifndef TIMER_IRQ
