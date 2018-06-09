@@ -28,5 +28,3 @@ lib-y += mmu_hyp.o caches.o
 #  gcc7 will bring a new function attribute "no_profile_instrument_function"
 #  should switch to that for higher granularity, but gcc7 is not even there
 CFLAGS_mmu_hyp.o += -fno-profile-arcs -fno-test-coverage
-
-lib-$(CONFIG_MACH_VEXPRESS) += vexpress.o
