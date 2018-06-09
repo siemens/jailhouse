@@ -35,21 +35,18 @@
 
 static void uart_init(struct uart_chip *chip)
 {
-#ifdef CONFIG_MACH_VEXPRESS
-	/* 115200 8N1 */
-	/* FIXME: Can be improved with an implementation of __aeabi_uidiv */
-	u32 bauddiv = UART_CLK / (16 * 115200);
+	unsigned int divider = chip->debug_console->divider;
 	void *base = chip->virt_base;
 
-	mmio_write16(base + UARTCR, 0);
-	while (mmio_read8(base + UARTFR) & UARTFR_BUSY)
-		cpu_relax();
-
-	mmio_write8(base + UARTLCR_H, UARTLCR_H_WLEN);
-	mmio_write16(base + UARTIBRD, bauddiv);
-	mmio_write16(base + UARTCR, (UARTCR_EN | UARTCR_TXE | UARTCR_RXE |
-				     UARTCR_Out1 | UARTCR_Out2));
-#endif
+	if (divider) {
+		mmio_write16(base + UARTCR, 0);
+		while (mmio_read8(base + UARTFR) & UARTFR_BUSY)
+			cpu_relax();
+		mmio_write16(base + UARTIBRD, divider);
+		mmio_write8(base + UARTLCR_H, UARTLCR_H_WLEN);
+		mmio_write16(base + UARTCR, UARTCR_EN | UARTCR_TXE |
+					    UARTCR_Out1 | UARTCR_Out2);
+	}
 }
 
 static bool uart_is_busy(struct uart_chip *chip)
