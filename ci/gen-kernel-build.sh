@@ -129,6 +129,5 @@ prepare_out
 prepare_kernel
 build_kernel x86 x86_64
 build_kernel banana-pi arm arm-linux-gnueabihf-
-build_kernel vexpress arm arm-linux-gnueabihf-
 build_kernel amd-seattle arm64 aarch64-linux-gnu-
 package_out

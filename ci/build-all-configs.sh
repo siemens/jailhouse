@@ -13,7 +13,7 @@
 
 set -e
 
-CONFIGS="x86 banana-pi vexpress amd-seattle"
+CONFIGS="x86 banana-pi amd-seattle"
 
 # only build a specific config if the branch selects it
 if [ ${TRAVIS_BRANCH#coverity_scan-} != ${TRAVIS_BRANCH} ]; then
