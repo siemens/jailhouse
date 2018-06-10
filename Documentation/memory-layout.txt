@@ -1,20 +1,37 @@
 Memory Layout of the Jailhouse Hypervisor
 =========================================
 
-While the hypervisor is running, two memory regions are visible in its address
-space: the hypervisor region and the remapping region. Jailhouse cells are not
-mapped into the hypervisor's address space, with the exception of explicitly
-shared pages and pages that are temporarily mapped, e.g. during MMIO instruction
-parsing.
+The hypervisor memory space consists of three types of memory regions: commonly
+visible hypervisor memory, globally visible I/O memory remappings and CPU-
+specific remappings of hypervisor memory as well as cell memory pages.
+
+Cells are not mapped as a whole into the hypervisor address space. Only
+explicitely shared pages and pages that are temporarily mapped, e.g. during
+MMIO instruction parsing, are visible by the hypervisor during runtime.
+Furthermore, the visibility is limited to the CPU that create it because they
+are only added to the CPU-specifc mapping.
 
 
-Hypervisor region
------------------
+Common memory region
+--------------------
 
-The hypervisor region contains both code and data of the hypervisor. It
-consists of contiguous physical RAM, mapped at a fixed virtual address, both
-in the hypervisor and the Linux address space. This identical mapping is
-required during startup and shutdown of the hypervisor.
+This region contains both code and data of the hypervisor. It consists of
+contiguous physical RAM, mapped at a fixed virtual address into the hypervisor
+address space.
+
+Prior to enabling the hypervisor and after disabling it, this region is also
+mapped into the address space of Linux that acts as root cell. The virtual
+address of this mapping is identical to the one used by the hypervisor when the
+architecture set JAILHOUSE_BORROW_ROOT_PT (currently x86 and ARM), on other,
+this addressed can differ.
+
+The commom memory region contains an array of per-CPU data structures, one for
+each configured CPU. Each per-CPU data structure consists of a private part and
+a public part. The public part will remain visible for all CPUs throughout the
+hypervisor operation. The private part, however, is only visible during setup
+and prior to shutdown. When the hypervisor is in operational mode, the private
+sections of all CPUs are hidden. Rather, CPUs are supposed to access this data
+via their CPU-specific mapping.
 
 Virtual address: JAILHOUSE_BASE
 Size: as defined in the system configuration (see hypervisor_memory.size) [1]
@@ -48,9 +65,23 @@ Size: as defined in the system configuration (see hypervisor_memory.size) [1]
         |                                      |
         +--------------------------------------+
         | Page +-----------------------------+ |
-        | Pool | Per-CPU Data                | |
-        |      |                             | |
-        |      |                             | |
+        | Pool | Private Data CPU 0          | |
+        |      | (unmapped during operation) | |
+        |      +-----------------------------+ |
+        |      | Public Data CPU 0           | |
+        |      +-----------------------------+ |
+        |      | Private Data CPU 1          | |
+        |      | (unmapped during operation) | |
+        |      +-----------------------------+ |
+        |      | Public Data CPU 1           | |
+        |      +-----------------------------+ |
+        :      :                             : :
+        :      :                             : :
+        |      +-----------------------------+ |
+        |      | Private Data CPU n-1        | |
+        |      | (unmapped during operation) | |
+        |      +-----------------------------+ |
+        |      | Public Data CPU n-1         | |
         |      +-----------------------------+ |
         |      | System Config               | |
         |      |                             | |
@@ -65,25 +96,63 @@ Size: as defined in the system configuration (see hypervisor_memory.size) [1]
         +--------------------------------------+ - higher address
 
 
-Remapping region
-----------------
+I/O memory remapping region
+---------------------------
 
-The remapping region is a range of reserved virtual memory in the hypervisor
-address space. It is used to map MMIO and, temporarily, selected guest pages
-for hypervisor access.
+This region is a range of reserved virtual memory in the hypervisor address
+space. It is used to map MMIO pages for hypervisor access.
 
 Virtual address: REMAP_BASE
 Size: PAGE_SIZE * NUM_REMAP_BITMAP_PAGES * PAGE_SIZE * 8
 
         +--------------------------------------+ - lower address
-        | Per-CPU Temporary Mapping Region     |
-        |                                      |
-        +--------------------------------------+
         | Dynamic Remapping Page pool          |
         :                                      :
         :                                      :
         |                                      |
         +--------------------------------------+ - higher address
+
+
+CPU-specific remapping region
+-----------------------------
+
+This region is differently mapped for each CPU. It consistes of a virtual
+address range that is used for temporarily mapping individual pages of the cell
+that runs on the same CPU.
+
+Futhermore, the private per-CPU data which is hidden from the common memory
+region is made available at fixed virtual address here. This allows to
+dereference CPU local data quickly and generically. Moreover, it hides cell-
+private data that the hypervisor may collect on VM exit, e.g. register content,
+from other CPUs.
+
+Consequently, malicious cells are unable to trick the hypervisor to leak cell
+data and other sensitive state information from cells that are always running
+on different CPUs. Specifically, all known Spectre-class attacks are unable to
+reveal relevant data, provided cells are partitioned along physical cores
+(hyperthread siblings belong to the same cell).
+
+Virtual address: TEMPORARY_MAPPING_BASE
+Size: NUM_TEMPORARY_PAGES * PAGE_SIZE +
+      PAGE_ALIGN(sizeof(struct public_per_cpu))
+
+        +--------------------------------------+ - lower address
+        | Temporary cell page remapping range  |
+        |                                      |
+        +--------------------------------------+
+        | Private per-CPU data                 |
+        | (at LOCAL_CPU_BASE)                  |
+        +--------------------------------------+ - higher address
+
+
+Debug console MMIO region (JAILHOUSE_BORROW_ROOT_PT only)
+---------------------------------------------------------
+
+This mapping of the debug console device MMIO region is set up by the driver
+prior to handing the control over to Jailhouse. The address is defined during
+runtime by Linux and generally does not conflict with the other, statically
+allocated regions. The hypervisor performs basic consistency checks on it. Its
+size is defined by the system configuration (system_config->debug_console.size).
 
 
 References
