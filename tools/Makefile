@@ -56,6 +56,10 @@ define patch_dirvar
 	sed -i 's|^$1 = None|$1 = "$($1)"|' $2
 endef
 
+define patch_pyjh_import
+	sed -i '/^sys.path\[0\] = .*/d' $1
+endef
+
 quiet_cmd_gen_collect = GEN     $@
 define cmd_gen_collect
 	$< -g $@; \
@@ -99,6 +103,7 @@ install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
 	$(INSTALL_PROGRAM) $^
 	$(Q)$(call patch_dirvar,libexecdir,$(lastword $^)/jailhouse-cell-linux)
 	$(Q)$(call patch_dirvar,datadir,$(lastword $^)/jailhouse-config-create)
+	$(Q)$(call patch_pyjh_import,$(lastword $^)/jailhouse-cell-linux)
 
 install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 	$(INSTALL_DATA) $^
