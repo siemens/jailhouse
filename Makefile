@@ -48,8 +48,12 @@ firmware_install: $(DESTDIR)$(firmwaredir) modules
 tool_inmates_install: $(DESTDIR)$(libexecdir)/jailhouse
 	$(INSTALL_DATA) inmates/tools/$(ARCH)/*.bin $<
 
-install: modules_install firmware_install tool_inmates_install
+pyjailhouse_install:
+	pip install --upgrade --force-reinstall --root=$(DESTDIR) .
+
+install: modules_install firmware_install tool_inmates_install \
+	pyjailhouse_install
 	$(Q)$(MAKE) -C tools $@ src=.
 
 .PHONY: modules_install install clean firmware_install modules tools docs \
-	docs_clean
+	docs_clean pyjailhouse_install

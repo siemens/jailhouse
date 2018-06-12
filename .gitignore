@@ -28,3 +28,4 @@ hypervisor/arch/*/include/generated
 *.s
 ci/out
 ci/*.tar.xz
+*.pyc
