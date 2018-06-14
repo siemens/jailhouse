@@ -366,9 +366,7 @@ ARM64 Demonstration in QEMU
 ---------------------------
 
 Similarly like x86, Jailhouse can be tried out in a completely emulated ARM64
-(aarch64) environment under QEMU. QEMU version 2.10 and the following patch are
-required: https://patchwork.ozlabs.org/patch/817339. Later versions of QEMU
-should include a corresponding fix.
+(aarch64) environment under QEMU. QEMU version 3.0 or later is required.
 
 Start the QEMU machine like this:
 
