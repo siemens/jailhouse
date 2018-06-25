@@ -42,6 +42,10 @@ INSTALL_PROGRAM ?= $(INSTALL)
 INSTALL_DATA    ?= $(INSTALL) -m 644
 INSTALL_DIR     ?= $(INSTALL) -d -m 755
 
+PIP ?= pip
+
+HAS_PYTHON_PIP := $(shell $(PIP) >/dev/null 2>/dev/null && echo yes)
+
 # creates a rule for each dir in $(INSTALL_DIRECTORIES) under the current
 # $(DESTDIR) and additionally to that for each of these dirs a subdir named
 # `jailhouse`. These can be used as prerequirement for install-rules and will

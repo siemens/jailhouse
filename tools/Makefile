@@ -29,7 +29,9 @@ KBUILD_CFLAGS += $(call cc-option, -fno-pie)
 KBUILD_CFLAGS += $(call cc-option, -no-pie)
 
 BINARIES := jailhouse
+always := $(BINARIES)
 
+ifeq ($(strip $(HAS_PYTHON_PIP)), yes)
 HELPERS := \
 	jailhouse-cell-linux \
 	jailhouse-cell-stats \
@@ -37,20 +39,47 @@ HELPERS := \
 	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
-MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
-
-always := $(BINARIES)
-
 HAS_PYTHON_MAKO := \
 	$(shell python -c "from mako.template import Template" 2>/dev/null \
 	&& echo yes)
 
 ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
-	always += jailhouse-config-collect
-	HELPERS += jailhouse-config-collect
-else
-	always += no_python_mako
-endif
+always += jailhouse-config-collect
+HELPERS += jailhouse-config-collect
+
+else  # !HAS_PYTHON_MAKO
+
+always += no_python_mako
+
+$(obj)/no_python_mako:
+	@echo -ne "WARNING: Could not create the helper script to generate" \
+		  "configurations on remote machines" \
+		  "(\"jailhouse-conf-collect\"). You need Python and the" \
+		  "Mako library for it.\n"
+endif # !HAS_PYTHON_MAKO
+
+install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
+	$(INSTALL_PROGRAM) $^
+	$(Q)$(call patch_dirvar,libexecdir,$(lastword $^)/jailhouse-cell-linux)
+	$(Q)$(call patch_dirvar,datadir,$(lastword $^)/jailhouse-config-create)
+	$(Q)$(call patch_pyjh_import,$(lastword $^)/jailhouse-cell-linux)
+
+install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
+	$(INSTALL_DATA) $^
+
+else  # !HAS_PYTHON_PIP
+
+install-libexec install-data:
+	@
+
+always += no_python_pip
+
+$(obj)/no_python_pip:
+	@echo -ne "WARNING: Could not install Python-based helpers. You need" \
+		  "Python and pip for them.\n"
+endif # !HAS_PYTHON_PIP
+
+MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
 
 define patch_dirvar
 	sed -i 's|^$1 = None|$1 = "$($1)"|' $2
@@ -99,15 +128,6 @@ $(obj)/%.8: $(src)/%.8.in
 install-bin: $(BINARIES) $(DESTDIR)$(sbindir)
 	$(INSTALL_PROGRAM) $^
 
-install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
-	$(INSTALL_PROGRAM) $^
-	$(Q)$(call patch_dirvar,libexecdir,$(lastword $^)/jailhouse-cell-linux)
-	$(Q)$(call patch_dirvar,datadir,$(lastword $^)/jailhouse-config-create)
-	$(Q)$(call patch_pyjh_import,$(lastword $^)/jailhouse-cell-linux)
-
-install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
-	$(INSTALL_DATA) $^
-
 install-completion: jailhouse-completion.bash $(DESTDIR)$(completionsdir)
 	$(INSTALL_DATA) $< $(DESTDIR)$(completionsdir)/jailhouse
 
@@ -117,11 +137,5 @@ install-man8: $(MAN8_PAGES) $(DESTDIR)$(man8dir)
 install: install-bin install-libexec install-data install-completion \
 	 install-man8
 
-$(obj)/no_python_mako:
-	@echo -ne "WARNING: Could not create the helper script to generate" \
-		  "configurations on remote machines" \
-		  "(\"jailhouse-conf-collect\"). You need Python and the" \
-		  "Mako library for it.\n"
-
 .PHONY: install install-bin install-libexec install-data install-completion \
-	no_python_mako
+	no_python_pip no_python_mako

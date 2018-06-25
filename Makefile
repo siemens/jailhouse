@@ -49,7 +49,11 @@ tool_inmates_install: $(DESTDIR)$(libexecdir)/jailhouse
 	$(INSTALL_DATA) inmates/tools/$(ARCH)/*.bin $<
 
 pyjailhouse_install:
-	pip install --upgrade --force-reinstall --root=$(DESTDIR) .
+ifeq ($(strip $(HAS_PYTHON_PIP)), yes)
+	$(PIP) install --upgrade --force-reinstall --root=$(DESTDIR) .
+else
+	@
+endif
 
 install: modules_install firmware_install tool_inmates_install \
 	pyjailhouse_install
