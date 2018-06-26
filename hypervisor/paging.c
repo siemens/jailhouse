@@ -457,7 +457,7 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 }
 
 /**
- * Map physical device resource into hypervisor address space
+ * Map physical device resource into hypervisor address space.
  * @param phys		Physical address of the resource.
  * @param size		Size of the resource.
  *
@@ -482,7 +482,7 @@ void *paging_map_device(unsigned long phys, unsigned long size)
 }
 
 /**
- * Unmap physical device resource from hypervisor address space
+ * Unmap physical device resource from hypervisor address space.
  * @param phys		Physical address of the resource.
  * @param virt		Virtual address of the resource.
  * @param size		Size of the resource.
