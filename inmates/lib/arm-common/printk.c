@@ -45,6 +45,16 @@
 static struct uart_chip *chip = NULL;
 static bool virtual_console;
 
+static void reg_out_mmio8(struct uart_chip *chip, unsigned int reg, u32 value)
+{
+	mmio_write8(chip->base + reg, value);
+}
+
+static u32 reg_in_mmio8(struct uart_chip *chip, unsigned int reg)
+{
+	return mmio_read8(chip->base + reg);
+}
+
 static void console_write(const char *msg)
 {
 	char c = 0;
@@ -105,6 +115,12 @@ static void console_init(void)
 					CON_HAS_INVERTED_GATE(console->flags));
 	clock_reg = (void *)(unsigned long)
 		cmdline_parse_int("con-clock-reg", console->clock_reg);
+
+	if (cmdline_parse_bool("con-regdist-1",
+			       CON_USES_REGDIST_1(console->flags))) {
+		chip->reg_out = reg_out_mmio8;
+		chip->reg_in = reg_in_mmio8;
+	}
 
 	if (chip->base)
 		map_range(chip->base, PAGE_SIZE, MAP_UNCACHED);
