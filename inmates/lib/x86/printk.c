@@ -51,6 +51,8 @@
 #define UART_LSR_THRE		0x20
 #define UART_IDLE_LOOPS		100
 
+static bool virtual_console;
+
 static long unsigned int printk_uart_base;
 static void (*uart_reg_out)(unsigned int, u8);
 static u8 (*uart_reg_in)(unsigned int);
@@ -93,16 +95,11 @@ static void uart_putc(char c)
 	uart_reg_out(UART_TX, c);
 }
 
-static void jailhouse_putc(char c)
-{
-	jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
-}
-
 static void console_write(const char *msg)
 {
 	char c = 0;
 
-	if (!console_putc)
+	if (!console_putc && !virtual_console)
 		return;
 
 	while (1) {
@@ -112,7 +109,12 @@ static void console_write(const char *msg)
 			c = *msg++;
 		if (!c)
 			break;
-		console_putc(c);
+
+		if (console_putc)
+			console_putc(c);
+
+		if (virtual_console)
+			jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
 	}
 }
 
@@ -124,15 +126,15 @@ static void console_init(void)
 	char buf[32];
 	unsigned int divider, n;
 
+	if (JAILHOUSE_COMM_HAS_DBG_PUTC_PERMITTED(comm_region->flags))
+		virtual_console = cmdline_parse_bool("con-virtual",
+			JAILHOUSE_COMM_HAS_DBG_PUTC_ACTIVE(comm_region->flags));
+
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
 	printk_uart_base = cmdline_parse_int("con-base", UART_BASE);
 	divider = cmdline_parse_int("con-divider", 0);
 
-	if (strcmp(type, "JAILHOUSE") == 0) {
-		hypercall_init();
-		console_putc = jailhouse_putc;
-		return;
-	} else if (strcmp(type, "PIO") == 0) {
+	if (strcmp(type, "PIO") == 0) {
 		console_putc = uart_putc;
 		uart_reg_out = uart_pio_out;
 		uart_reg_in = uart_pio_in;
@@ -180,9 +182,6 @@ void printk(const char *fmt, ...)
 		console_init();
 		inited = true;
 	}
-
-	if (!console_putc)
-		return;
 
 	va_start(ap, fmt);
 
