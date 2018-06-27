@@ -29,4 +29,4 @@ void arch_dbg_write_init(void);
 extern void (*arch_dbg_write)(const char *msg);
 
 extern bool virtual_console;
-extern volatile struct jailhouse_console console;
+extern volatile struct jailhouse_virt_console console;

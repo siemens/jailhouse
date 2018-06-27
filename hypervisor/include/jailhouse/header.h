@@ -38,7 +38,7 @@
  */
 typedef int (*jailhouse_entry)(unsigned int);
 
-struct jailhouse_console {
+struct jailhouse_virt_console {
 	unsigned int busy;
 	unsigned int tail;
 	/* current implementation requires the size of the content to be a
