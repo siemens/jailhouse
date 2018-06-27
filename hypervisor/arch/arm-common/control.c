@@ -204,6 +204,14 @@ void arch_cell_reset(struct cell *cell)
 {
 	unsigned int first = first_cpu(cell->cpu_set);
 	unsigned int cpu;
+	struct jailhouse_comm_region *comm_region =
+		&cell->comm_page.comm_region;
+
+	/* Place platform specific information inside comm_region */
+	comm_region->gic_version = system_config->platform_info.arm.gic_version;
+	comm_region->gicd_base = system_config->platform_info.arm.gicd_base;
+	comm_region->gicc_base = system_config->platform_info.arm.gicc_base;
+	comm_region->gicr_base = system_config->platform_info.arm.gicr_base;
 
 	/*
 	 * All CPUs but the first are initially suspended.  The first CPU

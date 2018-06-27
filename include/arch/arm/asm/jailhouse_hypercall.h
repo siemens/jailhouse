@@ -36,6 +36,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "../arm-common/asm/jailhouse_hypercall.h"
+
 #define JAILHOUSE_HVC_CODE		0x4a48
 
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \
@@ -56,6 +58,7 @@
 
 struct jailhouse_comm_region {
 	COMM_REGION_GENERIC_HEADER;
+	COMM_REGION_COMMON_PLATFORM_INFO;
 };
 
 static inline __u32 jailhouse_call(__u32 num)
