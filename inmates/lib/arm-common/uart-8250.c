@@ -52,11 +52,6 @@
 
 static void uart_8250_init(struct uart_chip *chip)
 {
-	if (chip->clock_reg)
-		mmio_write32(chip->clock_reg,
-			     mmio_read32(chip->clock_reg) |
-			     (1 << chip->gate_nr));
-
 	if (chip->divider) {
 		mmio_write32(chip->base + UART_LCR, UART_LCR_DLAB);
 		mmio_write32(chip->base + UART_DLL, chip->divider);

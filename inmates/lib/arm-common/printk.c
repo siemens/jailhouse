@@ -74,10 +74,13 @@ static void console_write(const char *msg)
 static void console_init(void)
 {
 	struct jailhouse_console *console = &comm_region->console;
+	unsigned int gate_nr, n;
 	struct uart_chip **c;
-	char buf[32];
+	bool gate_inverted;
 	const char *type;
-	unsigned int n;
+	void *clock_reg;
+	u32 clock_gates;
+	char buf[32];
 
 	if (JAILHOUSE_COMM_HAS_DBG_PUTC_PERMITTED(comm_region->flags))
 		virtual_console = cmdline_parse_bool("con-virtual",
@@ -97,15 +100,24 @@ static void console_init(void)
 	chip->base = (void *)(unsigned long)
 		cmdline_parse_int("con-base", console->address);
 	chip->divider = cmdline_parse_int("con-divider", console->divider);
-	chip->gate_nr = cmdline_parse_int("con-gate-nr", console->gate_nr);
-	chip->clock_reg = (void *)(unsigned long)
+	gate_nr = cmdline_parse_int("con-gate-nr", console->gate_nr);
+	gate_inverted = cmdline_parse_bool("con-gate-inverted",
+					CON_HAS_INVERTED_GATE(console->flags));
+	clock_reg = (void *)(unsigned long)
 		cmdline_parse_int("con-clock-reg", console->clock_reg);
 
 	if (chip->base)
 		map_range(chip->base, PAGE_SIZE, MAP_UNCACHED);
 
-	if (chip->clock_reg)
-		map_range(chip->clock_reg, PAGE_SIZE, MAP_UNCACHED);
+	if (clock_reg) {
+		map_range(clock_reg, PAGE_SIZE, MAP_UNCACHED);
+		clock_gates = mmio_read32(clock_reg);
+		if (gate_inverted)
+			clock_gates &= ~(1 << gate_nr);
+		else
+			clock_gates |= (1 << gate_nr);
+		mmio_write32(clock_reg, clock_gates);
+	}
 
 	chip->init(chip);
 

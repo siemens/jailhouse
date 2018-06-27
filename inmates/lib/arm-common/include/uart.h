@@ -41,10 +41,6 @@ struct uart_chip {
 	const __u16 type;
 
 	void *base;
-
-	void *clock_reg;
-	int gate_nr;
-
 	unsigned int divider;
 
 	void (*init)(struct uart_chip*);
