@@ -47,14 +47,7 @@ static u32 reg_in_mmio32(struct uart_chip *chip, unsigned int reg)
 
 static void uart_init(struct uart_chip *chip)
 {
-	void *clock_reg = (void*)(unsigned long)chip->virt_clock_reg;
-	unsigned int gate_nr = chip->debug_console->gate_nr;
 	const u32 flags = system_config->debug_console.flags;
-
-	/* clock setting only implemented on ARM via 32-bit MMIO */
-	if (clock_reg)
-		mmio_write32(clock_reg,
-			     mmio_read32(clock_reg) | (1 << gate_nr));
 
 	if (CON_IS_MMIO(flags) && CON_USES_REGDIST_1(flags)) {
 		chip->reg_out = reg_out_mmio8;

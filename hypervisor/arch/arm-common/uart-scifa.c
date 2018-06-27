@@ -31,13 +31,7 @@
 
 static void uart_init(struct uart_chip *chip)
 {
-	void *clock_reg = (void*)(unsigned long)chip->virt_clock_reg;
-	unsigned int gate_nr = chip->debug_console->gate_nr;
 	u16 scascr;
-
-	if (clock_reg)
-		mmio_write32(clock_reg,
-			     mmio_read32(clock_reg) & ~(1 << gate_nr));
 
 	if (chip->debug_console->divider) {
 		scascr = mmio_read16(chip->virt_base + SCIFA_SCASCR);

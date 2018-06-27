@@ -15,7 +15,6 @@
 struct uart_chip {
 	/* must be set by the caller */
 	void *virt_base;
-	void *virt_clock_reg;
 	struct jailhouse_console *debug_console;
 
 	/* driver selects defaults, if used */

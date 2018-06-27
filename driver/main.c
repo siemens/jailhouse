@@ -350,6 +350,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	unsigned long remap_addr = 0;
 	void __iomem *console = NULL, *clock_reg = NULL;
 	unsigned long config_size;
+	unsigned int clock_gates;
 	const char *fw_name;
 	long max_cpus;
 	int err;
@@ -504,6 +505,27 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_unmap;
 	}
 
+	if (config->debug_console.clock_reg) {
+		clock_reg = ioremap(config->debug_console.clock_reg,
+				    sizeof(clock_gates));
+		if (!clock_reg) {
+			err = -EINVAL;
+			pr_err("jailhouse: Unable to map clock register at "
+			       "%08lx\n",
+			       (unsigned long)config->debug_console.clock_reg);
+			goto error_unmap;
+		}
+
+		clock_gates = readl(clock_reg);
+		if (CON_HAS_INVERTED_GATE(config->debug_console.flags))
+			clock_gates &= ~(1 << config->debug_console.gate_nr);
+		else
+			clock_gates |= (1 << config->debug_console.gate_nr);
+		writel(clock_gates, clock_reg);
+
+		iounmap(clock_reg);
+	}
+
 #ifdef JAILHOUSE_BORROW_ROOT_PT
 	if (CON_IS_MMIO(config->debug_console.flags)) {
 		console = ioremap(config->debug_console.address,
@@ -518,18 +540,6 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		/* The hypervisor has no notion of address spaces, so we need
 		 * to enforce conversion. */
 		header->debug_console_base = (void * __force)console;
-	}
-
-	if (config->debug_console.clock_reg) {
-		clock_reg = ioremap(config->debug_console.clock_reg, 1);
-		if (!clock_reg) {
-			err = -EINVAL;
-			pr_err("jailhouse: Unable to map hypervisor debug "
-			       "clock register at %08lx\n",
-			       (unsigned long)config->debug_console.clock_reg);
-			goto error_unmap;
-		}
-		header->debug_clock_reg = (void * __force)clock_reg;
 	}
 #endif
 
@@ -567,8 +577,6 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	if (console)
 		iounmap(console);
-	if (clock_reg)
-		iounmap(clock_reg);
 
 	release_firmware(hypervisor);
 
@@ -591,8 +599,6 @@ error_unmap:
 	jailhouse_firmware_free();
 	if (console)
 		iounmap(console);
-	if (clock_reg)
-		iounmap(clock_reg);
 
 error_release_memreg:
 	/* jailhouse_firmware_free() could have been called already and

@@ -41,7 +41,6 @@ void arch_dbg_write_init(void)
 
 	if (uart) {
 		uart->debug_console = &system_config->debug_console;
-		uart->virt_clock_reg = hypervisor_header.debug_clock_reg;
 		uart->virt_base = hypervisor_header.debug_console_base;
 		uart->init(uart);
 		arch_dbg_write = uart_write;
