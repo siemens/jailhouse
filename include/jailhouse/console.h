@@ -65,6 +65,15 @@
 
 #define CON_USES_REGDIST_1(flags) (((flags) & JAILHOUSE_CON_REGDIST_4) == 0)
 
+/* Bits 2-11: Reserved */
+
+/* Bit 12 is used to indicate to clear instead of to set the clock gate */
+#define JAILHOUSE_CON_INVERTED_GATE	0x1000
+
+#define CON_HAS_INVERTED_GATE(flags)	!!((flags) & JAILHOUSE_CON_INVERTED_GATE)
+
+/* Bits 13-15: Reserved */
+
 struct jailhouse_console {
 	__u64 address;
 	__u32 size;

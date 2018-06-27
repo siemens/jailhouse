@@ -41,7 +41,8 @@ struct {
 			/* .divider = 0x2e, */
 			.type = JAILHOUSE_CON_TYPE_HSCIF,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
-				 JAILHOUSE_CON_REGDIST_4,
+				 JAILHOUSE_CON_REGDIST_4 |
+				 JAILHOUSE_CON_INVERTED_GATE,
 		},
 		.platform_info = {
 			/* .pci_mmconfig_base = 0x2000000,
