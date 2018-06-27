@@ -17,6 +17,7 @@ export INMATES_LIB
 
 INCLUDES := -I$(INMATES_LIB) \
 	    -I$(src)/../include/arch/$(SRCARCH) \
+	    -I$(src)/lib/include \
 	    -I$(src)/../include
 
 ifeq ($(subst arm64,arm,$(SRCARCH)),arm)

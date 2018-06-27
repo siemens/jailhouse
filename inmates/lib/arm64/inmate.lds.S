@@ -36,7 +36,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../inmate_common.h"
+#include <inmate_common.h>
 
 SECTIONS {
 	. = CONFIG_INMATE_BASE;

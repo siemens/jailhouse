@@ -261,6 +261,6 @@ void smp_wait_for_all_cpus(void);
 void smp_start_cpu(unsigned int cpu_id, void (*entry)(void));
 #endif
 
-#include "../inmate_common.h"
+#include <inmate_common.h>
 
 #endif /* !_JAILHOUSE_INMATE_H */

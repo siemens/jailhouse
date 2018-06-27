@@ -109,7 +109,7 @@ void arch_mmu_enable(void);
 #include <asm/processor.h>
 #include <arch/inmate.h>
 
-#include "../inmate_common.h"
+#include <inmate_common.h>
 
 /*
  * To ease the debugging, we can send a spurious hypercall, which should return
