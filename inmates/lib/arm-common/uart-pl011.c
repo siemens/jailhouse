@@ -81,4 +81,4 @@ static void uart_pl011_write(struct uart_chip *chip, char c)
 	mmio_write32(chip->base + UARTDR, c);
 }
 
-DEFINE_UART(pl011, "PL011");
+DEFINE_UART(pl011, "PL011", JAILHOUSE_CON_TYPE_PL011);

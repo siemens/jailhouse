@@ -38,6 +38,7 @@
 
 struct uart_chip {
 	const char *name;
+	const __u16 type;
 
 	void *base;
 
@@ -59,9 +60,10 @@ extern struct uart_chip *uart_array[];
 #define DECLARE_UART(__name) \
 	extern struct uart_chip UART_OPS_NAME(__name)
 
-#define DEFINE_UART(__name, __description) \
+#define DEFINE_UART(__name, __description, __type) \
 	struct uart_chip UART_OPS_NAME(__name) = { \
 		.name = __description, \
+		.type = __type, \
 		.init = uart_##__name##_init, \
 		.is_busy = uart_##__name##_is_busy, \
 		.write = uart_##__name##_write, \

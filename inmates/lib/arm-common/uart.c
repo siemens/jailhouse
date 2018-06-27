@@ -43,7 +43,6 @@ DECLARE_UART(8250);
 DECLARE_UART(8250_8);
 DECLARE_UART(hscif);
 DECLARE_UART(imx);
-DECLARE_UART(jailhouse);
 DECLARE_UART(mvebu);
 DECLARE_UART(pl011);
 DECLARE_UART(scifa);
@@ -54,7 +53,6 @@ struct uart_chip *uart_array[] = {
 	&UART_OPS_NAME(8250_8),
 	&UART_OPS_NAME(hscif),
 	&UART_OPS_NAME(imx),
-	&UART_OPS_NAME(jailhouse),
 	&UART_OPS_NAME(mvebu),
 	&UART_OPS_NAME(pl011),
 	&UART_OPS_NAME(scifa),

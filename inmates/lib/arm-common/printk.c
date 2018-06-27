@@ -39,27 +39,18 @@
 #include <inmate.h>
 #include <stdarg.h>
 #include <uart.h>
-#include <mach.h>
-
-#ifndef CON_DIVIDER
-#define CON_DIVIDER 0
-#endif
-
-#ifndef CON_CLOCK_REG
-#define CON_CLOCK_REG 0
-#endif
-
-#ifndef CON_GATE_NR
-#define CON_GATE_NR 0
-#endif
 
 #define UART_IDLE_LOOPS		100
 
 static struct uart_chip *chip = NULL;
+static bool virtual_console;
 
 static void console_write(const char *msg)
 {
 	char c = 0;
+
+	if (!chip && !virtual_console)
+		return;
 
 	while (1) {
 		if (c == '\n')
@@ -69,22 +60,33 @@ static void console_write(const char *msg)
 		if (!c)
 			break;
 
-		while (chip->is_busy(chip))
-			cpu_relax();
-		chip->write(chip, c);
+		if (chip) {
+			while (chip->is_busy(chip))
+				cpu_relax();
+			chip->write(chip, c);
+		}
+
+		if (virtual_console)
+			jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
 	}
 }
 
 static void console_init(void)
 {
+	struct jailhouse_console *console = &comm_region->console;
 	struct uart_chip **c;
 	char buf[32];
 	const char *type;
 	unsigned int n;
 
-	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
+	if (JAILHOUSE_COMM_HAS_DBG_PUTC_PERMITTED(comm_region->flags))
+		virtual_console = cmdline_parse_bool("con-virtual",
+			JAILHOUSE_COMM_HAS_DBG_PUTC_ACTIVE(comm_region->flags));
+
+	type = cmdline_parse_str("con-type", buf, sizeof(buf), "");
 	for (c = uart_array; *c; c++)
-		if (!strcmp(type, (*c)->name)) {
+		if (!strcmp(type, (*c)->name) ||
+		    (!*type && console->type == (*c)->type)) {
 			chip = *c;
 			break;
 		}
@@ -93,11 +95,11 @@ static void console_init(void)
 		return;
 
 	chip->base = (void *)(unsigned long)
-		cmdline_parse_int("con-base", CON_BASE);
-	chip->divider = cmdline_parse_int("con-divider", CON_DIVIDER);
-	chip->gate_nr = cmdline_parse_int("con-gate-nr", CON_GATE_NR);
+		cmdline_parse_int("con-base", console->address);
+	chip->divider = cmdline_parse_int("con-divider", console->divider);
+	chip->gate_nr = cmdline_parse_int("con-gate-nr", console->gate_nr);
 	chip->clock_reg = (void *)(unsigned long)
-		cmdline_parse_int("con-clock-reg", CON_CLOCK_REG);
+		cmdline_parse_int("con-clock-reg", console->clock_reg);
 
 	if (chip->base)
 		map_range(chip->base, PAGE_SIZE, MAP_UNCACHED);
@@ -131,9 +133,6 @@ void printk(const char *fmt, ...)
 		console_init();
 		inited = true;
 	}
-
-	if (!chip)
-		return;
 
 	va_start(ap, fmt);
 

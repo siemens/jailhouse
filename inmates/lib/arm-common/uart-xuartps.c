@@ -57,4 +57,4 @@ static void uart_xuartps_write(struct uart_chip *chip, char c)
 	mmio_write32(chip->base + UART_FIFO, c);
 }
 
-DEFINE_UART(xuartps, "XUARTPS");
+DEFINE_UART(xuartps, "XUARTPS", JAILHOUSE_CON_TYPE_XUARTPS);

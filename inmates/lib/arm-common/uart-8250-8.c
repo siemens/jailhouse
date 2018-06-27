@@ -75,4 +75,4 @@ static void uart_8250_8_write(struct uart_chip *chip, char c)
 	mmio_write8(chip->base + UART_TX, c);
 }
 
-DEFINE_UART(8250_8, "8250-8");
+DEFINE_UART(8250_8, "8250-8", JAILHOUSE_CON_TYPE_8250);
