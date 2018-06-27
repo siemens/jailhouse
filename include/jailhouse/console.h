@@ -39,43 +39,37 @@
 #ifndef _JAILHOUSE_CONSOLE_H
 #define _JAILHOUSE_CONSOLE_H
 
-/* Bits 0..3 are used to select the particular driver */
-#define JAILHOUSE_CON1_TYPE_NONE	0x0000
-#define JAILHOUSE_CON1_TYPE_VGA		0x0001
-#define JAILHOUSE_CON1_TYPE_8250	0x0002
-#define JAILHOUSE_CON1_TYPE_PL011	0x0003
-#define JAILHOUSE_CON1_TYPE_XUARTPS	0x0004
-#define JAILHOUSE_CON1_TYPE_MVEBU	0x0005
-#define JAILHOUSE_CON1_TYPE_HSCIF	0x0006
-#define JAILHOUSE_CON1_TYPE_SCIFA	0x0007
-#define JAILHOUSE_CON1_TYPE_IMX		0x0008
-#define JAILHOUSE_CON1_TYPE_MASK	0x000f
+/* Those definitions are used for the type in struct jailhouse_console */
+#define JAILHOUSE_CON_TYPE_NONE		0x0000
+#define JAILHOUSE_CON_TYPE_VGA		0x0001
+#define JAILHOUSE_CON_TYPE_8250		0x0002
+#define JAILHOUSE_CON_TYPE_PL011	0x0003
+#define JAILHOUSE_CON_TYPE_XUARTPS	0x0004
+#define JAILHOUSE_CON_TYPE_MVEBU	0x0005
+#define JAILHOUSE_CON_TYPE_HSCIF	0x0006
+#define JAILHOUSE_CON_TYPE_SCIFA	0x0007
+#define JAILHOUSE_CON_TYPE_IMX		0x0008
 
-#define CON1_TYPE(flags) ((flags) & JAILHOUSE_CON1_TYPE_MASK)
+/* Flags: bit 0 is used to select PIO (cleared) or MMIO (set) access */
+#define JAILHOUSE_CON_ACCESS_PIO	0x0000
+#define JAILHOUSE_CON_ACCESS_MMIO	0x0001
 
-/* Bits 4 is used to select PIO (cleared) or MMIO (set) access */
-#define JAILHOUSE_CON1_ACCESS_PIO	0x0000
-#define JAILHOUSE_CON1_ACCESS_MMIO	0x0010
+#define CON_IS_MMIO(flags) !!((flags) & JAILHOUSE_CON_ACCESS_MMIO)
 
-#define CON1_IS_MMIO(flags) ((flags) & JAILHOUSE_CON1_ACCESS_MMIO)
+/*
+ * Flags: bit 1 is used to select 1 (cleared) or 4-bytes (set) register distance.
+ * 1 byte implied 8-bit access, 4 bytes 32-bit access.
+ */
+#define JAILHOUSE_CON_REGDIST_1		0x0000
+#define JAILHOUSE_CON_REGDIST_4		0x0002
 
-/* Bits 5 is used to select 1 (cleared) or 4-bytes (set) register distance.
- * 1 byte implied 8-bit access, 4 bytes 32-bit access. */
-#define JAILHOUSE_CON1_REGDIST_1	0x0000
-#define JAILHOUSE_CON1_REGDIST_4	0x0020
-
-#define CON1_USES_REGDIST_1(flags) (((flags) & JAILHOUSE_CON1_REGDIST_4) == 0)
-
-/* Bits 8..11 are used to select the second console driver */
-#define JAILHOUSE_CON2_TYPE_ROOTPAGE	0x0100
-#define JAILHOUSE_CON2_TYPE_MASK	0x0f00
-
-#define CON2_TYPE(flags) ((flags) & JAILHOUSE_CON2_TYPE_MASK)
+#define CON_USES_REGDIST_1(flags) (((flags) & JAILHOUSE_CON_REGDIST_4) == 0)
 
 struct jailhouse_console {
 	__u64 address;
 	__u32 size;
-	__u32 flags;
+	__u16 type;
+	__u16 flags;
 	__u32 divider;
 	__u32 gate_nr;
 	__u64 clock_reg;

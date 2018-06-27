@@ -43,9 +43,7 @@ static void init_early(unsigned int cpu_id)
 	system_config = (struct jailhouse_system *)
 		(JAILHOUSE_BASE + core_and_percpu_size);
 
-	if (CON2_TYPE(system_config->debug_console.flags) ==
-	    JAILHOUSE_CON2_TYPE_ROOTPAGE)
-		virtual_console = true;
+	virtual_console = SYS_FLAGS_VIRTUAL_DEBUG_CONSOLE(system_config->flags);
 
 	arch_dbg_write_init();
 

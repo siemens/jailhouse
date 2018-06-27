@@ -30,13 +30,13 @@ static u32 reg_in_pio(struct uart_chip *chip, unsigned int reg)
 
 void arch_dbg_write_init(void)
 {
-	unsigned char dbg_type = CON1_TYPE(system_config->debug_console.flags);
+	u32 dbg_type = system_config->debug_console.type;
 
-	if (dbg_type == JAILHOUSE_CON1_TYPE_8250) {
+	if (dbg_type == JAILHOUSE_CON_TYPE_8250) {
 		uart = &uart_8250_ops;
 
 		uart->debug_console = &system_config->debug_console;
-		if (CON1_IS_MMIO(system_config->debug_console.flags)) {
+		if (CON_IS_MMIO(system_config->debug_console.flags)) {
 			uart->virt_base = hypervisor_header.debug_console_base;
 		} else {
 			uart->virt_base =
@@ -46,7 +46,7 @@ void arch_dbg_write_init(void)
 		}
 		uart->init(uart);
 		arch_dbg_write = uart_write;
-	} else if (dbg_type == JAILHOUSE_CON1_TYPE_VGA) {
+	} else if (dbg_type == JAILHOUSE_CON_TYPE_VGA) {
 		vga_init();
 		arch_dbg_write = vga_write;
 	}

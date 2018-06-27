@@ -505,7 +505,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 
 #ifdef JAILHOUSE_BORROW_ROOT_PT
-	if (CON1_IS_MMIO(config->debug_console.flags)) {
+	if (CON_IS_MMIO(config->debug_console.flags)) {
 		console = ioremap(config->debug_console.address,
 				  config->debug_console.size);
 		if (!console) {
@@ -533,8 +533,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 #endif
 
-	console_available = CON2_TYPE(config->debug_console.flags) ==
-				JAILHOUSE_CON2_TYPE_ROOTPAGE;
+	console_available = SYS_FLAGS_VIRTUAL_DEBUG_CONSOLE(config->flags);
 
 #ifdef CONFIG_X86
 	if (config->platform_info.x86.tsc_khz == 0)

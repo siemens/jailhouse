@@ -19,24 +19,24 @@
 
 void arch_dbg_write_init(void)
 {
-	unsigned char con_type = CON1_TYPE(system_config->debug_console.flags);
+	unsigned char con_type = system_config->debug_console.type;
 
-	if (!CON1_IS_MMIO(system_config->debug_console.flags))
+	if (!CON_IS_MMIO(system_config->debug_console.flags))
 		return;
 
-	if (con_type == JAILHOUSE_CON1_TYPE_PL011)
+	if (con_type == JAILHOUSE_CON_TYPE_PL011)
 		uart = &uart_pl011_ops;
-	else if (con_type == JAILHOUSE_CON1_TYPE_8250)
+	else if (con_type == JAILHOUSE_CON_TYPE_8250)
 		uart = &uart_8250_ops;
-	else if (con_type == JAILHOUSE_CON1_TYPE_XUARTPS)
+	else if (con_type == JAILHOUSE_CON_TYPE_XUARTPS)
 		uart = &uart_xuartps_ops;
-	else if (con_type == JAILHOUSE_CON1_TYPE_MVEBU)
+	else if (con_type == JAILHOUSE_CON_TYPE_MVEBU)
 		uart = &uart_mvebu_ops;
-	else if (con_type == JAILHOUSE_CON1_TYPE_HSCIF)
+	else if (con_type == JAILHOUSE_CON_TYPE_HSCIF)
 		uart = &uart_hscif_ops;
-	else if (con_type == JAILHOUSE_CON1_TYPE_SCIFA)
+	else if (con_type == JAILHOUSE_CON_TYPE_SCIFA)
 		uart = &uart_scifa_ops;
-	else if (con_type == JAILHOUSE_CON1_TYPE_IMX)
+	else if (con_type == JAILHOUSE_CON_TYPE_IMX)
 		uart = &uart_imx_ops;
 
 	if (uart) {

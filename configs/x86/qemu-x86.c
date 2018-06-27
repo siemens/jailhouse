@@ -33,6 +33,7 @@ struct {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
+		.flags = JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE,
 		.hypervisor_memory = {
 			.phys_start = 0x3a000000,
 			.size = 0x600000,
@@ -40,9 +41,8 @@ struct {
 		.debug_console = {
 			.address = 0x3f8,
 			/* .divider = 0x1, */
-			.flags = JAILHOUSE_CON1_TYPE_8250 |
-				 JAILHOUSE_CON1_ACCESS_PIO |
-				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
+			.type = JAILHOUSE_CON_TYPE_8250,
+			.flags = JAILHOUSE_CON_ACCESS_PIO,
 		},
 		.platform_info = {
 			.pci_mmconfig_base = 0xb0000000,

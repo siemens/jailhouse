@@ -50,8 +50,22 @@
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
 #define JAILHOUSE_CELL_PASSIVE_COMMREG	0x00000001
-#define JAILHOUSE_CELL_DEBUG_CONSOLE	0x00000002
-#define JAILHOUSE_CELL_TEST_DEVICE	0x00000004
+#define JAILHOUSE_CELL_TEST_DEVICE	0x00000002
+
+/*
+ * The flag JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED allows inmates to invoke
+ * the dbg putc hypercall.
+ *
+ * If JAILHOUSE_CELL_VIRTUAL_CONSOLE_ACTIVE is set, inmates should use the
+ * virtual console. This flag implies JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED.
+ */
+#define JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED	0x40000000
+#define JAILHOUSE_CELL_VIRTUAL_CONSOLE_ACTIVE		0x80000000
+
+#define CELL_FLAGS_VIRTUAL_CONSOLE_ACTIVE(flags) \
+	!!((flags) & JAILHOUSE_CELL_VIRTUAL_CONSOLE_ACTIVE)
+#define CELL_FLAGS_VIRTUAL_CONSOLE_PERMITTED(flags) \
+	!!((flags) & JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED)
 
 #define JAILHOUSE_CELL_DESC_SIGNATURE	"JHCELL"
 
@@ -186,12 +200,22 @@ struct jailhouse_iommu {
 
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYST"
 
+/*
+ * The flag JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE allows the root cell to read
+ * from the virtual console.
+ */
+#define JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE	0x0001
+
+#define SYS_FLAGS_VIRTUAL_DEBUG_CONSOLE(flags) \
+	!!((flags) & JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE)
+
 /**
  * General descriptor of the system.
  */
 struct jailhouse_system {
 	char signature[6];
 	__u16 revision;
+	__u32 flags;
 
 	/** Jailhouse's location in memory */
 	struct jailhouse_memory hypervisor_memory;

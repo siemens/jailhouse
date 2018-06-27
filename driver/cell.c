@@ -183,6 +183,10 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 
 	config->name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
 
+	/* CONSOLE_ACTIVE implies CONSOLE_PERMITTED for non-root cells */
+	if (CELL_FLAGS_VIRTUAL_CONSOLE_ACTIVE(config->flags))
+		config->flags |= JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED;
+
 	if (mutex_lock_interruptible(&jailhouse_lock) != 0) {
 		err = -EINTR;
 		goto kfree_config_out;

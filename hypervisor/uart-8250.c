@@ -56,7 +56,7 @@ static void uart_init(struct uart_chip *chip)
 		mmio_write32(clock_reg,
 			     mmio_read32(clock_reg) | (1 << gate_nr));
 
-	if (CON1_IS_MMIO(flags) && CON1_USES_REGDIST_1(flags)) {
+	if (CON_IS_MMIO(flags) && CON_USES_REGDIST_1(flags)) {
 		chip->reg_out = reg_out_mmio8;
 		chip->reg_in = reg_in_mmio8;
 	}

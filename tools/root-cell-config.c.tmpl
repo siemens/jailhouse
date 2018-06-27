@@ -56,6 +56,7 @@ struct {
 	.header = {
 		.signature = JAILHOUSE_SYSTEM_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
+		.flags = JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE,
 		.hypervisor_memory = {
 			.phys_start = ${hex(hvmem[0])},
 			.size = ${hex(hvmem[1])},
@@ -63,24 +64,23 @@ struct {
 		.debug_console = {
 			% if debug_console.address != 0:
 			.address = ${hex(debug_console.address)},
+			.type = JAILHOUSE_CON_TYPE_8250,
 			% if not debug_console.pio:
 			.size = 0x1000,
 			% endif
-			.flags = JAILHOUSE_CON1_TYPE_8250 |
-				 % if debug_console.pio:
-				 JAILHOUSE_CON1_ACCESS_PIO |
-				 % else:
-				 JAILHOUSE_CON1_ACCESS_MMIO |
-				 % endif
-				 % if debug_console.dist1:
-				 JAILHOUSE_CON1_REGDIST_1 |
-				 % else:
-				 JAILHOUSE_CON1_REGDIST_4 |
-				 % endif
+			% if debug_console.pio:
+			.flags = JAILHOUSE_CON_ACCESS_PIO |
 			% else:
-			.flags = JAILHOUSE_CON1_TYPE_NONE |
+			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 			% endif
-				 JAILHOUSE_CON2_TYPE_ROOTPAGE,
+			% if debug_console.dist1:
+				 JAILHOUSE_CON_REGDIST_1,
+			% else:
+				 JAILHOUSE_CON_REGDIST_4,
+			% endif
+			% else:
+			.type = JAILHOUSE_CON_TYPE_NONE,
+			% endif
 		},
 		.platform_info = {
 			.pci_mmconfig_base = ${hex(mmconfig.base)},
