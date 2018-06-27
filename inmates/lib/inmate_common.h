@@ -89,7 +89,7 @@ const char *cmdline_parse_str(const char *param, char *value_buffer,
 			      unsigned long buffer_size,
 			      const char *default_value);
 long long cmdline_parse_int(const char *param, long long default_value);
-bool cmdline_parse_bool(const char *param);
+bool cmdline_parse_bool(const char *param, bool default_value);
 
 enum map_type { MAP_CACHED, MAP_UNCACHED };
 

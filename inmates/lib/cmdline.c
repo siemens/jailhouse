@@ -55,10 +55,7 @@ static bool get_param(const char *param, char *value_buffer,
 		if (strncmp(p, param, param_len) == 0) {
 			p += param_len;
 
-			/* check for boolean parameter */
-			if ((buffer_size == 0 && (*p == ' ' || *p == 0)))
-				return true;
-
+			*value_buffer = 0;
 			/* extract parameter value */
 			if (*p == '=') {
 				p++;
@@ -70,8 +67,8 @@ static bool get_param(const char *param, char *value_buffer,
 				}
 				if (buffer_size > 0)
 					*value_buffer = 0;
-				return true;
 			}
+			return true;
 		}
 
 		/* search for end of this parameter */
@@ -132,7 +129,21 @@ long long cmdline_parse_int(const char *param, long long default_value)
 	return negative ? -value : value;
 }
 
-bool cmdline_parse_bool(const char *param)
+bool cmdline_parse_bool(const char *param, bool default_value)
 {
-	return get_param(param, NULL, 0);
+	char value_buffer[8];
+
+	/* return the default value if the parameter is not provided */
+	if (!get_param(param, value_buffer, sizeof(value_buffer)))
+		return default_value;
+
+	if (!strncasecmp(value_buffer, "true", 4) ||
+	    !strncmp(value_buffer, "1", 1) || strlen(value_buffer) == 0)
+		return true;
+
+	if (!strncasecmp(value_buffer, "false", 5) ||
+	    !strncmp(value_buffer, "0", 1))
+		return false;
+
+	return default_value;
 }
