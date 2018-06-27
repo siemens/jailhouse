@@ -39,7 +39,11 @@
 #include <inmate.h>
 #include <gic.h>
 
+extern const struct gic gic_v2;
+extern const struct gic gic_v3;
+
 static irq_handler_t irq_handler = (irq_handler_t)NULL;
+static const struct gic *gic = &gic_v2;
 
 /* Replaces the weak reference in header.S */
 void vector_irq(void)
@@ -47,20 +51,23 @@ void vector_irq(void)
 	u32 irqn;
 
 	while (1) {
-		irqn = gic.read_ack();
+		irqn = gic->read_ack();
 		if (irqn == 0x3ff)
 			break;
 
 		if (irq_handler)
 			irq_handler(irqn);
 
-		gic.write_eoi(irqn);
+		gic->write_eoi(irqn);
 	}
 }
 
 void gic_setup(irq_handler_t handler)
 {
-	gic.init();
+	if (comm_region->gic_version == 3)
+		gic = &gic_v3;
+
+	gic->init();
 
 	irq_handler = handler;
 
@@ -69,5 +76,5 @@ void gic_setup(irq_handler_t handler)
 
 void gic_enable_irq(unsigned int irq)
 {
-	gic.enable(irq);
+	gic->enable(irq);
 }

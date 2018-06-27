@@ -37,7 +37,6 @@
  */
 
 #include <asm/sysregs.h>
-#include <mach.h>
 #include <gic.h>
 
 static void *gicd_v3_base;
@@ -128,7 +127,3 @@ const struct gic gic_v3 = {
 	.write_eoi = gic_v3_write_eoi,
 	.read_ack = gic_v3_read_ack,
 };
-
-#if GIC_VERSION == 3
-extern const struct gic gic __attribute__((alias("gic_v3")));
-#endif

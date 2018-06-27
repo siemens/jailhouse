@@ -36,7 +36,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <mach.h>
 #include <gic.h>
 
 #define GICC_CTLR		0x0000
@@ -90,7 +89,3 @@ const struct gic gic_v2 = {
 	.write_eoi = gic_v2_write_eoi,
 	.read_ack = gic_v2_read_ack,
 };
-
-#if GIC_VERSION == 2
-extern const struct gic gic __attribute__((alias("gic_v2")));
-#endif

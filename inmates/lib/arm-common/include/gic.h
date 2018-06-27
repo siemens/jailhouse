@@ -55,8 +55,6 @@ struct gic {
 	u32 (*read_ack)(void);
 };
 
-extern const struct gic gic;
-
 #endif /* !__ASSEMBLY__ */
 
 #include <arch/gic.h>
