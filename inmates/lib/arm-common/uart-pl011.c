@@ -56,7 +56,7 @@
 
 #define UARTLCR_H_WLEN	(3 << 5)
 
-static void uart_init(struct uart_chip *chip)
+static void uart_pl011_init(struct uart_chip *chip)
 {
 	if (chip->divider) {
 		mmio_write16(chip->base + UARTCR, 0);
@@ -69,20 +69,16 @@ static void uart_init(struct uart_chip *chip)
 	}
 }
 
-static bool uart_is_busy(struct uart_chip *chip)
+static bool uart_pl011_is_busy(struct uart_chip *chip)
 {
 	/* FIFO full or busy */
 	return (mmio_read32(chip->base + UARTFR) &
 		(UARTFR_TXFF | UARTFR_BUSY)) != 0;
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_pl011_write(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->base + UARTDR, c);
 }
 
-struct uart_chip uart_pl011_ops = {
-	.init = uart_init,
-	.is_busy = uart_is_busy,
-	.write = uart_write,
-};
+DEFINE_UART(pl011, "PL011");

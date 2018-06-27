@@ -43,22 +43,18 @@
 #define UART_STAT		0xc
 #define  UART_STAT_TX_FULL	(1 << 11)
 
-static void uart_init(struct uart_chip *chip)
+static void uart_mvebu_init(struct uart_chip *chip)
 {
 }
 
-static bool uart_is_busy(struct uart_chip *chip)
+static bool uart_mvebu_is_busy(struct uart_chip *chip)
 {
 	return !!(mmio_read32(chip->base + UART_STAT) & UART_STAT_TX_FULL);
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_mvebu_write(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->base + UART_TSH, c);
 }
 
-struct uart_chip uart_mvebu_ops = {
-	.init = uart_init,
-	.is_busy = uart_is_busy,
-	.write = uart_write,
-};
+DEFINE_UART(mvebu, "MVEBU");

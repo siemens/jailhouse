@@ -53,7 +53,7 @@
 
 #define HSCIF_FIFO_SIZE			128
 
-static void uart_init(struct uart_chip *chip)
+static void uart_hscif_init(struct uart_chip *chip)
 {
 	u16 hsscr;
 
@@ -67,12 +67,12 @@ static void uart_init(struct uart_chip *chip)
 	}
 }
 
-static bool uart_is_busy(struct uart_chip *chip)
+static bool uart_hscif_is_busy(struct uart_chip *chip)
 {
 	return !(mmio_read16(chip->base + HSCIF_HSFSR) & HSCIF_HSFSR_TDFE);
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_hscif_write(struct uart_chip *chip, char c)
 {
 	mmio_write8(chip->base + HSCIF_HSFTDR, c);
 	mmio_write16(chip->base + HSCIF_HSFSR,
@@ -80,8 +80,4 @@ static void uart_write(struct uart_chip *chip, char c)
 				 ~(HSCIF_HSFSR_TDFE | HSCIF_HSFSR_TEND));
 }
 
-struct uart_chip uart_hscif_ops = {
-	.init = uart_init,
-	.is_busy = uart_is_busy,
-	.write = uart_write,
-};
+DEFINE_UART(hscif, "HSCIF");

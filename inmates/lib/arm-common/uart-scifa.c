@@ -54,7 +54,7 @@
 #define SCIFA_FIFO_SIZE			64
 #define SCIFA_TTRG_32BYTES		0
 
-static void uart_init(struct uart_chip *chip)
+static void uart_scifa_init(struct uart_chip *chip)
 {
 	u16 scascr;
 
@@ -68,12 +68,12 @@ static void uart_init(struct uart_chip *chip)
 	}
 }
 
-static bool uart_is_busy(struct uart_chip *chip)
+static bool uart_scifa_is_busy(struct uart_chip *chip)
 {
 	return !(mmio_read16(chip->base + SCIFA_SCASSR) & SCIFA_SCASSR_TDFE);
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_scifa_write(struct uart_chip *chip, char c)
 {
 	mmio_write8(chip->base + SCIFA_SCAFTDR, c);
 	mmio_write16(chip->base + SCIFA_SCASSR,
@@ -81,8 +81,4 @@ static void uart_write(struct uart_chip *chip, char c)
 				 ~(SCIFA_SCASSR_TDFE | SCIFA_SCASSR_TEND));
 }
 
-struct uart_chip uart_scifa_ops = {
-	.init = uart_init,
-	.is_busy = uart_is_busy,
-	.write = uart_write,
-};
+DEFINE_UART(scifa, "SCIFA");

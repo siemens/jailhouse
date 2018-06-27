@@ -43,22 +43,18 @@
 #define  UART_SR_TXEMPTY	0x8
 #define UART_FIFO		0x30
 
-static void uart_init(struct uart_chip *chip)
+static void uart_xuartps_init(struct uart_chip *chip)
 {
 }
 
-static bool uart_is_busy(struct uart_chip *chip)
+static bool uart_xuartps_is_busy(struct uart_chip *chip)
 {
 	return !(mmio_read32(chip->base + UART_SR) & UART_SR_TXEMPTY);
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_xuartps_write(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->base + UART_FIFO, c);
 }
 
-struct uart_chip uart_xuartps_ops = {
-	.init = uart_init,
-	.is_busy = uart_is_busy,
-	.write = uart_write,
-};
+DEFINE_UART(xuartps, "XUARTPS");

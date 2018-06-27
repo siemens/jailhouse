@@ -41,23 +41,19 @@
 #define UTXD			0x40
 #define UTS_TXEMPTY		(1 << 6)
 
-static void uart_init(struct uart_chip *chip)
+static void uart_imx_init(struct uart_chip *chip)
 {
 	/* Initialization currently done by Linux. */
 }
 
-static bool uart_is_busy(struct uart_chip *chip)
+static bool uart_imx_is_busy(struct uart_chip *chip)
 {
 	return !(mmio_read32(chip->base + UTS) & UTS_TXEMPTY);
 }
 
-static void uart_write(struct uart_chip *chip, char c)
+static void uart_imx_write(struct uart_chip *chip, char c)
 {
 	mmio_write32(chip->base + UTXD, c);
 }
 
-struct uart_chip uart_imx_ops = {
-	.init = uart_init,
-	.is_busy = uart_is_busy,
-	.write = uart_write,
-};
+DEFINE_UART(imx, "IMX");

@@ -39,22 +39,18 @@
 #include <inmate.h>
 #include <uart.h>
 
-static void jailhouse_init(struct uart_chip *chip)
+static void uart_jailhouse_init(struct uart_chip *chip)
 {
 }
 
-static bool jailhouse_is_busy(struct uart_chip *chip)
+static bool uart_jailhouse_is_busy(struct uart_chip *chip)
 {
 	return false;
 }
 
-static void jailhouse_write(struct uart_chip *chip, char c)
+static void uart_jailhouse_write(struct uart_chip *chip, char c)
 {
 	jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
 }
 
-struct uart_chip uart_jailhouse_ops = {
-	.init = jailhouse_init,
-	.is_busy = jailhouse_is_busy,
-	.write = jailhouse_write,
-};
+DEFINE_UART(jailhouse, "JAILHOUSE");

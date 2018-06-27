@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) OTH Regensburg, 2016
+ * Copyright (c) OTH Regensburg, 2016-2018
  *
  * Authors:
  *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -37,6 +37,8 @@
  */
 
 struct uart_chip {
+	const char *name;
+
 	void *base;
 
 	void *clock_reg;
@@ -48,6 +50,17 @@ struct uart_chip {
 	bool (*is_busy)(struct uart_chip*);
 	void (*write)(struct uart_chip*, char c);
 };
+
+#define UART_OPS_NAME(__name) \
+	uart_##__name##_ops
+
+#define DEFINE_UART(__name, __description) \
+	struct uart_chip UART_OPS_NAME(__name) = { \
+		.name = __description, \
+		.init = uart_##__name##_init, \
+		.is_busy = uart_##__name##_is_busy, \
+		.write = uart_##__name##_write, \
+	}
 
 extern struct uart_chip uart_jailhouse_ops;
 extern struct uart_chip uart_8250_ops;
