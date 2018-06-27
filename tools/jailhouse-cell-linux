@@ -565,8 +565,8 @@ class Irqchip:
 
 
 class Config:
-    _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ8x'
-    _HEADER_REVISION = 9
+    _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ8x32x'
+    _HEADER_REVISION = 10
 
     def __init__(self, config_file):
         self.data = config_file.read()

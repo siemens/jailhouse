@@ -45,7 +45,7 @@
  * Incremented on any layout or semantic change of system or cell config.
  * Also update HEADER_REVISION in tools.
  */
-#define JAILHOUSE_CONFIG_REVISION	9
+#define JAILHOUSE_CONFIG_REVISION	10
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -95,6 +95,8 @@ struct jailhouse_cell_desc {
 
 	__u64 cpu_reset_address;
 	__u64 msg_reply_timeout;
+
+	struct jailhouse_console console;
 } __attribute__((packed));
 
 #define JAILHOUSE_MEM_READ		0x0001

@@ -31,6 +31,16 @@ struct {
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+
+		.console = {
+			.address = 0xe6c40000,
+			.clock_reg = 0xe6150138,
+			.gate_nr = 4,
+			.divider = 0x1b,
+			.type = JAILHOUSE_CON_TYPE_SCIFA,
+			.flags = JAILHOUSE_CON_ACCESS_MMIO |
+				 JAILHOUSE_CON_REGDIST_4,
+		},
 	},
 
 	.cpus = {

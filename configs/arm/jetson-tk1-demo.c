@@ -37,6 +37,16 @@ struct {
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 
 		.cpu_reset_address = CONFIG_INMATE_BASE,
+
+		.console = {
+			.address = 0x70006300,
+			/* .clock_reg = 0x60006000 + 0x330, */
+			/* .gate_nr = (65 % 32), */
+			/* .divider = 0xdd, */
+			.type = JAILHOUSE_CON_TYPE_8250,
+			.flags = JAILHOUSE_CON_ACCESS_MMIO |
+				 JAILHOUSE_CON_REGDIST_4,
+		},
 	},
 
 	.cpus = {

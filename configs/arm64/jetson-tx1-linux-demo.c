@@ -46,6 +46,13 @@ struct {
 		.vpci_irq_base = 152,
 
 		.cpu_reset_address = CONFIG_INMATE_BASE,
+
+		.console = {
+			.address = 0x70006000,
+			.type = JAILHOUSE_CON_TYPE_8250,
+			.flags = JAILHOUSE_CON_ACCESS_MMIO |
+				 JAILHOUSE_CON_REGDIST_4,
+		},
 	},
 
 	.cpus = {

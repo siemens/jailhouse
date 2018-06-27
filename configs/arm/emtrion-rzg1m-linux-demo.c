@@ -36,6 +36,16 @@ struct {
 		.num_irqchips = ARRAY_SIZE(config.irqchips),
 		/* .num_pci_devices = ARRAY_SIZE(config.pci_devices),
 		.vpci_irq_base = 123, */
+
+		.console = {
+			.address = 0xe6ee0000,
+			.clock_reg = 0xe615014c,
+			.gate_nr = 15,
+			.divider = 0x10,
+			.type = JAILHOUSE_CON_TYPE_HSCIF,
+			.flags = JAILHOUSE_CON_ACCESS_MMIO |
+				 JAILHOUSE_CON_REGDIST_4,
+		},
 	},
 
 	.cpus = {
