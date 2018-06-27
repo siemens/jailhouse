@@ -83,6 +83,7 @@ int memcmp(const void *s1, const void *s2, unsigned long n);
 unsigned long strlen(const char *s);
 int strncmp(const char *s1, const char *s2, unsigned long n);
 int strcmp(const char *s1, const char *s2);
+int strncasecmp(const char *s1, const char *s2, unsigned long n);
 
 const char *cmdline_parse_str(const char *param, char *value_buffer,
 			      unsigned long buffer_size,
