@@ -65,34 +65,6 @@ static u32 reg_in_pio(struct uart_chip *chip, unsigned int reg)
 	return inb((unsigned long)chip->base + reg);
 }
 
-static void console_write(const char *msg)
-{
-	char c = 0;
-
-	if (!chip && !virtual_console)
-		return;
-
-	while (1) {
-		if (c == '\n')
-			c = '\r';
-		else
-			c = *msg++;
-		if (!c)
-			break;
-
-		if (chip) {
-			while (chip->is_busy(chip))
-				cpu_relax();
-			chip->write(chip, c);
-		}
-
-		if (virtual_console)
-			jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
-	}
-}
-
-#include "../../../hypervisor/printk-core.c"
-
 static void console_init(void)
 {
 	struct jailhouse_console *console = &comm_region->console;
@@ -150,19 +122,4 @@ static void console_init(void)
 	}
 }
 
-void printk(const char *fmt, ...)
-{
-	static bool inited;
-	va_list ap;
-
-	if (!inited) {
-		console_init();
-		inited = true;
-	}
-
-	va_start(ap, fmt);
-
-	__vprintk(fmt, ap);
-
-	va_end(ap);
-}
+#include "../printk.c"
