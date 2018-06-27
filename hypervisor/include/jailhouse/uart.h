@@ -16,7 +16,7 @@ struct uart_chip {
 	/* must be set by the caller */
 	void *virt_base;
 	void *virt_clock_reg;
-	struct jailhouse_debug_console *debug_console;
+	struct jailhouse_console *debug_console;
 
 	/* driver selects defaults, if used */
 	void (*reg_out)(struct uart_chip *chip, unsigned int reg, u32 value);
