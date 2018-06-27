@@ -12,8 +12,8 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <mach.h>
 #include <inmate.h>
+#include <gic.h>
 
 #define BEATS_PER_SEC		10
 
