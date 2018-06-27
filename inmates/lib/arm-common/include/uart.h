@@ -43,6 +43,9 @@ struct uart_chip {
 	void *base;
 	unsigned int divider;
 
+	void (*reg_out)(struct uart_chip *chip, unsigned int reg, u32 value);
+	u32 (*reg_in)(struct uart_chip *chip, unsigned int reg);
+
 	void (*init)(struct uart_chip*);
 	bool (*is_busy)(struct uart_chip*);
 	void (*write)(struct uart_chip*, char c);
@@ -56,11 +59,16 @@ extern struct uart_chip *uart_array[];
 #define DECLARE_UART(__name) \
 	extern struct uart_chip UART_OPS_NAME(__name)
 
-#define DEFINE_UART(__name, __description, __type) \
+#define DEFINE_UART_REG(__name, __description, __type, __reg_out, __reg_in) \
 	struct uart_chip UART_OPS_NAME(__name) = { \
 		.name = __description, \
 		.type = __type, \
 		.init = uart_##__name##_init, \
 		.is_busy = uart_##__name##_is_busy, \
 		.write = uart_##__name##_write, \
+		.reg_out = __reg_out, \
+		.reg_in = __reg_in, \
 	}
+
+#define DEFINE_UART(__name, __description, __type) \
+	DEFINE_UART_REG(__name, __description, __type, NULL, NULL)
