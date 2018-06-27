@@ -39,11 +39,6 @@
 #include <mach.h>
 #include <gic.h>
 
-#ifndef GICD_V2_BASE
-#define GICD_V2_BASE		((void *)-1)
-#define GICC_V2_BASE		((void *)-1)
-#endif
-
 #define GICC_CTLR		0x0000
 #define GICC_PMR		0x0004
 #define GICC_IAR		0x000c
@@ -55,32 +50,38 @@
 
 #define GICC_PMR_DEFAULT	0xf0
 
+static void *gicc_v2_base;
+static void *gicd_v2_base;
+
 static void gic_v2_enable(unsigned int irqn)
 {
-	mmio_write32(GICD_V2_BASE + GICD_ISENABLER + ((irqn >> 3) & ~0x3),
+	mmio_write32(gicd_v2_base + GICD_ISENABLER + ((irqn >> 3) & ~0x3),
 		     1 << (irqn & 0x1f));
 }
 
 static int gic_v2_init(void)
 {
-	map_range(GICC_V2_BASE, PAGE_SIZE, MAP_UNCACHED);
-	map_range(GICD_V2_BASE, PAGE_SIZE, MAP_UNCACHED);
+	gicc_v2_base = (void*)(unsigned long)comm_region->gicc_base;
+	gicd_v2_base = (void*)(unsigned long)comm_region->gicd_base;
 
-	mmio_write32(GICC_V2_BASE + GICC_CTLR, GICC_CTLR_GRPEN1);
-	mmio_write32(GICC_V2_BASE + GICC_PMR, GICC_PMR_DEFAULT);
-	mmio_write32(GICD_V2_BASE + GICD_CTLR, GICD_CTLR_ENABLE);
+	map_range(gicc_v2_base, PAGE_SIZE, MAP_UNCACHED);
+	map_range(gicd_v2_base, PAGE_SIZE, MAP_UNCACHED);
+
+	mmio_write32(gicc_v2_base + GICC_CTLR, GICC_CTLR_GRPEN1);
+	mmio_write32(gicc_v2_base + GICC_PMR, GICC_PMR_DEFAULT);
+	mmio_write32(gicd_v2_base + GICD_CTLR, GICD_CTLR_ENABLE);
 
 	return 0;
 }
 
 static void gic_v2_write_eoi(u32 irqn)
 {
-	mmio_write32(GICC_V2_BASE + GICC_EOIR, irqn);
+	mmio_write32(gicc_v2_base + GICC_EOIR, irqn);
 }
 
 static u32 gic_v2_read_ack(void)
 {
-	return mmio_read32(GICC_V2_BASE + GICC_IAR) & 0x3ff;
+	return mmio_read32(gicc_v2_base + GICC_IAR) & 0x3ff;
 }
 
 const struct gic gic_v2 = {
