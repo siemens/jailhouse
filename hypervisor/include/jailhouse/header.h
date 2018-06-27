@@ -81,7 +81,8 @@ struct jailhouse_header {
 	 * @note Filled by Linux loader driver before entry. */
 	unsigned int online_cpus;
 	/** Virtual base address of the debug console device (if used).
-	 * @note Filled by Linux loader driver before entry. */
+	 * @note Filled by Linux loader driver on ARM and x86 before entry.
+	 *       Filled by arch_entry on ARM64. */
 	void *debug_console_base;
 
 	/** Physical address of Linux's hyp-stubs.
