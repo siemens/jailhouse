@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) OTH Regensburg, 2016-2018
+ * Copyright (c) OTH Regensburg, 2018
  *
  * Authors:
  *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
@@ -36,33 +36,28 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct uart_chip {
-	const char *name;
+#include <inmate.h>
+#include <uart.h>
 
-	void *base;
+DECLARE_UART(8250);
+DECLARE_UART(8250_8);
+DECLARE_UART(hscif);
+DECLARE_UART(imx);
+DECLARE_UART(jailhouse);
+DECLARE_UART(mvebu);
+DECLARE_UART(pl011);
+DECLARE_UART(scifa);
+DECLARE_UART(xuartps);
 
-	void *clock_reg;
-	int gate_nr;
-
-	unsigned int divider;
-
-	void (*init)(struct uart_chip*);
-	bool (*is_busy)(struct uart_chip*);
-	void (*write)(struct uart_chip*, char c);
+struct uart_chip *uart_array[] = {
+	&UART_OPS_NAME(8250),
+	&UART_OPS_NAME(8250_8),
+	&UART_OPS_NAME(hscif),
+	&UART_OPS_NAME(imx),
+	&UART_OPS_NAME(jailhouse),
+	&UART_OPS_NAME(mvebu),
+	&UART_OPS_NAME(pl011),
+	&UART_OPS_NAME(scifa),
+	&UART_OPS_NAME(xuartps),
+	NULL
 };
-
-extern struct uart_chip *uart_array[];
-
-#define UART_OPS_NAME(__name) \
-	uart_##__name##_ops
-
-#define DECLARE_UART(__name) \
-	extern struct uart_chip UART_OPS_NAME(__name)
-
-#define DEFINE_UART(__name, __description) \
-	struct uart_chip UART_OPS_NAME(__name) = { \
-		.name = __description, \
-		.init = uart_##__name##_init, \
-		.is_busy = uart_##__name##_is_busy, \
-		.write = uart_##__name##_write, \
-	}

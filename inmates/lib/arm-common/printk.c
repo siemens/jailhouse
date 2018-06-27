@@ -77,29 +77,17 @@ static void console_write(const char *msg)
 
 static void console_init(void)
 {
+	struct uart_chip **c;
 	char buf[32];
 	const char *type;
 	unsigned int n;
 
 	type = cmdline_parse_str("con-type", buf, sizeof(buf), CON_TYPE);
-	if (!strcmp(type, "JAILHOUSE"))
-		chip = &uart_jailhouse_ops;
-	else if (!strcmp(type, "8250"))
-		chip = &uart_8250_ops;
-	else if (!strcmp(type, "8250-8"))
-		chip = &uart_8250_8_ops;
-	else if (!strcmp(type, "PL011"))
-		chip = &uart_pl011_ops;
-	else if (!strcmp(type, "XUARTPS"))
-		chip = &uart_xuartps_ops;
-	else if (!strcmp(type, "MVEBU"))
-		chip = &uart_mvebu_ops;
-	else if (!strcmp(type, "HSCIF"))
-		chip = &uart_hscif_ops;
-	else if (!strcmp(type, "SCIFA"))
-		chip = &uart_scifa_ops;
-	else if (!strcmp(type, "IMX-UART"))
-		chip = &uart_imx_ops;
+	for (c = uart_array; *c; c++)
+		if (!strcmp(type, (*c)->name)) {
+			chip = *c;
+			break;
+		}
 
 	if (!chip)
 		return;
