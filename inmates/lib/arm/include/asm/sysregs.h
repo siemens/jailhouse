@@ -75,6 +75,15 @@
 
 #define MAIR MAIR0
 
+#define MPIDR		SYSREG_32(0, c0, c0, 5)
+
+#define MPIDR_LEVEL_BITS		8
+#define MPIDR_LEVEL_MASK		((1 << MPIDR_LEVEL_BITS) - 1)
+#define MPIDR_LEVEL_SHIFT(level)	(MPIDR_LEVEL_BITS * (level))
+
+#define MPIDR_AFFINITY_LEVEL(mpidr, level) \
+	(((mpidr) >> (MPIDR_LEVEL_BITS * (level))) & MPIDR_LEVEL_MASK)
+
 #define SYSREG_32(...) 32, __VA_ARGS__
 #define SYSREG_64(...) 64, __VA_ARGS__
 
