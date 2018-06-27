@@ -590,6 +590,12 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	memcpy(comm_region->signature, COMM_REGION_MAGIC,
 	       sizeof(comm_region->signature));
 
+	if (CELL_FLAGS_VIRTUAL_CONSOLE_PERMITTED(cell->config->flags))
+		comm_region->flags |= JAILHOUSE_COMM_FLAG_DBG_PUTC_PERMITTED;
+	if (CELL_FLAGS_VIRTUAL_CONSOLE_ACTIVE(cell->config->flags))
+		comm_region->flags |= JAILHOUSE_COMM_FLAG_DBG_PUTC_ACTIVE;
+	comm_region->console = cell->config->console;
+
 	pci_cell_reset(cell);
 	arch_cell_reset(cell);
 
