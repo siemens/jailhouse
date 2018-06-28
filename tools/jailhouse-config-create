@@ -26,7 +26,12 @@ import re
 import argparse
 import struct
 import fnmatch
-from mako.template import Template
+
+try:
+    from mako.template import Template
+except ImportError:
+    print("This script requires the mako library to run.")
+    sys.exit(1)
 
 datadir = None
 
