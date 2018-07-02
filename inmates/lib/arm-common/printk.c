@@ -37,13 +37,7 @@
  */
 
 #include <inmate.h>
-#include <stdarg.h>
 #include <uart.h>
-
-#define UART_IDLE_LOOPS		100
-
-static struct uart_chip *chip = NULL;
-static bool virtual_console;
 
 static void reg_out_mmio8(struct uart_chip *chip, unsigned int reg, u32 value)
 {
@@ -55,35 +49,14 @@ static u32 reg_in_mmio8(struct uart_chip *chip, unsigned int reg)
 	return mmio_read8(chip->base + reg);
 }
 
-static void console_init(void)
+void arch_console_init(struct uart_chip *chip)
 {
 	struct jailhouse_console *console = &comm_region->console;
-	unsigned int gate_nr, n;
-	struct uart_chip **c;
+	unsigned int gate_nr;
 	bool gate_inverted;
-	const char *type;
 	void *clock_reg;
 	u32 clock_gates;
-	char buf[32];
 
-	if (JAILHOUSE_COMM_HAS_DBG_PUTC_PERMITTED(comm_region->flags))
-		virtual_console = cmdline_parse_bool("con-virtual",
-			JAILHOUSE_COMM_HAS_DBG_PUTC_ACTIVE(comm_region->flags));
-
-	type = cmdline_parse_str("con-type", buf, sizeof(buf), "");
-	for (c = uart_array; *c; c++)
-		if (!strcmp(type, (*c)->name) ||
-		    (!*type && console->type == (*c)->type)) {
-			chip = *c;
-			break;
-		}
-
-	if (!chip)
-		return;
-
-	chip->base = (void *)(unsigned long)
-		cmdline_parse_int("con-base", console->address);
-	chip->divider = cmdline_parse_int("con-divider", console->divider);
 	gate_nr = cmdline_parse_int("con-gate-nr", console->gate_nr);
 	gate_inverted = cmdline_parse_bool("con-gate-inverted",
 					CON_HAS_INVERTED_GATE(console->flags));
@@ -108,20 +81,4 @@ static void console_init(void)
 			clock_gates |= (1 << gate_nr);
 		mmio_write32(clock_reg, clock_gates);
 	}
-
-	chip->init(chip);
-
-	if (chip->divider == 0) {
-		/*
-		 * We share the UART with the hypervisor. Make sure all
-		 * its outputs are done before starting.
-		 */
-		do {
-			for (n = 0; n < UART_IDLE_LOOPS; n++)
-				if (chip->is_busy(chip))
-					break;
-		} while (n < UART_IDLE_LOOPS);
-	}
 }
-
-#include "../printk.c"

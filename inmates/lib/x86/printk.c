@@ -36,14 +36,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdarg.h>
 #include <inmate.h>
 #include <uart.h>
-
-#define UART_IDLE_LOOPS		100
-
-static struct uart_chip *chip;
-static bool virtual_console;
 
 static void reg_out_mmio8(struct uart_chip *chip, unsigned int reg, u32 value)
 {
@@ -65,32 +59,9 @@ static u32 reg_in_pio(struct uart_chip *chip, unsigned int reg)
 	return inb((unsigned long)chip->base + reg);
 }
 
-static void console_init(void)
+void arch_console_init(struct uart_chip *chip)
 {
 	struct jailhouse_console *console = &comm_region->console;
-	struct uart_chip **c;
-	const char *type;
-	char buf[32];
-	unsigned int n;
-
-	if (JAILHOUSE_COMM_HAS_DBG_PUTC_PERMITTED(comm_region->flags))
-		virtual_console = cmdline_parse_bool("con-virtual",
-			JAILHOUSE_COMM_HAS_DBG_PUTC_ACTIVE(comm_region->flags));
-
-	type = cmdline_parse_str("con-type", buf, sizeof(buf), "");
-	for (c = uart_array; *c; c++)
-		if (!strcmp(type, (*c)->name) ||
-		    (!*type && console->type == (*c)->type)) {
-			chip = *c;
-			break;
-		}
-
-	if (!chip)
-		return;
-
-	chip->base = (void *)(unsigned long)
-		cmdline_parse_int("con-base", console->address);
-	chip->divider = cmdline_parse_int("con-divider", console->divider);
 
 	if (cmdline_parse_bool("con-is-mmio", CON_IS_MMIO(console->flags))) {
 #ifdef __x86_64__
@@ -106,20 +77,4 @@ static void console_init(void)
 		chip->reg_out = reg_out_pio;
 		chip->reg_in = reg_in_pio;
 	}
-
-	chip->init(chip);
-
-	if (chip->divider == 0) {
-		/*
-		 * We share the UART with the hypervisor. Make sure all
-		 * its outputs are done before starting.
-		 */
-		do {
-			for (n = 0; n < UART_IDLE_LOOPS; n++)
-				if (chip->is_busy(chip))
-					break;
-		} while (n < UART_IDLE_LOOPS);
-	}
 }
-
-#include "../printk.c"

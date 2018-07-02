@@ -72,3 +72,5 @@ extern struct uart_chip *uart_array[];
 
 #define DEFINE_UART(__name, __description, __type) \
 	DEFINE_UART_REG(__name, __description, __type, NULL, NULL)
+
+void arch_console_init(struct uart_chip *chip);

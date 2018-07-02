@@ -38,6 +38,15 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdarg.h>
+#include <inmate.h>
+#include <uart.h>
+
+#define UART_IDLE_LOOPS		100
+
+static struct uart_chip *chip;
+static bool virtual_console;
+
 static void console_write(const char *msg)
 {
 	char c = 0;
@@ -61,6 +70,52 @@ static void console_write(const char *msg)
 
 		if (virtual_console)
 			jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
+	}
+}
+
+static void console_init(void)
+{
+	struct jailhouse_console *console = &comm_region->console;
+	unsigned int n;
+	struct uart_chip **c;
+	const char *type;
+	char buf[32];
+
+	if (JAILHOUSE_COMM_HAS_DBG_PUTC_PERMITTED(comm_region->flags))
+		virtual_console = cmdline_parse_bool("con-virtual",
+			JAILHOUSE_COMM_HAS_DBG_PUTC_ACTIVE(comm_region->flags));
+
+	type = cmdline_parse_str("con-type", buf, sizeof(buf), "");
+	for (c = uart_array; *c; c++)
+		if (!strcmp(type, (*c)->name) ||
+		    (!*type && console->type == (*c)->type)) {
+			chip = *c;
+			break;
+		}
+
+	if (!chip)
+		return;
+
+	chip->base = (void *)(unsigned long)
+		cmdline_parse_int("con-base", console->address);
+	chip->divider = cmdline_parse_int("con-divider", console->divider);
+
+	/* Do architecture specific initialisation, e.g., setting PIO accessors
+	 * for x86 or enable clocks for ARM */
+	arch_console_init(chip);
+
+	chip->init(chip);
+
+	if (chip->divider == 0) {
+		/*
+		 * We share the UART with the hypervisor. Make sure all
+		 * its outputs are done before starting.
+		 */
+		do {
+			for (n = 0; n < UART_IDLE_LOOPS; n++)
+				if (chip->is_busy(chip))
+					break;
+		} while (n < UART_IDLE_LOOPS);
 	}
 }
 
