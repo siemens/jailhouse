@@ -140,3 +140,7 @@ Valentine Sinitsyn <valentine.sinitsyn@gmail.com>:
 Henning Schild <henning.schild@siemens.com>:
  - inter-cell communication
  - configuration file generator
+
+Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+ - uart infrastructure
+ - inmate library
