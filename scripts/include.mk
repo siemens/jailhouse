@@ -42,9 +42,12 @@ INSTALL_PROGRAM ?= $(INSTALL)
 INSTALL_DATA    ?= $(INSTALL) -m 644
 INSTALL_DIR     ?= $(INSTALL) -d -m 755
 
-PIP ?= pip
+PYTHON ?= python
+PIP := $(PYTHON) -m pip
 
-HAS_PYTHON_PIP := $(shell $(PIP) >/dev/null 2>/dev/null && echo yes)
+ifeq ($(strip $(shell $(PIP) -V 2> /dev/null | awk '{split($$2,a,"."); if(a[1]>=10) print "y" }')), y)
+PYTHON_PIP_USABLE := yes
+endif
 
 # creates a rule for each dir in $(INSTALL_DIRECTORIES) under the current
 # $(DESTDIR) and additionally to that for each of these dirs a subdir named

@@ -31,7 +31,7 @@ KBUILD_CFLAGS += $(call cc-option, -no-pie)
 BINARIES := jailhouse
 always := $(BINARIES)
 
-ifeq ($(strip $(HAS_PYTHON_PIP)), yes)
+ifeq ($(strip $(PYTHON_PIP_USABLE)), yes)
 HELPERS := \
 	jailhouse-cell-linux \
 	jailhouse-cell-stats \
@@ -40,7 +40,7 @@ HELPERS := \
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
 HAS_PYTHON_MAKO := \
-	$(shell python -c "from mako.template import Template" 2>/dev/null \
+	$(shell $(PYTHON) -c "from mako.template import Template" 2>/dev/null \
 	&& echo yes)
 
 ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
@@ -64,15 +64,15 @@ install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
 install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 	$(INSTALL_DATA) $^
 
-else  # !HAS_PYTHON_PIP
+else  # !PYTHON_PIP_USABLE
 
 install-libexec install-data:
 	@
 
 install::
 	$(info WARNING: Could not install Python-based helpers. You need \
-		   Python and pip for them.)
-endif # !HAS_PYTHON_PIP
+		   Python and pip version >= 10 in order to install them.)
+endif # !PYTHON_PIP_USABLE
 
 MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
 
