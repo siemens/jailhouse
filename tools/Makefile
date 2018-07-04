@@ -49,13 +49,10 @@ HELPERS += jailhouse-config-collect
 
 else  # !HAS_PYTHON_MAKO
 
-always += no_python_mako
-
-$(obj)/no_python_mako:
-	@echo -ne "WARNING: Could not create the helper script to generate" \
-		  "configurations on remote machines" \
-		  "(\"jailhouse-conf-collect\"). You need Python and the" \
-		  "Mako library for it.\n"
+$(info WARNING: Could not create the helper script to generate \
+	   configurations on remote machines \
+	   ("jailhouse-conf-collect"). You need Python and the \
+	   Mako library for it.)
 endif # !HAS_PYTHON_MAKO
 
 install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
@@ -72,11 +69,9 @@ else  # !HAS_PYTHON_PIP
 install-libexec install-data:
 	@
 
-always += no_python_pip
-
-$(obj)/no_python_pip:
-	@echo -ne "WARNING: Could not install Python-based helpers. You need" \
-		  "Python and pip for them.\n"
+install::
+	$(info WARNING: Could not install Python-based helpers. You need \
+		   Python and pip for them.)
 endif # !HAS_PYTHON_PIP
 
 MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
@@ -134,8 +129,7 @@ install-completion: jailhouse-completion.bash $(DESTDIR)$(completionsdir)
 install-man8: $(MAN8_PAGES) $(DESTDIR)$(man8dir)
 	$(INSTALL_DATA) $^
 
-install: install-bin install-libexec install-data install-completion \
+install:: install-bin install-libexec install-data install-completion \
 	 install-man8
 
-.PHONY: install install-bin install-libexec install-data install-completion \
-	no_python_pip no_python_mako
+.PHONY: install install-bin install-libexec install-data install-completion
