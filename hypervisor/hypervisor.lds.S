@@ -21,8 +21,10 @@ SECTIONS
 	.header		: { *(.header) }
 
 	. = ALIGN(16);
-	__text_start = .;
-	.text		: { *(.text) }
+	.text		: {
+		__text_start = .;
+		*(.text)
+	}
 
 	. = ALIGN(16);
 	.rodata		: { *(.rodata) }
