@@ -250,7 +250,7 @@ static int split_hugepage(const struct paging *paging, pt_entry_t pte,
 	if (phys == INVALID_PHYS_ADDR)
 		return 0;
 
-	page_mask = ~(paging->page_size - 1);
+	page_mask = ~((unsigned long)paging->page_size - 1);
 	phys &= page_mask;
 	virt &= page_mask;
 
