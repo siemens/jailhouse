@@ -155,13 +155,13 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	 * ignore that case.
 	 */
 	if (cpu_data->cpu_id >= ARRAY_SIZE(gicv2_target_cpu_map))
-		return -EINVAL;
+		return trace_error(-EINVAL);
 
 	gicv2_target_cpu_map[cpu_data->cpu_id] =
 		mmio_read32(gicd_base + GICD_ITARGETSR);
 
 	if (gicv2_target_cpu_map[cpu_data->cpu_id] == 0)
-		return -ENODEV;
+		return trace_error(-ENODEV);
 
 	return 0;
 }
