@@ -168,8 +168,8 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 
 static int gicv2_cpu_shutdown(struct per_cpu *cpu_data)
 {
-	u32 gich_vmcr = mmio_read32(gich_base + GICH_VMCR);
 	u32 gicc_ctlr = 0;
+	u32 gich_vmcr;
 
 	if (!cpu_data->gicc_initialized)
 		return -ENODEV;
@@ -180,6 +180,7 @@ static int gicv2_cpu_shutdown(struct per_cpu *cpu_data)
 	mmio_write32(gicd_base + GICD_ICENABLER,
 		     1 << system_config->platform_info.arm.maintenance_irq);
 
+	gich_vmcr = mmio_read32(gich_base + GICH_VMCR);
 	if (gich_vmcr & GICH_VMCR_EN0)
 		gicc_ctlr |= GICC_CTLR_GRPEN1;
 	if (gich_vmcr & GICH_VMCR_EOImode)
