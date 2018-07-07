@@ -67,11 +67,9 @@ static long psci_emulate_affinity_info(struct trap_context *ctx)
 
 long psci_dispatch(struct trap_context *ctx)
 {
-	u32 function_id = ctx->regs[0];
-
 	this_cpu_data()->stats[JAILHOUSE_CPU_STAT_VMEXITS_PSCI]++;
 
-	switch (function_id) {
+	switch (ctx->regs[0]) {
 	case PSCI_VERSION:
 		/* Major[31:16], minor[15:0] */
 		return 2;
