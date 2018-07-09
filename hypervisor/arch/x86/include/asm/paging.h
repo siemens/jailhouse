@@ -26,6 +26,7 @@
 #define PAGE_FLAG_PRESENT	0x01
 #define PAGE_FLAG_RW		0x02
 #define PAGE_FLAG_US		0x04
+#define PAGE_FLAG_FRAMEBUFFER	0x08	/* write-combining */
 #define PAGE_FLAG_DEVICE	0x10	/* uncached */
 #define PAGE_FLAG_NOEXECUTE	0x8000000000000000UL
 

@@ -187,7 +187,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	write_cr3(paging_hvirt2phys(cpu_data->pg_structs.root_table));
 
 	cpu_data->pat = read_msr(MSR_IA32_PAT);
-	write_msr(MSR_IA32_PAT, PAT_RESET_VALUE);
+	write_msr(MSR_IA32_PAT, PAT_HOST_VALUE);
 
 	cpu_data->mtrr_def_type = read_msr(MSR_IA32_MTRR_DEF_TYPE);
 
