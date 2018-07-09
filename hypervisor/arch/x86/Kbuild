@@ -19,7 +19,11 @@ ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 always := lib-amd.a lib-intel.a
 
 common-objs-y := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
-		 paging.o pci.o i8042.o vcpu.o vga.o ivshmem.o
+		 paging.o pci.o i8042.o vcpu.o vga.o efifb.o ivshmem.o
+
+CFLAGS_efifb.o := -I$(src)
+
+$(obj)/efifb.o: $(src)/altc-8x16
 
 # units initialization order as defined by linking order:
 # iommu, ioapic, [test-device], [cat], <generic units>

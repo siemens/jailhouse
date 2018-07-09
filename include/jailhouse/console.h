@@ -49,6 +49,7 @@
 #define JAILHOUSE_CON_TYPE_HSCIF	0x0006
 #define JAILHOUSE_CON_TYPE_SCIFA	0x0007
 #define JAILHOUSE_CON_TYPE_IMX		0x0008
+#define JAILHOUSE_CON_TYPE_EFIFB	0x0009
 
 /* Flags: bit 0 is used to select PIO (cleared) or MMIO (set) access */
 #define JAILHOUSE_CON_ACCESS_PIO	0x0000
@@ -65,7 +66,13 @@
 
 #define CON_USES_REGDIST_1(flags) (((flags) & JAILHOUSE_CON_REGDIST_4) == 0)
 
-/* Bits 2-11: Reserved */
+/* Flags: bit 2 is used to select framebuffer format */
+#define JAILHOUSE_CON_FB_1024x768	0x0000
+#define JAILHOUSE_CON_FB_1920x1080	0x0004
+
+#define FB_IS_1920x1080(flags) !!((flags) & JAILHOUSE_CON_FB_1920x1080)
+
+/* Bits 3-11: Reserved */
 
 /* Bit 12 is used to indicate to clear instead of to set the clock gate */
 #define JAILHOUSE_CON_INVERTED_GATE	0x1000

@@ -19,9 +19,9 @@ Possible debug outputs for x86:
 
     - JAILHOUSE_CON_TYPE_8250      /* 8250-compatible UART (PIO or MMIO) */
     - JAILHOUSE_CON_TYPE_VGA       /* VGA console */
+    - JAILHOUSE_CON_TYPE_EFIFB     /* EFI framebuffer console */
 
-VGA output is only available for x86. For further documentation on VGA output
-see [vga-console.md](vga-console.md).
+For further documentation on VGA output see [vga-console.md](vga-console.md).
 
 Possible debug outputs for arm and arm64:
 
@@ -41,6 +41,11 @@ Possible register distances (MMIO only, PIO is implicitly 1-byte), to be or'ed:
 
     - JAILHOUSE_CON_REGDIST_1      /* 1-byte distance */
     - JAILHOUSE_CON_REGDIST_4      /* 4-bytes distance */
+
+Possible framebuffer formats (EFIFB only);
+
+    - JAILHOUSE_CON_FB_1024x768    /* 1024x786 pixel, 32 bit each */
+    - JAILHOUSE_CON_FB_1920x1080   /* 1920x1080 pixel, 32 bit each */
 
 ### .address and .size
 The address member denotes the base address of the Debug console (PIO or MMIO
@@ -84,6 +89,15 @@ Example configuration for MMIO based debug output on ARM (8250 UART):
         .divider = 0xdd, /* 115200 */
         .type = JAILHOUSE_CON_TYPE_8250, /* choose the 8250 driver */
         .flags = JAILHOUSE_CON_MMIO_32,  /* choose 32-bit MMIO access */
+    },
+
+Example configuration for EFI framebuffer debug out on x86:
+
+    .debug_console = {
+        .address = 0x80000000, /* framebuffer base address */
+        .size = 0x300000, /* 1024x786x4 */
+        .type = JAILHOUSE_CON_TYPE_EFIFB, /* choose the EFIFB driver */
+        .flags = JAILHOUSE_CON_FB_1024x768 /* format */
     },
 
 Example configuration for disabled debug output (architecture independent):
@@ -153,7 +167,7 @@ arm: none, 8250, hscif, imx, mvebu, pl011, scifa, xuartps
 Similar to the hypervisor configuration, a zero value for con-divider will skip
 initialisation of the UART interface.
 
-On x86, VGA output is not available for inmates.
+On x86, VGA and EFI framebuffer output are not available for inmates.
 
 ### Examples
 Example command line parameters for PIO based debug output on x86, where the

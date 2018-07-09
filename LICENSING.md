@@ -9,6 +9,11 @@ Whenever a file is provided under an additional or different license than
 GPLv2, this is stated in the file header. Any file that may lack such a
 header has to be considered licensed under GPLv2 (default license).
 
+The binary font file hypervisor/arch/x86/altc-8x16 was taken from the KBD
+project in version 2.0.4 (https://www.kernel.org/pub/linux/utils/kbd,
+http://kbd-project.org) which is distributed under the GNU GPL version 2 or
+later (SPDX identifier GPL-2.0-or-later).
+
 If two licenses are specified in a file header, you are free to pick the one
 that suits best your particular use case. You can also continue to use the
 file under the dual license. When choosing only one, remove the reference to

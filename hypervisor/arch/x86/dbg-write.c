@@ -15,6 +15,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/uart.h>
+#include <asm/efifb.h>
 #include <asm/io.h>
 #include <asm/vga.h>
 
@@ -49,5 +50,8 @@ void arch_dbg_write_init(void)
 	} else if (dbg_type == JAILHOUSE_CON_TYPE_VGA) {
 		vga_init();
 		arch_dbg_write = vga_write;
+	} else if (dbg_type == JAILHOUSE_CON_TYPE_EFIFB) {
+		efifb_init();
+		arch_dbg_write = efifb_write;
 	}
 }
