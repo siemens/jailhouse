@@ -17,7 +17,6 @@
 #include <jailhouse/uart.h>
 #include <asm/efifb.h>
 #include <asm/io.h>
-#include <asm/vga.h>
 
 static void reg_out_pio(struct uart_chip *chip, unsigned int reg, u32 value)
 {
@@ -47,9 +46,6 @@ void arch_dbg_write_init(void)
 		}
 		uart->init(uart);
 		arch_dbg_write = uart_write;
-	} else if (dbg_type == JAILHOUSE_CON_TYPE_VGA) {
-		vga_init();
-		arch_dbg_write = vga_write;
 	} else if (dbg_type == JAILHOUSE_CON_TYPE_EFIFB) {
 		efifb_init();
 		arch_dbg_write = efifb_write;

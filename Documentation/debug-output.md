@@ -18,10 +18,7 @@ default if nothing else is chosen:
 Possible debug outputs for x86:
 
     - JAILHOUSE_CON_TYPE_8250      /* 8250-compatible UART (PIO or MMIO) */
-    - JAILHOUSE_CON_TYPE_VGA       /* VGA console */
     - JAILHOUSE_CON_TYPE_EFIFB     /* EFI framebuffer console */
-
-For further documentation on VGA output see [vga-console.md](vga-console.md).
 
 Possible debug outputs for arm and arm64:
 
@@ -167,7 +164,7 @@ arm: none, 8250, hscif, imx, mvebu, pl011, scifa, xuartps
 Similar to the hypervisor configuration, a zero value for con-divider will skip
 initialisation of the UART interface.
 
-On x86, VGA and EFI framebuffer output are not available for inmates.
+On x86, EFI framebuffer output is not available for inmates.
 
 ### Examples
 Example command line parameters for PIO based debug output on x86, where the
