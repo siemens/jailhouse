@@ -607,7 +607,8 @@ int paging_map_all_per_cpu(unsigned int cpu, bool enable)
  */
 int paging_init(void)
 {
-	unsigned long n, per_cpu_pages, config_pages, bitmap_pages, vaddr;
+	unsigned long n, per_cpu_pages, config_pages, bitmap_pages;
+	unsigned long vaddr, flags;
 	int err;
 
 	per_cpu_pages = hypervisor_header.max_cpus *
@@ -673,11 +674,14 @@ int paging_init(void)
 		    vaddr < REMAP_BASE + remap_pool.pages * PAGE_SIZE)
 			return trace_error(-EINVAL);
 
+		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE;
+		if (system_config->debug_console.type ==
+		    JAILHOUSE_CON_TYPE_EFIFB)
+			flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_FRAMEBUFFER;
 		err = paging_create(&hv_paging_structs,
 				    system_config->debug_console.address,
 				    system_config->debug_console.size, vaddr,
-				    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-				    PAGING_NON_COHERENT);
+				    flags, PAGING_NON_COHERENT);
 		if (err)
 			return err;
 	}
