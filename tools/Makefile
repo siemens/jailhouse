@@ -39,22 +39,6 @@ HELPERS := \
 	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
-HAS_PYTHON_MAKO := \
-	$(shell $(PYTHON) -c "from mako.template import Template" 2>/dev/null \
-	&& echo yes)
-
-ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
-always += jailhouse-config-collect
-HELPERS += jailhouse-config-collect
-
-else  # !HAS_PYTHON_MAKO
-
-$(info WARNING: Could not create the helper script to generate \
-	   configurations on remote machines \
-	   ("jailhouse-conf-collect"). You need Python and the \
-	   Mako library for it.)
-endif # !HAS_PYTHON_MAKO
-
 install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
 	$(INSTALL_PROGRAM) $^
 	$(Q)$(call patch_dirvar,libexecdir,$(lastword $^)/jailhouse-cell-linux)
@@ -73,6 +57,22 @@ install::
 	$(info WARNING: Could not install Python-based helpers. You need \
 		   Python and pip version >= 10 in order to install them.)
 endif # !PYTHON_PIP_USABLE
+
+HAS_PYTHON_MAKO := \
+	$(shell $(PYTHON) -c "from mako.template import Template" 2>/dev/null \
+	&& echo yes)
+
+ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
+always += jailhouse-config-collect
+HELPERS += jailhouse-config-collect
+
+else  # !HAS_PYTHON_MAKO
+
+$(info WARNING: Could not create the helper script to generate \
+	   configurations on remote machines \
+	   ("jailhouse-conf-collect"). You need Python and the \
+	   Mako library for it.)
+endif # !HAS_PYTHON_MAKO
 
 MAN8_PAGES := jailhouse.8 jailhouse-cell.8 jailhouse-enable.8
 
