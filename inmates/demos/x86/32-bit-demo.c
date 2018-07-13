@@ -19,5 +19,5 @@
 
 void inmate_main(void)
 {
-	printk("This runs in 32-bit mode (EFER: %x)\n", read_msr(IA32_EFER));
+	printk("This runs in 32-bit mode (EFER: %llx)\n", read_msr(IA32_EFER));
 }

@@ -26,6 +26,6 @@ void inmate_main(void)
 			cpu_relax();
 		} while (now - start < 1000000000ULL);
 		start += 1000000000ULL;
-		printk("PM Timer: %11lu\n", now);
+		printk("PM Timer: %11llu\n", now);
 	}
 }

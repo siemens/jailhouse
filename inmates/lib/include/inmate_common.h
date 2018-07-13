@@ -73,7 +73,7 @@ static inline void __attribute__((noreturn)) stop(void)
 
 void arch_init_early(void);
 
-void printk(const char *fmt, ...);
+void __attribute__((format(printf, 1, 2))) printk(const char *fmt, ...);
 
 void *alloc(unsigned long size, unsigned long align);
 

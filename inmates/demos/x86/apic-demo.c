@@ -81,7 +81,7 @@ void inmate_main(void)
 	}
 
 	tsc_freq = tsc_init();
-	printk("Calibrated TSC frequency: %lu.%03u kHz\n", tsc_freq / 1000,
+	printk("Calibrated TSC frequency: %lu.%03lu kHz\n", tsc_freq / 1000,
 	       tsc_freq % 1000);
 
 	init_apic();

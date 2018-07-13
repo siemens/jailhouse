@@ -22,7 +22,7 @@ static void evaluate(u32 a, u32 b, int line)
 
 	printk("Test at line #%d %s\n", line, passed ? "passed" : "FAILED");
 	if (!passed) {
-		printk(" %llx != %llx\n", a, b);
+		printk(" %x != %x\n", a, b);
 		all_passed = false;
 	}
 }
