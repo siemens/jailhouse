@@ -21,7 +21,6 @@ void inmate_main(void)
 	while(++i) {
 		for (j = 0; j < 100000000; j++);
 		printk("Hello %d from cell!\n", i);
-		heartbeat();
 	}
 
 	/* lr should be 0, so a return will go back to the reset vector */
