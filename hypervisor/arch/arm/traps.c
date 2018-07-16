@@ -19,6 +19,7 @@
 #include <asm/control.h>
 #include <asm/gic.h>
 #include <asm/psci.h>
+#include <asm/smccc.h>
 #include <asm/traps.h>
 #include <asm/sysregs.h>
 
@@ -248,14 +249,16 @@ static int arch_handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
-	if (!IS_PSCI_32(regs[0]) && !IS_PSCI_UBOOT(regs[0]))
+	if (SMCCC_IS_CONV_64(regs[0]))
 		return TRAP_FORBIDDEN;
 
-	regs[0] = psci_dispatch(ctx);
+	if (IS_PSCI_UBOOT(regs[0])) {
+		regs[0] = psci_dispatch(ctx);
+		arch_skip_instruction(ctx);
+		return TRAP_HANDLED;
+	}
 
-	arch_skip_instruction(ctx);
-
-	return TRAP_HANDLED;
+	return handle_smc(ctx);
 }
 
 static int arch_handle_hvc(struct trap_context *ctx)

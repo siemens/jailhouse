@@ -15,11 +15,12 @@
 #include <jailhouse/control.h>
 #include <asm/control.h>
 #include <asm/psci.h>
+#include <asm/smccc.h>
 #include <asm/traps.h>
 
 static long psci_emulate_cpu_on(struct trap_context *ctx)
 {
-	unsigned long mask = IS_PSCI_64(ctx->regs[0]) ? (u64)-1L : (u32)-1;
+	u64 mask = SMCCC_IS_CONV_64(ctx->regs[0]) ? (u64)-1L : (u32)-1;
 	struct public_per_cpu *target_data;
 	bool kick_cpu = false;
 	unsigned int cpu;

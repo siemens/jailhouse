@@ -18,7 +18,7 @@
 #include <asm/gic.h>
 #include <asm/mmio.h>
 #include <asm/psci.h>
-#include <asm/sip.h>
+#include <asm/smccc.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
 #include <asm/processor.h>
@@ -31,24 +31,6 @@ void arch_skip_instruction(struct trap_context *ctx)
 	arm_read_sysreg(ELR_EL2, pc);
 	pc += ESR_IL(ctx->esr) ? 4 : 2;
 	arm_write_sysreg(ELR_EL2, pc);
-}
-
-static int handle_smc(struct trap_context *ctx)
-{
-	unsigned long *regs = ctx->regs;
-
-	if (IS_PSCI_32(regs[0]) || IS_PSCI_64(regs[0])) {
-		regs[0] = psci_dispatch(ctx);
-	} else if (IS_SIP_32(regs[0]) || IS_SIP_64(regs[0])) {
-		/* This can be ignored */
-		regs[0] = SIP_NOT_SUPPORTED;
-	} else {
-		return TRAP_UNHANDLED;
-	}
-
-	arch_skip_instruction(ctx);
-
-	return TRAP_HANDLED;
 }
 
 static int handle_hvc(struct trap_context *ctx)
