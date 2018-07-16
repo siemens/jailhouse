@@ -18,6 +18,7 @@
 #define PSCI_CPU_ON_64			0xc4000003
 #define PSCI_AFFINITY_INFO_32		0x84000004
 #define PSCI_AFFINITY_INFO_64		0xc4000004
+#define PSCI_FEATURES			0x8400000a
 
 /* v0.1 function IDs as used by U-Boot */
 #define PSCI_CPU_OFF_V0_1_UBOOT		0x95c1ba5f
@@ -35,6 +36,9 @@
 #define IS_PSCI_UBOOT(hvc)		(((hvc) >> 8) == 0x95c1ba)
 
 #define PSCI_INVALID_ADDRESS		(-1L)
+
+/* Major[31:16], minor[15:0] */
+#define PSCI_VERSION_1_1	0x10001
 
 struct trap_context;
 
