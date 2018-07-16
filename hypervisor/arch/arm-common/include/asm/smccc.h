@@ -10,9 +10,13 @@
  * the COPYING file in the top-level directory.
  */
 
+#define SMCCC_VERSION			0x80000000
+#define SMCCC_ARCH_FEATURES		0x80000001
+
 #define ARM_SMCCC_OWNER_MASK		BIT_MASK(29, 24)
 #define ARM_SMCCC_OWNER_SHIFT		24
 
+#define ARM_SMCCC_OWNER_ARCH		0
 #define ARM_SMCCC_OWNER_SIP             2
 #define ARM_SMCCC_OWNER_STANDARD        4
 
@@ -21,6 +25,8 @@
 
 #define ARM_SMCCC_NOT_SUPPORTED         (-1)
 #define ARM_SMCCC_SUCCESS               0
+
+#define ARM_SMCCC_VERSION_1_1		0x10001
 
 #define SMCCC_GET_OWNER(id)	((id & ARM_SMCCC_OWNER_MASK) >>	\
 				 ARM_SMCCC_OWNER_SHIFT)

@@ -78,6 +78,7 @@ static long psci_emulate_features_info(struct trap_context *ctx)
 	case PSCI_AFFINITY_INFO_32:
 	case PSCI_AFFINITY_INFO_64:
 	case PSCI_FEATURES:
+	case SMCCC_VERSION:
 		return PSCI_SUCCESS;
 
 	default:
