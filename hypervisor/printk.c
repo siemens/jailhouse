@@ -35,6 +35,9 @@ static void console_write(const char *msg)
 	/* ensure the busy flag is visible prior to updates of the content */
 	memory_barrier();
 	while (*msg) {
+		if (panic_in_progress && panic_cpu != phys_processor_id())
+			break;
+
 		console.content[console.tail % sizeof(console.content)] =
 			*msg++;
 		console.tail++;
