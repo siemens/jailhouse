@@ -640,7 +640,7 @@ static enum mmio_result gicv3_handle_dist_access(struct mmio_access *mmio)
 
 static int gicv3_get_cpu_target(unsigned int cpu_id)
 {
-	return 1 << public_per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK;
+	return 1 << (public_per_cpu(cpu_id)->mpidr & MPIDR_AFF0_MASK);
 }
 
 static u64 gicv3_get_cluster_target(unsigned int cpu_id)
