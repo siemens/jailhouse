@@ -117,6 +117,9 @@ static void gicv3_write_lr(unsigned int reg, u64 val)
 
 static int gicv3_init(void)
 {
+	unsigned long redist_size = GIC_V3_REDIST_SIZE;
+	unsigned int gicr_size;
+
 	/* Probe the GICD version */
 	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICDv3_PIDR2));
 	if (gic_version != 3 && gic_version != 4)
@@ -126,15 +129,22 @@ static int gicv3_init(void)
 	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
 		return trace_error(-EIO);
 
-	/* Let the per-cpu code access the redistributors */
-	gicr_base = paging_map_device(
-			system_config->platform_info.arm.gicr_base, GICR_SIZE);
-	if (!gicr_base)
-		return -ENOMEM;
-
 	last_gicr = system_config->root_cell.cpu_set_size * 8 - 1;
 	while (!cpu_id_valid(last_gicr))
 		last_gicr--;
+
+	/*
+	 * Let the per-cpu code access the redistributors. This makes the
+	 * assumption, that redistributors can be found in a sequence.
+	 */
+	if (gic_version == 4)
+		redist_size = GIC_V4_REDIST_SIZE;
+
+	gicr_size = redist_size * (last_gicr + 1);
+	gicr_base = paging_map_device(
+			system_config->platform_info.arm.gicr_base, gicr_size);
+	if (!gicr_base)
+		return -ENOMEM;
 
 	return 0;
 }

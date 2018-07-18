@@ -16,8 +16,6 @@
 #include <asm/sysregs.h>
 #include <asm/arch_gicv3.h>
 
-#define GICR_SIZE		0x100000
-
 #define GICDv3_CIDR0		0xfff0
 #define GICDv3_PIDR0		0xffe0
 #define GICDv3_PIDR2		0xffe8
