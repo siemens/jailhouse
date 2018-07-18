@@ -117,6 +117,11 @@ static void gicv3_write_lr(unsigned int reg, u64 val)
 
 static int gicv3_init(void)
 {
+	/* Probe the GICD version */
+	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICDv3_PIDR2));
+	if (gic_version != 3 && gic_version != 4)
+		return trace_error(-ENODEV);
+
 	/* TODO: need to validate more? */
 	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
 		return trace_error(-EIO);
@@ -183,11 +188,6 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
 	u32 ich_vtr;
 	u32 ich_vmcr;
-
-	/* Probe the GICD version */
-	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICDv3_PIDR2));
-	if (gic_version != 3 && gic_version != 4)
-		return trace_error(-ENODEV);
 
 	if (gic_version == 4)
 		redist_size = GIC_V4_REDIST_SIZE;
