@@ -22,6 +22,9 @@
 #include <asm/sysregs.h>
 #include <asm/traps.h>
 
+#define GIC_V3_REDIST_SIZE	0x20000
+#define GIC_V4_REDIST_SIZE	0x40000
+
 /*
  * This implementation assumes that the kernel driver already initialised most
  * of the GIC.
@@ -173,8 +176,8 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 {
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	unsigned long redist_addr = system_config->platform_info.arm.gicr_base;
+	unsigned long redist_size = GIC_V3_REDIST_SIZE;
 	void *redist_base = gicr_base;
-	unsigned long redist_size;
 	u64 typer, mpidr;
 	u32 pidr, aff;
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
@@ -185,6 +188,9 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	gic_version = GICD_PIDR2_ARCH(mmio_read32(gicd_base + GICDv3_PIDR2));
 	if (gic_version != 3 && gic_version != 4)
 		return trace_error(-ENODEV);
+
+	if (gic_version == 4)
+		redist_size = GIC_V4_REDIST_SIZE;
 
 	mpidr = cpu_data->public.mpidr;
 	aff = (MPIDR_AFFINITY_LEVEL(mpidr, 3) << 24 |
@@ -197,8 +203,6 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 		pidr = mmio_read32(redist_base + GICR_PIDR2);
 		if (GICR_PIDR2_ARCH(pidr) != gic_version)
 			break;
-
-		redist_size = gic_version == 4 ? 0x40000 : 0x20000;
 
 		typer = mmio_read64(redist_base + GICR_TYPER);
 		if ((typer >> 32) == aff) {
