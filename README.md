@@ -372,7 +372,7 @@ should include a corresponding fix.
 
 Start the QEMU machine like this:
 
-    qemu-system-aarch64 -cpu cortex-a57 -smp 4 -m 1G \
+    qemu-system-aarch64 -cpu cortex-a57 -smp 16 -m 1G \
         -machine virt,gic-version=3,virtualization=on -nographic \
         -netdev user,id=net -device virtio-net-device,netdev=net \
         -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
