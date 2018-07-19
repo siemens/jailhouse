@@ -180,7 +180,8 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 	spin_lock(&target_data->control_lock);
 
 	if (type == X86_INIT) {
-		if (!target_data->wait_for_sipi) {
+		if (!target_data->wait_for_sipi &&
+		    !target_data->init_signaled) {
 			target_data->init_signaled = true;
 			send_nmi = true;
 		}
