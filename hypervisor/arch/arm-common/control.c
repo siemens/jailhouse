@@ -104,9 +104,8 @@ static void check_events(struct public_per_cpu *cpu_public)
 
 	spin_lock(&cpu_public->control_lock);
 
-	do {
-		if (cpu_public->suspend_cpu)
-			cpu_public->cpu_suspended = true;
+	while (cpu_public->suspend_cpu) {
+		cpu_public->cpu_suspended = true;
 
 		spin_unlock(&cpu_public->control_lock);
 
@@ -114,28 +113,21 @@ static void check_events(struct public_per_cpu *cpu_public)
 			cpu_relax();
 
 		spin_lock(&cpu_public->control_lock);
+	}
 
-		if (!cpu_public->suspend_cpu) {
-			cpu_public->cpu_suspended = false;
+	cpu_public->cpu_suspended = false;
 
-			if (cpu_public->park) {
-				enter_cpu_off(cpu_public);
-				break;
-			}
-
-			if (cpu_public->reset) {
-				cpu_public->reset = false;
-				if (cpu_public->cpu_on_entry !=
-				    PSCI_INVALID_ADDRESS) {
-					cpu_public->wait_for_poweron = false;
-					reset = true;
-				} else {
-					enter_cpu_off(cpu_public);
-				}
-				break;
-			}
+	if (cpu_public->park) {
+		enter_cpu_off(cpu_public);
+	} else if (cpu_public->reset) {
+		cpu_public->reset = false;
+		if (cpu_public->cpu_on_entry != PSCI_INVALID_ADDRESS) {
+			cpu_public->wait_for_poweron = false;
+			reset = true;
+		} else {
+			enter_cpu_off(cpu_public);
 		}
-	} while (cpu_public->suspend_cpu);
+	}
 
 	if (cpu_public->flush_vcpu_caches) {
 		cpu_public->flush_vcpu_caches = false;
