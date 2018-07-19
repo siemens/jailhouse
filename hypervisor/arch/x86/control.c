@@ -213,12 +213,7 @@ void x86_check_events(void)
 
 	spin_lock(&cpu_public->control_lock);
 
-	do {
-		if (cpu_public->init_signaled && !cpu_public->suspend_cpu) {
-			x86_enter_wait_for_sipi(cpu_public);
-			break;
-		}
-
+	while (cpu_public->suspend_cpu) {
 		cpu_public->cpu_suspended = true;
 
 		spin_unlock(&cpu_public->control_lock);
@@ -227,17 +222,19 @@ void x86_check_events(void)
 			cpu_relax();
 
 		spin_lock(&cpu_public->control_lock);
+	}
 
-		cpu_public->cpu_suspended = false;
+	cpu_public->cpu_suspended = false;
 
-		if (cpu_public->sipi_vector >= 0) {
-			if (!cpu_public->failed) {
-				cpu_public->wait_for_sipi = false;
-				sipi_vector = cpu_public->sipi_vector;
-			}
-			cpu_public->sipi_vector = -1;
+	if (cpu_public->init_signaled) {
+		x86_enter_wait_for_sipi(cpu_public);
+	} else if (cpu_public->sipi_vector >= 0) {
+		if (!cpu_public->failed) {
+			cpu_public->wait_for_sipi = false;
+			sipi_vector = cpu_public->sipi_vector;
 		}
-	} while (cpu_public->init_signaled);
+		cpu_public->sipi_vector = -1;
+	}
 
 	if (cpu_public->flush_vcpu_caches) {
 		cpu_public->flush_vcpu_caches = false;
