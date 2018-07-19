@@ -194,6 +194,19 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 
 	if (send_nmi)
 		apic_send_nmi_ipi(target_data);
+
+	/*
+	 * On real hardware, the Delivery Status flag signals that the
+	 * INIT request has not yet arrived. But we can't easily associate that
+	 * flag on the sender side with the target state. Therefore, emulate
+	 * this feedback channel by delaying the requester during submission.
+	 */
+	if (type == X86_INIT) {
+		while (target_data->init_signaled) {
+			x86_check_events();
+			cpu_relax();
+		}
+	}
 }
 
 /* control_lock has to be held */

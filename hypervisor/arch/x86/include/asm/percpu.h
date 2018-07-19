@@ -43,7 +43,7 @@
 	/** True if CPU is waiting for SIPI. */				\
 	volatile bool wait_for_sipi;					\
 	/** Set to true for pending an INIT signal. */			\
-	bool init_signaled;						\
+	volatile bool init_signaled;					\
 	/** Pending SIPI vector; -1 if none is pending. */		\
 	int sipi_vector;						\
 	/** Set to true for pending cache allocation updates (Intel	\
