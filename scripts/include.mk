@@ -45,7 +45,7 @@ INSTALL_DIR     ?= $(INSTALL) -d -m 755
 PYTHON ?= python
 PIP := $(PYTHON) -m pip
 
-ifeq ($(strip $(shell $(PIP) -V 2> /dev/null | awk '{split($$2,a,"."); if(a[1]>=10) print "y" }')), y)
+ifeq ($(strip $(shell $(PIP) > /dev/null 2> /dev/null && echo "y")), y)
 PYTHON_PIP_USABLE := yes
 endif
 

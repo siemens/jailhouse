@@ -32,6 +32,10 @@ DOXYGEN ?= doxygen
 
 kbuild = -C $(KDIR) M=$$PWD $@
 
+ifneq ($(DESTDIR),)
+PIP_ROOT = --root=$(shell readlink -f $(DESTDIR))
+endif
+
 modules clean:
 	$(Q)$(MAKE) $(kbuild)
 
@@ -50,7 +54,7 @@ tool_inmates_install: $(DESTDIR)$(libexecdir)/jailhouse
 
 pyjailhouse_install:
 ifeq ($(strip $(PYTHON_PIP_USABLE)), yes)
-	$(PIP) install --upgrade --force-reinstall --root=$(DESTDIR) .
+	$(PIP) install --upgrade --force-reinstall $(PIP_ROOT) .
 else
 	@
 endif

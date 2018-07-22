@@ -55,7 +55,7 @@ install-libexec install-data:
 
 install::
 	$(info WARNING: Could not install Python-based helpers. You need \
-		   Python and pip version >= 10 in order to install them.)
+		   Python and pip in order to install them.)
 endif # !PYTHON_PIP_USABLE
 
 HAS_PYTHON_MAKO := \
