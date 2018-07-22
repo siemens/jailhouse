@@ -128,7 +128,7 @@ static unsigned long arm_get_l3_phys(pt_entry_t pte, unsigned long virt)
 {
 	if (!(*pte & PTE_FLAG_TERMINAL))
 		return INVALID_PHYS_ADDR;
-	return (*pte & PTE_PAGE_ADDR_MASK) | (virt & PAGE_MASK);
+	return (*pte & PTE_PAGE_ADDR_MASK) | (virt & PAGE_OFFS_MASK);
 }
 
 #define ARM_PAGING_COMMON				\
