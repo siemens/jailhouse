@@ -44,10 +44,11 @@ arch_entry:
 	mov	sp, r1
 	add	sp, #PERCPU_STACK_END
 	/*
-	 * Keep some space for a union registers, in case setup fails and needs
+	 * Keep space for a union registers, in case setup fails and needs
 	 * to return to the driver through the arch_shutdown_self path.
+	 * Also align the stack on double-words.
 	 */
-	sub	sp, #((NUM_USR_REGS + 1) * 4)
+	sub	sp, #(((NUM_USR_REGS + 1) * 4) + 7) & ~7
 	/* Call entry(cpuid, struct per_cpu*) */
 	bl	entry
 
@@ -126,6 +127,8 @@ vmexit_common:
 	push	{r0}
 
 	mov	r0, sp
+	/* align the stack on double-words */
+	bic	sp, #7
 	bl	arch_handle_exit
 
 
