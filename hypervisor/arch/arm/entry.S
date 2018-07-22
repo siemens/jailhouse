@@ -138,8 +138,8 @@ vmexit_common:
 	 */
 	.globl vmreturn
 vmreturn:
-	mov	sp, r0
-	add	sp, #4
+	/* skip exit reason */
+	add	sp, r0, #4
 
 	/* Restore usr regs */
 	pop	{r0-r12, lr}
