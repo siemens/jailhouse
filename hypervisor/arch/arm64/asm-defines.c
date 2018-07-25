@@ -21,6 +21,7 @@ void common(void);
 void common(void)
 {
 	OFFSET(HEADER_MAX_CPUS, jailhouse_header, max_cpus);
+	OFFSET(HEADER_CORE_SIZE, jailhouse_header, core_size);
 	OFFSET(HEADER_DEBUG_CONSOLE_VIRT, jailhouse_header, debug_console_base);
 	OFFSET(HEADER_HYP_STUB_VERSION, jailhouse_header, arm_linux_hyp_abi);
 	OFFSET(SYSCONFIG_DEBUG_CONSOLE_PHYS, jailhouse_system,
