@@ -57,20 +57,8 @@ int mmio_cell_init(struct cell *cell)
 
 static void copy_region(struct cell *cell, unsigned int src, unsigned dst)
 {
-	/*
-	 * Invalidate destination region by shrinking it to size 0. This has to
-	 * be made visible to other CPUs via a memory barrier before
-	 * manipulating other destination fields.
-	 */
-	cell->mmio_locations[dst].size = 0;
-	memory_barrier();
-
-	cell->mmio_locations[dst].start = cell->mmio_locations[src].start;
+	cell->mmio_locations[dst] = cell->mmio_locations[src];
 	cell->mmio_handlers[dst] = cell->mmio_handlers[src];
-	/* Ensure all fields are committed before activating the region. */
-	memory_barrier();
-
-	cell->mmio_locations[dst].size = cell->mmio_locations[src].size;
 }
 
 /**
@@ -103,50 +91,72 @@ void mmio_region_register(struct cell *cell, unsigned long start,
 			break;
 
 	/*
-	 * Set and commit a dummy region at the end of the list so that
-	 * we can safely grow it.
+	 * Advance the generation to odd value, indicating that modifications
+	 * are ongoing. Commit this change via a barrier so that other CPUs
+	 * will see this before we start changing any field.
 	 */
-	cell->mmio_locations[cell->num_mmio_regions].start = -1;
-	cell->mmio_locations[cell->num_mmio_regions].size = 0;
+	cell->mmio_generation++;
 	memory_barrier();
 
-	/*
-	 * Extend region list by one so that we can start moving entries.
-	 * Commit this change via a barrier so that the current last element
-	 * will remain visible when moving it up.
-	 */
-	cell->num_mmio_regions++;
-	memory_barrier();
-
-	for (n = cell->num_mmio_regions - 1; n > index; n--)
+	for (n = cell->num_mmio_regions; n > index; n--)
 		copy_region(cell, n - 1, n);
 
-	/* Invalidate the new region entry first (see also copy_region()). */
-	cell->mmio_locations[index].size = 0;
-	memory_barrier();
-
 	cell->mmio_locations[index].start = start;
-	cell->mmio_handlers[index].handler = handler;
-	cell->mmio_handlers[index].arg = handler_arg;
-	/* Ensure all fields are committed before activating the region. */
-	memory_barrier();
-
 	cell->mmio_locations[index].size = size;
+	cell->mmio_handlers[index].function = handler;
+	cell->mmio_handlers[index].arg = handler_arg;
+
+	cell->num_mmio_regions++;
+
+	/* Ensure all fields are committed before advancing the generation. */
+	memory_barrier();
+	cell->mmio_generation++;
 
 	spin_unlock(&cell->mmio_region_lock);
 }
 
 static int find_region(struct cell *cell, unsigned long address,
-		       unsigned int size)
+		       unsigned int size, unsigned long *region_base,
+		       struct mmio_region_handler *handler)
 {
-	unsigned int range_start = 0;
-	unsigned int range_size = cell->num_mmio_regions;
+	unsigned int range_start, range_size, index;
 	struct mmio_region_location region;
-	unsigned int index;
+	unsigned long generation;
+
+restart:
+	generation = cell->mmio_generation;
+
+	/*
+	 * Ensure that the generation value was read prior to reading any other
+	 * field.
+	 */
+	memory_load_barrier();
+
+	/* Odd number? Then we have an ongoing modification and must restart. */
+	if (generation & 1) {
+		cpu_relax();
+		goto restart;
+	}
+
+	range_start = 0;
+	range_size = cell->num_mmio_regions;
 
 	while (range_size > 0) {
 		index = range_start + range_size / 2;
 		region = cell->mmio_locations[index];
+
+		/*
+		 * Ensure the region location was read prior to checking the
+		 * generation again.
+		 */
+		memory_load_barrier();
+
+		/*
+		 * If the generation changed meanwhile, the fields we read
+		 * could have been inconsistent.
+		 */
+		if (cell->mmio_generation != generation)
+			goto restart;
 
 		if (address < region.start) {
 			range_size = index - range_start;
@@ -154,6 +164,21 @@ static int find_region(struct cell *cell, unsigned long address,
 			range_size -= index + 1 - range_start;
 			range_start = index + 1;
 		} else {
+			if (region_base != NULL) {
+				*region_base = region.start;
+				*handler = cell->mmio_handlers[index];
+			}
+
+			/*
+			 * Ensure everything was read prior to checking the
+			 * generation for the last time.
+			 */
+			memory_load_barrier();
+
+			/* final check of consistency */
+			if (cell->mmio_generation != generation)
+				goto restart;
+
 			return index;
 		}
 	}
@@ -174,18 +199,27 @@ void mmio_region_unregister(struct cell *cell, unsigned long start)
 
 	spin_lock(&cell->mmio_region_lock);
 
-	index = find_region(cell, start, 1);
+	index = find_region(cell, start, 1, NULL, NULL);
 	if (index >= 0) {
+		/*
+		 * Advance the generation to odd value, indicating that
+		 * modifications are ongoing. Commit this change via a barrier
+		 * so that other CPUs will see it before we start.
+		 */
+		cell->mmio_generation++;
+		memory_barrier();
+
 		for (/* empty */; index < cell->num_mmio_regions; index++)
 			copy_region(cell, index + 1, index);
 
+		cell->num_mmio_regions--;
+
 		/*
-		 * Ensure the last region move is visible before shrinking the
-		 * list.
+		 * Ensure all regions and their number are committed before
+		 * advancing the generation.
 		 */
 		memory_barrier();
-
-		cell->num_mmio_regions--;
+		cell->mmio_generation++;
 	}
 	spin_unlock(&cell->mmio_region_lock);
 }
@@ -205,16 +239,15 @@ void mmio_region_unregister(struct cell *cell, unsigned long start)
  */
 enum mmio_result mmio_handle_access(struct mmio_access *mmio)
 {
-	struct cell *cell = this_cell();
-	int index = find_region(cell, mmio->address, mmio->size);
-	mmio_handler handler;
+	struct mmio_region_handler handler;
+	unsigned long region_base;
 
-	if (index < 0)
+	if (find_region(this_cell(), mmio->address, mmio->size, &region_base,
+			&handler) < 0)
 		return MMIO_UNHANDLED;
 
-	handler = cell->mmio_handlers[index].handler;
-	mmio->address -= cell->mmio_locations[index].start;
-	return handler(cell->mmio_handlers[index].arg, mmio);
+	mmio->address -= region_base;
+	return handler.function(handler.arg, mmio);
 }
 
 /**

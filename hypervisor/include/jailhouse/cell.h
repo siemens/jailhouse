@@ -58,6 +58,9 @@ struct cell {
 	/** Lock protecting changes to mmio_locations, mmio_handlers, and
 	 * num_mmio_regions. */
 	spinlock_t mmio_region_lock;
+	/** Generation counter of mmio_locations, mmio_handlers, and
+	 * num_mmio_regions. */
+	volatile unsigned long mmio_generation;
 	/** MMIO region description table. */
 	struct mmio_region_location *mmio_locations;
 	/** MMIO region handler table. */

@@ -134,7 +134,7 @@ struct mmio_access {
 	unsigned long value;
 };
 
-/** MMIO callback handler.
+/** MMIO handler.
  * @param arg		Opaque argument defined via mmio_region_register().
  * @param mmio		MMIO access description. @a mmio->address will be
  * 			provided as offset to the region start.
@@ -151,11 +151,11 @@ struct mmio_region_location {
 	unsigned long size;
 };
 
-/** MMIO region access callback description. */
+/** MMIO region access handler description. */
 struct mmio_region_handler {
-	/** Access handler. */
-	mmio_handler handler;
-	/** Argument to pass to the handler. */
+	/** Access handling function. */
+	mmio_handler function;
+	/** Argument to pass to the function. */
 	void *arg;
 };
 
