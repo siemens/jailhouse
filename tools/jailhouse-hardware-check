@@ -2,7 +2,7 @@
 
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2016
+# Copyright (c) Siemens AG, 2018
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -17,8 +17,13 @@ import os
 import struct
 import sys
 
-check_passed = True
+# just a dummy to make python2 happy
+if sys.version_info[0] < 3:
+    class PermissionError(OSError):
+        pass
 
+check_passed = True
+ran_all = True
 
 def check_feature(msg, ok, optional=False):
     if not (ok or optional):
@@ -93,10 +98,23 @@ class MSR:
 class MMIO:
     def __init__(self, base, size):
         f = os.open('/dev/mem', os.O_RDONLY | os.O_SYNC)
-        self.mmap = mmap.mmap(f, size, mmap.MAP_SHARED, mmap.PROT_READ,
-                              offset=base)
+        self.mmap = None
+        try:
+            self.mmap = mmap.mmap(f, size, mmap.MAP_SHARED, mmap.PROT_READ,
+                                  offset=base)
+        except PermissionError:
+            pass
+        except mmap.error:
+            pass
 
     def read64(self, offset):
+        if self.mmap is None:
+            global ran_all
+            print(' Skipping MMIO tests, your kernel might have '
+                  'CONFIG_STRICT_DEVMEM enabled.\n Disable for thorough '
+                  'testing.\n')
+            ran_all = False
+            return None
         self.mmap.seek(offset)
         return struct.unpack('Q', self.mmap.read(8))[0]
 
@@ -238,6 +256,8 @@ if cpu_vendor == 'GenuineIntel':
             break
         mmio = MMIO(iommu[n].base, iommu[n].size)
         cap = mmio.read64(0x08)
+        if cap is None:
+            continue
         check_feature('  39-bit AGAW', cap & (1 << 9), cap & (1 << 10))
         check_feature('  48-bit AGAW', cap & (1 << 10), cap & (1 << 9))
         check_feature('  2M pages', cap & (1 << 34), True)
@@ -278,6 +298,8 @@ elif cpu_vendor == 'AuthenticAMD':
 
         mmio = MMIO(iommu[n].base, iommu[n].size)
         efr = mmio.read64(0x30)
+        if efr is None:
+            continue
         if check_feature('  SMI filter', ((efr >> 16) & 0x3) == 1):
             smi_filter_ok = True
             num_filter_regs = 1 << ((efr >> 18) & 7)
@@ -296,4 +318,7 @@ else:
     print('Unsupported CPU', file=sys.stderr)
 
 print('\nCheck %s!' % ('passed' if check_passed else 'FAILED'))
+if not ran_all:
+    print('BUT: Some essential checks had to be skipped!\n')
+    sys.exit(1)
 sys.exit(0 if check_passed else 2)
