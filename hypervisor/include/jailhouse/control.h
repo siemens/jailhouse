@@ -131,35 +131,14 @@ void __attribute__((noreturn)) panic_stop(void);
 void panic_park(void);
 
 /**
- * Suspend a remote CPU.
- * @param cpu_id	ID of the target CPU.
- *
- * Suspension means that the target CPU is no longer executing cell code or
- * arbitrary hypervisor code. It may actively busy-wait in the hypervisor
- * context, so the suspension time should be kept short.
- *
- * The function waits for the target CPU to enter suspended state.
- *
- * This service can be used to synchronize with other CPUs before performing
- * management tasks.
- *
- * @note This function must not be invoked for the caller's CPU.
- *
- * @see arch_resume_cpu
- * @see arch_reset_cpu
- * @see arch_park_cpu
- */
-void arch_suspend_cpu(unsigned int cpu_id);
-
-/**
  * Resume a suspended remote CPU.
  * @param cpu_id	ID of the target CPU.
  *
  * @note This function must not be invoked for the caller's CPU.
  *
- * @see arch_suspend_cpu
+ * @see suspend_cpu
  */
-void arch_resume_cpu(unsigned int cpu_id);
+void resume_cpu(unsigned int cpu_id);
 
 /**
  * Reset a suspended remote CPU and resumes its execution.
@@ -171,7 +150,7 @@ void arch_resume_cpu(unsigned int cpu_id);
  * @note This function must not be invoked for the caller's CPU or if the
  * target CPU is not in suspend state.
  *
- * @see arch_suspend_cpu
+ * @see suspend_cpu
  */
 void arch_reset_cpu(unsigned int cpu_id);
 
@@ -190,7 +169,7 @@ void arch_reset_cpu(unsigned int cpu_id);
  * @note This function must not be invoked for the caller's CPU or if the
  * target CPU is not in suspend state.
  *
- * @see arch_suspend_cpu
+ * @see suspend_cpu
  */
 void arch_park_cpu(unsigned int cpu_id);
 

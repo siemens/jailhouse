@@ -119,56 +119,18 @@ void arch_prepare_shutdown(void)
 	iommu_prepare_shutdown();
 }
 
-void arch_suspend_cpu(unsigned int cpu_id)
-{
-	struct public_per_cpu *target_data = public_per_cpu(cpu_id);
-	bool target_suspended;
-
-	spin_lock(&target_data->control_lock);
-
-	target_data->suspend_cpu = true;
-	target_suspended = target_data->cpu_suspended;
-
-	spin_unlock(&target_data->control_lock);
-
-	if (!target_suspended) {
-		/*
-		 * Send a maintenance signal (NMI) to the target CPU.
-		 * Then, wait for the target CPU to enter the suspended state.
-		 * The target CPU, in turn, will leave the guest and handle the
-		 * request in the event loop.
-		 */
-		arch_send_event(target_data);
-
-		while (!target_data->cpu_suspended)
-			cpu_relax();
-	}
-}
-
-void arch_resume_cpu(unsigned int cpu_id)
-{
-	struct public_per_cpu *target_data = public_per_cpu(cpu_id);
-
-	/* take lock to avoid theoretical race with a pending suspension */
-	spin_lock(&target_data->control_lock);
-
-	target_data->suspend_cpu = false;
-
-	spin_unlock(&target_data->control_lock);
-}
-
 void arch_reset_cpu(unsigned int cpu_id)
 {
 	public_per_cpu(cpu_id)->sipi_vector = APIC_BSP_PSEUDO_SIPI;
 
-	arch_resume_cpu(cpu_id);
+	resume_cpu(cpu_id);
 }
 
 void arch_park_cpu(unsigned int cpu_id)
 {
 	public_per_cpu(cpu_id)->init_signaled = true;
 
-	arch_resume_cpu(cpu_id);
+	resume_cpu(cpu_id);
 }
 
 void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,

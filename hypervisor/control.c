@@ -20,6 +20,7 @@
 #include <jailhouse/unit.h>
 #include <jailhouse/utils.h>
 #include <asm/bitops.h>
+#include <asm/control.h>
 #include <asm/spinlock.h>
 
 enum msg_type {MSG_REQUEST, MSG_INFORMATION};
@@ -73,6 +74,63 @@ bool cpu_id_valid(unsigned long cpu_id)
 		test_bit(cpu_id, system_cpu_set));
 }
 
+/**
+ * Suspend a remote CPU.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * Suspension means that the target CPU is no longer executing cell code or
+ * arbitrary hypervisor code. It may actively busy-wait in the hypervisor
+ * context, so the suspension time should be kept short.
+ *
+ * The function waits for the target CPU to enter suspended state.
+ *
+ * This service can be used to synchronize with other CPUs before performing
+ * management tasks.
+ *
+ * @note This function must not be invoked for the caller's CPU.
+ *
+ * @see resume_cpu
+ * @see arch_reset_cpu
+ * @see arch_park_cpu
+ */
+static void suspend_cpu(unsigned int cpu_id)
+{
+	struct public_per_cpu *target_data = public_per_cpu(cpu_id);
+	bool target_suspended;
+
+	spin_lock(&target_data->control_lock);
+
+	target_data->suspend_cpu = true;
+	target_suspended = target_data->cpu_suspended;
+
+	spin_unlock(&target_data->control_lock);
+
+	if (!target_suspended) {
+		/*
+		 * Send a maintenance signal to the target CPU.
+		 * Then, wait for the target CPU to enter the suspended state.
+		 * The target CPU, in turn, will leave the guest and handle the
+		 * request in the event loop.
+		 */
+		arch_send_event(target_data);
+
+		while (!target_data->cpu_suspended)
+			cpu_relax();
+	}
+}
+
+void resume_cpu(unsigned int cpu_id)
+{
+	struct public_per_cpu *target_data = public_per_cpu(cpu_id);
+
+	/* take lock to avoid theoretical race with a pending suspension */
+	spin_lock(&target_data->control_lock);
+
+	target_data->suspend_cpu = false;
+
+	spin_unlock(&target_data->control_lock);
+}
+
 /*
  * Suspend all CPUs assigned to the cell except the one executing
  * the function (if it is in the cell's CPU set) to prevent races.
@@ -82,7 +140,7 @@ static void cell_suspend(struct cell *cell)
 	unsigned int cpu;
 
 	for_each_cpu_except(cpu, cell->cpu_set, this_cpu_id())
-		arch_suspend_cpu(cpu);
+		suspend_cpu(cpu);
 }
 
 static void cell_resume(struct cell *cell)
@@ -90,7 +148,7 @@ static void cell_resume(struct cell *cell)
 	unsigned int cpu;
 
 	for_each_cpu_except(cpu, cell->cpu_set, this_cpu_id())
-		arch_resume_cpu(cpu);
+		resume_cpu(cpu);
 }
 
 /**
