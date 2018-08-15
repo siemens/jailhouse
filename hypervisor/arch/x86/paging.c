@@ -12,7 +12,6 @@
 
 #include <jailhouse/paging.h>
 #include <jailhouse/string.h>
-#include <jailhouse/utils.h>
 #include <asm/vcpu.h>
 
 #define X86_FLAG_HUGEPAGE	0x80
@@ -36,7 +35,7 @@ static void x86_64_set_next_pt(pt_entry_t pte, unsigned long next_pt)
 
 static void x86_64_clear_entry(pt_entry_t pte)
 {
-	*pte = 0;
+	*pte = PAGE_NONPRESENT_FLAGS;
 }
 
 static bool x86_64_page_table_empty(page_table_t page_table)

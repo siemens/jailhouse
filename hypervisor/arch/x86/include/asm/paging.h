@@ -14,6 +14,7 @@
 #define _JAILHOUSE_ASM_PAGING_H
 
 #include <jailhouse/types.h>
+#include <jailhouse/utils.h>
 #include <asm/processor.h>
 
 #define PAGE_SHIFT		12
@@ -33,7 +34,11 @@
 #define PAGE_DEFAULT_FLAGS	(PAGE_FLAG_PRESENT | PAGE_FLAG_RW)
 #define PAGE_READONLY_FLAGS	PAGE_FLAG_PRESENT
 #define PAGE_PRESENT_FLAGS	PAGE_FLAG_PRESENT
-#define PAGE_NONPRESENT_FLAGS	0
+/*
+ * Set the higher physical address bits so that non-present mappings point to a
+ * non-existing physical address, hardening against the L1TF disaster.
+ */
+#define PAGE_NONPRESENT_FLAGS	(INVALID_PHYS_ADDR & BIT_MASK(51, 30))
 
 #define INVALID_PHYS_ADDR	(~0UL)
 
