@@ -65,7 +65,7 @@ void arch_suspend_cpu(unsigned int cpu_id)
 		 * The target CPU, in turn, will leave the guest and handle the
 		 * request in the event loop.
 		 */
-		arm_cpu_kick(cpu_id);
+		arch_send_event(target_data);
 
 		while (!target_data->cpu_suspended)
 			cpu_relax();

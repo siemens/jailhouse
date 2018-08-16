@@ -138,7 +138,7 @@ void arch_suspend_cpu(unsigned int cpu_id)
 		 * The target CPU, in turn, will leave the guest and handle the
 		 * request in the event loop.
 		 */
-		apic_send_nmi_ipi(target_data);
+		arch_send_event(target_data);
 
 		while (!target_data->cpu_suspended)
 			cpu_relax();

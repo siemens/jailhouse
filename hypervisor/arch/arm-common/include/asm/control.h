@@ -33,6 +33,11 @@ void arm_cpu_reset(unsigned long pc);
 void arm_cpu_park(void);
 void arm_cpu_kick(unsigned int cpu_id);
 
+static inline void arch_send_event(struct public_per_cpu *target_data)
+{
+	arm_cpu_kick(target_data->cpu_id);
+}
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_ASM_CONTROL_H */

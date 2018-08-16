@@ -67,6 +67,9 @@ static struct {
 	void (*send_ipi)(u32 apic_id, u32 icr_lo);
 } apic_ops;
 
+void arch_send_event(struct public_per_cpu *target_data)
+	__attribute__((alias("apic_send_nmi_ipi")));
+
 static u32 read_xapic(unsigned int reg)
 {
 	return mmio_read32(xapic_page + XAPIC_REG(reg));
