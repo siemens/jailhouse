@@ -52,16 +52,11 @@ firmware_install: $(DESTDIR)$(firmwaredir) modules
 tool_inmates_install: $(DESTDIR)$(libexecdir)/jailhouse
 	$(INSTALL_DATA) inmates/tools/$(ARCH)/*.bin $<
 
-pyjailhouse_install:
+install: modules_install firmware_install tool_inmates_install
+	$(Q)$(MAKE) -C tools $@ src=.
 ifeq ($(strip $(PYTHON_PIP_USABLE)), yes)
 	$(PIP) install --upgrade --force-reinstall $(PIP_ROOT) .
-else
-	@
 endif
-
-install: modules_install firmware_install tool_inmates_install \
-	pyjailhouse_install
-	$(Q)$(MAKE) -C tools $@ src=.
 
 .PHONY: modules_install install clean firmware_install modules tools docs \
 	docs_clean pyjailhouse_install
