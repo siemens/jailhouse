@@ -22,7 +22,10 @@ KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes -Werror \
 	-D__LINUX_COMPILER_TYPES_H \
 	-DJAILHOUSE_VERSION=\"$(shell cat $(src)/../VERSION)\" $(EXTRA_CFLAGS)
+# prior to 4.19
 LDFLAGS :=
+# since 4.19
+KBUILD_LDFLAGS :=
 
 # force no-pie for distro compilers that enable pie by default
 KBUILD_CFLAGS += $(call cc-option, -fno-pie)

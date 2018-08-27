@@ -36,7 +36,10 @@ KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif
 
 OBJCOPYFLAGS := -O binary
+# prior to 4.19
 LDFLAGS += --gc-sections -T
+# since 4.19
+KBUILD_LDFLAGS += --gc-sections -T
 
 subdir-y := lib/$(SRCARCH) demos/$(SRCARCH) tests/$(SRCARCH) tools/$(SRCARCH)
 
