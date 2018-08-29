@@ -12,24 +12,62 @@
 
 #include <inmate.h>
 
+#define MSR_SMI_COUNT		0x34
+
 #define POLLUTE_CACHE_SIZE	(512 * 1024)
 
 #define APIC_TIMER_VECTOR	32
 
 static unsigned long expected_time;
 static unsigned long min = -1, max;
+static bool has_smi_count;
+static u32 initial_smis;
+
+static const unsigned int smi_count_models[] = {
+	0x37, 0x4a, 0x4d, 0x5a, 0x5d, 0x5c, 0x7a,	/* Silvermont */
+	0x1a, 0x1e, 0x1f, 0x2e,				/* Nehalem */
+	0x2a, 0x2d,					/* Sandy Bridge */
+	0x57, 0x85,					/* Xeon Phi */
+	0
+};
+
+static bool cpu_has_smi_count(void)
+{
+	unsigned int family, model, smi_count_model, n = 0;
+	unsigned long eax;
+
+	asm volatile("cpuid" : "=a" (eax) : "a" (1)
+		: "rbx", "rcx", "rdx", "memory");
+	family = ((eax & 0xf00) >> 8) | ((eax & 0xff00000) >> 16);
+	model = ((eax & 0xf0) >> 4) | ((eax & 0xf0000) >> 12);
+	if (family == 0x6) {
+		do {
+			smi_count_model = smi_count_models[n++];
+			if (model == smi_count_model)
+				return true;
+		} while (smi_count_model != 0);
+	}
+	return false;
+}
 
 static void irq_handler(void)
 {
 	unsigned long delta;
+	u32 smis;
 
 	delta = tsc_read() - expected_time;
 	if (delta < min)
 		min = delta;
 	if (delta > max)
 		max = delta;
-	printk("Timer fired, jitter: %6ld ns, min: %6ld ns, max: %6ld ns\n",
+	printk("Timer fired, jitter: %6ld ns, min: %6ld ns, max: %6ld ns",
 	       delta, min, max);
+	if (has_smi_count) {
+		smis = (u32)read_msr(MSR_SMI_COUNT);
+		if (smis != initial_smis)
+			printk(", SMIs: %d", smis - initial_smis);
+	}
+	printk("\n");
 
 	expected_time += 100 * NS_PER_MSEC;
 	apic_timer_set(expected_time - tsc_read());
@@ -78,6 +116,12 @@ void inmate_main(void)
 	if (cache_pollution) {
 		mem = alloc(PAGE_SIZE, PAGE_SIZE);
 		printk("Cache pollution enabled\n");
+	}
+
+	has_smi_count = cpu_has_smi_count();
+	if (has_smi_count) {
+		initial_smis = (u32)read_msr(MSR_SMI_COUNT);
+		printk("Initial number of SMIs: %d\n", initial_smis);
 	}
 
 	tsc_freq = tsc_init();
