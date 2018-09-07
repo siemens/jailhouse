@@ -17,6 +17,11 @@ import os
 import struct
 import sys
 
+sys.path[0] = os.path.dirname(os.path.abspath(__file__)) + "/.."
+import pyjailhouse.sysfs_parser as sysfs_parser
+# Imports from directory containing this must be done above
+# import statement, see python documentation on sys.path[0]
+
 # just a dummy to make python2 happy
 if sys.version_info[0] < 3:
     class PermissionError(OSError):
@@ -156,7 +161,7 @@ class Sysconfig:
                          Sysconfig.PCIISVIRT_SIZE + Sysconfig.PCIDOMAIN_SIZE +
                          Sysconfig.X86_PADDING)
 
-        keys = 'base size amd_bdf amd_base_cap amd_features'
+        keys = 'base_addr mmio_size amd_bdf amd_base_cap amd_features'
         IOMMU = collections.namedtuple('IOMMU', keys)
 
         iommus = []
@@ -167,23 +172,13 @@ class Sysconfig:
         return iommus
 
 
-def usage(exit_code):
-    prog = os.path.basename(sys.argv[0]).replace('-', ' ')
-    print('usage: %s SYSCONFIG' % prog)
-    sys.exit(exit_code)
-
-
-if len(sys.argv) != 2:
-    usage(1)
-if sys.argv[1] in ("--help", "-h"):
-    usage(0)
-
 if os.uname()[4] not in ('x86_64', 'i686'):
     print('Unsupported architecture', file=sys.stderr)
     sys.exit(1)
 
-config = Sysconfig(sys.argv[1])
-iommu = config.parse_iommus()
+
+ioapics = sysfs_parser.parse_madt()
+pci_devices, _, _ = sysfs_parser.parse_pcidevices()
 
 (cpu_vendor, cpu_features, cpu_count) = parse_cpuinfo()
 
@@ -199,6 +194,9 @@ check_feature('Number of CPUs > 1', cpu_count > 1)
 check_feature('Long mode', 'lm' in cpu_features)
 
 if cpu_vendor == 'GenuineIntel':
+    _, dmar_regions = sysfs_parser.parse_iomem(pci_devices)
+    iommu, _ = sysfs_parser.parse_dmar(pci_devices, ioapics, dmar_regions)
+
     check_feature('x2APIC', 'x2apic' in cpu_features, True)
     print()
     check_feature('VT-x (VMX)', 'vmx' in cpu_features)
@@ -248,14 +246,14 @@ if cpu_vendor == 'GenuineIntel':
     check_feature('  Activity state HLT',
                   msr.read(MSR.IA32_VMX_MISC) & (1 << 6))
 
-    for n in range(8):
-        if iommu[n].base == 0 and n > 0:
+    for n in range(len(iommu)):
+        if iommu[n].base_addr == 0 and n > 0:
             break
         print()
-        check_feature('VT-d (IOMMU #%d)' % n, iommu[n].base)
-        if iommu[n].base == 0:
+        check_feature('VT-d (IOMMU #%d)' % n, iommu[n].base_addr)
+        if iommu[n].base_addr == 0:
             break
-        mmio = MMIO(iommu[n].base, iommu[n].size)
+        mmio = MMIO(iommu[n].base_addr, iommu[n].mmio_size)
         cap = mmio.read64(0x08)
         if cap is None:
             continue
@@ -270,6 +268,8 @@ if cpu_vendor == 'GenuineIntel':
                       'x2apic' not in cpu_features)
 
 elif cpu_vendor == 'AuthenticAMD':
+    iommu, _ = sysfs_parser.parse_ivrs(pci_devices, ioapics)
+
     print()
     check_feature('AMD-V (SVM)', 'svm' in cpu_features)
     check_feature('  NPT', 'npt' in cpu_features)
@@ -277,12 +277,12 @@ elif cpu_vendor == 'AuthenticAMD':
     check_feature('  AVIC', 'avic' in cpu_features, True)
     check_feature('  Flush by ASID', 'flushbyasid' in cpu_features, True)
 
-    for n in range(8):
-        if iommu[n].base == 0 and n > 0:
+    for n in range(len(iommu)):
+        if iommu[n].base_addr == 0 and n > 0:
             break
         print()
-        check_feature('AMD-Vi (IOMMU #%d)' % n, iommu[n].base)
-        if iommu[n].base == 0:
+        check_feature('AMD-Vi (IOMMU #%d)' % n, iommu[n].base_addr)
+        if iommu[n].base_addr == 0:
             break
 
         bdf = iommu[n].amd_bdf
@@ -295,9 +295,9 @@ elif cpu_vendor == 'AuthenticAMD':
         check_feature('  Extended feature register', caps & (1 << 27))
         check_feature('  Valid base register',
                       (base & (1 << 0)) == 0 or
-                      base == (iommu[n].base | (1 << 0)))
+                      base == (iommu[n].base_addr | (1 << 0)))
 
-        mmio = MMIO(iommu[n].base, iommu[n].size)
+        mmio = MMIO(iommu[n].base_addr, iommu[n].mmio_size)
         efr = mmio.read64(0x30)
         if efr is None:
             continue
