@@ -25,6 +25,7 @@ if sys.version_info[0] < 3:
 check_passed = True
 ran_all = True
 
+
 def check_feature(msg, ok, optional=False):
     if not (ok or optional):
         global check_passed
