@@ -222,20 +222,18 @@ each additional cell besides the primary Linux. These .cell files have to be
 passed to the jailhouse command line tool for enabling the hypervisor or
 creating new cells.
 
-On x86 a system configuration can be created on the target system by running
-the following command:
+On x86, the required hardware capabilities can be validated by running
+
+    jailhouse hardware check
+
+A system configuration can be created on an x86 target system by running the
+following command:
 
     jailhouse config create sysconfig.c
 
 In order to translate this into the required binary form, place this file in
 the configs/x86/ directory. The build system will pick up every .c file from
 there and generate a corresponding .cell file.
-
-On x86 the hardware capabilities can be validated by running
-
-    jailhouse hardware check sysconfig.cell
-
-providing the binary system configuration created for the target.
 
 Currently, there is no config generator for the ARM architecture; therefore the
 config file must be manually written by starting from the reference examples
