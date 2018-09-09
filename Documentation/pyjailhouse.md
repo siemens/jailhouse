@@ -53,8 +53,7 @@ For the example, the following wouldn't work inside of boz.py:
 **Boilerplate code, with sys.path[0] warning**
 
 `
+# Imports from directory containing this must be done before the following
 sys.path[0] = os.path.dirname(os.path.abspath(__file__)) + ""
-from pyjailhouse import
-# Imports from directory containing this must be done above
-# import statement, see python documentation on sys.path[0]
+from pyjailhouse import *
 `

@@ -17,10 +17,9 @@ import os
 import struct
 import sys
 
+# Imports from directory containing this must be done before the following
 sys.path[0] = os.path.dirname(os.path.abspath(__file__)) + "/.."
 from pyjailhouse.cell import JailhouseCell
-# Imports from directory containing this must be done above
-# import statement, see python documentation on sys.path[0]
 
 libexecdir = None
 
