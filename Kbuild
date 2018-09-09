@@ -54,4 +54,7 @@ $(obj)/driver $(obj)/hypervisor: $(GEN_VERSION_H)
 
 endif
 
-clean-dirs := Documentation/generated hypervisor/include/generated
+clean-files := pyjailhouse/*.pyc
+
+clean-dirs := Documentation/generated hypervisor/include/generated \
+	      pyjailhouse/__pycache__
