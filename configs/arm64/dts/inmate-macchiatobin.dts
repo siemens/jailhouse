@@ -1,0 +1,106 @@
+/*
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate test on MACCHIATObin,
+ * corresponds to configs/arm64/macchiatobin-linux-demo.c
+ *
+ * Copyright (c) Siemens AG, 2016-2018
+ *
+ * Authors:
+ *  Jan Kiszka <jan.kiszka@siemens.com>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/dts-v1/;
+
+/ {
+	model = "Jailhouse cell on MACCHIATObin";
+
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	interrupt-parent = <&gic>;
+
+	hypervisor {
+		compatible = "jailhouse,cell";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@100 {
+			compatible = "arm,cortex-a72", "arm,armv8";
+			device_type = "cpu";
+			reg = <0x100>;
+			enable-method = "psci";
+		};
+		cpu@101 {
+			compatible = "arm,cortex-a72", "arm,armv8";
+			device_type = "cpu";
+			reg = <0x101>;
+			enable-method = "psci";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	gic: interrupt-controller@f0210000 {
+		compatible = "arm,gic-400";
+		#interrupt-cells = <3>;
+		interrupt-controller;
+		reg = <0x0 0xf0210000 0x0 0x10000>, /* GICD */
+		      <0x0 0xf022f000 0x0 0x20000>; /* GICC */
+	};
+
+	ap_syscon: system-controller@f06f4000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0 0xf06f4000 0 0x2000>;
+
+		ap_clk: clock {
+			compatible = "marvell,ap806-clock";
+			#clock-cells = <1>;
+		};
+	};
+
+	uart0: serial@f0512000 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0 0xf0512000 0 0x100>;
+		reg-shift = <2>;
+		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
+		reg-io-width = <1>;
+		clocks = <&ap_clk 3>;
+	};
+
+	pci@fc000000 {
+		compatible = "pci-host-ecam-generic";
+		device_type = "pci";
+		bus-range = <0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 80 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 2 &gic GIC_SPI 81 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 3 &gic GIC_SPI 82 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 4 &gic GIC_SPI 83 IRQ_TYPE_EDGE_RISING>;
+		reg = <0x0 0xfc000000 0x0 0x100000>;
+		ranges =
+			<0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+	};
+};
