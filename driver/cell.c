@@ -220,6 +220,19 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 	/* Off-line each CPU assigned to the new cell and remove it from the
 	 * root cell's set. */
 	for_each_cpu(cpu, &cell->cpus_assigned) {
+#ifdef CONFIG_X86
+		if (cpu == 0) {
+			/*
+			 * On x86, Linux only parks CPU 0 when offlining it and
+			 * expects to be able to get it back by sending an IPI.
+			 * This is not support by Jailhouse wich destroys the
+			 * CPU state across non-root assignments.
+			 */
+			pr_err("Cannot assign CPU 0 to other cells\n");
+			err = -EINVAL;
+			goto error_cpu_online;
+		}
+#endif
 		if (cpu_online(cpu)) {
 			err = cpu_down(cpu);
 			if (err)
