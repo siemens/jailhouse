@@ -382,8 +382,11 @@ static void apic_send_ipi(unsigned int target_cpu_id, u32 orig_icr_hi,
 
 	switch (icr_lo & APIC_ICR_DLVR_MASK) {
 	case APIC_ICR_DLVR_NMI:
-		/* TODO: must be sent via hypervisor */
-		printk("Ignoring NMI IPI\n");
+		/*
+		 * Correctly virtualized NMI injection is a non-trivial task,
+		 * specifically on AMD. Therefore, we ignore NMI IPIs for now.
+		 */
+		printk("Ignoring NMI IPI to CPU %d\n", target_cpu_id);
 		break;
 	case APIC_ICR_DLVR_INIT:
 		x86_send_init_sipi(target_cpu_id, X86_INIT, -1);
