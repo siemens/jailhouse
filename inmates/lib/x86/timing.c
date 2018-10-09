@@ -72,7 +72,7 @@ static u64 rdtsc(void)
 #endif
 }
 
-unsigned long tsc_read(void)
+unsigned long tsc_read_ns(void)
 {
 	unsigned int cpu = cpu_id();
 	unsigned long tmr;

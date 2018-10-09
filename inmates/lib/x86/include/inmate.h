@@ -239,7 +239,7 @@ void hypercall_init(void);
 
 unsigned long pm_timer_read(void);
 
-unsigned long tsc_read(void);
+unsigned long tsc_read_ns(void);
 unsigned long tsc_init(void);
 
 void delay_us(unsigned long microsecs);
