@@ -1160,15 +1160,16 @@ void vcpu_vendor_get_mmio_intercept(struct vcpu_mmio_intercept *mmio)
 void vcpu_handle_exit(struct per_cpu *cpu_data)
 {
 	u32 reason = vmcs_read32(VM_EXIT_REASON);
+	u32 *stats = cpu_data->public.stats;
 
-	cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
+	stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]++;
 
 	switch (reason) {
 	case EXIT_REASON_EXCEPTION_NMI:
 		vmx_handle_exception_nmi();
 		return;
 	case EXIT_REASON_PREEMPTION_TIMER:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
 		vmx_check_events();
 		return;
 	case EXIT_REASON_CPUID:
@@ -1178,17 +1179,17 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		vcpu_handle_hypercall();
 		return;
 	case EXIT_REASON_CR_ACCESS:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_CR]++;
 		if (vmx_handle_cr())
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (vcpu_handle_msr_read())
 			return;
 		break;
 	case EXIT_REASON_MSR_WRITE:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (cpu_data->guest_regs.rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
 			/* ignore writes */
 			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
@@ -1197,22 +1198,22 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_APIC_ACCESS:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_XAPIC]++;
 		if (vmx_handle_apic_access())
 			return;
 		break;
 	case EXIT_REASON_XSETBV:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_XSETBV]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_XSETBV]++;
 		if (vmx_handle_xsetbv())
 			return;
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_PIO]++;
 		if (vcpu_handle_io_access())
 			return;
 		break;
 	case EXIT_REASON_EPT_VIOLATION:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MMIO]++;
 		if (vcpu_handle_mmio_access())
 			return;
 		break;
