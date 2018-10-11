@@ -550,16 +550,19 @@ bool x2apic_handle_write(void)
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 	u32 val = guest_regs->rax;
 
-	stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
-
 	if (apic_accessing_reserved_bits(reg, val))
 		return false;
+
+	if (reg == APIC_REG_ICR) {
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_X2APIC_ICR]++;
+		return apic_handle_icr_write(val, guest_regs->rdx);
+	}
+
+	stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 
 	if (reg == APIC_REG_SELF_IPI)
 		/* TODO: emulate */
 		printk("Unhandled x2APIC self IPI write\n");
-	else if (reg == APIC_REG_ICR)
-		return apic_handle_icr_write(val, guest_regs->rdx);
 	else if (reg >= APIC_REG_LVTCMCI && reg <= APIC_REG_LVTERR &&
 		 apic_invalid_lvt_delivery_mode(reg, val))
 		return false;
@@ -575,16 +578,18 @@ void x2apic_handle_read(void)
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 	u32 *stats = this_cpu_public()->stats;
 
-	stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
-
 	if (reg == APIC_REG_ID)
 		guest_regs->rax = apic_ops.read_id();
 	else
 		guest_regs->rax = apic_ops.read(reg);
 
-	guest_regs->rdx = 0;
-	if (reg == APIC_REG_ICR)
+	if (reg == APIC_REG_ICR) {
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_X2APIC_ICR]++;
 		guest_regs->rdx = apic_ops.read(reg + 1);
+	} else {
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
+		guest_regs->rdx = 0;
+	}
 }
 
 /**
