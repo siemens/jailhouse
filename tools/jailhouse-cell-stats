@@ -111,7 +111,8 @@ try:
                 cell_id = int(id)
                 break
 
-    stats_names = os.listdir(stats_dir % cell_id)
+    entries = os.listdir(stats_dir % cell_id)
+    stats_names = [d for d in entries if d.startswith("vmexits_")]
 except OSError as e:
     print("reading stats: %s" % e.strerror, file=sys.stderr)
     exit(1)
