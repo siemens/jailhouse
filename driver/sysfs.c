@@ -104,13 +104,15 @@ JAILHOUSE_CPU_STATS_ATTR(vmexits_hypercall,
 JAILHOUSE_CPU_STATS_ATTR(vmexits_pio, JAILHOUSE_CPU_STAT_VMEXITS_PIO);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_xapic, JAILHOUSE_CPU_STAT_VMEXITS_XAPIC);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_cr, JAILHOUSE_CPU_STAT_VMEXITS_CR);
-JAILHOUSE_CPU_STATS_ATTR(vmexits_msr, JAILHOUSE_CPU_STAT_VMEXITS_MSR);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_cpuid, JAILHOUSE_CPU_STAT_VMEXITS_CPUID);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_xsetbv, JAILHOUSE_CPU_STAT_VMEXITS_XSETBV);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_exception,
 			 JAILHOUSE_CPU_STAT_VMEXITS_EXCEPTION);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_msr_other,
+			 JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER);
 #elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-JAILHOUSE_CPU_STATS_ATTR(vmexits_maintenance, JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_maintenance,
+			 JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_virt_irq, JAILHOUSE_CPU_STAT_VMEXITS_VIRQ);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_virt_sgi, JAILHOUSE_CPU_STAT_VMEXITS_VSGI);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_psci, JAILHOUSE_CPU_STAT_VMEXITS_PSCI);
@@ -128,10 +130,10 @@ static struct attribute *no_attrs[] = {
 	&vmexits_pio_attr.kattr.attr,
 	&vmexits_xapic_attr.kattr.attr,
 	&vmexits_cr_attr.kattr.attr,
-	&vmexits_msr_attr.kattr.attr,
 	&vmexits_cpuid_attr.kattr.attr,
 	&vmexits_xsetbv_attr.kattr.attr,
 	&vmexits_exception_attr.kattr.attr,
+	&vmexits_msr_other_attr.kattr.attr,
 #elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 	&vmexits_maintenance_attr.kattr.attr,
 	&vmexits_virt_irq_attr.kattr.attr,

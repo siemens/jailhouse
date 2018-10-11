@@ -924,7 +924,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		vcpu_handle_cpuid();
 		goto vmentry;
 	case VMEXIT_MSR:
-		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (!vmcb->exitinfo1)
 			res = vcpu_handle_msr_read();
 		else

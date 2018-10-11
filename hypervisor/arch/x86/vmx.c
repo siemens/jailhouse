@@ -1183,12 +1183,12 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (vcpu_handle_msr_read())
 			return;
 		break;
 	case EXIT_REASON_MSR_WRITE:
-		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR]++;
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (cpu_data->guest_regs.rcx == MSR_IA32_PERF_GLOBAL_CTRL) {
 			/* ignore writes */
 			vcpu_skip_emulated_instruction(X86_INST_LEN_WRMSR);
