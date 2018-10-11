@@ -795,6 +795,7 @@ static bool svm_handle_msr_write(struct per_cpu *cpu_data)
 	unsigned long efer;
 
 	if (cpu_data->guest_regs.rcx == MSR_EFER) {
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		/* Never let a guest to disable SVME; see APMv2, Sect. 3.1.7 */
 		efer = get_wrmsr_value(&cpu_data->guest_regs) | EFER_SVME;
 		/* Flush TLB on LME/NXE change: See APMv2, Sect. 15.16 */
@@ -924,7 +925,6 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		vcpu_handle_cpuid();
 		goto vmentry;
 	case VMEXIT_MSR:
-		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (!vmcb->exitinfo1)
 			res = vcpu_handle_msr_read();
 		else

@@ -546,8 +546,11 @@ unsigned int apic_mmio_access(const struct guest_paging_structures *pg_structs,
 bool x2apic_handle_write(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
+	u32 *stats = this_cpu_public()->stats;
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
 	u32 val = guest_regs->rax;
+
+	stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 
 	if (apic_accessing_reserved_bits(reg, val))
 		return false;
@@ -570,6 +573,9 @@ void x2apic_handle_read(void)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
 	u32 reg = guest_regs->rcx - MSR_X2APIC_BASE;
+	u32 *stats = this_cpu_public()->stats;
+
+	stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 
 	if (reg == APIC_REG_ID)
 		guest_regs->rax = apic_ops.read_id();

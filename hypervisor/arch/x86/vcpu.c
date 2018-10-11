@@ -274,9 +274,11 @@ bool vcpu_handle_msr_read(void)
 		x2apic_handle_read();
 		break;
 	case MSR_IA32_PAT:
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		set_rdmsr_value(&cpu_data->guest_regs, cpu_data->pat);
 		break;
 	case MSR_IA32_MTRR_DEF_TYPE:
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		set_rdmsr_value(&cpu_data->guest_regs,
 				cpu_data->mtrr_def_type);
 		break;
@@ -302,6 +304,7 @@ bool vcpu_handle_msr_write(void)
 			return false;
 		break;
 	case MSR_IA32_PAT:
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		val = get_wrmsr_value(&cpu_data->guest_regs);
 		for (bit_pos = 0; bit_pos < 64; bit_pos += 8) {
 			pa = (val >> bit_pos) & 0xff;
@@ -316,6 +319,7 @@ bool vcpu_handle_msr_write(void)
 			vcpu_vendor_set_guest_pat(val);
 		break;
 	case MSR_IA32_MTRR_DEF_TYPE:
+		cpu_data->public.stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		/*
 		 * This only emulates the difference between MTRRs enabled
 		 * and disabled. When disabled, we turn off all caching by
