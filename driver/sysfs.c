@@ -67,13 +67,14 @@ struct jailhouse_cpu_stats_attr {
 	unsigned int code;
 };
 
-static ssize_t stats_show(struct kobject *kobj, struct kobj_attribute *attr,
-			  char *buffer)
+static ssize_t cell_stats_show(struct kobject *kobj,
+			       struct kobj_attribute *attr,
+			       char *buffer)
 {
 	struct jailhouse_cpu_stats_attr *stats_attr =
 		container_of(attr, struct jailhouse_cpu_stats_attr, kattr);
 	unsigned int code = JAILHOUSE_CPU_INFO_STAT_BASE + stats_attr->code;
-	struct cell *cell = container_of(kobj, struct cell, kobj);
+	struct cell *cell = container_of(kobj, struct cell, stats_kobj);
 	unsigned long sum = 0;
 	unsigned int cpu;
 	int value;
@@ -89,8 +90,9 @@ static ssize_t stats_show(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 #define JAILHOUSE_CPU_STATS_ATTR(_name, _code) \
-	static struct jailhouse_cpu_stats_attr _name##_attr = { \
-		.kattr = __ATTR(_name, S_IRUGO, stats_show, NULL), \
+	static struct jailhouse_cpu_stats_attr _name##_cell_attr = { \
+		.kattr = __ATTR(_name, S_IRUGO, cell_stats_show, NULL), \
+		.code = _code, \
 		.code = _code, \
 	}
 
@@ -123,35 +125,35 @@ JAILHOUSE_CPU_STATS_ATTR(vmexits_cp15, JAILHOUSE_CPU_STAT_VMEXITS_CP15);
 #endif
 #endif
 
-static struct attribute *no_attrs[] = {
-	&vmexits_total_attr.kattr.attr,
-	&vmexits_mmio_attr.kattr.attr,
-	&vmexits_management_attr.kattr.attr,
-	&vmexits_hypercall_attr.kattr.attr,
+static struct attribute *cell_stats_attrs[] = {
+	&vmexits_total_cell_attr.kattr.attr,
+	&vmexits_mmio_cell_attr.kattr.attr,
+	&vmexits_management_cell_attr.kattr.attr,
+	&vmexits_hypercall_cell_attr.kattr.attr,
 #ifdef CONFIG_X86
-	&vmexits_pio_attr.kattr.attr,
-	&vmexits_xapic_attr.kattr.attr,
-	&vmexits_cr_attr.kattr.attr,
-	&vmexits_cpuid_attr.kattr.attr,
-	&vmexits_xsetbv_attr.kattr.attr,
-	&vmexits_exception_attr.kattr.attr,
-	&vmexits_msr_other_attr.kattr.attr,
-	&vmexits_msr_x2apic_icr_attr.kattr.attr,
+	&vmexits_pio_cell_attr.kattr.attr,
+	&vmexits_xapic_cell_attr.kattr.attr,
+	&vmexits_cr_cell_attr.kattr.attr,
+	&vmexits_cpuid_cell_attr.kattr.attr,
+	&vmexits_xsetbv_cell_attr.kattr.attr,
+	&vmexits_exception_cell_attr.kattr.attr,
+	&vmexits_msr_other_cell_attr.kattr.attr,
+	&vmexits_msr_x2apic_icr_cell_attr.kattr.attr,
 #elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-	&vmexits_maintenance_attr.kattr.attr,
-	&vmexits_virt_irq_attr.kattr.attr,
-	&vmexits_virt_sgi_attr.kattr.attr,
-	&vmexits_psci_attr.kattr.attr,
+	&vmexits_maintenance_cell_attr.kattr.attr,
+	&vmexits_virt_irq_cell_attr.kattr.attr,
+	&vmexits_virt_sgi_cell_attr.kattr.attr,
+	&vmexits_psci_cell_attr.kattr.attr,
 #ifdef CONFIG_ARM
-	&vmexits_cp15_attr.kattr.attr,
+	&vmexits_cp15_cell_attr.kattr.attr,
 #endif
 #endif
 	NULL
 };
 
-static struct attribute_group stats_attr_group = {
-	.attrs = no_attrs,
-	.name = "statistics"
+static struct kobj_type cell_stats_type = {
+	.sysfs_ops = &kobj_sysfs_ops,
+	.default_attrs = cell_stats_attrs,
 };
 
 static int print_cpumask(char *buf, size_t size, cpumask_t *mask, bool as_list)
@@ -296,8 +298,10 @@ int jailhouse_sysfs_cell_create(struct cell *cell)
 		return err;
 	}
 
-	err = sysfs_create_group(&cell->kobj, &stats_attr_group);
+	err = kobject_init_and_add(&cell->stats_kobj, &cell_stats_type,
+				   &cell->kobj, "%s", "statistics");
 	if (err) {
+		jailhouse_cell_kobj_release(&cell->stats_kobj);
 		kobject_put(&cell->kobj);
 		return err;
 	}
@@ -312,7 +316,7 @@ void jailhouse_sysfs_cell_register(struct cell *cell)
 
 void jailhouse_sysfs_cell_delete(struct cell *cell)
 {
-	sysfs_remove_group(&cell->kobj, &stats_attr_group);
+	kobject_put(&cell->stats_kobj);
 	kobject_put(&cell->kobj);
 }
 

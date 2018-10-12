@@ -24,6 +24,7 @@
 
 struct cell {
 	struct kobject kobj;
+	struct kobject stats_kobj;
 	struct list_head entry;
 	unsigned int id;
 	char name[JAILHOUSE_CELL_ID_NAMELEN+1];
