@@ -22,14 +22,17 @@ can be used for monitoring the state of the hypervisor and its cells.
    |  |- cpus_failed_list       - human readable list of logical CPUs that
    |  |                           caused a failure
    |  `- statistics
-   |     |- vmexits_total       - Total number of VM exits
-   |     `- vmexits_<reason>    - VM exits due to <reason>
+   |     |- cpu<n>
+   |     |  |- vmexits_total    - Total number of VM exits on CPU <n>
+   |     |  `- vmexits_<reason> - VM exits due to <reason> on CPU <n>
+   |     |- vmexits_total       - Total number of VM exits on all cell CPUs
+   |     `- vmexits_<reason>    - VM exits due to <reason> on all cell CPUs
    `- ...
 
-Note that statistics are accumulated non-atomically over all CPUs of a cell and
-may not reflect a fully consistent state. The existence and semantics of VM
-exit reason values are architecture-dependent and may change in future
-versions. In general statistics shall only be considered as a first hint when
-analyzing cell behavior.
+Note that accumulated statistics over all CPUs of a cell are not collected
+atomically and may not reflect a fully consistent state. The existence and
+semantics of VM exit reason values are architecture-dependent and may change in
+future versions. In general statistics shall only be considered as a first hint
+when analyzing cell behavior.
 
 [1] Documentation/debug-output.md

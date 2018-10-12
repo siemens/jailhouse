@@ -143,6 +143,7 @@ void jailhouse_cell_register_root(void)
 void jailhouse_cell_delete_root(void)
 {
 	cell_delete(root_cell);
+	root_cell = NULL;
 }
 
 int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)

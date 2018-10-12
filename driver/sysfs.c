@@ -21,6 +21,7 @@
 #include <linux/version.h>
 #include <linux/gfp.h>
 #include <linux/stat.h>
+#include <linux/slab.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
 #define DEVICE_ATTR_RO(_name) \
@@ -62,6 +63,12 @@ static const struct sysfs_ops cell_sysfs_ops = {
 
 static struct kobject *cells_dir;
 
+struct cell_cpu {
+	struct kobject kobj;
+	struct list_head entry;
+	unsigned int cpu;
+};
+
 struct jailhouse_cpu_stats_attr {
 	struct kobj_attribute kattr;
 	unsigned int code;
@@ -89,10 +96,31 @@ static ssize_t cell_stats_show(struct kobject *kobj,
 	return sprintf(buffer, "%lu\n", sum);
 }
 
+static ssize_t cpu_stats_show(struct kobject *kobj,
+			      struct kobj_attribute *attr,
+			      char *buffer)
+{
+	struct jailhouse_cpu_stats_attr *stats_attr =
+		container_of(attr, struct jailhouse_cpu_stats_attr, kattr);
+	unsigned int code = JAILHOUSE_CPU_INFO_STAT_BASE + stats_attr->code;
+	struct cell_cpu *cell_cpu = container_of(kobj, struct cell_cpu, kobj);
+	int value;
+
+	value = jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cell_cpu->cpu,
+				    code);
+	if (value < 0)
+		value = 0;
+
+	return sprintf(buffer, "%d\n", value);
+}
+
 #define JAILHOUSE_CPU_STATS_ATTR(_name, _code) \
 	static struct jailhouse_cpu_stats_attr _name##_cell_attr = { \
 		.kattr = __ATTR(_name, S_IRUGO, cell_stats_show, NULL), \
 		.code = _code, \
+	}; \
+	static struct jailhouse_cpu_stats_attr _name##_cpu_attr = { \
+		.kattr = __ATTR(_name, S_IRUGO, cpu_stats_show, NULL), \
 		.code = _code, \
 	}
 
@@ -154,6 +182,37 @@ static struct attribute *cell_stats_attrs[] = {
 static struct kobj_type cell_stats_type = {
 	.sysfs_ops = &kobj_sysfs_ops,
 	.default_attrs = cell_stats_attrs,
+};
+
+static struct attribute *cpu_stats_attrs[] = {
+	&vmexits_total_cpu_attr.kattr.attr,
+	&vmexits_mmio_cpu_attr.kattr.attr,
+	&vmexits_management_cpu_attr.kattr.attr,
+	&vmexits_hypercall_cpu_attr.kattr.attr,
+#ifdef CONFIG_X86
+	&vmexits_pio_cpu_attr.kattr.attr,
+	&vmexits_xapic_cpu_attr.kattr.attr,
+	&vmexits_cr_cpu_attr.kattr.attr,
+	&vmexits_cpuid_cpu_attr.kattr.attr,
+	&vmexits_xsetbv_cpu_attr.kattr.attr,
+	&vmexits_exception_cpu_attr.kattr.attr,
+	&vmexits_msr_other_cpu_attr.kattr.attr,
+	&vmexits_msr_x2apic_icr_cpu_attr.kattr.attr,
+#elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	&vmexits_maintenance_cpu_attr.kattr.attr,
+	&vmexits_virt_irq_cpu_attr.kattr.attr,
+	&vmexits_virt_sgi_cpu_attr.kattr.attr,
+	&vmexits_psci_cpu_attr.kattr.attr,
+#ifdef CONFIG_ARM
+	&vmexits_cp15_cpu_attr.kattr.attr,
+#endif
+#endif
+	NULL
+};
+
+static struct kobj_type cell_cpu_type = {
+	.sysfs_ops = &kobj_sysfs_ops,
+	.default_attrs = cpu_stats_attrs,
 };
 
 static int print_cpumask(char *buf, size_t size, cpumask_t *mask, bool as_list)
@@ -287,8 +346,21 @@ static struct kobj_type cell_type = {
 	.default_attrs = cell_attrs,
 };
 
+static struct cell_cpu *find_cell_cpu(struct cell *cell, unsigned int cpu)
+{
+	struct cell_cpu *cell_cpu;
+
+	list_for_each_entry(cell_cpu, &root_cell->cell_cpus, entry)
+		if (cell_cpu->cpu == cpu)
+			return cell_cpu;
+
+	return NULL;
+}
+
 int jailhouse_sysfs_cell_create(struct cell *cell)
 {
+	struct cell_cpu *cell_cpu;
+	unsigned int cpu;
 	int err;
 
 	err = kobject_init_and_add(&cell->kobj, &cell_type, cells_dir, "%d",
@@ -306,6 +378,43 @@ int jailhouse_sysfs_cell_create(struct cell *cell)
 		return err;
 	}
 
+	INIT_LIST_HEAD(&cell->cell_cpus);
+
+	for_each_cpu(cpu, &cell->cpus_assigned) {
+		if (root_cell == NULL) {
+			cell_cpu = kzalloc(sizeof(struct cell_cpu), GFP_KERNEL);
+			if (cell_cpu == NULL) {
+				jailhouse_sysfs_cell_delete(cell);
+				return -ENOMEM;
+			}
+
+			cell_cpu->cpu = cpu;
+
+			err = kobject_init_and_add(&cell_cpu->kobj,
+						   &cell_cpu_type,
+						   &cell->stats_kobj,
+						   "cpu%u", cpu);
+			if (err) {
+				jailhouse_cell_kobj_release(&cell_cpu->kobj);
+				kfree(cell_cpu);
+				jailhouse_sysfs_cell_delete(cell);
+				return err;
+			}
+			list_add_tail(&cell_cpu->entry, &cell->cell_cpus);
+		} else {
+			cell_cpu = find_cell_cpu(root_cell, cpu);
+			if (WARN_ON(cell_cpu == NULL))
+				continue;
+
+			err = kobject_move(&cell_cpu->kobj, &cell->stats_kobj);
+			if (WARN_ON(err))
+				continue;
+
+			list_del(&cell_cpu->entry);
+			list_add_tail(&cell_cpu->entry, &cell->cell_cpus);
+		}
+	}
+
 	return 0;
 }
 
@@ -316,6 +425,28 @@ void jailhouse_sysfs_cell_register(struct cell *cell)
 
 void jailhouse_sysfs_cell_delete(struct cell *cell)
 {
+	struct cell_cpu *cell_cpu, *tmp;
+	int err;
+
+	if (cell == root_cell) {
+		list_for_each_entry_safe(cell_cpu, tmp, &cell->cell_cpus,
+					 entry) {
+			list_del(&cell_cpu->entry);
+			kobject_put(&cell_cpu->kobj);
+			kfree(cell_cpu);
+		}
+	} else {
+		list_for_each_entry_safe(cell_cpu, tmp, &cell->cell_cpus,
+					 entry) {
+			err = kobject_move(&cell_cpu->kobj,
+					   &root_cell->stats_kobj);
+			if (WARN_ON(err))
+				continue;
+
+			list_del(&cell_cpu->entry);
+			list_add_tail(&cell_cpu->entry, &root_cell->cell_cpus);
+		}
+	}
 	kobject_put(&cell->stats_kobj);
 	kobject_put(&cell->kobj);
 }
