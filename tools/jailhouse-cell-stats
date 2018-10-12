@@ -21,21 +21,26 @@ cell_dir  = cells_dir + "%d/"
 stats_dir = cell_dir + "statistics/"
 
 
-def main(stdscr, cell_id, cell_name, stats_names):
+def main(stdscr, cell_id, cell_name, stats_names, cpus):
+    def reset_stats():
+        curses.halfdelay(10)
+        return dict.fromkeys(stats_names, None)
+
     try:
         curses.use_default_colors()
         curses.curs_set(0)
     except curses.error:
         pass
     curses.noecho()
-    curses.halfdelay(10)
     value = dict.fromkeys(stats_names)
-    old_value = dict.fromkeys(stats_names, None)
+    old_value = reset_stats()
+    cpu = -1
     while True:
         now = datetime.datetime.now()
 
         for name in stats_names:
-            f = open((stats_dir + "/%s") % (cell_id, name), "r")
+            cpu_dir = ("/cpu%d" % cpus[cpu]) if cpu >= 0 else ""
+            f = open((stats_dir + cpu_dir + "/%s") % (cell_id, name), "r")
             value[name] = int(f.read())
 
         def sortkey(name):
@@ -48,7 +53,11 @@ def main(stdscr, cell_id, cell_name, stats_names):
         stdscr.addstr(0, 0, "Statistics for %s cell" % cell_name)
         (height, width) = stdscr.getmaxyx()
         stdscr.hline(2, 0, " ", width, curses.A_REVERSE)
-        stdscr.addstr(2, 0, "COUNTER", curses.A_REVERSE)
+        stdscr.addstr(2, 0, "COUNTER ", curses.A_REVERSE)
+        if cpu >= 0:
+            stdscr.addstr(2, 8, "(CPU %d)" % cpus[cpu], curses.A_REVERSE)
+        else:
+            stdscr.addstr(2, 8, "(All CPUs)", curses.A_REVERSE)
         stdscr.addstr(2, 30, "%10s" % "SUM", curses.A_REVERSE)
         stdscr.addstr(2, 40, "%10s" % "PER SEC", curses.A_REVERSE)
         line = 3
@@ -62,15 +71,25 @@ def main(stdscr, cell_id, cell_name, stats_names):
             old_value[name] = value[name]
             line += 1
         stdscr.hline(height - 1, 0, " ", width, curses.A_REVERSE)
-        stdscr.addstr(height - 1, 1, "Q - Quit", curses.A_REVERSE)
+        stdscr.addstr(height - 1, 1,
+                      "Q - Quit | C - Toggle CPU | A - All CPUs",
+                      curses.A_REVERSE)
         stdscr.refresh()
 
         last_refresh = now
 
         try:
-            if stdscr.getch() == ord('q'):
+            c = stdscr.getch()
+            if c == ord('q'):
                 break
-            curses.halfdelay(40)
+            elif c == ord('c'):
+                old_value = reset_stats()
+                cpu = (cpu + 1) % len(cpus)
+            elif c == ord('a'):
+                old_value = reset_stats()
+                cpu = -1
+            else:
+                curses.halfdelay(40)
         except KeyboardInterrupt:
             break
         except curses.error:
@@ -113,8 +132,9 @@ try:
 
     entries = os.listdir(stats_dir % cell_id)
     stats_names = [d for d in entries if d.startswith("vmexits_")]
+    cpus = sorted([int(d[3:]) for d in entries if d.startswith("cpu")])
 except OSError as e:
     print("reading stats: %s" % e.strerror, file=sys.stderr)
     exit(1)
 
-curses.wrapper(main, cell_id, cell_name, stats_names)
+curses.wrapper(main, cell_id, cell_name, stats_names, cpus)
