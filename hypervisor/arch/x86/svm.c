@@ -980,7 +980,7 @@ vmentry:
 void vcpu_park(void)
 {
 #ifdef CONFIG_CRASH_CELL_ON_PANIC
-	if (this_cpu_data()->failed) {
+	if (this_cpu_public()->failed) {
 		this_cpu_data()->vmcb.rip = 0;
 		return;
 	}

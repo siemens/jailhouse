@@ -910,7 +910,7 @@ void vcpu_nmi_handler(void)
 void vcpu_park(void)
 {
 #ifdef CONFIG_CRASH_CELL_ON_PANIC
-	if (this_cpu_data()->failed) {
+	if (this_cpu_public()->failed) {
 		vmcs_write64(GUEST_RIP, 0);
 		return;
 	}
