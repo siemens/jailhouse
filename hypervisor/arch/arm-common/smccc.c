@@ -33,13 +33,16 @@ static long handle_arch(struct trap_context *ctx)
 int handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
+	u32 *stats = this_cpu_public()->stats;
 
 	switch (SMCCC_GET_OWNER(regs[0])) {
 	case ARM_SMCCC_OWNER_ARCH:
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_SMCCC]++;
 		regs[0] = handle_arch(ctx);
 		break;
 
 	case ARM_SMCCC_OWNER_SIP:
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_SMCCC]++;
 		regs[0] = ARM_SMCCC_NOT_SUPPORTED;
 		break;
 

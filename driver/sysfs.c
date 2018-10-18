@@ -148,6 +148,7 @@ JAILHOUSE_CPU_STATS_ATTR(vmexits_maintenance,
 JAILHOUSE_CPU_STATS_ATTR(vmexits_virt_irq, JAILHOUSE_CPU_STAT_VMEXITS_VIRQ);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_virt_sgi, JAILHOUSE_CPU_STAT_VMEXITS_VSGI);
 JAILHOUSE_CPU_STATS_ATTR(vmexits_psci, JAILHOUSE_CPU_STAT_VMEXITS_PSCI);
+JAILHOUSE_CPU_STATS_ATTR(vmexits_smccc, JAILHOUSE_CPU_STAT_VMEXITS_SMCCC);
 #ifdef CONFIG_ARM
 JAILHOUSE_CPU_STATS_ATTR(vmexits_cp15, JAILHOUSE_CPU_STAT_VMEXITS_CP15);
 #endif
@@ -172,6 +173,7 @@ static struct attribute *cell_stats_attrs[] = {
 	&vmexits_virt_irq_cell_attr.kattr.attr,
 	&vmexits_virt_sgi_cell_attr.kattr.attr,
 	&vmexits_psci_cell_attr.kattr.attr,
+	&vmexits_smccc_cell_attr.kattr.attr,
 #ifdef CONFIG_ARM
 	&vmexits_cp15_cell_attr.kattr.attr,
 #endif
@@ -203,6 +205,7 @@ static struct attribute *cpu_stats_attrs[] = {
 	&vmexits_virt_irq_cpu_attr.kattr.attr,
 	&vmexits_virt_sgi_cpu_attr.kattr.attr,
 	&vmexits_psci_cpu_attr.kattr.attr,
+	&vmexits_smccc_cpu_attr.kattr.attr,
 #ifdef CONFIG_ARM
 	&vmexits_cp15_cpu_attr.kattr.attr,
 #endif
