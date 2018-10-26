@@ -209,6 +209,7 @@ static void vmcb_setup(struct per_cpu *cpu_data)
 	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_STGI;
 	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_CLGI;
 	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_SKINIT;
+	vmcb->general2_intercepts |= GENERAL2_INTERCEPT_WBINVD;
 
 	/*
 	 * We only intercept #DB and #AC to prevent that malicious guests can
@@ -963,6 +964,11 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			vmcb->eventinj_err = vmcb->exitinfo1;
 		}
 		x86_check_events();
+		goto vmentry;
+	case VMEXIT_WBINVD:
+		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_WBINVD]++;
+		/* ignore flush request for now */
+		vcpu_skip_emulated_instruction(X86_INST_LEN_WBINVD);
 		goto vmentry;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:
