@@ -11,3 +11,5 @@
  */
 
 void cat_update(void);
+
+int cat_lock_hc(void);

@@ -18,7 +18,7 @@
 
 #include <jailhouse/cell-config.h>
 
-#define CAT_ROOT_COS	0
+#define CAT_ROOT_COS	0UL
 
 static unsigned int cbm_max, freed_mask;
 static int cos_max = -1;
@@ -31,6 +31,19 @@ void cat_update(void)
 	write_msr(MSR_IA32_PQR_ASSOC,
 		  (u64)cell->arch.cos << PQR_ASSOC_COS_SHIFT);
 	write_msr(MSR_IA32_L3_MASK_0 + cell->arch.cos, cell->arch.cat_mask);
+}
+
+int cat_lock_hc(void)
+{
+	struct cell *cell = this_cell();
+
+	if (cell == &root_cell)
+		return -EPERM;
+
+	write_msr(MSR_IA32_PQR_ASSOC, CAT_ROOT_COS << PQR_ASSOC_COS_SHIFT);
+	printk("CAT: Cache population in COS %d locked for cell %s\n",
+	       cell->arch.cos, cell->config->name);
+	return 0;
 }
 
 /* root cell has to be stopped */

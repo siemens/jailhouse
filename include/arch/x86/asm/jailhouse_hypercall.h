@@ -71,6 +71,8 @@
 #define JAILHOUSE_CPUID_SIGNATURE		0x40000000
 #define JAILHOUSE_CPUID_FEATURES		0x40000001
 
+#define JAILHOUSE_HC_X86_LOCK_CAT		1000
+
 /**
  * @defgroup Hypercalls Hypercall Subsystem
  *

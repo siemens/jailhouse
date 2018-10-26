@@ -182,6 +182,11 @@ void __attribute__((weak)) cat_update(void)
 {
 }
 
+int __attribute__((weak)) cat_lock_hc(void)
+{
+	return -ENOSYS;
+}
+
 void x86_check_events(void)
 {
 	struct public_per_cpu *cpu_public = this_cpu_public();

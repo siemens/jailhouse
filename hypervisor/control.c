@@ -22,6 +22,8 @@
 #include <asm/bitops.h>
 #include <asm/control.h>
 #include <asm/spinlock.h>
+// HACK
+#include <asm/cat.h>
 
 enum msg_type {MSG_REQUEST, MSG_INFORMATION};
 enum failure_mode {ABORT_ON_ERROR, WARN_ON_ERROR};
@@ -956,6 +958,9 @@ long hypercall(unsigned long code, unsigned long arg1, unsigned long arg2)
 			return trace_error(-EPERM);
 		printk("%c", (char)arg1);
 		return 0;
+	// HACK
+	case JAILHOUSE_HC_X86_LOCK_CAT:
+		return cat_lock_hc();
 	default:
 		return -ENOSYS;
 	}
