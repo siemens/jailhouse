@@ -22,6 +22,7 @@ static unsigned long expected_time;
 static unsigned long min = -1, max;
 static bool has_smi_count;
 static u32 initial_smis;
+static bool warmup = true;
 
 static const unsigned int smi_count_models[] = {
 	0x37, 0x4a, 0x4d, 0x5a, 0x5d, 0x5c, 0x7a,	/* Silvermont */
@@ -151,6 +152,11 @@ void inmate_main(void)
 			jailhouse_send_reply_from_cell(comm_region,
 					JAILHOUSE_MSG_UNKNOWN);
 			break;
+		}
+
+		if (warmup) {
+			warmup = false;
+			jailhouse_call(JAILHOUSE_HC_X86_LOCK_CAT);
 		}
 	}
 
