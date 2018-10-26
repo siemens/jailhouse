@@ -227,14 +227,16 @@ static int vmx_check_features(void)
 	    (CPU_BASED_CR3_LOAD_EXITING | CPU_BASED_CR3_STORE_EXITING))
 		return trace_error(-EIO);
 
-	/* require APIC access, EPT and unrestricted guest mode support */
+	/* require APIC access, EPT, unrestricted guest mode support and
+	 * WBINVD interception */
 	vmx_proc_ctrl2 = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2) >> 32;
 	ept_cap = read_msr(MSR_IA32_VMX_EPT_VPID_CAP);
 	if (!(vmx_proc_ctrl2 & SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES) ||
 	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_ENABLE_EPT) ||
 	    (ept_cap & EPT_MANDATORY_FEATURES) != EPT_MANDATORY_FEATURES ||
 	    !(ept_cap & (EPT_INVEPT_SINGLE | EPT_INVEPT_GLOBAL)) ||
-	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
+	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST) ||
+	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_WBINVD))
 		return trace_error(-EIO);
 
 	/* require RDTSCP, INVPCID, XSAVES if present in CPUID */
@@ -586,7 +588,7 @@ static bool vmcs_setup(void)
 	val = read_msr(MSR_IA32_VMX_PROCBASED_CTLS2);
 	val |= SECONDARY_EXEC_VIRTUALIZE_APIC_ACCESSES |
 		SECONDARY_EXEC_ENABLE_EPT | SECONDARY_EXEC_UNRESTRICTED_GUEST |
-		secondary_exec_addon;
+		SECONDARY_EXEC_WBINVD | secondary_exec_addon;
 	ok &= vmcs_write32(SECONDARY_VM_EXEC_CONTROL, val);
 
 	ok &= vmcs_write64(APIC_ACCESS_ADDR,
@@ -1217,6 +1219,11 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		if (vcpu_handle_mmio_access())
 			return;
 		break;
+	case EXIT_REASON_WBINVD:
+		stats[JAILHOUSE_CPU_STAT_VMEXITS_WBINVD]++;
+		/* ignore flush request for now */
+		vcpu_skip_emulated_instruction(X86_INST_LEN_WBINVD);
+		return;
 	default:
 		panic_printk("FATAL: %s, reason %d\n",
 			     (reason & EXIT_REASONS_FAILED_VMENTRY) ?

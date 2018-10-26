@@ -142,6 +142,7 @@
 #define X86_INST_LEN_HYPERCALL				3
 #define X86_INST_LEN_MOV_TO_CR				3
 #define X86_INST_LEN_XSETBV				3
+#define X86_INST_LEN_WBINVD				2
 
 #define X86_REX_CODE					4
 
