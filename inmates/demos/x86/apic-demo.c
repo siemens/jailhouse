@@ -22,7 +22,7 @@ static unsigned long expected_time;
 static unsigned long min = -1, max;
 static bool has_smi_count;
 static u32 initial_smis;
-static bool warmup = true;
+static int warmup = 100;
 
 static const unsigned int smi_count_models[] = {
 	0x37, 0x4a, 0x4d, 0x5a, 0x5d, 0x5c, 0x7a,	/* Silvermont */
@@ -111,6 +111,8 @@ void inmate_main(void)
 	bool cache_pollution;
 	char *mem;
 
+	asm volatile("wbinvd":::"memory");
+
 	comm_region->cell_state = JAILHOUSE_CELL_RUNNING_LOCKED;
 
 	cache_pollution = cmdline_parse_bool("pollute-cache", false);
@@ -154,10 +156,12 @@ void inmate_main(void)
 			break;
 		}
 
-		if (warmup) {
-			warmup = false;
-			jailhouse_call(JAILHOUSE_HC_X86_LOCK_CAT);
-		}
+		if (warmup == 0) {
+			write_msr(0xc8f, 0);
+			printk("locked!\n");
+			warmup = -1;
+		} else if (warmup > 0)
+			warmup--;
 	}
 
 	printk("Stopped APIC demo\n");

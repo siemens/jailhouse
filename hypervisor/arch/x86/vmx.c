@@ -71,7 +71,9 @@ static u8 __attribute__((aligned(PAGE_SIZE))) msr_bitmap[][0x2000/8] = {
 		[  0x828/8 ...  0x82f/8 ] = 0x81, /* 0x828, 0x82f */
 		[  0x830/8 ...  0x837/8 ] = 0xfd, /* 0x830, 0x832 - 0x837 */
 		[  0x838/8 ...  0x83f/8 ] = 0xc1, /* 0x838, 0x83e, 0x83f */
-		[  0x840/8 ...  0xd8f/8 ] = 0xff, /* esp. 0xc80 - 0xd8f */
+		[  0x840/8 ...  0xc87/8 ] = 0xff,
+		[  0xc88/8 ...  0xc8f/8 ] = 0x7f,
+		[  0xc90/8 ...  0xd8f/8 ] = 0xff,
 		[  0xd90/8 ... 0x1fff/8 ] = 0,
 	},
 	[ VMX_MSR_BMP_C000_WRITE ] = {
@@ -1221,7 +1223,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		break;
 	case EXIT_REASON_WBINVD:
 		stats[JAILHOUSE_CPU_STAT_VMEXITS_WBINVD]++;
-		/* ignore flush request for now */
+		asm volatile("wbinvd" ::: "memory");
 		vcpu_skip_emulated_instruction(X86_INST_LEN_WBINVD);
 		return;
 	default:
