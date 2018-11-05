@@ -22,10 +22,10 @@ enum trap_return {
 	TRAP_FORBIDDEN		= -1,
 };
 
-typedef int (*trap_handler)(struct trap_context *ctx);
+typedef enum trap_return (*trap_handler)(struct trap_context *ctx);
 
 void arch_skip_instruction(struct trap_context *ctx);
 
-int arch_handle_dabt(struct trap_context *ctx);
+enum trap_return arch_handle_dabt(struct trap_context *ctx);
 
 #endif /* !_JAILHOUSE_ASM_TRAPS_H */

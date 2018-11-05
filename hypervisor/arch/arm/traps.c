@@ -245,7 +245,7 @@ static void dump_guest_regs(struct trap_context *ctx)
 	panic_printk("\n");
 }
 
-static int arch_handle_smc(struct trap_context *ctx)
+static enum trap_return arch_handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 
@@ -261,7 +261,7 @@ static int arch_handle_smc(struct trap_context *ctx)
 	return handle_smc(ctx);
 }
 
-static int arch_handle_hvc(struct trap_context *ctx)
+static enum trap_return arch_handle_hvc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 	unsigned long code = regs[0];
@@ -277,7 +277,7 @@ static int arch_handle_hvc(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
-static int arch_handle_cp15_32(struct trap_context *ctx)
+static enum trap_return arch_handle_cp15_32(struct trap_context *ctx)
 {
 	u32 hsr = ctx->hsr;
 	u32 rt = (hsr >> 5) & 0xf;
@@ -360,7 +360,7 @@ static int arch_handle_cp15_32(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
-static int arch_handle_cp15_64(struct trap_context *ctx)
+static enum trap_return arch_handle_cp15_64(struct trap_context *ctx)
 {
 	u32 hsr  = ctx->hsr;
 	u32 rt2  = (hsr >> 10) & 0xf;
@@ -402,7 +402,7 @@ static int arch_handle_cp15_64(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
-static int handle_iabt(struct trap_context *ctx)
+static enum trap_return handle_iabt(struct trap_context *ctx)
 {
 	unsigned long hpfar, hdfar;
 

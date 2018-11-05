@@ -33,7 +33,7 @@ void arch_skip_instruction(struct trap_context *ctx)
 	arm_write_sysreg(ELR_EL2, pc);
 }
 
-static int handle_hvc(struct trap_context *ctx)
+static enum trap_return handle_hvc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 	unsigned long code = regs[0];
@@ -51,7 +51,7 @@ static int handle_hvc(struct trap_context *ctx)
 	return TRAP_HANDLED;
 }
 
-static int handle_sysreg(struct trap_context *ctx)
+static enum trap_return handle_sysreg(struct trap_context *ctx)
 {
 	u32 esr = ctx->esr;
 	u32 rt  = (esr >> 5) & 0x1f;
@@ -69,7 +69,7 @@ static int handle_sysreg(struct trap_context *ctx)
 	return TRAP_UNHANDLED;
 }
 
-static int handle_iabt(struct trap_context *ctx)
+static enum trap_return handle_iabt(struct trap_context *ctx)
 {
 	unsigned long hpfar, hdfar;
 

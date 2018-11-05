@@ -30,7 +30,7 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	while (1);
 }
 
-int arch_handle_dabt(struct trap_context *ctx)
+enum trap_return arch_handle_dabt(struct trap_context *ctx)
 {
 	enum mmio_result mmio_result;
 	struct mmio_access mmio;

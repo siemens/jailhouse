@@ -30,7 +30,7 @@ static long handle_arch(struct trap_context *ctx)
 	}
 }
 
-int handle_smc(struct trap_context *ctx)
+enum trap_return handle_smc(struct trap_context *ctx)
 {
 	unsigned long *regs = ctx->regs;
 	u32 *stats = this_cpu_public()->stats;

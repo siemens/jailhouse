@@ -33,4 +33,4 @@
 
 #define SMCCC_IS_CONV_64(function_id)	!!(function_id & (1 << 30))
 
-int handle_smc(struct trap_context *ctx);
+enum trap_return handle_smc(struct trap_context *ctx);
