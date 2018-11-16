@@ -19,7 +19,8 @@ Contribution Checklist
 
 - structure patches logically, in small steps [**required**]
     - one separable functionality/fix/refactoring = one patch
-    - do not mix those there in a single patch
+    - do not mix those three into a single patch (e.g. first refactor, then
+      add a new functionality that builds onto the refactoring)
     - after each patch, the tree still has to build and work, i.e. do not add
       even temporary breakages inside a patch series (helps when tracking down
       bugs)
