@@ -69,15 +69,15 @@ static long psci_emulate_affinity_info(struct trap_context *ctx)
 static long psci_emulate_features_info(struct trap_context *ctx)
 {
 	switch (ctx->regs[1]) {
-	case PSCI_VERSION:
-	case PSCI_CPU_SUSPEND_32:
-	case PSCI_CPU_SUSPEND_64:
-	case PSCI_CPU_OFF:
-	case PSCI_CPU_ON_32:
-	case PSCI_CPU_ON_64:
-	case PSCI_AFFINITY_INFO_32:
-	case PSCI_AFFINITY_INFO_64:
-	case PSCI_FEATURES:
+	case PSCI_0_2_FN_VERSION:
+	case PSCI_0_2_FN_CPU_SUSPEND:
+	case PSCI_0_2_FN64_CPU_SUSPEND:
+	case PSCI_0_2_FN_CPU_OFF:
+	case PSCI_0_2_FN_CPU_ON:
+	case PSCI_0_2_FN64_CPU_ON:
+	case PSCI_0_2_FN_AFFINITY_INFO:
+	case PSCI_0_2_FN64_AFFINITY_INFO:
+	case PSCI_1_0_FN_FEATURES:
 	case SMCCC_VERSION:
 		return PSCI_SUCCESS;
 
@@ -91,32 +91,32 @@ long psci_dispatch(struct trap_context *ctx)
 	this_cpu_public()->stats[JAILHOUSE_CPU_STAT_VMEXITS_PSCI]++;
 
 	switch (ctx->regs[0]) {
-	case PSCI_VERSION:
-		return PSCI_VERSION_1_1;
+	case PSCI_0_2_FN_VERSION:
+		return PSCI_VERSION(1, 1);
 
-	case PSCI_CPU_SUSPEND_32:
-	case PSCI_CPU_SUSPEND_64:
+	case PSCI_0_2_FN_CPU_SUSPEND:
+	case PSCI_0_2_FN64_CPU_SUSPEND:
 		if (!irqchip_has_pending_irqs()) {
 			asm volatile("wfi" : : : "memory");
 			irqchip_handle_irq();
 		}
 		return 0;
 
-	case PSCI_CPU_OFF:
+	case PSCI_0_2_FN_CPU_OFF:
 	case PSCI_CPU_OFF_V0_1_UBOOT:
 		arm_cpu_park();
 		return 0;
 
-	case PSCI_CPU_ON_32:
-	case PSCI_CPU_ON_64:
+	case PSCI_0_2_FN_CPU_ON:
+	case PSCI_0_2_FN64_CPU_ON:
 	case PSCI_CPU_ON_V0_1_UBOOT:
 		return psci_emulate_cpu_on(ctx);
 
-	case PSCI_AFFINITY_INFO_32:
-	case PSCI_AFFINITY_INFO_64:
+	case PSCI_0_2_FN_AFFINITY_INFO:
+	case PSCI_0_2_FN64_AFFINITY_INFO:
 		return psci_emulate_affinity_info(ctx);
 
-	case PSCI_FEATURES:
+	case PSCI_1_0_FN_FEATURES:
 		return psci_emulate_features_info(ctx);
 
 	default:
