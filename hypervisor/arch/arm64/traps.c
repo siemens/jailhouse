@@ -182,14 +182,16 @@ static void arch_handle_trap(union registers *guest_regs)
 	}
 }
 
-static void arch_dump_exit(union registers *regs, const char *reason)
+static void arch_el2_abt(union registers *regs)
 {
 	struct trap_context ctx;
 
 	fill_trap_context(&ctx, regs);
-	panic_printk("\nFATAL: Unhandled HYP exception: %s\n", reason);
+	panic_printk("\nFATAL: Unhandled HYP exception: "
+		     "synchronous abort from EL2\n");
 	dump_regs(&ctx);
 	dump_hyp_stack(&ctx);
+	panic_stop();
 }
 
 union registers *arch_handle_exit(union registers *regs)
@@ -204,12 +206,11 @@ union registers *arch_handle_exit(union registers *regs)
 		break;
 
 	case EXIT_REASON_EL2_ABORT:
-		arch_dump_exit(regs, "synchronous abort from EL2");
-		panic_stop();
+		arch_el2_abt(regs);
 		break;
 
 	default:
-		arch_dump_exit(regs, "unexpected");
+		/* It's a bug if this case is called */
 		panic_stop();
 	}
 
