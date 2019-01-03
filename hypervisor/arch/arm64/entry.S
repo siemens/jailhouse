@@ -269,10 +269,20 @@ bootstrap_vectors:
 
 .macro handle_vmexit exit_reason
 	.align	7
-	/* Fill the union registers. Should comply with NUM_USR_REGS */
+	/* We need to save EL1 context, reserve some space on the stack */
 	sub	sp, sp, #(16 * 16)
+	/* And push [x1-x4] early, we need registers to work on */
 	stp	x1, x2, [sp, #(1 * 16)]
 	stp	x3, x4, [sp, #(2 * 16)]
+
+	/* x1 is available, use it to hold the exit reason */
+	mov	x1, #\exit_reason
+	/* ... and push it together with x0 */
+	stp	x1, x0, [sp, #(0 * 16)]
+
+	/* [x0-x4] may now be clobbered. */
+
+	/* Fill the rest of the union registers. Should comply with NUM_USR_REGS */
 	stp	x5, x6, [sp, #(3 * 16)]
 	stp	x7, x8, [sp, #(4 * 16)]
 	stp	x9, x10, [sp, #(5 * 16)]
@@ -286,9 +296,6 @@ bootstrap_vectors:
 	stp	x25, x26, [sp, #(13 * 16)]
 	stp	x27, x28, [sp, #(14 * 16)]
 	stp	x29, x30, [sp, #(15 * 16)]
-
-	mov	x1, #\exit_reason
-	stp	x1, x0, [sp, #(0 * 16)]
 
 	mov	x29, xzr	/* reset fp,lr */
 	mov	x30, xzr
