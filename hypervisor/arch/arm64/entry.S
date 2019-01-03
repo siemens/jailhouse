@@ -21,6 +21,10 @@
 #define LINUX_HVC_SET_VECTORS_LEGACY	1
 #define LINUX_HVC_SET_VECTORS		0
 
+	.data
+vmexits_total:
+	.quad CPU_STAT_VMEXITS_TOTAL
+
 /* x11 must contain the virt-to-phys offset */
 .macro virt2phys, register
 	add	\register, \register, x11
@@ -281,6 +285,16 @@ bootstrap_vectors:
 	stp	x1, x0, [sp, #(0 * 16)]
 
 	/* [x0-x4] may now be clobbered. */
+
+	/*
+	 * increase vmexits_total on each exit. Using x3 and x4 will preserve
+	 * x0, which still holds the guest's value on exit.
+	 */
+	ldr	x3, =vmexits_total
+	ldr	x3, [x3]
+	ldr	x4, [x3]
+	add	x4, x4, #1
+	str	x4, [x3]
 
 	/* Fill the rest of the union registers. Should comply with NUM_USR_REGS */
 	stp	x5, x6, [sp, #(3 * 16)]

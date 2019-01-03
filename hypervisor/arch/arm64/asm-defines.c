@@ -35,6 +35,9 @@ void common(void)
 	       __builtin_offsetof(struct per_cpu, stack) + \
 	       FIELD_SIZEOF(struct per_cpu, stack));
 	DEFINE(PERCPU_SIZE_ASM, sizeof(struct per_cpu));
+	DEFINE(CPU_STAT_VMEXITS_TOTAL, LOCAL_CPU_BASE +
+	       __builtin_offsetof(struct per_cpu,
+		       public.stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]));
 	BLANK();
 
 	DEFINE(DCACHE_CLEAN_ASM, DCACHE_CLEAN);
