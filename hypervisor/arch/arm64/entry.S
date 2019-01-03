@@ -26,6 +26,9 @@
 vmexits_total:
 	.quad CPU_STAT_VMEXITS_TOTAL
 
+vmexits_smccc:
+	.quad CPU_STAT_VMEXITS_SMCCC
+
 /* x11 must contain the virt-to-phys offset */
 .macro virt2phys, register
 	add	\register, \register, x11
@@ -363,6 +366,13 @@ el1_trap:
 	mrs	x0, elr_el2
 	add	x0, x0, #4
 	msr	elr_el2, x0
+
+	/* And don't forget to account the SMC exit */
+	ldr	x0, =vmexits_smccc
+	ldr	x0, [x0]
+	ldr	x1, [x0]
+	add	x1, x1, #1
+	str	x1, [x0]
 
 	/* beam me up, we only need to restore x4 and sp */
 	ldr	x4, [sp, #(2 * 16 + 1 * 8)]

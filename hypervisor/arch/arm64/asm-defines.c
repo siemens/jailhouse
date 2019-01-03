@@ -38,6 +38,9 @@ void common(void)
 	DEFINE(CPU_STAT_VMEXITS_TOTAL, LOCAL_CPU_BASE +
 	       __builtin_offsetof(struct per_cpu,
 		       public.stats[JAILHOUSE_CPU_STAT_VMEXITS_TOTAL]));
+	DEFINE(CPU_STAT_VMEXITS_SMCCC, LOCAL_CPU_BASE +
+	       __builtin_offsetof(struct per_cpu,
+		       public.stats[JAILHOUSE_CPU_STAT_VMEXITS_SMCCC]));
 	BLANK();
 
 	DEFINE(DCACHE_CLEAN_ASM, DCACHE_CLEAN);
