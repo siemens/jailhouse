@@ -270,9 +270,7 @@ bootstrap_vectors:
 	ventry	.
 	ventry	.
 
-
-.macro handle_vmexit handler
-	.align	7
+.macro handle_vmexit_early
 	/* We need to save EL1 context, reserve some space on the stack */
 	sub	sp, sp, #(16 * 16)
 	/* And push [x1-x4] early, we need registers to work on */
@@ -291,7 +289,9 @@ bootstrap_vectors:
 	ldr	x4, [x3]
 	add	x4, x4, #1
 	str	x4, [x3]
+.endm
 
+.macro handle_vmexit_late handler
 	/* Fill the rest of the union registers. Should comply with NUM_USR_REGS */
 	stp	x5, x6, [sp, #(3 * 16)]
 	stp	x7, x8, [sp, #(4 * 16)]
@@ -315,6 +315,16 @@ bootstrap_vectors:
 	b	__vmreturn
 .endm
 
+.macro handle_vmexit handler
+	.align	7
+	handle_vmexit_early
+	handle_vmexit_late \handler
+.endm
+
+/*
+ * These are the default vectors. They are used on early startup and if no
+ * Spectre v2 mitigation is available.
+ */
 	.align 11
 hyp_vectors:
 	ventry	.
