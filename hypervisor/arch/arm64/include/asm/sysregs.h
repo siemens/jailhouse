@@ -107,7 +107,8 @@
 #define HCR_VM_BIT	(1u << 0)
 
 /* exception class */
-#define ESR_EC(esr)		GET_FIELD((esr), 31, 26)
+#define ESR_EC_SHIFT		(26)
+#define ESR_EC(esr)		GET_FIELD((esr), 31, ESR_EC_SHIFT)
 /* instruction length */
 #define ESR_IL(esr)		GET_FIELD((esr), 25, 25)
 /* Instruction specific syndrome */

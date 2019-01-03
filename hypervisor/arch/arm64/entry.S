@@ -316,6 +316,9 @@ bootstrap_vectors:
 	b	__vmreturn
 .endm
 
+el1_trap:
+	handle_vmexit_late arch_handle_trap
+
 .macro handle_vmexit handler
 	.align	7
 	handle_vmexit_early
@@ -331,6 +334,40 @@ bootstrap_vectors:
 	smc	#0
 
 	handle_vmexit_late \handler
+.endm
+
+.macro handle_abort_fastpath
+	.align	7
+	handle_vmexit_early
+
+	/* Save old x0, which might contain guest SMC's function ID */
+	mov	x4, x0
+
+	mov	w0, #SMCCC_ARCH_WORKAROUND_1
+	smc	#0
+
+	mrs	x0, esr_el2
+	lsr	x0, x0, #ESR_EC_SHIFT
+	cmp	x0, #ESR_EC_SMC64
+	b.ne	el1_trap /* normal trap if !SMC64 */
+
+	/* w4 holds the guest's function_id */
+	eor	w0, w4, #SMCCC_ARCH_WORKAROUND_1
+	cbnz	w0, el1_trap /* normal trap if !SMCCC_ARCH_WORKAROUND_1 */
+
+	/* Here we land if the guest called SMCCC_ARCH_WORKAROUND_1 */
+
+	/*
+	 * Skip guest's instruction, it must have been 'smc #0' and must have
+	 * had 4 bytes */
+	mrs	x0, elr_el2
+	add	x0, x0, #4
+	msr	elr_el2, x0
+
+	/* beam me up, we only need to restore x4 and sp */
+	ldr	x4, [sp, #(2 * 16 + 1 * 8)]
+	add	sp, sp, #(16 * 16)
+	eret
 .endm
 
 /*
@@ -373,7 +410,7 @@ hyp_vectors_hardened:
 	ventry	.
 	ventry	.
 
-	handle_vmexit_hardened arch_handle_trap
+	handle_abort_fastpath
 	handle_vmexit_hardened irqchip_handle_irq
 	ventry	.
 	ventry	.
