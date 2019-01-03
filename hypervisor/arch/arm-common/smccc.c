@@ -47,6 +47,21 @@ void smccc_discover(void)
 	this_cpu_data()->smccc_has_workaround_1 = ret >= ARM_SMCCC_SUCCESS;
 }
 
+static inline long handle_arch_features(u32 id)
+{
+	switch (id) {
+	case SMCCC_ARCH_FEATURES:
+		return ARM_SMCCC_SUCCESS;
+
+	case SMCCC_ARCH_WORKAROUND_1:
+		return this_cpu_data()->smccc_has_workaround_1 ?
+			ARM_SMCCC_SUCCESS : ARM_SMCCC_NOT_SUPPORTED;
+
+	default:
+		return ARM_SMCCC_NOT_SUPPORTED;
+	}
+}
+
 static long handle_arch(struct trap_context *ctx)
 {
 	u32 function_id = ctx->regs[0];
@@ -55,8 +70,9 @@ static long handle_arch(struct trap_context *ctx)
 	case SMCCC_VERSION:
 		return ARM_SMCCC_VERSION_1_1;
 
-	/* No features supported yet */
 	case SMCCC_ARCH_FEATURES:
+		return handle_arch_features(ctx->regs[1]);
+
 	default:
 		return ARM_SMCCC_NOT_SUPPORTED;
 	}
