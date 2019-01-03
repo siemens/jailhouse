@@ -35,7 +35,11 @@
 
 #define SMCCC_IS_CONV_64(function_id)	!!(function_id & (1 << 30))
 
+#ifndef __ASSEMBLY__
+
 struct trap_context;
 
 void smccc_discover(void);
 enum trap_return handle_smc(struct trap_context *ctx);
+
+#endif /* !__ASSEMBLY__ */

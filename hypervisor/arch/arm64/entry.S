@@ -15,6 +15,7 @@
 
 #include <asm/asm-defines.h>
 #include <asm/paging.h>
+#include <asm/smccc.h>
 #include <asm/jailhouse_hypercall.h>
 #include <jailhouse/header.h>
 
@@ -321,6 +322,17 @@ bootstrap_vectors:
 	handle_vmexit_late \handler
 .endm
 
+.macro handle_vmexit_hardened handler
+	.align	7
+	handle_vmexit_early
+
+	/* Mitigate CVE 2017-5715 (aka Spectre v2) */
+	mov	w0, #SMCCC_ARCH_WORKAROUND_1
+	smc	#0
+
+	handle_vmexit_late \handler
+.endm
+
 /*
  * These are the default vectors. They are used on early startup and if no
  * Spectre v2 mitigation is available.
@@ -339,6 +351,30 @@ hyp_vectors:
 
 	handle_vmexit arch_handle_trap
 	handle_vmexit irqchip_handle_irq
+	ventry	.
+	ventry	.
+
+	ventry	.
+	ventry	.
+	ventry	.
+	ventry	.
+
+
+	.align 11
+	.globl hyp_vectors_hardened
+hyp_vectors_hardened:
+	ventry	.
+	ventry	.
+	ventry	.
+	ventry	.
+
+	handle_vmexit arch_el2_abt /* no mitigation, we're doomed anyway... */
+	ventry	.
+	ventry	.
+	ventry	.
+
+	handle_vmexit_hardened arch_handle_trap
+	handle_vmexit_hardened irqchip_handle_irq
 	ventry	.
 	ventry	.
 

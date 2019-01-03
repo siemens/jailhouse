@@ -14,6 +14,8 @@
 
 #include <jailhouse/percpu.h>
 
+extern unsigned long hyp_vectors_hardened;
+
 void enable_mmu_el2(u64 ttbr0_el2);
 void __attribute__((noreturn)) shutdown_el2(struct per_cpu *cpu_data);
 

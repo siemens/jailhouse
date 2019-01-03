@@ -19,6 +19,7 @@
 #include <asm/entry.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
+#include <asm/smccc.h>
 
 extern u8 __trampoline_start[];
 
@@ -60,7 +61,15 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	/* Setup guest traps */
 	arm_write_sysreg(HCR_EL2, hcr);
 
-	return arm_cpu_init(cpu_data);
+	err = arm_cpu_init(cpu_data);
+	if (err)
+		return err;
+
+	/* Conditionally switch to hardened vectors */
+	if (this_cpu_data()->smccc_has_workaround_1)
+		arm_write_sysreg(vbar_el2, &hyp_vectors_hardened);
+
+	return 0;
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
