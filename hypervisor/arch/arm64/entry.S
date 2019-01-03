@@ -315,7 +315,8 @@ bootstrap_vectors:
 	mov	x30, xzr
 	mov	x0, sp
 	bl	arch_handle_exit
-	b	.
+	/* take the fast exit path, sp is already in place */
+	b	__vmreturn
 .endm
 
 	.align 11
@@ -413,6 +414,7 @@ shutdown_el2:
 vmreturn:
 	/* x0: union registers* */
 	mov	sp, x0
+__vmreturn:
 	ldp	x29, x30, [sp, #(15 * 16)]
 	ldp	x27, x28, [sp, #(14 * 16)]
 	ldp	x25, x26, [sp, #(13 * 16)]

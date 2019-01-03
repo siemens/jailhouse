@@ -213,5 +213,5 @@ union registers *arch_handle_exit(union registers *regs)
 		panic_stop();
 	}
 
-	vmreturn(regs);
+	return regs;
 }
