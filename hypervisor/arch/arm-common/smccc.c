@@ -11,9 +11,41 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/printk.h>
 #include <asm/psci.h>
 #include <asm/traps.h>
+#include <asm/smc.h>
 #include <asm/smccc.h>
+
+void smccc_discover(void)
+{
+	int ret;
+
+	ret = smc(PSCI_0_2_FN_VERSION);
+
+	/* We need >=PSCIv1.0 for SMCCC */
+	if (PSCI_VERSION_MAJOR(ret) < 1)
+		return;
+
+	/* Check if PSCI supports SMCCC version call */
+	ret = smc_arg1(PSCI_1_0_FN_FEATURES, SMCCC_VERSION);
+	if (ret != ARM_SMCCC_SUCCESS)
+		return;
+
+	/* We need to have SMCCC v1.1 */
+	ret = smc(SMCCC_VERSION);
+	if (ret != ARM_SMCCC_VERSION_1_1)
+		return;
+
+	/* check if SMCCC_ARCH_FEATURES is actually available */
+	ret = smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_FEATURES);
+	if (ret != ARM_SMCCC_SUCCESS)
+		return;
+
+	ret = smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_1);
+
+	this_cpu_data()->smccc_has_workaround_1 = ret >= ARM_SMCCC_SUCCESS;
+}
 
 static long handle_arch(struct trap_context *ctx)
 {
