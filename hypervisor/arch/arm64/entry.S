@@ -271,18 +271,14 @@ bootstrap_vectors:
 	ventry	.
 
 
-.macro handle_vmexit exit_reason
+.macro handle_vmexit handler
 	.align	7
 	/* We need to save EL1 context, reserve some space on the stack */
 	sub	sp, sp, #(16 * 16)
 	/* And push [x1-x4] early, we need registers to work on */
+	str	    x0, [sp, #(1 * 8)]
 	stp	x1, x2, [sp, #(1 * 16)]
 	stp	x3, x4, [sp, #(2 * 16)]
-
-	/* x1 is available, use it to hold the exit reason */
-	mov	x1, #\exit_reason
-	/* ... and push it together with x0 */
-	stp	x1, x0, [sp, #(0 * 16)]
 
 	/* [x0-x4] may now be clobbered. */
 
@@ -314,7 +310,7 @@ bootstrap_vectors:
 	mov	x29, xzr	/* reset fp,lr */
 	mov	x30, xzr
 	mov	x0, sp
-	bl	arch_handle_exit
+	bl	\handler
 	/* take the fast exit path, sp is already in place */
 	b	__vmreturn
 .endm
@@ -326,13 +322,13 @@ hyp_vectors:
 	ventry	.
 	ventry	.
 
-	handle_vmexit EXIT_REASON_EL2_ABORT
+	handle_vmexit arch_el2_abt
 	ventry	.
 	ventry	.
 	ventry	.
 
-	handle_vmexit EXIT_REASON_EL1_ABORT
-	handle_vmexit EXIT_REASON_EL1_IRQ
+	handle_vmexit arch_handle_trap
+	handle_vmexit irqchip_handle_irq
 	ventry	.
 	ventry	.
 

@@ -159,7 +159,7 @@ static const trap_handler trap_handlers[0x40] =
 	[ESR_EC_DABT_LOW]	= arch_handle_dabt,
 };
 
-static void arch_handle_trap(union registers *guest_regs)
+void arch_handle_trap(union registers *guest_regs)
 {
 	struct trap_context ctx;
 	trap_handler handler;
@@ -182,7 +182,7 @@ static void arch_handle_trap(union registers *guest_regs)
 	}
 }
 
-static void arch_el2_abt(union registers *regs)
+void arch_el2_abt(union registers *regs)
 {
 	struct trap_context ctx;
 
@@ -192,27 +192,4 @@ static void arch_el2_abt(union registers *regs)
 	dump_regs(&ctx);
 	dump_hyp_stack(&ctx);
 	panic_stop();
-}
-
-union registers *arch_handle_exit(union registers *regs)
-{
-	switch (regs->exit_reason) {
-	case EXIT_REASON_EL1_IRQ:
-		irqchip_handle_irq();
-		break;
-
-	case EXIT_REASON_EL1_ABORT:
-		arch_handle_trap(regs);
-		break;
-
-	case EXIT_REASON_EL2_ABORT:
-		arch_el2_abt(regs);
-		break;
-
-	default:
-		/* It's a bug if this case is called */
-		panic_stop();
-	}
-
-	return regs;
 }

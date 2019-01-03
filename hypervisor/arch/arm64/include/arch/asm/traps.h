@@ -16,3 +16,6 @@ struct trap_context {
 	u64 spsr;
 	u64 sp;
 };
+
+void arch_handle_trap(union registers *guest_regs);
+void arch_el2_abt(union registers *regs);

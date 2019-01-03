@@ -16,17 +16,18 @@
 #include <jailhouse/types.h>
 #include <jailhouse/utils.h>
 
-#define EXIT_REASON_EL2_ABORT	0x0
-#define EXIT_REASON_EL1_ABORT	0x1
-#define EXIT_REASON_EL1_IRQ	0x2
-
 #define NUM_USR_REGS		31
 
 #ifndef __ASSEMBLY__
 
 union registers {
 	struct {
-		unsigned long exit_reason;
+		/*
+		 * We have an odd number of registers, and the stack needs to
+		 * be aligned after pushing all registers. Add 64 bit padding
+		 * at the beginning.
+		 */
+		unsigned long __padding;
 		unsigned long usr[NUM_USR_REGS];
 	};
 };
