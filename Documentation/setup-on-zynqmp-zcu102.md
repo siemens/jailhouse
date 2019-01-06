@@ -189,8 +189,8 @@ state of each cell:
 Debug in ZCU102
 ---------------
 The debug console is supposed to help with early cell boot issues and/or when a
-UART is not available or not working. Add `JAILHOUSE_CELL_DEBUG_CONSOLE` to the
-cell config (see e.g. configs/arm64/qemu-arm64-linux-demo.c).
+UART is not available or not working. Add `JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED`
+to the cell config (see e.g. configs/arm64/qemu-arm64-linux-demo.c).
 
 As an example, the gic-demo can be debugged. Just add the following info in the
 cell load. It will print all the data through the principal UART instead of from

@@ -265,8 +265,8 @@ Arguments: 1. character to write
 Return code: 0 on success, negative error code otherwise
 
     Possible errors are:
-        -EPERM  (-1)  - cell lacks JAILHOUSE_CELL_DEBUG_CONSOLE flag in its
-                        configuration
+        -EPERM  (-1)  - cell lacks JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED
+                        flag in its configuration
 
 
 Communication Region
