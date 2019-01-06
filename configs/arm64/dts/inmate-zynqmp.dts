@@ -1,10 +1,11 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Device tree for Linux inmate test on ZynqMP ZCU102 board,
- * corresponds to configs/arm64/zynqmp-zcu102-linux-demo.c
+ * Device tree for Linux inmate test on ZynqMP ZCU102 and Ultra96 boards,
+ * corresponds to configs/arm64/zynqmp-zcu102-linux-demo.c and
+ * configs/arm64/ultra96-linux-demo.c.
  *
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2016-2019
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -18,7 +19,7 @@
 /dts-v1/;
 
 / {
-	model = "Jailhouse cell on ZynqMP ZCU102";
+	model = "Jailhouse cell on ZynqMP";
 
 	#address-cells = <2>;
 	#size-cells = <2>;

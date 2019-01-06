@@ -138,8 +138,8 @@ is essential to do a new Linux image but with
 
 The files `image/linux/Image` and `image/linux/rootfs.cpio` have to be copied 
 from the Petalinux project to the rootfs. Besides,
-`configs/arm64/dts/inmate-zynqmp-zcu102.dtb` file has to be copied from
-Jailhouse project. 
+`configs/arm64/dts/inmate-zynqmp.dtb` file has to be copied from Jailhouse
+project.
 
 To load Linux in the guest cell:
 
@@ -163,7 +163,7 @@ To load Linux in the guest cell:
     Activating hypervisor
     [   39.844953] The Jailhouse is opening.
 
-    # jailhouse cell linux zynqmp-zcu102-linux-demo.cell Image -d inmate-zynqmp-zcu102.dtb -i rootfs.cpio -c "console=ttyPS0,115200"
+    # jailhouse cell linux zynqmp-zcu102-linux-demo.cell Image -d inmate-zynqmp.dtb -i rootfs.cpio -c "console=ttyPS0,115200"
     [   81.967652] CPU2: shutdown
     [   81.970285] psci: CPU2 killed.
     [   82.015619] CPU3: shutdown
