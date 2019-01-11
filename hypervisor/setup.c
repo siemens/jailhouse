@@ -73,7 +73,7 @@ static void init_early(unsigned int cpu_id)
 	 * Linux' page table before shutdown without triggering violations.
 	 *
 	 * Allow read access to the console page, if the hypervisor has the
-	 * debug console flag JAILHOUSE_CON2_TYPE_ROOTPAGE set.
+	 * debug console flag JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE set.
 	 */
 	hyp_phys_start = system_config->hypervisor_memory.phys_start;
 	hyp_phys_end = hyp_phys_start + system_config->hypervisor_memory.size;
