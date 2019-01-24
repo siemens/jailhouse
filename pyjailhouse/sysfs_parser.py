@@ -611,7 +611,8 @@ class PCICapability:
                     raise RuntimeError('Invalid MSI-X BAR found')
                 if (bar & 0x4) != 0:
                     bar |= struct.unpack('<I', f.read(4))[0] << 32
-                msix_address = (bar & 0xfffffffffffffff0) + table & 0xfffffff8
+                msix_address = \
+                    (bar & 0xfffffffffffffff0) + (table & 0xfffffff8)
                 flags = PCICapability.RW
             else:
                 # unknown/unhandled cap, mark its existence
