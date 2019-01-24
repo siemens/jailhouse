@@ -18,12 +18,10 @@ ARM support
     - analyze cp15 system control registers access, trap critical ones
   - v8 (64-bit)
     - check if we need arch_inject_dabt
-    - analyze system constrol registers access, specifically regarding cache
+    - analyze system control registers access, specifically regarding cache
       maintenance and side effects on neighboring cores
-    - GICv3 support
   - common (v7 and v8)
     - System MMU support
-    - runtime selection of GICv2 vs. v3
     - re-evaluate IRQ priorities for GIC emulation and possibly add support
     - properly reset interrupts on cell reset or reassignment
     - support for big endian? (depends on relevant targets)
@@ -35,7 +33,6 @@ Configuration
  - review of format, rework of textual representation
  - refactor config generator
     - better internal structure, also to prepare non-x86 support
-    - move into Python module, for reuse by multiple helper scripts
  - enhance config generator
     - confine the created root cell config to the essentially required
       resources (e.g. PCI BARs)
@@ -76,9 +73,7 @@ Inmates
     - RTEMS upstream support
     - Zephyr?
   - upstream Linux support
-    - x86 patches
-    - removable generic PCI host controller
-    - discuss remaining patches (export __boot_cpu_mode, CONFIG_PCI_DOMAINS)
+    - discuss remaining patches
 
 Hardware error handling
   - MCE processing + managed forwarding [v1.0]
