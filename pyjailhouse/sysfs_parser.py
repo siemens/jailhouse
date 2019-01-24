@@ -24,6 +24,10 @@ import fnmatch
 
 root_dir = "/"
 
+def set_root_dir(dir):
+    global root_dir
+    root_dir = dir
+
 inputs = {
     'files': set(),
     'files_opt': set(),
@@ -73,7 +77,7 @@ def check_input_listed(name, optional=False):
 def input_open(name, mode='r', optional=False):
     check_input_listed(name, optional)
     try:
-        f = open(os.path.join(root_dir, name), mode)
+        f = open(root_dir + name, mode)
     except Exception as e:
         if optional:
             return open("/dev/null", mode)
@@ -84,7 +88,7 @@ def input_open(name, mode='r', optional=False):
 def input_listdir(dir, wildcards):
     for w in wildcards:
         check_input_listed(os.path.join(dir, w))
-    dirs = os.listdir(os.path.join(root_dir, dir))
+    dirs = os.listdir(root_dir + dir)
     dirs.sort()
     return dirs
 

@@ -243,6 +243,8 @@ if ((options.root is '/') and (os.geteuid() is not 0)):
     print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
     sys.exit(1)
 
+sysfs_parser.set_root_dir(options.root)
+
 jh_enabled = input_readline('/sys/devices/jailhouse/enabled', True).rstrip()
 if jh_enabled == '1':
     print('ERROR: Jailhouse was enabled when collecting input files! '
@@ -252,8 +254,6 @@ if jh_enabled == '1':
 
 IOAPIC_MAX_PINS = 120
 int_src_count = IOAPIC_MAX_PINS
-
-sysfs_parser.root_dir = options.root
 
 (pcidevices, pcicaps, cnt) = sysfs_parser.parse_pcidevices()
 
