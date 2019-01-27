@@ -411,7 +411,7 @@ static int vtd_emulate_qi_request(unsigned int unit_no,
 				  struct vtd_entry inv_desc)
 {
 	unsigned int start, count, n;
-	void *status_page;
+	void *status_addr;
 	int result;
 
 	switch (inv_desc.lo_word & VTD_REQ_INV_MASK) {
@@ -437,13 +437,14 @@ static int vtd_emulate_qi_request(unsigned int unit_no,
 		    !(inv_desc.lo_word & VTD_INV_WAIT_SW))
 			return -EINVAL;
 
-		status_page = paging_get_guest_pages(NULL, inv_desc.hi_word, 1,
+		status_addr = paging_get_guest_pages(NULL, inv_desc.hi_word, 1,
 						     PAGE_DEFAULT_FLAGS);
-		if (!status_page)
+		if (!status_addr)
 			return -EINVAL;
 
-		*(u32 *)(status_page + (inv_desc.hi_word & ~PAGE_MASK)) =
-			inv_desc.lo_word >> 32;
+		status_addr += inv_desc.hi_word & PAGE_OFFS_MASK & ~3;
+		*(u32 *)status_addr =
+			inv_desc.lo_word >> VTD_INV_WAIT_SDATA_SHIFT;
 
 		return 0;
 	}
