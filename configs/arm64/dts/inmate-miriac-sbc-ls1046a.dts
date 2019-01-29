@@ -1,0 +1,106 @@
+/*
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate on Microsys miriac-LS1046a-SBC,
+ * corresponds to configs/arm64/miriac-sbc-ls1046a-linux-demo.c
+ *
+ * Copyright (c) Linutronix GmbH, 2018
+ *
+ * Authors:
+ *  Andreas Messerschmid <andreas.messerschmid@linutronix.de>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/dts-v1/;
+
+/ {
+	model = "Jailhouse cell on Microsys Miriac-LS1046a-SBC";
+
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	interrupt-parent = <&gic>;
+
+	hypervisor {
+		compatible = "jailhouse,cell";
+	};
+
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu@2 {
+			compatible = "arm,cortex-a72", "arm,armv8";
+			device_type = "cpu";
+			reg = <0x0 0x2>;
+			enable-method = "psci";
+		};
+
+		cpu@3 {
+			compatible = "arm,cortex-a72", "arm,armv8";
+			device_type = "cpu";
+			reg = <0x0 0x3>;
+			enable-method = "psci";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13
+				(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 14
+				(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 11
+				(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+			     <GIC_PPI 10
+				(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	gic: interrupt-controller@1410000 {
+		compatible = "arm,gic-400";
+		reg = <0x0 0x1410000 0x0 0x1000>,
+		      <0x0 0x142f000 0x0 0x2000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+	uartclk: clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;
+	};
+
+	uart: serial@21c0500 {
+		compatible = "fsl,ns16550", "ns16550a";
+		reg = <0x00 0x21c0500 0x0 0x100>;
+		interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&uartclk>, <&uartclk>;
+		clock-names = "uart_clk", "pclk";
+	};
+
+	pci@13000000 {
+		compatible = "pci-host-ecam-generic";
+		device_type = "pci";
+		bus-range = <0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 74 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 2 &gic GIC_SPI 75 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 3 &gic GIC_SPI 76 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 4 &gic GIC_SPI 77 IRQ_TYPE_EDGE_RISING>;
+		reg = <0x0 0x13000000 0x0 0x100000>;
+		ranges =
+			<0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+	};
+};
