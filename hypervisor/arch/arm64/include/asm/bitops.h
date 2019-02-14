@@ -93,9 +93,9 @@ static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
 			"1:\n\t"
 			"stxr	%w0, %3, %2\n\t"
 			"dmb    ish\n\t"
-			: "=r" (ret), "=&r" (test),
+			: "=&r" (ret), "=&r" (test),
 			  "+Q" (*(volatile unsigned long *)addr),
-			  "=r" (tmp)
+			  "=&r" (tmp)
 			: "r" (1ul << nr));
 	} while (ret);
 	return !!(test);
