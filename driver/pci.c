@@ -103,8 +103,10 @@ static void jailhouse_pci_remove_device(const struct jailhouse_pci_device *dev)
 
 	l_dev = pci_get_domain_bus_and_slot(dev->domain, PCI_BUS_NUM(dev->bdf),
 					    dev->bdf & 0xff);
-	if (l_dev)
+	if (l_dev) {
 		pci_stop_and_remove_bus_device_locked(l_dev);
+		pci_dev_put(l_dev);
+	}
 }
 
 static void jailhouse_pci_claim_release(const struct jailhouse_pci_device *dev,
