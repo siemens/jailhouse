@@ -60,7 +60,7 @@ static enum trap_return handle_sysreg(struct trap_context *ctx)
 	if (esr & 1)
 		return TRAP_UNHANDLED;
 
-	if (ESR_MATCH_MCR_MRC(esr, 3, 0, 12, 11, 5) && /* ICC_SGI1R */
+	if (ESR_MATCH_MSR_MRS(esr, 3, 0, 12, 11, 5) && /* ICC_SGI1R */
 	    gicv3_handle_sgir_write(rt == 31 ? 0 : ctx->regs[rt])) {
 		arch_skip_instruction(ctx);
 		return TRAP_HANDLED;
