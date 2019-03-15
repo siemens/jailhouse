@@ -102,8 +102,13 @@ class MSR:
 
 class MMIO:
     def __init__(self, base, size):
-        f = os.open('/dev/mem', os.O_RDONLY | os.O_SYNC)
         self.mmap = None
+        try:
+            f = os.open('/dev/mem', os.O_RDONLY | os.O_SYNC)
+        except OSError as e:
+            print(' ERROR: Failed to open /dev/mem: %s' % e)
+            return
+
         try:
             self.mmap = mmap.mmap(f, size, mmap.MAP_SHARED, mmap.PROT_READ,
                                   offset=base)
