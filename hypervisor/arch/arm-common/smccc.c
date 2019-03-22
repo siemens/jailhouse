@@ -94,6 +94,7 @@ enum trap_return handle_smc(struct trap_context *ctx)
 	case ARM_SMCCC_OWNER_ARCH:
 		stats[JAILHOUSE_CPU_STAT_VMEXITS_SMCCC]++;
 		ret = handle_arch(ctx);
+		break;
 
 	case ARM_SMCCC_OWNER_SIP:
 		stats[JAILHOUSE_CPU_STAT_VMEXITS_SMCCC]++;
