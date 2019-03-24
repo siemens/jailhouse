@@ -296,9 +296,8 @@ elif cpu_vendor == 'AuthenticAMD':
 
         mmio = MMIO(iommu[n].base_addr, iommu[n].mmio_size)
         efr = mmio.read64(0x30)
-        if efr is None:
-            continue
-        if check_feature('  SMI filter', ((efr >> 16) & 0x3) == 1):
+        if efr is not None and \
+           check_feature('  SMI filter', ((efr >> 16) & 0x3) == 1):
             smi_filter_ok = True
             num_filter_regs = 1 << ((efr >> 18) & 7)
             for n in range(num_filter_regs):
@@ -308,8 +307,9 @@ elif cpu_vendor == 'AuthenticAMD':
                     smi_filter_ok = False
             check_feature('    Valid filter registers', smi_filter_ok)
 
-        he_feature = iommu[n].amd_features if iommu[n].amd_features != 0 \
-            else efr
+        he_feature = iommu[n].amd_features
+        if he_feature == 0 and efr:
+            he_feature = efr
         check_feature('  Hardware events', he_feature & (1 << 8), True)
 
 else:
