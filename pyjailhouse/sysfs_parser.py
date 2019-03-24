@@ -501,7 +501,7 @@ def parse_ivrs(pcidevices, ioapics):
 
 
 def get_cpu_vendor():
-    with open('/proc/cpuinfo') as f:
+    with open(root_dir + '/proc/cpuinfo') as f:
         for line in f:
             if not line.strip():
                 continue
