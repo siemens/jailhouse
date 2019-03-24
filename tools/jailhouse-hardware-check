@@ -179,18 +179,18 @@ pci_devices, _, _ = sysfs_parser.parse_pcidevices()
 
 (cpu_vendor, cpu_features, cpu_count) = parse_cpuinfo()
 
-if not os.access('/dev/cpu/0/msr', os.R_OK):
-    if os.system('/sbin/modprobe msr'):
-        sys.exit(1)
-
-msr = MSR(cpu_count)
-
 print('Feature                         Availability')
 print('------------------------------  ------------------')
 check_feature('Number of CPUs > 1', cpu_count > 1)
 check_feature('Long mode', 'lm' in cpu_features)
 
 if cpu_vendor == 'GenuineIntel':
+    if not os.access('/dev/cpu/0/msr', os.R_OK):
+        if os.system('/sbin/modprobe msr'):
+            sys.exit(1)
+
+    msr = MSR(cpu_count)
+
     _, dmar_regions = sysfs_parser.parse_iomem(pci_devices)
     iommu, _ = sysfs_parser.parse_dmar(pci_devices, ioapics, dmar_regions)
 
