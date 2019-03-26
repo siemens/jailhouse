@@ -441,7 +441,7 @@ def parse_ivrs(pcidevices, ioapics):
                     if variety == 0x01:  # IOAPIC
                         for chip in ioapics:
                             if chip.id == handle:
-                                chip.bdf = device_id
+                                chip.bdf = device_id_b
                                 chip.iommu = len(units) - 1
                 else:
                     # Reserved or ignored entries
