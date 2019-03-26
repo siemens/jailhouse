@@ -74,349 +74,349 @@ struct {
 	},
 
 	.mem_regions = {
-		/* 0 - DDR memory controller */ {
+		/* DDR memory controller */ {
 			.phys_start = 0x01080000,
 			.virt_start = 0x01080000,
 			.size =	          0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 1 - IFC */ {
+		/* IFC */ {
 			.phys_start = 0x01530000,
 			.virt_start = 0x01530000,
 			.size =	         0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 2 - QSPI */ {
+		/* QSPI */ {
 			.phys_start = 0x01550000,
 			.virt_start = 0x01550000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 3 - esdhc */ {
+		/* esdhc */ {
 			.phys_start = 0x01560000,
 			.virt_start = 0x01560000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 4 - scfg */ {
+		/* scfg */ {
 			.phys_start = 0x01570000,
 			.virt_start = 0x01570000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 5 - crypto */ {
+		/* crypto */ {
 			.phys_start = 0x01700000,
 			.virt_start = 0x01700000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 6 - qman */ {
+		/* qman */ {
 			.phys_start = 0x01880000,
 			.virt_start = 0x01880000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-                /* 7 - bman */ {
+                /* bman */ {
                         .phys_start = 0x01890000,
                         .virt_start = 0x01890000,
                         .size = 0x10000,
                         .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
                                 JAILHOUSE_MEM_IO,
                 },
-		/* 8 - fman */ {
+		/* fman */ {
 			.phys_start = 0x01a00000,
 			.virt_start = 0x01a00000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 9 - qportals */ {
+		/* qportals */ {
 			.phys_start = 0x500000000,
 			.virt_start = 0x500000000,
 			.size = 0x8000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 10 - bportals */ {
+		/* bportals */ {
 			.phys_start = 0x508000000,
 			.virt_start = 0x508000000,
 			.size = 0x8000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 11 - dcfg */ {
+		/* dcfg */ {
 			.phys_start = 0x01ee0000,
 			.virt_start = 0x01ee0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-                /* 12 - clockgen */ {
+                /* clockgen */ {
                         .phys_start = 0x01ee1000,
                         .virt_start = 0x01ee1000,
                         .size = 0x1000,
                         .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
                                 JAILHOUSE_MEM_IO,
                 },
-		/* 13 - rcpm */ {
+		/* rcpm */ {
 			.phys_start = 0x01ee2000,
 			.virt_start = 0x01ee2000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 14 - tmu */ {
+		/* tmu */ {
 			.phys_start = 0x01f00000,
 			.virt_start = 0x01f00000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 15 - dspi */ {
+		/* dspi */ {
 			.phys_start = 0x02100000,
 			.virt_start = 0x02100000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 16 - i2c0 */ {
+		/* i2c0 */ {
 			.phys_start = 0x02180000,
 			.virt_start = 0x02180000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 17 - i2c1 */ {
+		/* i2c1 */ {
 			.phys_start = 0x02190000,
 			.virt_start = 0x02190000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 18 - i2c2 */ {
+		/* i2c2 */ {
 			.phys_start = 0x021a0000,
 			.virt_start = 0x021a0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 19 - i2c3 */ {
+		/* i2c3 */ {
 			.phys_start = 0x021b0000,
 			.virt_start = 0x021b0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 20 - duart1 */ {
+		/* duart1 */ {
 			.phys_start = 0x021c0000,
 			.virt_start = 0x021c0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 21 - duart2 */ {
+		/* duart2 */ {
 			.phys_start = 0x021d0000,
 			.virt_start = 0x021d0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 22 - gpio0 */ {
+		/* gpio0 */ {
 			.phys_start = 0x02300000,
 			.virt_start = 0x02300000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 23 - gpio1 */ {
+		/* gpio1 */ {
 			.phys_start = 0x02310000,
 			.virt_start = 0x02310000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 24 - gpio2 */ {
+		/* gpio2 */ {
 			.phys_start = 0x02320000,
 			.virt_start = 0x02320000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 25 - gpio3 */ {
+		/* gpio3 */ {
 			.phys_start = 0x02330000,
 			.virt_start = 0x02330000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 26 - lpuart0 */ {
+		/* lpuart0 */ {
 			.phys_start = 0x02950000,
 			.virt_start = 0x02950000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 27 - lpuart1 */ {
+		/* lpuart1 */ {
 			.phys_start = 0x02960000,
 			.virt_start = 0x02960000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 28 - lpuart2 */ {
+		/* lpuart2 */ {
 			.phys_start = 0x02970000,
 			.virt_start = 0x02970000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 29 - lpuart3 */ {
+		/* lpuart3 */ {
 			.phys_start = 0x02980000,
 			.virt_start = 0x02980000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 30 - lpuart4 */ {
+		/* lpuart4 */ {
 			.phys_start = 0x02990000,
 			.virt_start = 0x02990000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 31 - lpuart5 */ {
+		/* lpuart5 */ {
 			.phys_start = 0x029a0000,
 			.virt_start = 0x029a0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 32 - wdog0 */ {
+		/* wdog0 */ {
 			.phys_start = 0x02ad0000,
 			.virt_start = 0x02ad0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 33 - edma0 */ {
+		/* edma0 */ {
 			.phys_start = 0x02c00000,
 			.virt_start = 0x02c00000,
 			.size = 0x30000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 34 - usb0 */ {
+		/* usb0 */ {
 			.phys_start = 0x02f00000,
 			.virt_start = 0x02f00000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 35 - usb1 */ {
+		/* usb1 */ {
 			.phys_start = 0x03000000,
 			.virt_start = 0x03000000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 36 - usb2 */ {
+		/* usb2 */ {
 			.phys_start = 0x03100000,
 			.virt_start = 0x03100000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 37 - sata */ {
+		/* sata */ {
 			.phys_start = 0x03200000,
 			.virt_start = 0x03200000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 38 - msi1 */ {
+		/* msi1 */ {
 			.phys_start = 0x01580000,
 			.virt_start = 0x01580000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 39 - msi2 */ {
+		/* msi2 */ {
 			.phys_start = 0x01590000,
 			.virt_start = 0x01590000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 40 - msi3 */ {
+		/* msi3 */ {
 			.phys_start = 0x015a0000,
 			.virt_start = 0x015a0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 41 - pcie0 */ {
+		/* pcie0 */ {
 			.phys_start = 0x03400000,
 			.virt_start = 0x03400000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 42 - pcie1 */ {
+		/* pcie1 */ {
 			.phys_start = 0x03500000,
 			.virt_start = 0x03500000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 43 - pcie2 */ {
+		/* pcie2 */ {
 			.phys_start = 0x03600000,
 			.virt_start = 0x03600000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 44 - RAM - 1GB - root cell */ {
+		/* RAM - 1GB - root cell */ {
 			.phys_start = 0x80000000,
 			.virt_start = 0x80000000,
 			.size = 0x40000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* 45 - RAM - ~1GB - inmates */ {
+		/* RAM - ~1GB - inmates */ {
 			.phys_start = 0xc0500000,
 			.virt_start = 0xc0500000,
 			.size = 0x3fb00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* 46 - IVSHMEM shared memory region for 00:00.0 */ {
+		/* IVSHMEM shared memory region for 00:00.0 */ {
 			.phys_start = 0xc0400000,
 			.virt_start = 0xc0400000,
 			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* 47 - PCI host bridge 0 */ {
+		/* PCI host bridge 0 */ {
 			.phys_start = 0x4000000000,
 			.virt_start = 0x4000000000,
 			.size = 0x800000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 48 - PCI host bridge 1 */ {
+		/* PCI host bridge 1 */ {
 			.phys_start = 0x4800000000,
 			.virt_start = 0x4800000000,
 			.size = 0x800000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* 49 - PCI host bridge 2 */ {
+		/* PCI host bridge 2 */ {
 			.phys_start = 0x5000000000,
 			.virt_start = 0x5000000000,
 			.size = 0x800000000,
