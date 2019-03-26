@@ -396,12 +396,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* IVSHMEM shared memory region for 00:00.0 */ {
-			.phys_start = 0xc0400000,
-			.virt_start = 0xc0400000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
 		/* PCI host bridge 0 */ {
 			.phys_start = 0x4000000000,
 			.virt_start = 0x4000000000,
@@ -422,6 +416,12 @@ struct {
 			.size = 0x800000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
+		},
+		/* IVSHMEM shared memory region for 00:00.0 */ {
+			.phys_start = 0xc0400000,
+			.virt_start = 0xc0400000,
+			.size = 0x100000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 	},
 
@@ -451,7 +451,7 @@ struct {
 				0xffffff00, 0xffffffff, 0x00000000,
 				0x00000000, 0x00000000, 0x00000000,
 			},
-			.shmem_region = 46,
+			.shmem_region = ARRAY_SIZE(config.mem_regions) - 1,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
 	},
