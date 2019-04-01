@@ -300,8 +300,8 @@ elif cpu_vendor == 'AuthenticAMD':
            check_feature('  SMI filter', ((efr >> 16) & 0x3) == 1):
             smi_filter_ok = True
             num_filter_regs = 1 << ((efr >> 18) & 7)
-            for n in range(num_filter_regs):
-                smi_freg = mmio.read64(0x60 + (n << 3))
+            for reg in range(num_filter_regs):
+                smi_freg = mmio.read64(0x60 + reg * 8)
                 # must not be locked AND set to match against specific device
                 if smi_freg & (1 << 17) and smi_freg & (1 << 16):
                     smi_filter_ok = False
