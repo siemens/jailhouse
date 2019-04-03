@@ -193,6 +193,9 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	unsigned long redist_addr = system_config->platform_info.arm.gicr_base;
 	unsigned long redist_size = GIC_V3_REDIST_SIZE;
 	void *redist_base = gicr_base;
+	unsigned long gicr_ispendr;
+	unsigned int n;
+	void *gicr;
 	u64 typer, mpidr;
 	u32 pidr, aff;
 	u32 cell_icc_ctlr, cell_icc_pmr, cell_icc_igrpen1;
@@ -236,8 +239,8 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 		return trace_error(-EIO);
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
-	mmio_write32(redist_base + GICR_SGI_BASE + GICR_ISENABLER,
-		     0x0000ffff | (1 << mnt_irq));
+	gicr = redist_base + GICR_SGI_BASE;
+	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
 	/*
 	 * Set EOIMode to 1
@@ -277,6 +280,15 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 
 	/* After this, the cells access the virtual interface of the GIC. */
 	arm_write_sysreg(ICH_HCR_EL2, ICH_HCR_EN);
+
+	/* Forward any pending physical SGIs to the virtual queue. */
+	gicr_ispendr = mmio_read32(gicr + GICR_ISPENDR);
+	for (n = 0; n < 16; n++) {
+		if (test_bit(n, &gicr_ispendr)) {
+			mmio_write32(gicr + GICR_ICPENDR, 1UL << n);
+			irqchip_set_pending(&cpu_data->public, n);
+		}
+	}
 
 	return 0;
 }
