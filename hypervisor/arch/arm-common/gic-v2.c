@@ -100,6 +100,7 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	unsigned int mnt_irq = system_config->platform_info.arm.maintenance_irq;
 	u32 vtr, vmcr;
 	u32 cell_gicc_ctlr, cell_gicc_pmr;
+	unsigned int n;
 
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff | (1 << mnt_irq));
@@ -139,7 +140,7 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	/*
 	 * Clear pending virtual IRQs in case anything is left from previous
 	 * use. Physically pending IRQs will be forwarded to Linux once we
-	 * enable interrupts for the hypervisor.
+	 * enable interrupts for the hypervisor, except for SGIs, see below.
 	 */
 	gicv2_clear_pending_irqs();
 
@@ -162,6 +163,18 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 
 	if (gicv2_target_cpu_map[cpu_data->public.cpu_id] == 0)
 		return trace_error(-ENODEV);
+
+	/*
+	 * Forward any pending physical SGIs to the virtual queue.
+	 * We will convert them into self-inject SGIs, ignoring the original
+	 * source. But Linux doesn't care about that anyway.
+	 */
+	for (n = 0; n < 16; n++) {
+		if (mmio_read8(gicd_base + GICD_CPENDSGIR + n)) {
+			mmio_write8(gicd_base + GICD_CPENDSGIR + n, 0xff);
+			irqchip_set_pending(this_cpu_public(), n);
+		}
+	}
 
 	return 0;
 }
