@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014-2016
+# Copyright (c) Siemens AG, 2014-2019
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -11,25 +11,29 @@
 #
 
 language: c
+dist: xenial
 
 compiler:
   - gcc
 
-sudo: required
-dist: trusty
-
-# Remove bogus python installations from PATH,
-# see https://github.com/travis-ci/travis-ci/issues/5326
-before_install:
-  - export PATH=$(echo $PATH | sed 's/\/opt\/python[^:]*//g')
+addons:
+  apt:
+    packages:
+      - python-mako
+      - gcc-arm-linux-gnueabihf
+      - libc6-dev-armhf-cross
+      - gcc-aarch64-linux-gnu
+      - libc6-dev-arm64-cross
+  coverity_scan:
+    project:
+      name: "siemens/jailhouse"
+    notification_email: jan.kiszka@siemens.com
+    build_script_url: https://raw.githubusercontent.com/$TRAVIS_REPO_SLUG/$TRAVIS_BRANCH/ci/coverity-scan-build.sh
+    build_command_prepend: "cov-configure --comptype gcc --compiler arm-linux-gnueabihf-gcc --template; cov-configure --comptype gcc --compiler aarch64-linux-gnu-gcc --template"
+    build_command: "unused"
+    branch_pattern: coverity_scan.*
 
 install:
-  # Install additional packages
-  - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu xenial main'
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq python-mako gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu make
-  # Update scan.coverity.com certificate
-  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
   # Install kernel build environment if it's not in the cache
   - if [ ! -L ci/linux ]; then
         pushd ci;
@@ -47,13 +51,3 @@ script:
   - if [ ${COVERITY_SCAN_BRANCH} != 1 ];
         then ci/build-all-configs.sh;
     fi
-
-addons:
-  coverity_scan:
-    project:
-      name: "siemens/jailhouse"
-    notification_email: jan.kiszka@siemens.com
-    build_script_url: https://raw.githubusercontent.com/$TRAVIS_REPO_SLUG/$TRAVIS_BRANCH/ci/coverity-scan-build.sh
-    build_command_prepend: "cov-configure --comptype gcc --compiler arm-linux-gnueabihf-gcc --template; cov-configure --comptype gcc --compiler aarch64-linux-gnu-gcc --template"
-    build_command: "unused"
-    branch_pattern: coverity_scan.*
