@@ -1,0 +1,164 @@
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Texas Instruments AM654 Inmate Model";
+	compatible = "ti,am654-evm", "ti,am654";
+	interrupt-parent = <&gic500>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial1 = &mcu_uart0;
+	};
+
+	chosen {
+		stdout-path = "serial1:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x8 0xe0000000 0x0 0x1fff0000>;
+	};
+
+	hypervisor {
+		compatible = "jailhouse,cell";
+	};
+
+	psci: psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@100 {
+			compatible = "arm,cortex-a53","arm,armv8";
+			reg = <0x100>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+		cpu1: cpu@101 {
+			compatible = "arm,cortex-a53","arm,armv8";
+			reg = <0x101>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+	};
+
+	pmu: pmu {
+		compatible = "arm,armv8-pmuv3";
+		/* Recommendation from GIC500 TRM Table A.3 */
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	a53_timer0: timer-cl0-cpu0 {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>, /* cntpsirq */
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>, /* cntpnsirq */
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>, /* cntvirq */
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>; /* cnthpirq */
+	};
+
+	cbass_main: interconnect@100000 {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		gic500: interrupt-controller@1800000 {
+			compatible = "arm,gic-v3";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+			reg = <0x00 0x01800000 0x00 0x10000>,	/* GICD */
+			      <0x00 0x01880000 0x00 0x90000>;	/* GICR */
+			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		pci@76000000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			bus-range = <0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map =
+			<0 0 0 1 &gic500 GIC_SPI 157 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 2 &gic500 GIC_SPI 158 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 3 &gic500 GIC_SPI 159 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 4 &gic500 GIC_SPI 160 IRQ_TYPE_EDGE_RISING>;
+			reg = <0x0 0x76000000 0x0 0x100000>;
+			ranges =
+			<0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+		};
+
+		secure_proxy_main: mailbox@32c00000 {
+			compatible = "ti,am654-secure-proxy";
+			#mbox-cells = <1>;
+			reg-names = "target_data", "rt", "scfg";
+			reg = <0x00 0x32c00000 0x00 0x100000>,
+			      <0x00 0x32400000 0x00 0x100000>,
+			      <0x00 0x32800000 0x00 0x100000>;
+			interrupt-names = "rx_016";
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		cbass_mcu: interconnect@28380000 {
+			compatible = "simple-bus";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+
+			mcu_uart0: serial@40a00000 {
+				compatible = "ti,am654-uart";
+				reg = <0x00 0x40a00000 0x00 0x100>;
+				reg-shift = <2>;
+				reg-io-width = <4>;
+				interrupts = <GIC_SPI 565 IRQ_TYPE_LEVEL_HIGH>;
+				clock-frequency = <96000000>;
+				current-speed = <115200>;
+				power-domains = <&k3_pds 149>;
+			};
+
+			cbass_wakeup: interconnect@42040000 {
+				compatible = "simple-bus";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* WKUP  Basic peripherals */
+				ranges = <0x42040000 0x00 0x42040000 0x03ac2400>;
+				dmsc: dmsc {
+					compatible = "ti,k2g-sci";
+					ti,host-id = <13>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+					ranges;
+
+					mbox-names = "rx", "tx";
+
+					mboxes= <&secure_proxy_main 16>,
+						<&secure_proxy_main 18>;
+
+					k3_pds: power-controller {
+						compatible = "ti,sci-pm-domain";
+						#power-domain-cells = <1>;
+					};
+
+					k3_clks: clocks {
+						compatible = "ti,k2g-sci-clk";
+						#clock-cells = <2>;
+					};
+
+					k3_reset: reset-controller {
+						compatible = "ti,sci-reset";
+						#reset-cells = <2>;
+					};
+				};
+			};
+		};
+	};
+};
