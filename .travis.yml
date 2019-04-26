@@ -34,6 +34,9 @@ addons:
     branch_pattern: coverity_scan.*
 
 install:
+  # Work around broken certificate of scan.coverity.com
+  - sudo curl -s -L https://entrust.com/root-certificates/entrust_l1k.cer -o /usr/local/share/ca-certificates/entrust_l1k.crt
+  - sudo update-ca-certificates
   # Install kernel build environment if it's not in the cache
   - if [ ! -L ci/linux ]; then
         pushd ci;
