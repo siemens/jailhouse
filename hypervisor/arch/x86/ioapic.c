@@ -165,19 +165,16 @@ static void ioapic_mask_cell_pins(struct cell_ioapic *ioapic,
 				  enum ioapic_handover handover)
 {
 	struct phys_ioapic *phys_ioapic = ioapic->phys_ioapic;
-	union ioapic_redir_entry entry;
 	unsigned int pin, reg;
 
 	for (pin = 0; pin < phys_ioapic->pins; pin++) {
 		if (!test_bit(pin, (unsigned long *)ioapic->pin_bitmap))
 			continue;
 
-		reg = IOAPIC_REDIR_TBL_START + pin * 2;
-
-		entry.raw[0] = ioapic_reg_read(phys_ioapic, reg);
-		if (entry.remap.mask)
+		if (phys_ioapic->shadow_redir_table[pin].native.mask)
 			continue;
 
+		reg = IOAPIC_REDIR_TBL_START + pin * 2;
 		ioapic_reg_write(phys_ioapic, reg, IOAPIC_REDIR_MASK);
 
 		if (handover == PINS_MASKED)
