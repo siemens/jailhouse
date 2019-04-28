@@ -307,7 +307,7 @@ void arch_pci_suppress_msi(struct pci_device *device,
 			pci_write_config(info->bdf, cap->start + 8, 0, 4);
 		pci_write_config(info->bdf, cap->start + 4,
 				 (u32)msi.raw.address, 4);
-
+	} else {
 		/*
 		 * Inject MSI vectors to avoid losing events while suppressed.
 		 * Linux can handle rare spurious interrupts.
