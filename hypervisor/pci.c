@@ -809,7 +809,8 @@ void pci_config_commit(struct cell *cell_added_removed)
 				err = arch_pci_update_msi(device, cap);
 			} else if (cap->id == PCI_CAP_MSIX) {
 				err = pci_update_msix(device, cap);
-				pci_suppress_msix(device, cap, false);
+				if (device->cell == &root_cell)
+					pci_suppress_msix(device, cap, false);
 			}
 			if (err)
 				goto error;
