@@ -165,7 +165,6 @@ static void ioapic_mask_cell_pins(struct cell_ioapic *ioapic,
 				  enum ioapic_handover handover)
 {
 	struct phys_ioapic *phys_ioapic = ioapic->phys_ioapic;
-	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;
 	unsigned int pin, reg;
 
@@ -181,20 +180,8 @@ static void ioapic_mask_cell_pins(struct cell_ioapic *ioapic,
 
 		ioapic_reg_write(phys_ioapic, reg, IOAPIC_REDIR_MASK);
 
-		if (handover == PINS_MASKED) {
+		if (handover == PINS_MASKED)
 			phys_ioapic->shadow_redir_table[pin].native.mask = 1;
-		} else if (!entry.native.level_triggered) {
-			/*
-			 * Inject edge-triggered interrupts to avoid losing
-			 * events while masked. Linux can handle rare spurious
-			 * interrupts.
-			 */
-			entry = phys_ioapic->shadow_redir_table[pin];
-			irq_msg = ioapic_translate_redir_entry(ioapic, pin,
-							       entry);
-			if (irq_msg.valid)
-				apic_send_irq(irq_msg);
-		}
 	}
 }
 
@@ -426,6 +413,7 @@ static void ioapic_cell_exit(struct cell *cell)
 
 void ioapic_config_commit(struct cell *cell_added_removed)
 {
+	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;
 	struct cell_ioapic *ioapic;
 	unsigned int pin, reg, n;
@@ -451,6 +439,20 @@ void ioapic_config_commit(struct cell *cell_added_removed)
 					     "state, pin %d\n", pin);
 				panic_stop();
 			}
+
+			if (cell_added_removed != &root_cell ||
+			    entry.native.level_triggered)
+				continue;
+
+			/*
+			 * Inject edge-triggered interrupts to avoid losing
+			 * events while suppressed (masked). Linux can handle
+			 * rare spurious interrupts.
+			 */
+			irq_msg = ioapic_translate_redir_entry(ioapic, pin,
+							       entry);
+			if (irq_msg.valid)
+				apic_send_irq(irq_msg);
 		}
 }
 
