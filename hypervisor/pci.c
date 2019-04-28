@@ -524,13 +524,14 @@ void pci_prepare_handover(void)
 		return;
 
 	for_each_configured_pci_device(device, &root_cell) {
-		if (device->cell)
-			for_each_pci_cap(cap, device, n) {
-				if (cap->id == PCI_CAP_MSI)
-					arch_pci_suppress_msi(device, cap);
-				else if (cap->id == PCI_CAP_MSIX)
-					pci_suppress_msix(device, cap, true);
-			}
+		if (!device->cell)
+			continue;
+		for_each_pci_cap(cap, device, n) {
+			if (cap->id == PCI_CAP_MSI)
+				arch_pci_suppress_msi(device, cap);
+			else if (cap->id == PCI_CAP_MSIX)
+				pci_suppress_msix(device, cap, true);
+		}
 	}
 }
 
@@ -800,26 +801,27 @@ void pci_config_commit(struct cell *cell_added_removed)
 	if (!cell_added_removed)
 		return;
 
-	for_each_configured_pci_device(device, &root_cell)
-		if (device->cell) {
-			for_each_pci_cap(cap, device, n) {
-				if (cap->id == PCI_CAP_MSI) {
-					err = arch_pci_update_msi(device, cap);
-				} else if (cap->id == PCI_CAP_MSIX) {
-					err = pci_update_msix(device, cap);
-					pci_suppress_msix(device, cap, false);
-				}
-				if (err)
-					goto error;
+	for_each_configured_pci_device(device, &root_cell) {
+		if (!device->cell)
+			continue;
+		for_each_pci_cap(cap, device, n) {
+			if (cap->id == PCI_CAP_MSI) {
+				err = arch_pci_update_msi(device, cap);
+			} else if (cap->id == PCI_CAP_MSIX) {
+				err = pci_update_msix(device, cap);
+				pci_suppress_msix(device, cap, false);
 			}
-			if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
-				err = arch_ivshmem_update_msix(device);
-				if (err) {
-					cap = NULL;
-					goto error;
-				}
+			if (err)
+				goto error;
+		}
+		if (device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM) {
+			err = arch_ivshmem_update_msix(device);
+			if (err) {
+				cap = NULL;
+				goto error;
 			}
 		}
+	}
 	return;
 
 error:
