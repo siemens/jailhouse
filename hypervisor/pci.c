@@ -528,7 +528,7 @@ void pci_prepare_handover(void)
 			continue;
 		for_each_pci_cap(cap, device, n) {
 			if (cap->id == PCI_CAP_MSI)
-				arch_pci_suppress_msi(device, cap);
+				arch_pci_suppress_msi(device, cap, true);
 			else if (cap->id == PCI_CAP_MSIX)
 				pci_suppress_msix(device, cap, true);
 		}
@@ -807,6 +807,9 @@ void pci_config_commit(struct cell *cell_added_removed)
 		for_each_pci_cap(cap, device, n) {
 			if (cap->id == PCI_CAP_MSI) {
 				err = arch_pci_update_msi(device, cap);
+				if (device->cell == &root_cell)
+					arch_pci_suppress_msi(device, cap,
+							      false);
 			} else if (cap->id == PCI_CAP_MSIX) {
 				err = pci_update_msix(device, cap);
 				if (device->cell == &root_cell)

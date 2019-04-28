@@ -283,7 +283,8 @@ x86_pci_translate_msi(struct pci_device *device, unsigned int vector,
 }
 
 void arch_pci_suppress_msi(struct pci_device *device,
-			   const struct jailhouse_pci_capability *cap)
+			   const struct jailhouse_pci_capability *cap,
+			   bool suppressed)
 {
 	unsigned int n, vectors = pci_enabled_msi_vectors(device);
 	const struct jailhouse_pci_device *info = device->info;
@@ -297,23 +298,27 @@ void arch_pci_suppress_msi(struct pci_device *device,
 	if (!(pci_read_config(info->bdf, PCI_CFG_COMMAND, 2) & PCI_CMD_MASTER))
 		return;
 
-	/*
-	 * Disable delivery by setting no destination CPU bit in logical
-	 * addressing mode.
-	 */
-	if (info->msi_64bits)
-		pci_write_config(info->bdf, cap->start + 8, 0, 4);
-	pci_write_config(info->bdf, cap->start + 4, (u32)msi.raw.address, 4);
+	if (suppressed) {
+		/*
+		 * Disable delivery by setting no destination CPU bit in logical
+		 * addressing mode.
+		 */
+		if (info->msi_64bits)
+			pci_write_config(info->bdf, cap->start + 8, 0, 4);
+		pci_write_config(info->bdf, cap->start + 4,
+				 (u32)msi.raw.address, 4);
 
-	/*
-	 * Inject MSI vectors to avoid losing events while suppressed.
-	 * Linux can handle rare spurious interrupts.
-	 */
-	msi = pci_get_x86_msi_vector(device);
-	for (n = 0; n < vectors; n++) {
-		irq_msg = x86_pci_translate_msi(device, n, vectors, msi);
-		if (irq_msg.valid)
-			apic_send_irq(irq_msg);
+		/*
+		 * Inject MSI vectors to avoid losing events while suppressed.
+		 * Linux can handle rare spurious interrupts.
+		 */
+		msi = pci_get_x86_msi_vector(device);
+		for (n = 0; n < vectors; n++) {
+			irq_msg = x86_pci_translate_msi(device, n, vectors,
+							msi);
+			if (irq_msg.valid)
+				apic_send_irq(irq_msg);
+		}
 	}
 }
 

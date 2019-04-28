@@ -210,12 +210,14 @@ int arch_pci_add_physical_device(struct cell *cell, struct pci_device *device);
 void arch_pci_remove_physical_device(struct pci_device *device);
 
 /**
- * Avoid MSI vector delivery of a given device.
+ * Avoid MSI vector delivery of a given device or re-enable it.
  * @param device	Device to be silenced.
  * @param cap		MSI capability of the device.
+ * @param suppressed	True to disable delivery, false to allow it again.
  */
 void arch_pci_suppress_msi(struct pci_device *device,
-			   const struct jailhouse_pci_capability *cap);
+			   const struct jailhouse_pci_capability *cap,
+			   bool suppressed);
 
 /**
  * Update MSI vector mapping for a given device.
