@@ -61,7 +61,7 @@ Mailing list:
 
   - Archives
     - https://groups.google.com/forum/#!forum/jailhouse-dev
-    - http://news.gmane.org/gmane.linux.jailhouse
+    - https://www.mail-archive.com/jailhouse-dev@googlegroups.com
 
 Continuous integration:
 
@@ -73,10 +73,10 @@ Continuous integration:
 
 Static code analysis:
 
-  - https://scan.coverity.com/projects/4114
+  - https://scan.coverity.com/projects/siemens-jailhouse
 
   - Status:
-    - ![](https://scan.coverity.com/projects/4114/badge.svg) on coverity_scan
+    - ![](https://scan.coverity.com/projects/siemens-jailhouse/badge.svg) on coverity_scan
 
 See the [contribution documentation](CONTRIBUTING.md) for details
 on how to write Jailhouse patches and propose them for upstream integration.
