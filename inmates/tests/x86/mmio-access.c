@@ -14,6 +14,8 @@
 
 #define EXPECT_EQUAL(a, b)	evaluate(a, b, __LINE__)
 
+extern u8 __reset_entry[]; /* assumed to be at 0 */
+
 static bool all_passed = true;
 
 static void evaluate(u64 a, u64 b, int line)
@@ -108,7 +110,7 @@ void inmate_main(void)
 
 	pattern = ~pattern;
 	/* MOV_TO_MEM (89), 64-bit data, mod=0, reg=0, rm=5 (rip+disp32) */
-	asm volatile("movq %%rax, cmdline+0x101ef8(%%rip)"
+	asm volatile("movq %%rax, __reset_entry+0x101ff8(%%rip)"
 		: : "a" (pattern));
 	EXPECT_EQUAL(*comm_page_reg, pattern);
 
