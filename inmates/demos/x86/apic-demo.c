@@ -131,7 +131,7 @@ void inmate_main(void)
 	init_apic();
 
 	while (!terminate) {
-		asm volatile("hlt");
+		cpu_relax();
 
 		if (cache_pollution)
 			pollute_cache(mem);
