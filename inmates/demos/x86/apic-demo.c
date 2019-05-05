@@ -147,6 +147,8 @@ void inmate_main(void)
 			} else
 				terminate = true;
 			break;
+		case JAILHOUSE_MSG_NONE:
+			break;
 		default:
 			jailhouse_send_reply_from_cell(comm_region,
 					JAILHOUSE_MSG_UNKNOWN);
