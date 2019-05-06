@@ -12,7 +12,14 @@
  * Partly derived from Linux kernel code.
  */
 
+/*
+ * We need guards around ARRAY_SIZE as there is a duplicate definition in
+ * jailhouse/cell-config.h due to header license incompatibility. Once
+ * ARRAY_SIZE is replaced in cell-config.h, this guard can be removed.
+ */
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array)	(sizeof(array) / sizeof((array)[0]))
+#endif
 
 /* sizeof() for a structure/union field */
 #define FIELD_SIZEOF(type, fld)	(sizeof(((type *)0)->fld))

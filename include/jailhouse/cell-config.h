@@ -41,6 +41,10 @@
 
 #include <jailhouse/console.h>
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
+#endif
+
 /*
  * Incremented on any layout or semantic change of system or cell config.
  * Also update HEADER_REVISION in tools.

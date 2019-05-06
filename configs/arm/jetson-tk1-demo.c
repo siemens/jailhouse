@@ -16,8 +16,6 @@
 #include <jailhouse/types.h>
 #include <jailhouse/cell-config.h>
 
-#define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
-
 #ifndef CONFIG_INMATE_BASE
 #define CONFIG_INMATE_BASE 0x0
 #endif
