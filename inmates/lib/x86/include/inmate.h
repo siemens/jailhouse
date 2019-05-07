@@ -235,8 +235,6 @@ void ioapic_pin_set_vector(unsigned int pin,
 			   enum ioapic_trigger_mode trigger_mode,
 			   unsigned int vector);
 
-void hypercall_init(void);
-
 unsigned long pm_timer_read(void);
 
 unsigned long tsc_read_ns(void);
