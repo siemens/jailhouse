@@ -158,7 +158,7 @@ inmate command line parameters.
 | con-virtual   | Use secondary virtual console | true / false       | true / false                    |
 
 Available debug output drivers (con-type=):
-x86: none, 8350
+x86: none, 8250
 arm: none, 8250, hscif, imx, mvebu, pl011, scifa, xuartps
 
 Similar to the hypervisor configuration, a zero value for con-divider will skip
