@@ -40,8 +40,6 @@
 
 -include $(GEN_CONFIG_MK)
 
-KBUILD_AFLAGS := $(filter-out -include asm/unified.h,$(KBUILD_AFLAGS))
-
 LINUXINCLUDE += -I$(INMATES_LIB)/include
 LINUXINCLUDE += -I$(INMATES_LIB)/../arm-common/include
 

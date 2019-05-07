@@ -25,6 +25,7 @@ INCLUDES += -I$(src)/../hypervisor/arch/arm-common/include
 endif
 
 LINUXINCLUDE  := $(INCLUDES)
+KBUILD_AFLAGS := -D__ASSEMBLY__ -fno-PIE
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \

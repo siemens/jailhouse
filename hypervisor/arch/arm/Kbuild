@@ -12,8 +12,6 @@
 
 include $(src)/../arm-common/Kbuild
 
-KBUILD_AFLAGS := $(subst -include asm/unified.h,,$(KBUILD_AFLAGS))
-
 always := lib.a
 
 # units initialization order as defined by linking order:
