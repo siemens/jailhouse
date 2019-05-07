@@ -41,3 +41,9 @@ General configuration parameters
      * configurations.
      */
     #define CONFIG_BARE_METAL 1
+
+    /*
+     * Only available on x86. This debugging option that needs to be activated
+     * when running mmio-access tests.
+     */
+    #define CONFIG_TEST_DEVICE 1

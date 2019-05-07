@@ -67,6 +67,7 @@ static unsigned long testdev_get_mmio_base(struct cell *cell)
 	const struct jailhouse_memory *mem;
 	unsigned int n;
 
+	/* The mmio test page is one page after the COMM_REGION */
 	for_each_mem_region(mem, cell->config, n)
 		if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
 			return mem->virt_start + PAGE_SIZE;

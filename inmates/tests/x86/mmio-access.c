@@ -29,6 +29,14 @@ static void evaluate(u64 a, u64 b, int line)
 	}
 }
 
+/*
+ * mmio-access tests different memory access strategies that are intercepted by
+ * the hypervisor. Therefore, it maps a second page right behind the
+ * comm_region. Access to 0xff8-0xfff within that page will be intercepted by
+ * the hypervisor. The hypervisor will redirect the access to the comm_region.
+ * By reading back those values from the comm_region, we can verify that the
+ * access was successful.
+ */
 void inmate_main(void)
 {
 	volatile u64 *comm_page_reg = (void *)(COMM_REGION_BASE + 0xff8);
