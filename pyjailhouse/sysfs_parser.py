@@ -24,6 +24,7 @@ import fnmatch
 
 root_dir = "/"
 
+
 def set_root_dir(dir):
     global root_dir
     root_dir = dir
@@ -94,14 +95,13 @@ def input_listdir(dir, wildcards):
 
 
 def parse_iomem(pcidevices):
-    regions = IOMemRegionTree.parse_iomem_tree(
+    (regions, dmar_regions) = IOMemRegionTree.parse_iomem_tree(
         IOMemRegionTree.parse_iomem_file())
 
     rom_region = MemRegion(0xc0000, 0xdffff, 'ROMs')
     add_rom_region = False
 
     ret = []
-    dmar_regions = []
     for r in regions:
         append_r = True
         # filter the list for MSI-X pages
@@ -860,21 +860,22 @@ class IOMemRegionTree:
 
         return root
 
-    # find HPET regions in tree
+    # find specific regions in tree
     @staticmethod
-    def find_hpet_regions(tree):
+    def find_regions_by_name(tree, name):
         regions = []
 
         for tree in tree.children:
             r = tree.region
             s = r.typestr
 
-            if (s.find('HPET') >= 0):
+            if (s.find(name) >= 0):
                 regions.append(r)
 
             # if the tree continues recurse further down ...
             if (len(tree.children) > 0):
-                regions.extend(IOMemRegionTree.find_hpet_regions(tree))
+                regions.extend(
+                    IOMemRegionTree.find_regions_by_name(tree, name))
 
         return regions
 
@@ -882,6 +883,7 @@ class IOMemRegionTree:
     @staticmethod
     def parse_iomem_tree(tree):
         regions = []
+        dmar_regions = []
 
         for tree in tree.children:
             r = tree.region
@@ -901,20 +903,26 @@ class IOMemRegionTree:
             ):
                 continue
 
-            # generally blacklisted, unless we find an HPET behind it
+            # generally blacklisted, with a few exceptions
             if (s.lower() == 'reserved'):
-                regions.extend(IOMemRegionTree.find_hpet_regions(tree))
+                regions.extend(
+                    IOMemRegionTree.find_regions_by_name(tree, 'HPET'))
+                dmar_regions.extend(
+                    IOMemRegionTree.find_regions_by_name(tree, 'dmar'))
                 continue
 
             # if the tree continues recurse further down ...
             if (len(tree.children) > 0):
-                regions.extend(IOMemRegionTree.parse_iomem_tree(tree))
+                (temp_regions, temp_dmar_regions) = \
+                    IOMemRegionTree.parse_iomem_tree(tree)
+                regions.extend(temp_regions)
+                dmar_regions.extend(temp_dmar_regions)
                 continue
 
             # add all remaining leaves
             regions.append(r)
 
-        return regions
+        return regions, dmar_regions
 
 
 class IOMMUConfig:
