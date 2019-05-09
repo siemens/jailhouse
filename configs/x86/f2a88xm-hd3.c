@@ -737,19 +737,19 @@ struct {
 	.pci_caps = {
 		/* PCIDevice: 00:00.2 */
 		{
-			.id = 0xf,
+			.id = PCI_CAP_ID_SECDEV,
 			.start = 0x40,
 			.len = 2,
 			.flags = 0,
 		},
 		{
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0x54,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x8,
+			.id = PCI_CAP_ID_HT,
 			.start = 0x64,
 			.len = 2,
 			.flags = 0,
@@ -757,56 +757,56 @@ struct {
 		/* PCIDevice: 00:01.0 */
 		/* PCIDevice: 00:01.1 */
 		{
-			.id = 0x9,
+			.id = PCI_CAP_ID_VNDR,
 			.start = 0x48,
 			.len = 2,
 			.flags = 0,
 		},
 		{
-			.id = 0x1,
+			.id = PCI_CAP_ID_PM,
 			.start = 0x50,
 			.len = 8,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x10,
+			.id = PCI_CAP_ID_EXP,
 			.start = 0x58,
 			.len = 2,
 			.flags = 0,
 		},
 		{
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0xa0,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		/* PCIDevice: 00:03.1 */
 		{
-			.id = 0x1,
+			.id = PCI_CAP_ID_PM,
 			.start = 0x50,
 			.len = 8,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x10,
+			.id = PCI_CAP_ID_EXP,
 			.start = 0x58,
 			.len = 2,
 			.flags = 0,
 		},
 		{
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0xa0,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0xd,
+			.id = PCI_CAP_ID_SSVID,
 			.start = 0xb0,
 			.len = 2,
 			.flags = 0,
 		},
 		{
-			.id = 0x8,
+			.id = PCI_CAP_ID_HT,
 			.start = 0xb8,
 			.len = 2,
 			.flags = 0,
@@ -814,38 +814,38 @@ struct {
 		/* PCIDevice: 00:10.0 */
 		/* PCIDevice: 00:10.1 */
 		{
-			.id = 0x1,
+			.id = PCI_CAP_ID_PM,
 			.start = 0x50,
 			.len = 8,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0x70,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x11,
+			.id = PCI_CAP_ID_MSIX,
 			.start = 0x90,
 			.len = 12,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x10,
+			.id = PCI_CAP_ID_EXP,
 			.start = 0xa0,
 			.len = 2,
 			.flags = 0,
 		},
 		/* PCIDevice: 00:11.0 */
 		{
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0x50,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x12,
+			.id = PCI_CAP_ID_SATA,
 			.start = 0x70,
 			.len = 2,
 			.flags = 0,
@@ -853,58 +853,58 @@ struct {
 		/* PCIDevice: 00:12.2 */
 		/* PCIDevice: 00:13.2 */
 		{
-			.id = 0x1,
+			.id = PCI_CAP_ID_PM,
 			.start = 0xc0,
 			.len = 8,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0xa,
+			.id = PCI_CAP_ID_DBG,
 			.start = 0xe4,
 			.len = 2,
 			.flags = 0,
 		},
 		/* PCIDevice: 00:14.2 */
 		{
-			.id = 0x1,
+			.id = PCI_CAP_ID_PM,
 			.start = 0x50,
 			.len = 8,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		/* PCIDevice: 00:18.3 */
 		{
-			.id = 0xf,
+			.id = PCI_CAP_ID_SECDEV,
 			.start = 0xf0,
 			.len = 2,
 			.flags = 0,
 		},
 		/* PCIDevice: 01:00.0 */
 		{
-			.id = 0x1,
+			.id = PCI_CAP_ID_PM,
 			.start = 0x40,
 			.len = 8,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0x50,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x10,
+			.id = PCI_CAP_ID_EXP,
 			.start = 0x70,
 			.len = 2,
 			.flags = 0,
 		},
 		{
-			.id = 0x11,
+			.id = PCI_CAP_ID_MSIX,
 			.start = 0xb0,
 			.len = 12,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
 		},
 		{
-			.id = 0x3,
+			.id = PCI_CAP_ID_VPD,
 			.start = 0xd0,
 			.len = 2,
 			.flags = 0,

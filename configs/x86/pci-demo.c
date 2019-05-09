@@ -94,7 +94,7 @@ struct {
 
 	.pci_caps = {
 		{ /* Intel HDA @00:1b.0 */
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0x60,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,

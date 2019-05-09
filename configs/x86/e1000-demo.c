@@ -97,7 +97,7 @@ struct {
 
 	.pci_caps = {
 		{ /* Intel e1000 @00:19.0 */
-			.id = 0x5,
+			.id = PCI_CAP_ID_MSI,
 			.start = 0xd0,
 			.len = 14,
 			.flags = JAILHOUSE_PCICAPS_WRITE,
