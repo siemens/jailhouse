@@ -240,7 +240,7 @@ enum pci_access pci_cfg_read_moderate(struct pci_device *device, u16 address,
 		return PCI_ACCESS_PERFORM;
 
 	cap_offs = address - cap->start;
-	if (cap->id == PCI_CAP_MSI && cap_offs >= 4 &&
+	if (cap->id == PCI_CAP_ID_MSI && cap_offs >= 4 &&
 	    (cap_offs < 10 || (device->info->msi_64bits && cap_offs < 14))) {
 		*value = device->msi_registers.raw[cap_offs / 4] >>
 			((cap_offs % 4) * 8);
@@ -331,7 +331,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 		return PCI_ACCESS_REJECT;
 
 	cap_offs = address - cap->start;
-	if (cap->id == PCI_CAP_MSI &&
+	if (cap->id == PCI_CAP_ID_MSI &&
 	    (cap_offs < 10 || (device->info->msi_64bits && cap_offs < 14))) {
 		device->msi_registers.raw[cap_offs / 4] &= ~mask;
 		device->msi_registers.raw[cap_offs / 4] |= value;
@@ -345,7 +345,7 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 		 */
 		if (cap_offs >= 4)
 			return PCI_ACCESS_DONE;
-	} else if (cap->id == PCI_CAP_MSIX && cap_offs < 4) {
+	} else if (cap->id == PCI_CAP_ID_MSIX && cap_offs < 4) {
 		device->msix_registers.raw &= ~mask;
 		device->msix_registers.raw |= value;
 
@@ -527,9 +527,9 @@ void pci_prepare_handover(void)
 		if (!device->cell)
 			continue;
 		for_each_pci_cap(cap, device, n) {
-			if (cap->id == PCI_CAP_MSI)
+			if (cap->id == PCI_CAP_ID_MSI)
 				arch_pci_suppress_msi(device, cap, true);
-			else if (cap->id == PCI_CAP_MSIX)
+			else if (cap->id == PCI_CAP_ID_MSIX)
 				pci_suppress_msix(device, cap, true);
 		}
 	}
@@ -556,10 +556,10 @@ void pci_reset_device(struct pci_device *device)
 	pci_write_config(device->info->bdf, PCI_CFG_COMMAND, PCI_CMD_MEM, 2);
 
 	for_each_pci_cap(cap, device, n) {
-		if (cap->id == PCI_CAP_MSI || cap->id == PCI_CAP_MSIX)
+		if (cap->id == PCI_CAP_ID_MSI || cap->id == PCI_CAP_ID_MSIX)
 			/* Disable MSI/MSI-X by clearing the control word. */
 			pci_write_config(device->info->bdf, cap->start+2, 0, 2);
-		if (cap->id == PCI_CAP_MSIX)
+		if (cap->id == PCI_CAP_ID_MSIX)
 			/* Mask each MSI-X vector also physically. */
 			for (n = 0; n < device->info->num_msix_vectors; n++)
 				mmio_write32(&device->msix_table[n].raw[3],
@@ -713,9 +713,9 @@ static int pci_cell_init(struct cell *cell)
 			goto error;
 
 		for_each_pci_cap(cap, device, ncap)
-			if (cap->id == PCI_CAP_MSI)
+			if (cap->id == PCI_CAP_ID_MSI)
 				pci_save_msi(device, cap);
-			else if (cap->id == PCI_CAP_MSIX)
+			else if (cap->id == PCI_CAP_ID_MSIX)
 				pci_save_msix(device, cap);
 	}
 
@@ -805,12 +805,12 @@ void pci_config_commit(struct cell *cell_added_removed)
 		if (!device->cell)
 			continue;
 		for_each_pci_cap(cap, device, n) {
-			if (cap->id == PCI_CAP_MSI) {
+			if (cap->id == PCI_CAP_ID_MSI) {
 				err = arch_pci_update_msi(device, cap);
 				if (device->cell == &root_cell)
 					arch_pci_suppress_msi(device, cap,
 							      false);
-			} else if (cap->id == PCI_CAP_MSIX) {
+			} else if (cap->id == PCI_CAP_ID_MSIX) {
 				err = pci_update_msix(device, cap);
 				if (device->cell == &root_cell)
 					pci_suppress_msix(device, cap, false);
@@ -875,9 +875,9 @@ static void pci_shutdown(void)
 			continue;
 
 		for_each_pci_cap(cap, device, n)
-			if (cap->id == PCI_CAP_MSI)
+			if (cap->id == PCI_CAP_ID_MSI)
 				pci_restore_msi(device, cap);
-			else if (cap->id == PCI_CAP_MSIX)
+			else if (cap->id == PCI_CAP_ID_MSIX)
 				pci_restore_msix(device, cap);
 
 		if (device->cell != &root_cell)

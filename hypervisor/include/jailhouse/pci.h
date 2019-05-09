@@ -35,9 +35,6 @@
 
 #define PCI_DEV_CLASS_OTHER	0xff
 
-#define PCI_CAP_MSI		0x05
-#define PCI_CAP_MSIX		0x11
-
 #define PCI_IVSHMEM_NUM_MMIO_REGIONS	2
 
 struct cell;
