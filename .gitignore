@@ -19,6 +19,7 @@ include/jailhouse/config.h
 hypervisor/hypervisor.lds
 inmates/lib/arm/inmate.lds
 inmates/lib/arm64/inmate.lds
+pyjailhouse/pci_defs.py
 tools/jailhouse
 tools/jailhouse-gcov-extract
 tools/jailhouse-config-collect

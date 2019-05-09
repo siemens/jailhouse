@@ -59,4 +59,4 @@ ifeq ($(strip $(PYTHON_PIP_USABLE)), yes)
 endif
 
 .PHONY: modules_install install clean firmware_install modules tools docs \
-	docs_clean pyjailhouse_install
+	docs_clean

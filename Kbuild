@@ -41,6 +41,16 @@ GEN_VERSION_H := $(obj)/hypervisor/include/generated/version.h
 $(GEN_VERSION_H): $(src)/Makefile FORCE
 	$(call filechk,version)
 
+quiet_cmd_gen_pci_defs = GEN     $@
+define cmd_gen_pci_defs
+	$^ $(src)/include/jailhouse/pci_defs.h > $@
+endef
+
+GEN_PCI_DEFS_PY := $(obj)/pyjailhouse/pci_defs.py
+
+$(GEN_PCI_DEFS_PY): $(src)/scripts/gen_pci_defs.sh
+	$(call if_changed,gen_pci_defs)
+
 subdir-y := driver hypervisor configs inmates tools
 
 subdir-ccflags-y := -Werror
@@ -52,9 +62,11 @@ $(addprefix $(obj)/,$(subdir-y)): $(GEN_CONFIG_MK)
 
 $(obj)/driver $(obj)/hypervisor: $(GEN_VERSION_H)
 
+$(obj)/tools: $(GEN_PCI_DEFS_PY)
+
 endif
 
-clean-files := pyjailhouse/*.pyc
+clean-files := pyjailhouse/*.pyc pyjailhouse/pci_defs.py
 
 clean-dirs := Documentation/generated hypervisor/include/generated \
 	      pyjailhouse/__pycache__
