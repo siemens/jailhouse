@@ -37,18 +37,7 @@
  */
 
 #include <inmate.h>
-
-#define X86_CR0_PE		0x00000001
-#define X86_CR0_WP		0x00010000
-#define X86_CR0_PG		0x80000000
-
-#define X86_CR4_PAE		0x00000020
-
-#define MSR_EFER		0xc0000080
-#define EFER_LME		0x00000100
-
-#define MSR_MTRR_DEF_TYPE	0x000002ff
-#define MTRR_ENABLE		0x00000800
+#include <asm/regs.h>
 
 	.code16
 	.section ".boot", "ax"
