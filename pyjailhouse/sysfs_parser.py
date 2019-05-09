@@ -630,18 +630,19 @@ class PCICapability:
                 cap = next
                 f.seek(cap)
                 (id, version_next) = struct.unpack('<HH', f.read(4))
-                next = version_next >> 4
                 if id == 0xffff:
                     break
-                elif id == 0x0010:  # SR-IOV
+                elif (id & PCICapability.JAILHOUSE_PCI_EXT_CAP) != 0:
+                    print('WARNING: Ignoring unsupported PCI Express '
+                          'Extended Capability ID %x' % id)
+                    continue
+
+                next = version_next >> 4
+                if id == 0x0010:  # SR-IOV
                     len = 64
                     # access side effects still need to be analyzed
                     flags = PCICapability.RD
                 else:
-                    if (id & PCICapability.JAILHOUSE_PCI_EXT_CAP) != 0:
-                        print('WARNING: Ignoring unsupported PCI Express '
-                              'Extended Capability ID %x' % id)
-                        continue
                     # unknown/unhandled cap, mark its existence
                     len = 4
                     flags = PCICapability.RD
