@@ -38,33 +38,25 @@
 
 #include <inmate.h>
 
-#define NUM_IDT_DESC		64
-
-#define X2APIC_EOI		0x80b
 #define X2APIC_SPIV		0x80f
 
 #define APIC_EOI_ACK		0
 
-static int_handler_t int_handler[NUM_IDT_DESC];
-
 extern u8 irq_entry[];
+
+static int_handler_t __attribute__((used)) int_handler[MAX_INTERRUPT_VECTORS];
 
 void int_init(void)
 {
 	write_msr(X2APIC_SPIV, 0x1ff);
 }
 
-static void __attribute__((used)) handle_interrupt(unsigned int vector)
-{
-	int_handler[vector]();
-	write_msr(X2APIC_EOI, APIC_EOI_ACK);
-}
-
 void int_set_handler(unsigned int vector, int_handler_t handler)
 {
-	unsigned long entry = (unsigned long)irq_entry + vector * 16;
+	unsigned int int_number = vector - 32;
+	u64 entry = (unsigned long)irq_entry + int_number * 16;
 
-	int_handler[vector] = handler;
+	int_handler[int_number] = handler;
 
 	idt[vector * 2] = (entry & 0xffff) | (INMATE_CS64 << 16) |
 		((0x8e00 | (entry & 0xffff0000)) << 32);
@@ -73,43 +65,53 @@ void int_set_handler(unsigned int vector, int_handler_t handler)
 
 #ifdef __x86_64__
 asm(
-".macro irq_prologue vector\n\t"
-	"push %rdi\n\t"
-	"mov $vector,%rdi\n\t"
+".macro eoi\n\t"
+	/* write 0 as ack to x2APIC EOI register (0x80b) */
+	"xor %eax,%eax\n\t"
+	"xor %edx,%edx\n\t"
+	"mov $0x80b,%ecx\n\t"
+	"wrmsr\n"
+".endm\n"
+
+".macro irq_prologue irq\n\t"
+	"push %rax\n\t"
+	"mov $irq * 8,%rax\n\t"
 	"jmp irq_common\n"
+	".balign 16\n"
 ".endm\n\t"
 
 	".global irq_entry\n\t"
 	".balign 16\n"
 "irq_entry:\n"
-"vector=0\n"
-".rept 64\n"
-	"irq_prologue vector\n\t"
-	"vector=vector+1\n\t"
-	".balign 16\n\t"
+"irq=0\n"
+".rept 32\n"
+	"irq_prologue irq\n\t"
+	"irq=irq+1\n\t"
 ".endr\n"
 
 "irq_common:\n\t"
-	"push %rax\n\t"
 	"push %rcx\n\t"
 	"push %rdx\n\t"
 	"push %rsi\n\t"
+	"push %rdi\n\t"
 	"push %r8\n\t"
 	"push %r9\n\t"
 	"push %r10\n\t"
 	"push %r11\n\t"
 
-	"call handle_interrupt\n\t"
+	"call *int_handler(%rax)\n\t"
+
+	"eoi\n\t"
 
 	"pop %r11\n\t"
 	"pop %r10\n\t"
 	"pop %r9\n\t"
 	"pop %r8\n\t"
+	"pop %rdi\n\t"
 	"pop %rsi\n\t"
 	"pop %rdx\n\t"
 	"pop %rcx\n\t"
 	"pop %rax\n\t"
-	"pop %rdi\n\t"
 
 	"iretq"
 );
