@@ -42,10 +42,18 @@
 
 #define AUTHENTIC_AMD(n)	(((const u32 *)"AuthenticAMD")[n])
 
+struct desc_table_reg {
+	u16 limit;
+	unsigned long base;
+} __attribute__((packed));
+
 bool jailhouse_use_vmcall = true;
+
+unsigned long idt[(32 + MAX_INTERRUPT_VECTORS) * 2];
 
 void arch_init_early(void)
 {
+	struct desc_table_reg dtr;
 	u32 eax, ebx, ecx, edx;
 
 	asm volatile("cpuid"
@@ -58,4 +66,8 @@ void arch_init_early(void)
 	    edx == AUTHENTIC_AMD(1) &&
 	    ecx == AUTHENTIC_AMD(2))
 		jailhouse_use_vmcall = false;
+
+	dtr.limit = sizeof(idt) - 1;
+	dtr.base = (unsigned long)&idt;
+	asm volatile("lidt %0" : : "m" (dtr));
 }

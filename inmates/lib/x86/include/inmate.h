@@ -218,6 +218,10 @@ static inline unsigned int cpu_id(void)
 	return read_msr(X2APIC_ID);
 }
 
+#define MAX_INTERRUPT_VECTORS	32
+
+extern unsigned long idt[];
+
 typedef void(*int_handler_t)(void);
 
 void int_init(void);

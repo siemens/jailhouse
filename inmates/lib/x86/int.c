@@ -45,30 +45,13 @@
 
 #define APIC_EOI_ACK		0
 
-struct desc_table_reg {
-	u16 limit;
-	u64 base;
-} __attribute__((packed));
-
-static u32 idt[NUM_IDT_DESC * 4];
 static int_handler_t int_handler[NUM_IDT_DESC];
 
 extern u8 irq_entry[];
 
-static inline void write_idtr(struct desc_table_reg *val)
-{
-	asm volatile("lidt %0" : : "m" (*val));
-}
-
 void int_init(void)
 {
-	struct desc_table_reg dtr;
-
 	write_msr(X2APIC_SPIV, 0x1ff);
-
-	dtr.limit = NUM_IDT_DESC * 16 - 1;
-	dtr.base = (u64)&idt;
-	write_idtr(&dtr);
 }
 
 static void __attribute__((used)) handle_interrupt(unsigned int vector)
@@ -83,9 +66,9 @@ void int_set_handler(unsigned int vector, int_handler_t handler)
 
 	int_handler[vector] = handler;
 
-	idt[vector * 4] = (entry & 0xffff) | (INMATE_CS64 << 16);
-	idt[vector * 4 + 1] = 0x8e00 | (entry & 0xffff0000);
-	idt[vector * 4 + 2] = entry >> 32;
+	idt[vector * 2] = (entry & 0xffff) | (INMATE_CS64 << 16) |
+		((0x8e00 | (entry & 0xffff0000)) << 32);
+	idt[vector * 2 + 1] = entry >> 32;
 }
 
 #ifdef __x86_64__
