@@ -222,6 +222,8 @@ static inline unsigned int cpu_id(void)
 
 extern unsigned long idt[];
 
+void excp_reporting_init(void);
+
 typedef void(*int_handler_t)(void);
 
 void int_init(void);
