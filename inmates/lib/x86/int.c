@@ -63,7 +63,6 @@ void int_set_handler(unsigned int vector, int_handler_t handler)
 	idt[vector * 2 + 1] = entry >> 32;
 }
 
-#ifdef __x86_64__
 asm(
 ".macro eoi\n\t"
 	/* write 0 as ack to x2APIC EOI register (0x80b) */
@@ -74,8 +73,13 @@ asm(
 ".endm\n"
 
 ".macro irq_prologue irq\n\t"
+#ifdef __x86_64__
 	"push %rax\n\t"
 	"mov $irq * 8,%rax\n\t"
+#else
+	"push %eax\n\t"
+	"mov $irq * 4,%eax\n\t"
+#endif
 	"jmp irq_common\n"
 	".balign 16\n"
 ".endm\n\t"
@@ -90,6 +94,7 @@ asm(
 ".endr\n"
 
 "irq_common:\n\t"
+#ifdef __x86_64__
 	"push %rcx\n\t"
 	"push %rdx\n\t"
 	"push %rsi\n\t"
@@ -114,10 +119,25 @@ asm(
 	"pop %rax\n\t"
 
 	"iretq"
-);
 #else
-#error implement me!
+	"push %ecx\n\t"
+	"push %edx\n\t"
+	"push %esi\n\t"
+	"push %edi\n\t"
+
+	"call *int_handler(%eax)\n\t"
+
+	"eoi\n\t"
+
+	"pop %edi\n\t"
+	"pop %esi\n\t"
+	"pop %edx\n\t"
+	"pop %ecx\n\t"
+	"pop %eax\n\t"
+
+	"iret"
 #endif
+);
 
 void int_send_ipi(unsigned int cpu_id, unsigned int vector)
 {
