@@ -481,7 +481,10 @@ def parse_ivrs(pcidevices, ioapics):
                       'regions. The memory at 0x%x will be mapped accessible '
                       'to all devices.' % mem_addr)
 
-            regions.append(MemRegion(mem_addr, mem_len, 'ACPI IVRS', comment))
+            regions.append(
+                MemRegion(mem_addr, mem_addr + mem_len - 1, 'ACPI IVRS',
+                    comment))
+
         elif type == 0x40:
             raise RuntimeError(
                 'You board uses IVRS Rev. 2 feature Jailhouse doesn\'t '
