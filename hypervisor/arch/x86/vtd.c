@@ -506,7 +506,7 @@ static enum mmio_result vtd_unit_access_handler(void *arg,
 
 invalid_iq_entry:
 	panic_printk("FATAL: Invalid/unsupported invalidation queue entry\n");
-	return -1;
+	return MMIO_ERROR;
 }
 
 static void vtd_init_unit(void *reg_base, void *inv_queue)
