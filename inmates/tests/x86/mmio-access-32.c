@@ -47,9 +47,12 @@ void inmate_main(void)
 	EXPECT_EQUAL(reg32, pattern);
 
 	/* MOV_FROM_MEM (8a), 8-bit data */
-	asm volatile("movb (%%ebx), %%al"
-		: "=a" (reg32) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL(reg32, (u8)pattern);
+	asm volatile("movb (%%eax), %%al"
+		: "=a" (reg32) : "a" (mmio_reg));
+	/* %al should contain 0x44, while higher bits still hold the rest of
+	 * mmio_reg. Test this. */
+	EXPECT_EQUAL(reg32,
+		     ((unsigned long)mmio_reg & ~0xffUL) | (pattern & 0xff));
 
 	/* MOVZXB (0f b6), 32-bit data, 32-bit address */
 	asm volatile("movzxb (%%ebx), %%eax"

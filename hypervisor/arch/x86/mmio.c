@@ -85,7 +85,7 @@ x86_mmio_parse(const struct guest_paging_structures *pg_structs, bool is_write)
 	struct parse_context ctx = { .remaining = X86_MAX_INST_LEN,
 				     .count = 1 };
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
-	struct mmio_instruction inst = { .inst_len = 0 };
+	struct mmio_instruction inst = { 0 };
 	u64 pc = vcpu_vendor_get_rip();
 	unsigned int n, skip_len = 0;
 	bool has_immediate = false;
@@ -167,6 +167,9 @@ restart:
 		goto error_noinst;
 
 	op[2].raw = *ctx.inst;
+
+	if (!does_write && inst.access_size < 4)
+		inst.reg_preserve_mask = ~BYTE_MASK(inst.access_size);
 
 	/* ensure that we are actually talking about mov imm,<mem> */
 	if (op[0].raw == X86_OP_MOV_IMMEDIATE_TO_MEM && op[2].modrm.reg != 0)

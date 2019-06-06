@@ -30,6 +30,11 @@ struct mmio_instruction {
 	/** Output value, already copied either from a register or
          * from an immediate value */
 	unsigned long out_val;
+	/** A read must not clear the upper bits of registers, if the access
+	 * width is smaller than 32 bit. This mask describes the bits that have
+	 * to be preserved.
+	 */
+	unsigned long reg_preserve_mask;
 };
 
 /**

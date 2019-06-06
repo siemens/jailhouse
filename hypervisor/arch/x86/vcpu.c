@@ -231,6 +231,7 @@ bool vcpu_handle_mmio_access(void)
 	struct mmio_access mmio = {.size = 0};
 	struct vcpu_mmio_intercept intercept;
 	struct mmio_instruction inst;
+	unsigned long *reg;
 
 	vcpu_vendor_get_mmio_intercept(&intercept);
 
@@ -249,8 +250,10 @@ bool vcpu_handle_mmio_access(void)
 
 	result = mmio_handle_access(&mmio);
 	if (result == MMIO_HANDLED) {
-		if (!mmio.is_write)
-			guest_regs->by_index[inst.in_reg_num] = mmio.value;
+		if (!mmio.is_write) {
+			reg= &guest_regs->by_index[inst.in_reg_num];
+			*reg = (*reg & inst.reg_preserve_mask) | mmio.value;
+		}
 		vcpu_skip_emulated_instruction(inst.inst_len);
 		return true;
 	}
