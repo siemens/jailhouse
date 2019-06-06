@@ -54,6 +54,7 @@ struct parse_context {
 	bool has_rex_w;
 	bool has_rex_r;
 	bool has_addrsz_prefix;
+	bool has_opsz_prefix;
 };
 
 static bool ctx_update(struct parse_context *ctx, u64 *pc, unsigned int advance,
@@ -74,14 +75,33 @@ static bool ctx_update(struct parse_context *ctx, u64 *pc, unsigned int advance,
 	return true;
 }
 
-static unsigned int get_address_width(bool has_addrsz_prefix)
+static void parse_widths(struct parse_context *ctx,
+		         struct mmio_instruction *inst, bool parse_addr_width)
 {
 	u16 cs_attr = vcpu_vendor_get_cs_attr();
-	bool long_mode = (vcpu_vendor_get_efer() & EFER_LMA) &&
-		(cs_attr & VCPU_CS_L);
+	bool cs_db = !!(cs_attr & VCPU_CS_DB);
+	bool long_mode =
+		(vcpu_vendor_get_efer() & EFER_LMA) && (cs_attr & VCPU_CS_L);
 
-	return long_mode ? (has_addrsz_prefix ? 4 : 8) :
-		(!!(cs_attr & VCPU_CS_DB) ^ has_addrsz_prefix) ? 4 : 2;
+	/* Op size prefix is ignored if rex.w = 1 */
+	if (ctx->has_rex_w) {
+		inst->access_size = 8;
+	} else {
+		/* CS.d is ignored in long mode */
+		if (long_mode)
+			inst->access_size = ctx->has_opsz_prefix ? 2 : 4;
+		else
+			inst->access_size =
+				(cs_db ^ ctx->has_opsz_prefix) ? 4 : 2;
+	}
+
+	if (parse_addr_width) {
+		if (long_mode)
+			inst->inst_len += ctx->has_addrsz_prefix ? 4 : 8;
+		else
+			inst->inst_len +=
+				(cs_db ^ ctx->has_addrsz_prefix) ? 4 : 2;
+	}
 }
 
 struct mmio_instruction
@@ -118,6 +138,11 @@ restart:
 			goto error_noinst;
 		ctx.has_addrsz_prefix = true;
 		goto restart;
+	case X86_PREFIX_OP_SZ:
+		if (!ctx_update(&ctx, &pc, 1, pg_structs))
+			goto error_noinst;
+		ctx.has_opsz_prefix = true;
+		goto restart;
 	case X86_OP_MOVZX_OPC1:
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
@@ -134,28 +159,26 @@ restart:
 		ctx.does_write = true;
 		break;
 	case X86_OP_MOV_TO_MEM:
-		inst.access_size = ctx.has_rex_w ? 8 : 4;
+		parse_widths(&ctx, &inst, false);
 		ctx.does_write = true;
 		break;
 	case X86_OP_MOVB_FROM_MEM:
 		inst.access_size = 1;
 		break;
 	case X86_OP_MOV_FROM_MEM:
-		inst.access_size = ctx.has_rex_w ? 8 : 4;
+		parse_widths(&ctx, &inst, false);
 		break;
 	case X86_OP_MOV_IMMEDIATE_TO_MEM:
-		inst.access_size = ctx.has_rex_w ? 8 : 4;
+		parse_widths(&ctx, &inst, false);
 		ctx.has_immediate = true;
 		ctx.does_write = true;
 		break;
 	case X86_OP_MOV_MEM_TO_AX:
-		inst.inst_len += get_address_width(ctx.has_addrsz_prefix);
-		inst.access_size = ctx.has_rex_w ? 8 : 4;
+		parse_widths(&ctx, &inst, true);
 		inst.in_reg_num = 15;
 		goto final;
 	case X86_OP_MOV_AX_TO_MEM:
-		inst.inst_len += get_address_width(ctx.has_addrsz_prefix);
-		inst.access_size = ctx.has_rex_w ? 8 : 4;
+		parse_widths(&ctx, &inst, true);
 		inst.out_val = guest_regs->by_index[15];
 		ctx.does_write = true;
 		goto final;

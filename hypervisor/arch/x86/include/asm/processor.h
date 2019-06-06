@@ -145,6 +145,7 @@
 
 #define X86_REX_CODE					4
 
+#define X86_PREFIX_OP_SZ				0x66
 #define X86_PREFIX_ADDR_SZ				0x67
 
 #define X86_OP_MOVZX_OPC1				0x0f

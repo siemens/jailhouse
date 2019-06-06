@@ -51,6 +51,10 @@ void inmate_main(void)
 	mmio_write64(mmio_reg, pattern);
 	EXPECT_EQUAL(*comm_page_reg, pattern);
 
+	/* MOV_FROM_MEM (8b), 16-bit data, Ox66 OP size prefix */
+	asm volatile("mov (%%rax), %%ax" : "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL((u16)reg64, (u16)pattern);
+
 	/* MOV_FROM_MEM (8b), 64-bit data, mod=0, reg=0, rm=3 */
 	asm volatile("movq (%%rbx), %%rax"
 		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
@@ -71,6 +75,12 @@ void inmate_main(void)
 		: "=a" (reg64) : "a" (mmio_reg));
 	/* %al should contain 0x88, while high bits should still hold the rest
 	 * of mmio_reg */
+	EXPECT_EQUAL(reg64,
+		     ((unsigned long)mmio_reg & ~0xffUL) | (pattern & 0xff));
+
+	/* MOV_FROM_MEM (8a), 8-bit data, 0x66 OP size prefix (ignored) */
+	asm volatile("data16 mov (%%rax), %%al"
+		: "=a" (reg64) : "a" (mmio_reg));
 	EXPECT_EQUAL(reg64,
 		     ((unsigned long)mmio_reg & ~0xffUL) | (pattern & 0xff));
 
@@ -128,7 +138,15 @@ void inmate_main(void)
 	/* MOV_TO_MEM (88), 8-bit data */
 	asm volatile("movb %%al, (%%rbx)"
 		: : "a" (0x42), "b" (mmio_reg));
-	EXPECT_EQUAL(*comm_page_reg, (pattern & 0xffffffffffffff00) | 0x42);
+	EXPECT_EQUAL(*comm_page_reg, (pattern & ~0xffUL) | 0x42);
+
+	/* MOV_TO_MEM (88), 8-bit data, OP size prefix */
+	asm volatile("data16 mov %%al, (%%rbx)" : : "a" (0x23), "b" (mmio_reg));
+	EXPECT_EQUAL(*comm_page_reg, (pattern & ~0xffUL) | 0x23);
+
+	/* MOV_TO_MEM (89), 16-bit data, OP size prefix */
+	asm volatile("mov %%ax, (%%rbx)" : : "a" (0x2342), "b" (mmio_reg));
+	EXPECT_EQUAL(*comm_page_reg, (pattern & ~0xffffUL) | 0x2342);
 
 	/* IMMEDIATE_TO_MEM (c7), 64-bit data, mod=0, reg=0, rm=3 */
 	asm volatile("movq %0, (%%rbx)"
