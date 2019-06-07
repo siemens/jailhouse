@@ -110,10 +110,10 @@ void inmate_main(void)
 	EXPECT_EQUAL(reg64, (u32)pattern);
 
 	reg64 = 0ULL;
-	/* MEM_TO_AX (a1), 32-bit data, 32-bit address */
-	asm volatile(".byte 0x67, 0x48, 0xa1, 0xf8, 0x1f, 0x10, 0x00"
+	/* MEM_TO_AX (a1), 64-bit data, 32-bit address, AD SZ override prefix */
+	asm volatile("addr32 mov 0x101ff8, %%rax"
 		: "=a" (reg64) : "a" (0));
-	EXPECT_EQUAL((u32)reg64, (u32)pattern);
+	EXPECT_EQUAL(reg64, pattern);
 
 	printk("MMIO read test %s\n\n", all_passed ? "passed" : "FAILED");
 
