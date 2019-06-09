@@ -23,8 +23,9 @@ void smccc_discover(void)
 
 	ret = smc(PSCI_0_2_FN_VERSION);
 
-	/* We need >=PSCIv1.0 for SMCCC */
-	if (PSCI_VERSION_MAJOR(ret) < 1)
+	/* We need >=PSCIv1.0 for SMCCC. Against the spec, U-Boot may also
+	 * return a negative error code. */
+	if (ret < 0 || PSCI_VERSION_MAJOR(ret) < 1)
 		return;
 
 	/* Check if PSCI supports SMCCC version call */
