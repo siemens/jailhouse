@@ -398,6 +398,7 @@ static int vtd_emulate_inv_int(unsigned int unit_no, unsigned int index)
 		return 0;
 
 	device = pci_get_assigned_device(&root_cell, irte_usage->device_id);
+	/* On x86, ivshmem devices only support MSI-X. */
 	if (device && device->info->type == JAILHOUSE_PCI_TYPE_IVSHMEM)
 		return arch_ivshmem_update_msix(device);
 
