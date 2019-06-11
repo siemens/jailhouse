@@ -698,6 +698,8 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 	cell->loadable = true;
 
+	pci_cell_reset(cell);
+
 	/* map all loadable memory regions into the root cell */
 	for_each_mem_region(mem, cell->config, n)
 		if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
