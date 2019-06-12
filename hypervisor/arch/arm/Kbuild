@@ -15,7 +15,7 @@ include $(src)/../arm-common/Kbuild
 always := lib.a
 
 # units initialization order as defined by linking order:
-# irqchip (common-objs-y), [vexpress], <generic units>
+# irqchip (common-objs-y), <generic units>
 
 lib-y := $(common-objs-y)
 lib-y += entry.o setup.o control.o traps.o mmio.o lib.o
