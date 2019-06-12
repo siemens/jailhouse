@@ -139,10 +139,10 @@ unsigned long apic_timer_init(unsigned int vector)
 	return apic_freq;
 }
 
-void apic_timer_set(unsigned long timeout_ns)
+void apic_timer_set(unsigned long long timeout_ns)
 {
-	unsigned long long ticks =
-		(unsigned long long)timeout_ns * apic_tick_freq / NS_PER_SEC;
+	unsigned long long ticks = timeout_ns * apic_tick_freq / NS_PER_SEC;
+
 	if (tsc_deadline)
 		write_msr(IA32_TSC_DEADLINE, rdtsc() + ticks);
 	else
