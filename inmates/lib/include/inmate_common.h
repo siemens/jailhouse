@@ -42,9 +42,9 @@
 
 #define NULL			((void *)0)
 
-#define NS_PER_USEC		1000UL
-#define NS_PER_MSEC		1000000UL
-#define NS_PER_SEC		1000000000UL
+#define NS_PER_USEC		1000ULL
+#define NS_PER_MSEC		1000000ULL
+#define NS_PER_SEC		1000000000ULL
 
 #ifndef __ASSEMBLY__
 typedef s8 __s8;
