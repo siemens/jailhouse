@@ -50,7 +50,7 @@
 #define X2APIC_TDCR		0x83e
 
 static unsigned long apic_tick_freq;
-static unsigned long pm_timer_last[SMP_MAX_CPUS];
+static unsigned long long pm_timer_last[SMP_MAX_CPUS];
 static unsigned long pm_timer_overflows[SMP_MAX_CPUS];
 static unsigned long tsc_freq, tsc_overflow;
 static unsigned long tsc_last[SMP_MAX_CPUS];
@@ -92,13 +92,13 @@ unsigned long tsc_init(void)
 	return tsc_freq;
 }
 
-unsigned long pm_timer_read(void)
+unsigned long long pm_timer_read(void)
 {
 	unsigned int cpu = cpu_id();
-	unsigned long tmr;
+	unsigned long long tmr;
 
-	tmr = ((inl(comm_region->pm_timer_address) & 0x00ffffff) * NS_PER_SEC)
-		/ PM_TIMER_HZ;
+	tmr = ((unsigned long long)(inl(comm_region->pm_timer_address)
+		& 0x00ffffff) * NS_PER_SEC) / PM_TIMER_HZ;
 	if (tmr < pm_timer_last[cpu])
 		pm_timer_overflows[cpu] += PM_TIMER_OVERFLOW;
 	pm_timer_last[cpu] = tmr;
