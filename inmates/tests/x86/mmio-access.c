@@ -84,20 +84,107 @@ void inmate_main(void)
 	EXPECT_EQUAL(reg64,
 		     ((unsigned long)mmio_reg & ~0xffUL) | (pattern & 0xff));
 
-	/* MOVZXB (0f b6), to 64-bit, mod=0, reg=0, rm=3 */
-	asm volatile("movzxb (%%rbx), %%rax"
-		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL(reg64, (u8)pattern);
+	/* MOVZX test cases */
 
-	/* MOVZXB (0f b6), 32-bit data, 32-bit address */
-	asm volatile("movzxb (%%ebx), %%eax"
-		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL(reg64, (u8)pattern);
+	/*
+	 * First three tests: MOVZXB (0f b6) with 64-bit address, varying
+	 * register width (rax, eax, ax)
+	 */
 
-	/* MOVZXW (0f b7) */
-	asm volatile("movzxw (%%rbx), %%rax"
-		: "=a" (reg64) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL(reg64, (u16)pattern);
+	/* MOVZXB (48 0f b6), 8-bit data, 64-bit address, clear bits 8-63 */
+	asm volatile("movzxb (%%rax), %%rax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xff);
+
+	/* MOVZXB (0f b6), 8-bit data, 64-bit address, clear bits 8-63
+	 * Exposes the same behaviour as 48 0f b6. */
+	asm volatile("movzxb (%%rax), %%eax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xff);
+
+	/* MOVZXB (66 0f b6), 8-bit data, clear bits 8-15, preserve 16-63,
+	 * operand size prefix */
+	asm volatile("movzxb (%%rax), %%ax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64,
+		     ((unsigned long)mmio_reg & ~0xffffUL) | (pattern & 0xff));
+
+	/*
+	 * Second three tests: MOVZXB (0f b6) with 32-bit address, varying
+	 * register width (rax, eax, ax).
+	 *
+	 * These pattern will cover cases, where we have, e.g., both operand
+	 * prefixes (address size override prefix and operand size override
+	 * prefix), and a REX + adress size override prefix.
+	 */
+
+	/* MOVZXB (67 48 0f b6), 8-bit data, clear bits 8-63, 32-bit address,
+	 * REX_W, AD SZ override prefix */
+	asm volatile("movzxb (%%eax), %%rax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xff);
+
+	/* MOVZXB (67 0f b6), 8-bit data, clear bits 8-63, 32-bit address,
+	 * AD SZ override prefix. Exposes the same behaviour as 67 48 0f b6. */
+	asm volatile("movzxb (%%eax), %%eax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xff);
+
+	/* MOVZXB (67 66 0f b6), 8-bit data, clear bits 8-15, preserve 16-63,
+	 * 32-bit address, AD SZ override prefix, OP SZ override prefix */
+	asm volatile("movzxb (%%eax), %%ax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64,
+		     ((unsigned long)mmio_reg & ~0xffffUL) | (pattern & 0xff));
+
+	/*
+	 * Three tests for: MOVZXW (0f b7) with 64-bit address, varying
+	 * register width (rax, eax, ax).
+	 */
+
+	/* MOVZXW (48 0f b7), 16-bit data, clear bits 16-63, 64-bit address */
+	asm volatile("movzxw (%%rax), %%rax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xffff);
+
+	/* MOVZXW (0f b7), 16-bit data, clear bits 16-63, 64-bit address.
+	 * Exposes the same behaviour as 48 0f b7. */
+	asm volatile("movzxw (%%rax), %%eax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xffff);
+
+	/* MOVZXW (66 0f b7), 16-bit data, preserve bits 16-63, OP SZ prefix.
+	 * Practically working, but not specified by the manual (it's
+	 * effectively a 16->16 move). */
+	asm volatile(".byte 0x66, 0x0f, 0xb7, 0x00"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, ((unsigned long)mmio_reg & ~0xffffUL) |
+			     (pattern & 0xffff));
+
+	/*
+	 * Last but not least: MOVZXW (0f b7) with 32-bit address, varying
+	 * register width (rax, eax, ax).
+	 */
+
+	/* MOVZXW (67 48 0f b7), 16-bit data, clear bits 16-63, 32-bit address,
+	 * AD SZ prefix, REX_W */
+	asm volatile("movzxw (%%eax), %%rax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xffff);
+
+	/* MOVZXW (67 0f b7), 16-bit data, clear bits 16-63, 32-bit address,
+	 * AD SZ prefix. Exposes same behaviour as 67 48 0f b7. */
+	asm volatile("movzxw (%%eax), %%eax"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, pattern & 0xffff);
+
+	/* MOVZXW (67 66 0f b7), 16-bit data, preserve bits 16-63, 32-bit address,
+	 * AD SZ prefix, OP SZ prefix. See also 66 0f b7: not an official
+	 * instruction */
+	asm volatile(".byte 0x67, 0x66, 0x0f, 0xb7, 0x00"
+		: "=a" (reg64) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg64, ((unsigned long)mmio_reg & ~0xffffUL) |
+			     (pattern & 0xffff));
 
 	/* MEM_TO_AX (a1), 64-bit data, 64-bit address */
 	asm volatile("movabs (0x101ff8), %%rax"

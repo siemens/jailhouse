@@ -64,15 +64,31 @@ void inmate_main(void)
 	EXPECT_EQUAL(reg32,
 		     ((unsigned long)mmio_reg & ~0xffUL) | (pattern & 0xff));
 
-	/* MOVZXB (0f b6), 32-bit data, 32-bit address */
-	asm volatile("movzxb (%%ebx), %%eax"
-		: "=a" (reg32) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL(reg32, (u8)pattern);
+	/* MOVZXB (0f b6), 8-bit data, 32-bit address, zero extend bits 8-31 */
+	asm volatile("movzxb (%%eax), %%eax"
+		: "=a" (reg32) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg32, pattern & 0xff);
 
-	/* MOVZXW (0f b7) */
-	asm volatile("movzxw (%%ebx), %%eax"
-		: "=a" (reg32) : "a" (0), "b" (mmio_reg));
-	EXPECT_EQUAL(reg32, (u16)pattern);
+	/* MOVZXB (66 0f b6), 8-bit data, 32-bit address, zero extend bits 8-15,
+	 * operand size prefix */
+	asm volatile("movzxb (%%eax), %%ax"
+		: "=a" (reg32) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg32,
+		     ((unsigned long)mmio_reg & ~0xffff) | (pattern & 0xff));
+
+	/* MOVZXW (0f b7), 16-bit data, 32-bit address, zero extend bits
+	 * 16-31 */
+	asm volatile("movzxw (%%eax), %%eax"
+		: "=a" (reg32) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg32, pattern & 0xffff);
+
+	/* MOVZXW (66 0f b7), 16-bit data, 32-bit address, preserve bits 16-31.
+	 * Practically working, but not specified by the manual (it's
+	 * effectively a 16->16 move). */
+	asm volatile(".byte 0x66, 0x0f, 0xb7, 0x00"
+		: "=a" (reg32) : "a" (mmio_reg));
+	EXPECT_EQUAL(reg32, ((unsigned long)mmio_reg & ~0xffff) |
+			     (pattern & 0xffff));
 
 	/* MEM_TO_AX (a1), 32-bit data, 32-bit address */
 	asm volatile("mov (0x101ff8), %%eax"

@@ -55,6 +55,7 @@ struct parse_context {
 	bool has_rex_r;
 	bool has_addrsz_prefix;
 	bool has_opsz_prefix;
+	bool zero_extend;
 };
 
 static bool ctx_update(struct parse_context *ctx, u64 *pc, unsigned int advance,
@@ -144,6 +145,7 @@ restart:
 		ctx.has_opsz_prefix = true;
 		goto restart;
 	case X86_OP_MOVZX_OPC1:
+		ctx.zero_extend = true;
 		if (!ctx_update(&ctx, &pc, 1, pg_structs))
 			goto error_noinst;
 		op[1].raw = *ctx.inst;
@@ -191,8 +193,39 @@ restart:
 
 	op[2].raw = *ctx.inst;
 
-	if (!ctx.does_write && inst.access_size < 4)
-		inst.reg_preserve_mask = ~BYTE_MASK(inst.access_size);
+	/*
+	 * reg_preserve_mask defaults to 0, and only needs to be set in case of
+	 * reads
+	 */
+	if (!ctx.does_write) {
+		/*
+		 * MOVs on 32 or 64 bit destination registers need no
+		 * adjustment of the reg_preserve_mask, all upper bits will
+		 * always be cleared.
+		 *
+		 * In case of 16 or 8 bit registers, the instruction must only
+		 * modify bits within that width. Therefore, reg_preserve_mask
+		 * may be set to preserve upper bits.
+		 *
+		 * For regular instructions, this is the case if access_size < 4.
+		 *
+		 * For zero-extend instructions, this is the case if the
+		 * operand size override prefix is set.
+		 */
+		if (!ctx.zero_extend && inst.access_size < 4) {
+			/*
+			 * Restrict access to the width of the access_size, and
+			 * preserve all other bits
+			 */
+			inst.reg_preserve_mask = ~BYTE_MASK(inst.access_size);
+		} else if (ctx.zero_extend && ctx.has_opsz_prefix) {
+			/*
+			 * Always preserve bits 16-63. Potential zero-extend of
+			 * bits 8-15 is ensured by access_size
+			 */
+			inst.reg_preserve_mask = ~BYTE_MASK(2);
+		}
+	}
 
 	/* ensure that we are actually talking about mov imm,<mem> */
 	if (op[0].raw == X86_OP_MOV_IMMEDIATE_TO_MEM && op[2].modrm.reg != 0)
