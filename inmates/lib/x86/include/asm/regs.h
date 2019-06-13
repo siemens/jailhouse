@@ -48,3 +48,80 @@
 
 #define MSR_MTRR_DEF_TYPE	0x000002ff
 #define MTRR_ENABLE		0x00000800
+
+#ifndef __ASSEMBLY__
+
+#include <string.h>
+
+#define READ_CR(n)					\
+static inline unsigned long read_cr##n(void)		\
+{							\
+	unsigned long cr;				\
+	asm volatile("mov %%cr" __stringify(n) ", %0"	\
+		: "=r" (cr));				\
+							\
+	return cr;					\
+}
+
+READ_CR(3)
+READ_CR(4)
+
+static inline void write_cr4(unsigned long val)
+{
+	asm volatile("mov %0, %%cr4" : : "r" (val));
+}
+
+static inline u64 read_xcr0(void)
+{
+	register u32 eax, edx;
+
+	asm volatile("xgetbv" : "=a" (eax), "=d" (edx) : "c" (0));
+
+	return ((u64)(edx) << 32) + ((u64)(eax));
+}
+
+static inline void write_xcr0(u64 xcr0)
+{
+	unsigned int eax = xcr0;
+	unsigned int edx = xcr0 >> 32;
+
+	asm volatile("xsetbv" : : "a" (eax), "d" (edx), "c" (0));
+}
+
+static inline void cpuid(unsigned int *eax, unsigned int *ebx,
+                         unsigned int *ecx, unsigned int *edx)
+{
+        /* ecx is often an input as well as an output. */
+        asm volatile("cpuid"
+            : "=a" (*eax), "=b" (*ebx), "=c" (*ecx), "=d" (*edx)
+            : "0" (*eax), "2" (*ecx)
+            : "memory");
+}
+
+static inline u64 cpuid_edax(unsigned int op, unsigned int sub)
+{
+	unsigned int eax, ebx, ecx, edx;
+
+	eax = op;
+	ecx = sub;
+	cpuid(&eax, &ebx, &ecx, &edx);
+	return ((u64)edx << 32) + (u64)eax;
+}
+
+#define CPUID_REG(reg)							  \
+static inline unsigned int cpuid_##reg(unsigned int op, unsigned int sub) \
+{									  \
+	unsigned int eax, ebx, ecx, edx;				  \
+									  \
+	eax = op;							  \
+	ecx = sub;							  \
+	cpuid(&eax, &ebx, &ecx, &edx);					  \
+	return reg;							  \
+}
+
+CPUID_REG(eax)
+CPUID_REG(ebx)
+CPUID_REG(ecx)
+CPUID_REG(edx)
+
+#endif /* __ASSEMBLY__ */

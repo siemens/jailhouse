@@ -37,6 +37,7 @@
  */
 
 #include <inmate.h>
+#include <asm/regs.h>
 
 #define PG_PRESENT	0x01
 #define PG_RW		0x02
@@ -48,7 +49,7 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 	unsigned long pt_addr, *pt_entry, *pt;
 	unsigned long vaddr = (unsigned long)start;
 
-	asm volatile("mov %%cr3,%0" : "=r" (pt_addr));
+	pt_addr = read_cr3();
 
 	size += (vaddr & ~HUGE_PAGE_MASK) + HUGE_PAGE_SIZE - 1;
 	size &= HUGE_PAGE_MASK;
