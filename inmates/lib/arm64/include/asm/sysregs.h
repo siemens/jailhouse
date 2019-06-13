@@ -41,6 +41,8 @@
 
 #ifndef __ASSEMBLY__
 
+#include <string.h>
+
 #define SCTLR_EL1_I	(1 << 12)
 #define SCTLR_EL1_C	(1 << 2)
 #define SCTLR_EL1_M	(1 << 0)
@@ -82,9 +84,6 @@
 
 #define MPIDR_AFFINITY_LEVEL(mpidr, level) \
         (((mpidr) >> MPIDR_LEVEL_SHIFT(level)) & MPIDR_LEVEL_MASK)
-
-#define __stringify_1(x...)     #x
-#define __stringify(x...)       __stringify_1(x)
 
 #define SYSREG_32(op1, crn, crm, op2)	s3_##op1 ##_##crn ##_##crm ##_##op2
 
