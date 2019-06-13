@@ -11,23 +11,9 @@
  */
 
 #include <inmate.h>
-
-#define EXPECT_EQUAL(a, b)	evaluate(a, b, __LINE__)
+#include <test.h>
 
 extern u8 __reset_entry[]; /* assumed to be at 0 */
-
-static bool all_passed = true;
-
-static void evaluate(u64 a, u64 b, int line)
-{
-	bool passed = (a == b);
-
-	printk("Test at line #%d %s\n", line, passed ? "passed" : "FAILED");
-	if (!passed) {
-		printk(" %llx != %llx\n", a, b);
-		all_passed = false;
-	}
-}
 
 /*
  * mmio-access tests different memory access strategies that are intercepted by

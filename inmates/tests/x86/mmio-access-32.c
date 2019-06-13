@@ -11,21 +11,7 @@
  */
 
 #include <inmate.h>
-
-#define EXPECT_EQUAL(a, b)	evaluate(a, b, __LINE__)
-
-static bool all_passed = true;
-
-static void evaluate(u32 a, u32 b, int line)
-{
-	bool passed = (a == b);
-
-	printk("Test at line #%d %s\n", line, passed ? "passed" : "FAILED");
-	if (!passed) {
-		printk(" %x != %x\n", a, b);
-		all_passed = false;
-	}
-}
+#include <test.h>
 
 void inmate_main(void)
 {
