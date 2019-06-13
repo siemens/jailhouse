@@ -39,7 +39,10 @@
 SECTIONS
 {
 	. = 0;
-	.boot		: { *(.boot) }
+	.boot		: {
+		*(.boot.entry)
+		*(.boot)
+	}
 
 	. = 0x1000;
 	.cmdline	: {

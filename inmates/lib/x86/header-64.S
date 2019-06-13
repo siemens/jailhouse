@@ -39,21 +39,9 @@
 #include <inmate.h>
 #include <asm/regs.h>
 
-	.code16
-	.section ".boot", "ax"
-
-	.globl __reset_entry
-__reset_entry:
-	lgdtl %cs:gdt_ptr
-
-	mov %cr0,%eax
-	or $X86_CR0_PE,%al
-	mov %eax,%cr0
-
-	ljmpl $INMATE_CS32,$start32
-
-
 	.code32
+	.section ".boot", "ax"
+	.globl start32
 start32:
 	mov %cr4,%eax
 	or $X86_CR4_PAE,%eax
@@ -142,6 +130,7 @@ gdt:
 	.quad	0x00c09b000000ffff
 	.quad	0x00af9b000000ffff
 
+	.globl gdt_ptr
 gdt_ptr:
 	.short	gdt_ptr - gdt - 1
 	.long	gdt
