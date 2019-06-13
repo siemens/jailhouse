@@ -108,7 +108,8 @@ start64:
 	mov $c_entry,%rbx
 
 call_entry:
-	mov $stack_top,%rsp
+	xor %rsp, %rsp
+	xchg stack, %rsp
 	callq *%rbx
 
 stop:	cli

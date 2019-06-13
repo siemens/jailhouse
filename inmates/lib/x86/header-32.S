@@ -104,7 +104,8 @@ start32:
 	mov $c_entry,%ebx
 
 call_entry:
-	mov $stack_top,%esp
+	xor %esp, %esp
+	xchg stack, %esp
 	call *%ebx
 
 stop:	cli

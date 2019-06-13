@@ -221,6 +221,7 @@ static inline unsigned int cpu_id(void)
 #define MAX_INTERRUPT_VECTORS	32
 
 extern unsigned long idt[];
+extern void *stack;
 
 void excp_reporting_init(void);
 

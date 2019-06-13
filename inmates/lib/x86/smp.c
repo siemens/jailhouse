@@ -54,6 +54,7 @@ void smp_start_cpu(unsigned int cpu_id, void (*entry)(void))
 	u64 base_val = ((u64)cpu_id << 32) | APIC_LVL_ASSERT;
 
 	ap_entry = entry;
+	stack = alloc(PAGE_SIZE, PAGE_SIZE) + PAGE_SIZE;
 
 	write_msr(X2APIC_ICR, base_val | APIC_DM_INIT);
 	delay_us(10000);
@@ -61,6 +62,6 @@ void smp_start_cpu(unsigned int cpu_id, void (*entry)(void))
 	delay_us(200);
 	write_msr(X2APIC_ICR, base_val | APIC_DM_SIPI);
 
-	while (ap_entry != NULL)
+	while (ap_entry && stack)
 		cpu_relax();
 }

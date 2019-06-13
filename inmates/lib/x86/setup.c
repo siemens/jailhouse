@@ -42,6 +42,8 @@
 
 #define AUTHENTIC_AMD(n)	(((const u32 *)"AuthenticAMD")[n])
 
+void *stack = (void*)stack_top;
+
 struct desc_table_reg {
 	u16 limit;
 	unsigned long base;
