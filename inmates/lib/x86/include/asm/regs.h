@@ -42,9 +42,30 @@
 
 #define X86_CR4_PAE		0x00000020
 #define X86_CR4_PSE		0x00000010
+#define X86_CR4_OSFXSR		0x00000200
+#define X86_CR4_OSXSAVE		0x00040000
+
+#define X86_XCR0_X87		(1 << 0)
+#define X86_XCR0_SSE		(1 << 1)
+#define X86_XCR0_AVX		(1 << 2)
 
 #define MSR_EFER		0xc0000080
 #define EFER_LME		0x00000100
+
+#define X86_CPUID_FEATURES	0x00000001 /* Processor Info and Feature Bits */
+/* Feature bits in EDX */
+# define X86_FEATURE_FPU	(1 << 0)  /* The processor contains an x87 FPU. */
+# define X86_FEATURE_FXSR       (1 << 24) /* FXSAVE/FXRSTOR, CR4.OSFXSR */
+# define X86_FEATURE_SSE	(1 << 25) /* The processor supports SSE */
+# define X86_FEATURE_SSE2	(1 << 26) /* The processor supports SSE2 */
+/* Feature bits in ECX */
+# define X86_FEATURE_SSE3	(1 << 0)  /* The processor supports SSE3 */
+# define X86_FEATURE_PCLMULQDQ	(1 << 1)  /* The processor supports PCLMULQDQ */
+# define X86_FEATURE_SSE4_1	(1 << 19) /* The processor supports SSE4.1 */
+# define X86_FEATURE_SSE4_2	(1 << 20) /* The processor supports SSE4.2 */
+# define X86_FEATURE_XSAVE	(1 << 26) /* XSAVE/..., CR4.OSXSAVE */
+
+#define X86_CPUID_XSTATE	0x0000000d /* Extended state features */
 
 #define MSR_MTRR_DEF_TYPE	0x000002ff
 #define MTRR_ENABLE		0x00000800
@@ -52,6 +73,21 @@
 #ifndef __ASSEMBLY__
 
 #include <string.h>
+
+struct x86_cpu_features {
+	bool avx:1;
+	bool sse:1;
+	bool sse2:1;
+	bool sse3:1;
+	bool sse4_1:1;
+	bool sse4_2:1;
+	bool fpu:1;
+	bool xsave:1;
+	bool fxsr:1;
+	bool pclmulqdq:1;
+};
+
+extern struct x86_cpu_features x86_cpu_features;
 
 #define READ_CR(n)					\
 static inline unsigned long read_cr##n(void)		\

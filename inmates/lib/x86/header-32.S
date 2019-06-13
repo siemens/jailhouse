@@ -74,7 +74,7 @@ start32:
 	cmp $SMP_MAX_CPUS,%edi
 	jae stop
 
-	mov $0x01,%eax
+	mov $X86_CPUID_FEATURES, %eax
 	cpuid
 	shr $24,%ebx
 	mov %bl,smp_cpu_ids(%edi)
@@ -94,6 +94,9 @@ start32:
 call_entry:
 	xor %esp, %esp
 	xchg stack, %esp
+
+	call arch_init_features
+
 	call *%ebx
 
 stop:	cli

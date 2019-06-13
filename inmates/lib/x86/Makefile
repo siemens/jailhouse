@@ -40,7 +40,8 @@ include $(INMATES_LIB)/Makefile.lib
 
 always := lib.a lib32.a
 
-TARGETS := excp.o header-common.o int.o ioapic.o printk.o setup.o uart.o
+TARGETS := cpu-features.o excp.o header-common.o int.o ioapic.o printk.o
+TARGETS += setup.o uart.o
 TARGETS += ../alloc.o ../pci.o ../string.o ../cmdline.o ../setup.o
 TARGETS += ../uart-8250.o ../printk.o
 TARGETS_32_ONLY := header-32.o
@@ -56,6 +57,10 @@ $(obj)/lib32.a: $(addprefix $(obj)/,$(lib32-y))
 	$(call if_changed,link_archive32)
 
 targets += header-32.o
+
+# Code of this object is called before SSE/AVX extensions are available. Ensure
+# that the compiler won't generate unsupported instructions for this file.
+CFLAGS_cpu-features.o += -mno-sse
 
 $(obj)/%-32.o: c_flags += -m32
 $(obj)/%-32.o: $(src)/%.c
