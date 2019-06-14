@@ -63,7 +63,7 @@ $(obj)/%.bin: $(obj)/%-linked.o
 
 # 32-bit (i386) support
 define DECLARE_32_BIT =
- CFLAGS_$(1).o := -m32
+ CFLAGS_$(1).o := -m32 -msse
  LDFLAGS_$(1)-linked.o := /dev/null -m elf_i386 -T
  $(1)_32 := y
 endef
