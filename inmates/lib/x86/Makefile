@@ -56,16 +56,16 @@ cmd_link_archive32 = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) $@ $^
 $(obj)/lib32.a: $(addprefix $(obj)/,$(lib32-y))
 	$(call if_changed,link_archive32)
 
-targets += header-32.o
+targets += $(lib32-y)
 
 # Code of this object is called before SSE/AVX extensions are available. Ensure
 # that the compiler won't generate unsupported instructions for this file.
 CFLAGS_cpu-features.o += -mno-sse
 
 $(obj)/%-32.o: c_flags += -m32
-$(obj)/%-32.o: $(src)/%.c
+$(obj)/%-32.o: $(src)/%.c FORCE
 	$(call if_changed_rule,cc_o_c)
 
 $(obj)/%-32.o: a_flags += -m32
-$(obj)/%-32.o: $(src)/%.S
+$(obj)/%-32.o: $(src)/%.S FORCE
 	$(call if_changed_rule,as_o_S)

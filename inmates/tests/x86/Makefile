@@ -24,7 +24,7 @@ sse-demo-y := sse-demo.o
 $(eval $(call DECLARE_32_BIT,sse-demo-32))
 sse-demo-32-y := sse-demo-32.o
 
-$(obj)/sse-demo-32.o: $(src)/sse-demo.c
+$(obj)/sse-demo-32.o: $(src)/sse-demo.c FORCE
 	$(call if_changed_rule,cc_o_c)
 
 $(eval $(call DECLARE_TARGETS,$(INMATES)))
