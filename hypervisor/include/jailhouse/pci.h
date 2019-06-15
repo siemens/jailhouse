@@ -23,7 +23,6 @@
 #define PCI_CFG_STATUS		0x06
 # define PCI_STS_CAPS		(1 << 4)
 #define PCI_CFG_BAR		0x10
-# define PCI_BAR_64BIT		0x4
 #define PCI_CFG_BAR_END		0x27
 #define PCI_CFG_ROMBAR		0x30
 #define PCI_CFG_CAPS		0x34

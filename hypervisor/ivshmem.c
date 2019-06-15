@@ -40,17 +40,17 @@
 
 #define IVSHMEM_MSIX_VECTORS	1
 
+/*
+ * Make the region two times as large as the MSI-X table to guarantee a
+ * power-of-2 size (encoding constraint of a BAR).
+ */
+#define IVSHMEM_MSIX_SIZE		(0x10 * IVSHMEM_MSIX_VECTORS * 2)
+
 #define IVSHMEM_REG_INTX_CTRL	0
 #define IVSHMEM_REG_IVPOS	8
 #define IVSHMEM_REG_DBELL	12
 #define IVSHMEM_REG_LSTATE	16
 #define IVSHMEM_REG_RSTATE	20
-
-/*
- * Make the region two times as large as the MSI-X table to guarantee a
- * power-of-2 size (encoding constraint of a BAR).
- */
-#define IVSHMEM_BAR4_SIZE	(0x10 * IVSHMEM_MSIX_VECTORS * 2)
 
 struct ivshmem_data {
 	struct ivshmem_endpoint eps[2];
@@ -69,8 +69,8 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	/* MSI-X capability */
 	[IVSHMEM_CFG_MSIX_CAP/4] = (IVSHMEM_MSIX_VECTORS - 1) << 16
 				   | (0x00 << 8) | PCI_CAP_ID_MSIX,
-	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = 4,
-	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 4,
+	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = 1,
+	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 1,
 };
 
 static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
@@ -210,19 +210,19 @@ static int ivshmem_write_command(struct ivshmem_endpoint *ive, u16 val)
 
 	if ((val & PCI_CMD_MEM) != (*cmd & PCI_CMD_MEM)) {
 		if (*cmd & PCI_CMD_MEM) {
-			mmio_region_unregister(device->cell, ive->bar0_address);
-			mmio_region_unregister(device->cell, ive->bar4_address);
+			mmio_region_unregister(device->cell, ive->ioregion[0]);
+			mmio_region_unregister(device->cell, ive->ioregion[1]);
 		}
 		if (val & PCI_CMD_MEM) {
-			ive->bar0_address = device->bar[0] & ~0xf;
+			ive->ioregion[0] = device->bar[0] & ~0xf;
 			/* Derive the size of region 0 from its BAR mask. */
-			mmio_region_register(device->cell, ive->bar0_address,
+			mmio_region_register(device->cell, ive->ioregion[0],
 					     ~device->info->bar_mask[0] + 1,
 					     ivshmem_register_mmio, ive);
 
-			ive->bar4_address = (*(u64 *)&device->bar[4]) & ~0xfL;
-			mmio_region_register(device->cell, ive->bar4_address,
-					     IVSHMEM_BAR4_SIZE,
+			ive->ioregion[1] = device->bar[1] & ~0xf;
+			mmio_region_register(device->cell, ive->ioregion[1],
+					     IVSHMEM_MSIX_SIZE,
 					     ivshmem_msix_mmio, ive);
 		}
 		*cmd = (*cmd & ~PCI_CMD_MEM) | (val & PCI_CMD_MEM);
@@ -381,8 +381,8 @@ void ivshmem_reset(struct pci_device *device)
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 
 	if (ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MEM) {
-		mmio_region_unregister(device->cell, ive->bar0_address);
-		mmio_region_unregister(device->cell, ive->bar4_address);
+		mmio_region_unregister(device->cell, ive->ioregion[0]);
+		mmio_region_unregister(device->cell, ive->ioregion[1]);
 	}
 
 	memset(device->bar, 0, sizeof(device->bar));
@@ -398,8 +398,6 @@ void ivshmem_reset(struct pci_device *device)
 			(((device->info->bdf >> 3) & 0x3) + 1) << 8;
 		/* disable MSI-X capability */
 		ive->cspace[PCI_CFG_CAPS/4] = 0;
-	} else {
-		device->bar[4] = PCI_BAR_64BIT;
 	}
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_PTR/4] = (u32)ive->shmem->virt_start;
