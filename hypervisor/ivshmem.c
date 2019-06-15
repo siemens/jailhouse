@@ -99,7 +99,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	switch (mmio->address) {
 	case IVSHMEM_REG_ID:
 		/* read-only ID */
-		mmio->value = ive->id;
+		mmio->value = ive->device->info->shmem_dev_id;
 		break;
 	case IVSHMEM_REG_MAX_PEERS:
 		/* read-only number of peers */
@@ -326,7 +326,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	struct ivshmem_endpoint *ive, *remote;
 	struct pci_device *peer_dev;
 	struct ivshmem_data *iv;
-	unsigned int id = 0;
+	unsigned int id;
 
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
@@ -340,8 +340,12 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		if (iv->bdf == dev_info->bdf)
 			break;
 
+	id = dev_info->shmem_dev_id;
+
 	if (iv) {
-		id = iv->eps[0].device ? 1 : 0;
+		if (id >= IVSHMEM_MAX_PEERS)
+			return trace_error(-EINVAL);
+
 		if (iv->eps[id].device)
 			return trace_error(-EBUSY);
 
@@ -373,7 +377,6 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 
 	ive->device = device;
 	ive->shmem = mem;
-	ive->id = id;
 	device->ivshmem_endpoint = ive;
 	if (remote->device) {
 		ive->remote = remote;
@@ -447,7 +450,7 @@ void ivshmem_exit(struct pci_device *device)
 	} else {
 		for (ivp = &ivshmem_list; *ivp; ivp = &(*ivp)->next) {
 			iv = *ivp;
-			if (&iv->eps[ive->id] == ive) {
+			if (&iv->eps[ive->device->info->shmem_dev_id] == ive) {
 				*ivp = iv->next;
 				page_free(&mem_pool, iv, 1);
 				break;
