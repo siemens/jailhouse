@@ -148,6 +148,7 @@ struct {
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
 			.shmem_region = 3,
+			.shmem_dev_id = 1,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
 #ifdef CONFIG_QEMU_E1000E_ASSIGNMENT

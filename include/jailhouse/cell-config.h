@@ -176,11 +176,13 @@ struct jailhouse_pci_device {
 	__u16 num_msix_vectors;
 	__u16 msix_region_size;
 	__u64 msix_address;
-	/** Memory region index of virtual shared memory device. */
+	/** Memory region index of shared memory device. */
 	__u32 shmem_region;
-	/** PCI subclass and interface ID of virtual shared memory device. */
+	/** ID of shared memory device (0..1). */
+	__u8 shmem_dev_id;
+	__u8 padding;
+	/** PCI subclass and interface ID of shared memory device. */
 	__u16 shmem_protocol;
-	__u8 padding[2];
 } __attribute__((packed));
 
 #define JAILHOUSE_IVSHMEM_BAR_MASK_INTX			\

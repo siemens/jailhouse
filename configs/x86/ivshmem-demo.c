@@ -86,6 +86,7 @@ struct {
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
 			.shmem_region = 2,
+			.shmem_dev_id = 1,
 		},
 	},
 };
