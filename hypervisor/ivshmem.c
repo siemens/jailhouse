@@ -48,11 +48,11 @@
  */
 #define IVSHMEM_MSIX_SIZE		(0x10 * IVSHMEM_MSIX_VECTORS * 2)
 
-#define IVSHMEM_REG_INTX_CTRL	0
-#define IVSHMEM_REG_IVPOS	8
-#define IVSHMEM_REG_DBELL	12
-#define IVSHMEM_REG_LSTATE	16
-#define IVSHMEM_REG_RSTATE	20
+#define IVSHMEM_REG_IVPOS		0x00
+#define IVSHMEM_REG_INTX_CTRL		0x08
+#define IVSHMEM_REG_DOORBELL		0x0c
+#define IVSHMEM_REG_LSTATE		0x10
+#define IVSHMEM_REG_RSTATE		0x14
 
 struct ivshmem_data {
 	struct ivshmem_endpoint eps[2];
@@ -106,7 +106,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		/* read-only IVPosition */
 		mmio->value = ive->ivpos;
 		break;
-	case IVSHMEM_REG_DBELL:
+	case IVSHMEM_REG_DOORBELL:
 		if (mmio->is_write)
 			ivshmem_remote_interrupt(ive);
 		else
