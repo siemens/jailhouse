@@ -32,6 +32,8 @@
 #define PCI_VENDOR_ID_SIEMENS		0x110a
 #define IVSHMEM_DEVICE_ID		0x4106
 
+#define IVSHMEM_MAX_PEERS		2
+
 #define IVSHMEM_CFG_VNDR_CAP		0x40
 #define IVSHMEM_CFG_MSIX_CAP		(IVSHMEM_CFG_VNDR_CAP + \
 					 IVSHMEM_CFG_VNDR_LEN)
@@ -49,13 +51,14 @@
 #define IVSHMEM_MSIX_SIZE		(0x10 * IVSHMEM_MSIX_VECTORS * 2)
 
 #define IVSHMEM_REG_ID			0x00
+#define IVSHMEM_REG_MAX_PEERS		0x04
 #define IVSHMEM_REG_INTX_CTRL		0x08
 #define IVSHMEM_REG_DOORBELL		0x0c
 #define IVSHMEM_REG_LSTATE		0x10
 #define IVSHMEM_REG_RSTATE		0x14
 
 struct ivshmem_data {
-	struct ivshmem_endpoint eps[2];
+	struct ivshmem_endpoint eps[IVSHMEM_MAX_PEERS];
 	u16 bdf;
 	struct ivshmem_data *next;
 };
@@ -97,6 +100,10 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 	case IVSHMEM_REG_ID:
 		/* read-only ID */
 		mmio->value = ive->id;
+		break;
+	case IVSHMEM_REG_MAX_PEERS:
+		/* read-only number of peers */
+		mmio->value = IVSHMEM_MAX_PEERS;
 		break;
 	case IVSHMEM_REG_INTX_CTRL:
 		if (mmio->is_write) {
