@@ -197,17 +197,9 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 	err = apic_cpu_init(cpu_data);
 	if (err)
-		goto error_out;
+		return err;
 
-	err = vcpu_init(cpu_data);
-	if (err)
-		goto error_out;
-
-	return 0;
-
-error_out:
-	arch_cpu_restore(this_cpu_id(), err);
-	return err;
+	return vcpu_init(cpu_data);
 }
 
 void __attribute__((noreturn)) arch_cpu_activate_vmm(void)
