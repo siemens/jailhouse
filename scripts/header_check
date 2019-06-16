@@ -31,7 +31,7 @@ test_compile()
 	header=`basename $2`
 	prepend=
 	case $header in
-	cell-config.h|header.h|hypercall.h)
+	cell-config.h|console.h|header.h|hypercall.h)
 		prepend="#include <jailhouse/types.h>"
 		;;
 	jailhouse_hypercall.h)
