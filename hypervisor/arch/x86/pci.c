@@ -393,8 +393,8 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 				     irq_msg);
 	// HACK for QEMU
 	if (result == -ENOSYS) {
-		mmio_write64(&device->msix_table[index].address,
-			     device->msix_vectors[index].address);
+		mmio_write64_split(&device->msix_table[index].address,
+				   device->msix_vectors[index].address);
 		mmio_write32(&device->msix_table[index].data,
 			     device->msix_vectors[index].data);
 		return 0;
@@ -402,8 +402,8 @@ int arch_pci_update_msix_vector(struct pci_device *device, unsigned int index)
 	if (result < 0)
 		return result;
 
-	mmio_write64(&device->msix_table[index].address,
-		     pci_get_x86_msi_remap_address(result));
+	mmio_write64_split(&device->msix_table[index].address,
+			   pci_get_x86_msi_remap_address(result));
 	mmio_write32(&device->msix_table[index].data, 0);
 
 	return 0;

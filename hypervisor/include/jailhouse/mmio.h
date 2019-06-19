@@ -74,6 +74,21 @@ DEFINE_MMIO_WRITE(64)
 /** @} */
 
 /**
+ * Write a 64-bit value to a memory-mapper I/O register. Perform two 32-bit
+ * write operations instead of one 64-bit write operation.
+ *
+ * @param address	Virtual address of the register.
+ * @param value		Value to write.
+ * @{
+ */
+static inline void mmio_write64_split(void *address, u64 value)
+{
+	mmio_write32(address + 4, (u32)(value >> 32));
+	mmio_write32(address, (u32)value);
+}
+/** @} */
+
+/**
  * Read value from 32 or 64-bit MMIO register field.
  * @param address	Virtual address of the register.
  * @param mask		Bitmask to defining the field. Only successive bits
