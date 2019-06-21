@@ -81,14 +81,18 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 
 static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
 {
+	struct ivshmem_endpoint *remote = ive->remote;
+
+	if (!remote)
+		return;
+
 	/*
-	 * Hold the remote lock while sending the interrupt so that
-	 * ivshmem_exit can synchronize on the completion of the delivery.
+	 * Hold the IRQ lock while sending the interrupt so that ivshmem_exit
+	 * can synchronize on the completion of the delivery.
 	 */
-	spin_lock(&ive->remote_lock);
-	if (ive->remote)
-		arch_ivshmem_trigger_interrupt(ive->remote);
-	spin_unlock(&ive->remote_lock);
+	spin_lock(&remote->irq_lock);
+	arch_ivshmem_trigger_interrupt(remote);
+	spin_unlock(&remote->irq_lock);
 }
 
 static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
@@ -394,6 +398,14 @@ void ivshmem_reset(struct pci_device *device)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 
+	/*
+	 * Hold the spinlock while invalidating in order to synchronize with
+	 * any in-flight interrupt from remote sides.
+	 */
+	spin_lock(&ive->irq_lock);
+	memset(&ive->irq_cache, 0, sizeof(ive->irq_cache));
+	spin_unlock(&ive->irq_lock);
+
 	if (ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MEM) {
 		mmio_region_unregister(device->cell, ive->ioregion[0]);
 		mmio_region_unregister(device->cell, ive->ioregion[1]);
@@ -440,15 +452,16 @@ void ivshmem_exit(struct pci_device *device)
 	struct ivshmem_endpoint *remote = ive->remote;
 	struct ivshmem_link **linkp;
 
+	/*
+	 * Hold the spinlock while invalidating in order to synchronize with
+	 * any in-flight interrupt from remote sides.
+	 */
+	spin_lock(&ive->irq_lock);
+	memset(&ive->irq_cache, 0, sizeof(ive->irq_cache));
+	spin_unlock(&ive->irq_lock);
+
 	if (remote) {
-		/*
-		 * The spinlock synchronizes the disconnection of the remote
-		 * device with any in-flight interrupts targeting the device
-		 * to be destroyed.
-		 */
-		spin_lock(&remote->remote_lock);
 		remote->remote = NULL;
-		spin_unlock(&remote->remote_lock);
 
 		ivshmem_write_state(ive, 0);
 

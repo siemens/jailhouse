@@ -1,10 +1,11 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2019
  *
  * Author:
  *  Henning Schild <henning.schild@siemens.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -18,49 +19,39 @@
 
 void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 {
-	/* Get a copy of the struct before using it. */
-	struct apic_irq_message irq_msg = ive->arch.irq_msg;
-
-	/* The read barrier makes sure the copy is consistent. */
-	memory_load_barrier();
-	if (irq_msg.valid)
-		apic_send_irq(irq_msg);
+	if (ive->irq_cache.msg.valid)
+		apic_send_irq(ive->irq_cache.msg);
 }
 
 int arch_ivshmem_update_msix(struct pci_device *device, bool enabled)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
-	union x86_msi_vector msi = {
-		.raw.address = device->msix_vectors[0].address,
-		.raw.data = device->msix_vectors[0].data,
-	};
-	struct apic_irq_message irq_msg;
+	struct apic_irq_message irq_msg = { .valid = 0 };
+	union x86_msi_vector msi;
 
-	/* before doing anything mark the cached irq_msg as invalid,
-	 * on success it will be valid on return. */
-	ive->arch.irq_msg.valid = 0;
-	memory_barrier();
+	if (enabled) {
+		msi.raw.address = device->msix_vectors[0].address;
+		msi.raw.data = device->msix_vectors[0].data;
 
-	if (!enabled)
-		return 0;
+		irq_msg = x86_pci_translate_msi(device, 0, 0, msi);
 
-	irq_msg = x86_pci_translate_msi(device, 0, 0, msi);
-	if (!irq_msg.valid)
-		return 0;
-
-	if (!apic_filter_irq_dest(device->cell, &irq_msg)) {
-		panic_printk("FATAL: ivshmem MSI-X target outside of "
-			     "cell \"%s\" device %02x:%02x.%x\n",
-			     device->cell->config->name,
-			     PCI_BDF_PARAMS(device->info->bdf));
-		return -EPERM;
+		if (irq_msg.valid &&
+		    !apic_filter_irq_dest(device->cell, &irq_msg)) {
+			panic_printk("FATAL: ivshmem MSI-X target outside of "
+				     "cell \"%s\" device %02x:%02x.%x\n",
+				     device->cell->config->name,
+				     PCI_BDF_PARAMS(device->info->bdf));
+			return -EPERM;
+		}
 	}
-	/* now copy the whole struct into our cache and mark the cache
-	 * valid at the end */
-	irq_msg.valid = 0;
-	ive->arch.irq_msg = irq_msg;
-	memory_barrier();
-	ive->arch.irq_msg.valid = 1;
+
+	/*
+	 * Lock used as barrier, ensuring all interrupts triggered after return
+	 * use the new setting.
+	 */
+	spin_lock(&ive->irq_lock);
+	ive->irq_cache.msg = irq_msg;
+	spin_unlock(&ive->irq_lock);
 
 	return 0;
 }

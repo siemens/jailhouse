@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2016-2019
  *
  * Author:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -15,7 +15,7 @@
 
 void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 {
-	unsigned int irq_id = ive->arch.irq_id;
+	unsigned int irq_id = ive->irq_cache.id;
 
 	if (irq_id)
 		irqchip_set_pending(NULL, irq_id);
@@ -33,7 +33,13 @@ int arch_ivshmem_update_msix(struct pci_device *device, bool enabled)
 			return -EPERM;
 	}
 
-	ive->arch.irq_id = irq_id;
+	/*
+	 * Lock used as barrier, ensuring all interrupts triggered after return
+	 * use the new setting.
+	 */
+	spin_lock(&ive->irq_lock);
+	ive->irq_cache.id = irq_id;
+	spin_unlock(&ive->irq_lock);
 
 	return 0;
 }
@@ -43,6 +49,12 @@ void arch_ivshmem_update_intx(struct ivshmem_endpoint *ive, bool enabled)
 	u8 pin = ive->cspace[PCI_CFG_INT/4] >> 8;
 	struct pci_device *device = ive->device;
 
-	ive->arch.irq_id = enabled ?
+	/*
+	 * Lock used as barrier, ensuring all interrupts triggered after return
+	 * use the new setting.
+	 */
+	spin_lock(&ive->irq_lock);
+	ive->irq_cache.id = enabled ?
 		(32 + device->cell->config->vpci_irq_base + pin - 1) : 0;
+	spin_unlock(&ive->irq_lock);
 }

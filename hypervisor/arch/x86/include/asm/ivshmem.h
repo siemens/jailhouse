@@ -12,6 +12,6 @@
 
 #include <asm/apic.h>
 
-struct arch_pci_ivshmem {
-	struct apic_irq_message irq_msg;
+struct arch_ivshmem_irq_cache {
+	struct apic_irq_message msg;
 };

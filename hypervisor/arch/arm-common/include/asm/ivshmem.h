@@ -10,6 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-struct arch_pci_ivshmem {
-	u16 irq_id;
+struct arch_ivshmem_irq_cache {
+	u16 id;
 };
