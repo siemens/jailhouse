@@ -168,7 +168,8 @@ struct jailhouse_pci_device {
 	__u16 caps_start;
 	__u16 num_caps;
 	__u8 num_msi_vectors;
-	__u8 msi_64bits;
+	__u8 msi_64bits:1;
+	__u8 msi_maskable:1;
 	__u16 num_msix_vectors;
 	__u16 msix_region_size;
 	__u64 msix_address;

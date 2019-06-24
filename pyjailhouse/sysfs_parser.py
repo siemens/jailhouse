@@ -682,6 +682,7 @@ class PCIDevice:
         self.num_caps = len(caps)
         self.num_msi_vectors = 0
         self.msi_64bits = 0
+        self.msi_maskable = 0
         self.num_msix_vectors = 0
         self.msix_region_size = 0
         self.msix_address = 0
@@ -691,6 +692,7 @@ class PCIDevice:
                 if c.id == PCI_CAP_ID.MSI:
                     self.num_msi_vectors = 1 << ((msg_ctrl >> 1) & 0x7)
                     self.msi_64bits = (msg_ctrl >> 7) & 1
+                    self.msi_maskable = (msg_ctrl >> 8) & 1
                 else:  # MSI-X
                     if c.msix_address != 0:
                         vectors = (msg_ctrl & 0x7ff) + 1
