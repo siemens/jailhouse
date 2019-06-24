@@ -31,9 +31,9 @@ void arch_pci_remove_physical_device(struct pci_device *device)
 {
 }
 
-void arch_pci_suppress_msi(struct pci_device *device,
-			   const struct jailhouse_pci_capability *cap,
-			   bool suppressed)
+void arch_pci_set_suppress_msi(struct pci_device *device,
+			       const struct jailhouse_pci_capability *cap,
+			       bool suppress)
 {
 }
 

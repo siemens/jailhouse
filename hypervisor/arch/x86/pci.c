@@ -282,9 +282,9 @@ x86_pci_translate_msi(struct pci_device *device, unsigned int vector,
 	return irq_msg;
 }
 
-void arch_pci_suppress_msi(struct pci_device *device,
-			   const struct jailhouse_pci_capability *cap,
-			   bool suppressed)
+void arch_pci_set_suppress_msi(struct pci_device *device,
+			       const struct jailhouse_pci_capability *cap,
+			       bool suppress)
 {
 	unsigned int n, vectors = pci_enabled_msi_vectors(device);
 	const struct jailhouse_pci_device *info = device->info;
@@ -299,7 +299,7 @@ void arch_pci_suppress_msi(struct pci_device *device,
 	if (!(pci_read_config(info->bdf, PCI_CFG_COMMAND, 2) & PCI_CMD_MASTER))
 		return;
 
-	if (suppressed) {
+	if (suppress) {
 		/*
 		 * Disable delivery by setting no destination CPU bit in logical
 		 * addressing mode.

@@ -210,14 +210,14 @@ void arch_pci_remove_physical_device(struct pci_device *device);
  * Avoid MSI vector delivery of a given device or re-enable it.
  * @param device	Device to be silenced.
  * @param cap		MSI capability of the device.
- * @param suppressed	True to disable delivery, false to allow it again.
+ * @param suppress	True to disable delivery, false to allow it again.
  *
  * @note As events may be lost while a MSI vector is suppressed, re-enabling it
  * may require injecting one event unconditionally.
  */
-void arch_pci_suppress_msi(struct pci_device *device,
-			   const struct jailhouse_pci_capability *cap,
-			   bool suppressed);
+void arch_pci_set_suppress_msi(struct pci_device *device,
+			       const struct jailhouse_pci_capability *cap,
+			       bool suppress);
 
 /**
  * Update MSI vector mapping for a given device.
