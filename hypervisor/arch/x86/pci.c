@@ -289,6 +289,7 @@ void arch_pci_suppress_msi(struct pci_device *device,
 	unsigned int n, vectors = pci_enabled_msi_vectors(device);
 	const struct jailhouse_pci_device *info = device->info;
 	struct apic_irq_message irq_msg;
+	unsigned int mask_pos, mask = 0;
 	union x86_msi_vector msi = {
 		.native.dest_logical = 1,
 		.native.redir_hint = 1,
@@ -312,11 +313,15 @@ void arch_pci_suppress_msi(struct pci_device *device,
 		 * Inject MSI vectors to avoid losing events while suppressed.
 		 * Linux can handle rare spurious interrupts.
 		 */
+		if (info->msi_maskable) {
+			mask_pos = cap->start + (info->msi_64bits ? 0x10 : 0xc);
+			mask = pci_read_config(info->bdf, mask_pos, 4);
+		}
 		msi = pci_get_x86_msi_vector(device);
 		for (n = 0; n < vectors; n++) {
 			irq_msg = x86_pci_translate_msi(device, n, vectors,
 							msi);
-			if (irq_msg.valid)
+			if ((mask & (1 << n)) == 0 && irq_msg.valid)
 				apic_send_irq(irq_msg);
 		}
 	}
