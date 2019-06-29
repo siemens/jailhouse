@@ -38,6 +38,7 @@
 #define IVSHMEM_CFG_MSIX_CAP		(IVSHMEM_CFG_VNDR_CAP + \
 					 IVSHMEM_CFG_VNDR_LEN)
 
+#define IVSHMEM_CFG_SHMEM_STATE_TAB_SZ	(IVSHMEM_CFG_VNDR_CAP + 0x04)
 #define IVSHMEM_CFG_SHMEM_RW_SZ		(IVSHMEM_CFG_VNDR_CAP + 0x08)
 #define IVSHMEM_CFG_SHMEM_ADDR		(IVSHMEM_CFG_VNDR_CAP + 0x18)
 #define IVSHMEM_CFG_VNDR_LEN		0x20
@@ -54,8 +55,7 @@
 #define IVSHMEM_REG_MAX_PEERS		0x04
 #define IVSHMEM_REG_INTX_CTRL		0x08
 #define IVSHMEM_REG_DOORBELL		0x0c
-#define IVSHMEM_REG_LSTATE		0x10
-#define IVSHMEM_REG_RSTATE		0x14
+#define IVSHMEM_REG_STATE		0x10
 
 struct ivshmem_link {
 	struct ivshmem_endpoint eps[IVSHMEM_MAX_PEERS];
@@ -89,6 +89,31 @@ static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
 	if (ive->remote)
 		arch_ivshmem_trigger_interrupt(ive->remote);
 	spin_unlock(&ive->remote_lock);
+}
+
+static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
+{
+	const struct jailhouse_pci_device *dev_info = ive->device->info;
+	u32 *state_table = (u32 *)TEMPORARY_MAPPING_BASE;
+
+	/*
+	 * Cannot fail: upper levels of page table were already created by
+	 * paging_init, and we always map single pages, thus only update the
+	 * leaf entry and do not have to deal with huge pages.
+	 */
+	paging_create(&this_cpu_data()->pg_structs,
+		      ive->shmem[0].phys_start, PAGE_SIZE,
+		      (unsigned long)state_table, PAGE_DEFAULT_FLAGS,
+		      PAGING_NON_COHERENT);
+
+	state_table[dev_info->shmem_dev_id] = new_state;
+	memory_barrier();
+
+	if (ive->state != new_state) {
+		ive->state = new_state;
+
+		ivshmem_remote_interrupt(ive);
+	}
 }
 
 int ivshmem_update_msix(struct pci_device *device)
@@ -145,19 +170,11 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		else
 			mmio->value = 0;
 		break;
-	case IVSHMEM_REG_LSTATE:
-		if (mmio->is_write) {
-			ive->state = mmio->value;
-			ivshmem_remote_interrupt(ive);
-		} else {
+	case IVSHMEM_REG_STATE:
+		if (mmio->is_write)
+			ivshmem_write_state(ive, mmio->value);
+		else
 			mmio->value = ive->state;
-		}
-		break;
-	case IVSHMEM_REG_RSTATE:
-		/* read-only remote state */
-		spin_lock(&ive->remote_lock);
-		mmio->value = ive->remote ? ive->remote->state : 0;
-		spin_unlock(&ive->remote_lock);
 		break;
 	default:
 		/* ignore any other access */
@@ -315,7 +332,6 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 {
 	const struct jailhouse_pci_device *dev_info = device->info;
 	struct ivshmem_endpoint *ive, *remote;
-	const struct jailhouse_memory *mem;
 	struct pci_device *peer_dev;
 	struct ivshmem_link *link;
 	unsigned int id;
@@ -323,10 +339,9 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
 
-	if (dev_info->shmem_region >= cell->config->num_memory_regions)
+	if (dev_info->shmem_regions_start + 2 >
+	    cell->config->num_memory_regions)
 		return trace_error(-EINVAL);
-
-	mem = jailhouse_cell_mem_regions(cell->config) + dev_info->shmem_region;
 
 	for (link = ivshmem_links; link; link = link->next)
 		if (link->bdf == dev_info->bdf)
@@ -361,7 +376,8 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 
 	ive->device = device;
 	ive->link = link;
-	ive->shmem = mem;
+	ive->shmem = jailhouse_cell_mem_regions(cell->config) +
+		dev_info->shmem_regions_start;
 	device->ivshmem_endpoint = ive;
 	if (remote->device) {
 		ive->remote = remote;
@@ -400,14 +416,17 @@ void ivshmem_reset(struct pci_device *device)
 		device->msix_vectors[0].masked = 1;
 	}
 
-	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4] = (u32)ive->shmem->size;
-	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4 + 1] =
-		(u32)(ive->shmem->size >> 32);
-	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4] = (u32)ive->shmem->virt_start;
-	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4 + 1] =
-		(u32)(ive->shmem->virt_start >> 32);
+	ive->cspace[IVSHMEM_CFG_SHMEM_STATE_TAB_SZ/4] = (u32)ive->shmem[0].size;
 
-	ive->state = 0;
+	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4] = (u32)ive->shmem[1].size;
+	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4 + 1] =
+		(u32)(ive->shmem[1].size >> 32);
+
+	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4] = (u32)ive->shmem[0].virt_start;
+	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4 + 1] =
+		(u32)(ive->shmem[0].virt_start >> 32);
+
+	ivshmem_write_state(ive, 0);
 }
 
 /**
@@ -431,7 +450,7 @@ void ivshmem_exit(struct pci_device *device)
 		remote->remote = NULL;
 		spin_unlock(&remote->remote_lock);
 
-		ivshmem_remote_interrupt(ive);
+		ivshmem_write_state(ive, 0);
 
 		ive->device = NULL;
 	} else {

@@ -133,7 +133,13 @@ struct jailhouse_memory {
 	{								\
 		.phys_start = start,					\
 		.virt_start = start,					\
-		.size = 0x100000,					\
+		.size = 0x1000,						\
+		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED,	\
+	},								\
+	{								\
+		.phys_start = (start) + 0x1000,				\
+		.virt_start = (start) + 0x1000,				\
+		.size = 0xff000,					\
 		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |	\
 			JAILHOUSE_MEM_ROOTSHARED,			\
 	}
@@ -185,8 +191,8 @@ struct jailhouse_pci_device {
 	__u16 num_msix_vectors;
 	__u16 msix_region_size;
 	__u64 msix_address;
-	/** Memory region index of shared memory device. */
-	__u32 shmem_region;
+	/** First memory region index of shared memory device. */
+	__u32 shmem_regions_start;
 	/** ID of shared memory device (0..1). */
 	__u8 shmem_dev_id;
 	__u8 padding;
