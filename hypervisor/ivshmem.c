@@ -79,26 +79,22 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 1,
 };
 
-static void ivshmem_remote_interrupt(struct ivshmem_endpoint *ive)
+static void ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 {
-	struct ivshmem_endpoint *remote = ive->remote;
-
-	if (!remote)
-		return;
-
 	/*
 	 * Hold the IRQ lock while sending the interrupt so that ivshmem_exit
 	 * can synchronize on the completion of the delivery.
 	 */
-	spin_lock(&remote->irq_lock);
-	arch_ivshmem_trigger_interrupt(remote);
-	spin_unlock(&remote->irq_lock);
+	spin_lock(&ive->irq_lock);
+	arch_ivshmem_trigger_interrupt(ive);
+	spin_unlock(&ive->irq_lock);
 }
 
 static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 {
 	const struct jailhouse_pci_device *dev_info = ive->device->info;
 	u32 *state_table = (u32 *)TEMPORARY_MAPPING_BASE;
+	struct ivshmem_endpoint *target_ive;
 
 	/*
 	 * Cannot fail: upper levels of page table were already created by
@@ -116,7 +112,8 @@ static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 	if (ive->state != new_state) {
 		ive->state = new_state;
 
-		ivshmem_remote_interrupt(ive);
+		target_ive = &ive->link->eps[dev_info->shmem_dev_id ^ 1];
+		ivshmem_trigger_interrupt(target_ive);
 	}
 }
 
@@ -149,7 +146,8 @@ static void ivshmem_update_intx(struct ivshmem_endpoint *ive)
 static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
-	struct ivshmem_endpoint *ive = arg;
+	struct ivshmem_endpoint *target_ive, *ive = arg;
+	unsigned int target;
 
 	switch (mmio->address) {
 	case IVSHMEM_REG_ID:
@@ -169,10 +167,17 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		}
 		break;
 	case IVSHMEM_REG_DOORBELL:
-		if (mmio->is_write)
-			ivshmem_remote_interrupt(ive);
-		else
+		if (mmio->is_write) {
+			target = GET_FIELD(mmio->value, 31, 16);
+			if (target >= IVSHMEM_MAX_PEERS)
+				break;
+
+			target_ive = &ive->link->eps[target];
+
+			ivshmem_trigger_interrupt(target_ive);
+		} else {
 			mmio->value = 0;
+		}
 		break;
 	case IVSHMEM_REG_STATE:
 		if (mmio->is_write)
