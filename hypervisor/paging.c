@@ -105,12 +105,14 @@ static unsigned long find_next_free_page(struct page_pool *pool,
 static void *page_alloc_internal(struct page_pool *pool, unsigned int num,
 				 unsigned long align_mask)
 {
-	/* The pool itself might not be aligned as required. */
-	unsigned long aligned_start =
-		((unsigned long)pool->base_address >> PAGE_SHIFT) & align_mask;
-	unsigned long next = aligned_start;
-	unsigned long start, last;
+	unsigned long aligned_start, pool_start, next, start, last;
 	unsigned int allocated;
+
+	pool_start = (unsigned long)pool->base_address >> PAGE_SHIFT;
+
+	/* The pool itself might not be aligned as required. */
+	aligned_start = ((pool_start + align_mask) & ~align_mask) - pool_start;
+	next = aligned_start;
 
 restart:
 	/* Forward the search start to the next aligned page. */
