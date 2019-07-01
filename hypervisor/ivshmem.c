@@ -43,8 +43,6 @@
 #define IVSHMEM_CFG_SHMEM_ADDR		(IVSHMEM_CFG_VNDR_CAP + 0x18)
 #define IVSHMEM_CFG_VNDR_LEN		0x20
 
-#define IVSHMEM_MSIX_VECTORS	1
-
 /*
  * Make the region two times as large as the MSI-X table to guarantee a
  * power-of-2 size (encoding constraint of a BAR).
@@ -73,20 +71,20 @@ static const u32 default_cspace[IVSHMEM_CFG_SIZE / sizeof(u32)] = {
 	[PCI_CFG_CAPS/4] = IVSHMEM_CFG_VNDR_CAP,
 	[IVSHMEM_CFG_VNDR_CAP/4] = (IVSHMEM_CFG_VNDR_LEN << 16) |
 				(IVSHMEM_CFG_MSIX_CAP << 8) | PCI_CAP_ID_VNDR,
-	[IVSHMEM_CFG_MSIX_CAP/4] = (IVSHMEM_MSIX_VECTORS - 1) << 16 |
-				   (0x00 << 8) | PCI_CAP_ID_MSIX,
+	[IVSHMEM_CFG_MSIX_CAP/4] = (0x00 << 8) | PCI_CAP_ID_MSIX,
 	[(IVSHMEM_CFG_MSIX_CAP + 0x4)/4] = 1,
 	[(IVSHMEM_CFG_MSIX_CAP + 0x8)/4] = 0x10 * IVSHMEM_MSIX_VECTORS | 1,
 };
 
-static void ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
+static void ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive,
+				      unsigned int vector)
 {
 	/*
 	 * Hold the IRQ lock while sending the interrupt so that ivshmem_exit
 	 * can synchronize on the completion of the delivery.
 	 */
 	spin_lock(&ive->irq_lock);
-	arch_ivshmem_trigger_interrupt(ive);
+	arch_ivshmem_trigger_interrupt(ive, vector);
 	spin_unlock(&ive->irq_lock);
 }
 
@@ -113,25 +111,33 @@ static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 		ive->state = new_state;
 
 		target_ive = &ive->link->eps[dev_info->shmem_dev_id ^ 1];
-		ivshmem_trigger_interrupt(target_ive);
+		ivshmem_trigger_interrupt(target_ive, 0);
 	}
 }
 
-int ivshmem_update_msix(struct pci_device *device)
+int ivshmem_update_msix_vector(struct pci_device *device, unsigned int vector)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	union pci_msix_registers cap;
 	bool enabled;
 
-	if (device->info->num_msix_vectors == 0)
-		return 0;
-
 	cap.raw = ive->cspace[IVSHMEM_CFG_MSIX_CAP/4];
 	enabled = cap.enable && !cap.fmask &&
-		!ive->device->msix_vectors[0].masked &&
+		!device->msix_vectors[vector].masked &&
 		ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MASTER;
 
-	return arch_ivshmem_update_msix(ive, enabled);
+	return arch_ivshmem_update_msix(ive, vector, enabled);
+}
+
+int ivshmem_update_msix(struct pci_device *device)
+{
+	unsigned int vector, num_vectors = device->info->num_msix_vectors;
+	int err = 0;
+
+	for (vector = 0; vector < num_vectors && !err; vector++)
+		err = ivshmem_update_msix_vector(device, vector);
+
+	return err;
 }
 
 static void ivshmem_update_intx(struct ivshmem_endpoint *ive)
@@ -147,7 +153,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 					      struct mmio_access *mmio)
 {
 	struct ivshmem_endpoint *target_ive, *ive = arg;
-	unsigned int target;
+	unsigned int num_vectors, vector, target;
 
 	switch (mmio->address) {
 	case IVSHMEM_REG_ID:
@@ -168,13 +174,26 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		break;
 	case IVSHMEM_REG_DOORBELL:
 		if (mmio->is_write) {
+			/*
+			 * All peers have the same number of MSI-X vectors,
+			 * thus we can derive the limit from the local device.
+			 */
+			num_vectors = ive->device->info->num_msix_vectors;
+			if (num_vectors == 0)
+				num_vectors = 1; /* INTx means one vector */
+
+			vector = GET_FIELD(mmio->value, 15, 0);
+			/* ignore out-of-range requests */
+			if (vector >= num_vectors)
+				break;
+
 			target = GET_FIELD(mmio->value, 31, 16);
 			if (target >= IVSHMEM_MAX_PEERS)
 				break;
 
 			target_ive = &ive->link->eps[target];
 
-			ivshmem_trigger_interrupt(target_ive);
+			ivshmem_trigger_interrupt(target_ive, vector);
 		} else {
 			mmio->value = 0;
 		}
@@ -195,6 +214,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 
 static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 {
+	unsigned int vector = mmio->address / sizeof(union pci_msix_vector);
 	struct ivshmem_endpoint *ive = arg;
 	u32 *msix_table = (u32 *)ive->device->msix_vectors;
 
@@ -211,9 +231,11 @@ static enum mmio_result ivshmem_msix_mmio(void *arg, struct mmio_access *mmio)
 		}
 	/* MSI-X Table */
 	} else {
+		if (vector >= ive->device->info->num_msix_vectors)
+			goto fail;
 		if (mmio->is_write) {
 			msix_table[mmio->address / 4] = mmio->value;
-			if (ivshmem_update_msix(ive->device))
+			if (ivshmem_update_msix_vector(ive->device, vector))
 				return MMIO_ERROR;
 		} else {
 			mmio->value = msix_table[mmio->address / 4];
@@ -349,7 +371,8 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
 
 	if (dev_info->shmem_regions_start + 2 >
-	    cell->config->num_memory_regions)
+	    cell->config->num_memory_regions ||
+	    dev_info->num_msix_vectors > IVSHMEM_MSIX_VECTORS)
 		return trace_error(-EINVAL);
 
 	for (link = ivshmem_links; link; link = link->next)
@@ -402,6 +425,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 void ivshmem_reset(struct pci_device *device)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
+	unsigned int n;
 
 	/*
 	 * Hold the spinlock while invalidating in order to synchronize with
@@ -430,7 +454,10 @@ void ivshmem_reset(struct pci_device *device)
 		/* disable MSI-X capability */
 		ive->cspace[IVSHMEM_CFG_VNDR_CAP/4] &= 0xffff00ff;
 	} else {
-		device->msix_vectors[0].masked = 1;
+		ive->cspace[IVSHMEM_CFG_MSIX_CAP/4] |=
+			(device->info->num_msix_vectors - 1) << 16;
+		for (n = 0; n < device->info->num_msix_vectors; n++)
+			device->msix_vectors[n].masked = 1;
 	}
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_STATE_TAB_SZ/4] = (u32)ive->shmem[0].size;

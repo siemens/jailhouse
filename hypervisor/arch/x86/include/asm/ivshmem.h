@@ -13,5 +13,5 @@
 #include <asm/apic.h>
 
 struct arch_ivshmem_irq_cache {
-	struct apic_irq_message msg;
+	struct apic_irq_message msg[IVSHMEM_MSIX_VECTORS];
 };
