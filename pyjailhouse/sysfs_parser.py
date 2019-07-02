@@ -105,6 +105,11 @@ def parse_iomem(pcidevices):
 
     ret = []
     for r in regions:
+        # Filter PCI buses in order to avoid mapping empty ones that might
+        # require interception when becoming non-empty.
+        if r.typestr.startswith('PCI Bus'):
+            continue
+
         append_r = True
         # filter the list for MSI-X pages
         for d in pcidevices:
