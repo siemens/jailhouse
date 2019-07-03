@@ -302,13 +302,25 @@ static const struct of_device_id gic_of_match[] = {
 
 static bool create_vpci_of_overlay(struct jailhouse_system *config)
 {
+	u32 address_cells, size_cells, gic_address_cells, gic_phandle;
 	struct device_node *vpci_node = NULL;
-	u32 gic_address_cells, gic_phandle;
-	struct device_node *gic;
-	struct property *prop;
+	struct device_node *root, *gic;
+	struct property *prop = NULL;
 	unsigned int n, cell;
 	u64 base_addr;
 	u32 *prop_val;
+
+	root = of_find_node_by_path("/");
+	if (!root)
+		return false;
+
+	if (of_property_read_u32(root, "#address-cells", &address_cells) < 0 ||
+	    of_property_read_u32(root, "#size-cells", &size_cells) < 0) {
+		of_node_put(root);
+		return false;
+	}
+
+	of_node_put(root);
 
 	gic = of_find_matching_node(NULL, gic_of_match);
 	if (!gic)
@@ -348,6 +360,18 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	if (!vpci_node)
 		goto out;
 
+	/*
+	 * Set only here to suppress warnings of dtc when compiling the
+	 * incomplete overlay.
+	 */
+	prop = alloc_prop("device_type", 4);
+	if (!prop)
+		goto out;
+	strcpy(prop->value, "pci");
+
+	if (of_changeset_add_property(&overlay_changeset, vpci_node, prop) < 0)
+		goto out;
+
 	if (config->platform_info.pci_domain != (u16)-1) {
 		prop = alloc_prop("linux,pci-domain", sizeof(u32));
 		if (!prop)
@@ -381,22 +405,24 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	if (of_changeset_add_property(&overlay_changeset, vpci_node, prop) < 0)
 		goto out;
 
-	prop = alloc_prop("reg", sizeof(u32) * 4);
+	prop = alloc_prop("reg", sizeof(u32) * (address_cells + size_cells));
 	if (!prop)
 		goto out;
 
 	/* Set the MMCONFIG base address of the host controller. */
 	base_addr = config->platform_info.pci_mmconfig_base;
 	prop_val = prop->value;
-	prop_val[0] = cpu_to_be32(base_addr >> 32);
-	prop_val[1] = cpu_to_be32(base_addr);
-	prop_val[2] = 0;
-	prop_val[3] = cpu_to_be32(0x100000);
+	if (address_cells > 1)
+		*prop_val++ = cpu_to_be32(base_addr >> 32);
+	*prop_val++ = cpu_to_be32(base_addr);
+	if (size_cells > 1)
+		*prop_val++ = 0;
+	*prop_val = cpu_to_be32(0x100000);
 
 	if (of_changeset_add_property(&overlay_changeset, vpci_node, prop) < 0)
 		goto out;
 
-	prop = alloc_prop("ranges", sizeof(u32) * 7);
+	prop = alloc_prop("ranges", sizeof(u32) * (5 + address_cells));
 	if (!prop)
 		goto out;
 
@@ -406,16 +432,16 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	 */
 	base_addr += 0x100000;
 	prop_val = prop->value;
-	prop_val[0] = cpu_to_be32(0x02000000);
-	prop_val[1] = cpu_to_be32(base_addr >> 32);
-	prop_val[2] = cpu_to_be32(base_addr);
-	prop_val[3] = cpu_to_be32(base_addr >> 32);
-	prop_val[4] = cpu_to_be32(base_addr);
-	prop_val[5] = 0;
-	prop_val[6] = cpu_to_be32(count_ivshmem_devices(root_cell) * 0x2000);
+	*prop_val++ = cpu_to_be32(0x02000000);
+	*prop_val++ = cpu_to_be32(base_addr >> 32);
+	*prop_val++ = cpu_to_be32(base_addr);
+	if (address_cells > 1)
+		*prop_val++ = cpu_to_be32(base_addr >> 32);
+	*prop_val++ = cpu_to_be32(base_addr);
+	*prop_val++ = 0;
+	*prop_val = cpu_to_be32(count_ivshmem_devices(root_cell) * 0x2000);
 
-	if (of_changeset_update_property(&overlay_changeset, vpci_node,
-					 prop) < 0)
+	if (of_changeset_add_property(&overlay_changeset, vpci_node, prop) < 0)
 		goto out;
 
 	prop = alloc_prop("status", 3);
