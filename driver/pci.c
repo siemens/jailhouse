@@ -254,6 +254,9 @@ static struct device_node *overlay;
 
 static void free_prop(struct property *prop)
 {
+	if (!prop)
+		return;
+
 	kfree(prop->name);
 	kfree(prop->value);
 	kfree(prop);
@@ -421,13 +424,17 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 	strcpy(prop->value, "ok");
 
 	if (of_changeset_update_property(&overlay_changeset, vpci_node,
-					 prop) < 0 ||
-	    of_changeset_apply(&overlay_changeset) < 0)
+					 prop) < 0)
+		goto out;
+	prop = NULL;
+
+	if (of_changeset_apply(&overlay_changeset) < 0)
 		goto out;
 
 	overlay_applied = true;
 
 out:
+	free_prop(prop);
 	of_node_put(vpci_node);
 	if (!overlay_applied) {
 		struct of_changeset_entry *ce;
