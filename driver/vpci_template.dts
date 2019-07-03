@@ -18,6 +18,7 @@
 				#size-cells = <2>;
 				#interrupt-cells = <1>;
 				interrupt-map-mask = <0 0 0 7>;
+				dma-coherent;
 				/* set to "ok" during dynamic update */
 				status = "disabled";
 			};
