@@ -23,10 +23,10 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 		apic_send_irq(ive->irq_cache.msg);
 }
 
-int arch_ivshmem_update_msix(struct pci_device *device, bool enabled)
+int arch_ivshmem_update_msix(struct ivshmem_endpoint *ive, bool enabled)
 {
-	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
 	struct apic_irq_message irq_msg = { .valid = 0 };
+	struct pci_device *device = ive->device;
 	union x86_msi_vector msi;
 
 	if (enabled) {

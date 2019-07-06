@@ -21,9 +21,9 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive)
 		irqchip_set_pending(NULL, irq_id);
 }
 
-int arch_ivshmem_update_msix(struct pci_device *device, bool enabled)
+int arch_ivshmem_update_msix(struct ivshmem_endpoint *ive,  bool enabled)
 {
-	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
+	struct pci_device *device = ive->device;
 	unsigned int irq_id = 0;
 
 	if (enabled) {

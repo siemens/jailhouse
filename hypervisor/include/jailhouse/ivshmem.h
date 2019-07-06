@@ -61,12 +61,12 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive);
 
 /**
  * Update cached MSI-X state (if any) of the given ivshmem device.
- * @param device	The device to be updated.
+ * @param ive		Ivshmem endpoint to be updated.
  * @param enabled	True if MSI-X is enabled and unmasked.
  *
  * @return 0 on success, negative error code otherwise.
  */
-int arch_ivshmem_update_msix(struct pci_device *device, bool enabled);
+int arch_ivshmem_update_msix(struct ivshmem_endpoint *ive, bool enabled);
 
 /**
  * Update cached INTx state (if any) of the given ivshmem device.

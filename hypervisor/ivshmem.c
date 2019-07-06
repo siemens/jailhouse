@@ -131,7 +131,7 @@ int ivshmem_update_msix(struct pci_device *device)
 		!ive->device->msix_vectors[0].masked &&
 		ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_MASTER;
 
-	return arch_ivshmem_update_msix(device, enabled);
+	return arch_ivshmem_update_msix(ive, enabled);
 }
 
 static void ivshmem_update_intx(struct ivshmem_endpoint *ive)
