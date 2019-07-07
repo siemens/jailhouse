@@ -182,8 +182,8 @@ struct jailhouse_irqchip {
 #define JAILHOUSE_PCI_TYPE_IVSHMEM	0x03
 
 #define JAILHOUSE_SHMEM_PROTO_UNDEFINED	0x0000
-#define JAILHOUSE_SHMEM_PROTO_VETH	0x0100
-#define JAILHOUSE_SHMEM_PROTO_CUSTOM	0x8000	/* 0x80xx..0xffxx */
+#define JAILHOUSE_SHMEM_PROTO_VETH	0x0001
+#define JAILHOUSE_SHMEM_PROTO_CUSTOM	0x4000	/* 0x4000..0x7fff */
 
 struct jailhouse_pci_device {
 	__u8 type;
