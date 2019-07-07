@@ -43,6 +43,8 @@
 #define IVSHMEM_CFG_SHMEM_ADDR		(IVSHMEM_CFG_VNDR_CAP + 0x18)
 #define IVSHMEM_CFG_VNDR_LEN		0x20
 
+#define IVSHMEM_CFG_ONESHOT_INT		(1 << 24)
+
 /*
  * Make the region two times as large as the MSI-X table to guarantee a
  * power-of-2 size (encoding constraint of a BAR).
@@ -86,8 +88,13 @@ static void ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive,
 	 */
 	spin_lock(&ive->irq_lock);
 
-	if (ive->int_ctrl_reg & IVSHMEM_INT_ENABLE)
+	if (ive->int_ctrl_reg & IVSHMEM_INT_ENABLE) {
+		if (ive->cspace[IVSHMEM_CFG_VNDR_CAP/4] &
+		    IVSHMEM_CFG_ONESHOT_INT)
+			ive->int_ctrl_reg = 0;
+
 		arch_ivshmem_trigger_interrupt(ive, vector);
+	}
 
 	spin_unlock(&ive->irq_lock);
 }
@@ -338,6 +345,12 @@ enum pci_access ivshmem_pci_cfg_write(struct pci_device *device,
 			value & PCI_MSIX_CTRL_RW_MASK;
 		if (ivshmem_update_msix(device))
 			return PCI_ACCESS_REJECT;
+		break;
+	case IVSHMEM_CFG_VNDR_CAP / 4:
+		ive->cspace[IVSHMEM_CFG_VNDR_CAP/4] &= ~IVSHMEM_CFG_ONESHOT_INT;
+		ive->cspace[IVSHMEM_CFG_VNDR_CAP/4] |=
+			value & IVSHMEM_CFG_ONESHOT_INT;
+		break;
 	}
 	return PCI_ACCESS_DONE;
 }
