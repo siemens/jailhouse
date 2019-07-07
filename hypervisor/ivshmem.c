@@ -425,6 +425,8 @@ void ivshmem_reset(struct pci_device *device)
 			(((device->info->bdf >> 3) & 0x3) + 1) << 8;
 		/* disable MSI-X capability */
 		ive->cspace[IVSHMEM_CFG_VNDR_CAP/4] &= 0xffff00ff;
+	} else {
+		device->msix_vectors[0].masked = 1;
 	}
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4] = (u32)ive->shmem->size;
