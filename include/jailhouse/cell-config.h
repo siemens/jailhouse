@@ -136,12 +136,20 @@ struct jailhouse_memory {
 		.size = 0x1000,						\
 		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED,	\
 	},								\
+	{ 0 },								\
 	{								\
 		.phys_start = (start) + 0x1000,				\
 		.virt_start = (start) + 0x1000,				\
-		.size = 0xff000,					\
-		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |	\
-			JAILHOUSE_MEM_ROOTSHARED,			\
+		.size = 0x7f000,					\
+		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED | \
+			((dev_id == 0) ? JAILHOUSE_MEM_WRITE : 0),	\
+	},								\
+	{								\
+		.phys_start = (start) + 0x80000,			\
+		.virt_start = (start) + 0x80000,			\
+		.size = 0x7f000,					\
+		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED | \
+			((dev_id == 1) ? JAILHOUSE_MEM_WRITE : 0),	\
 	}
 
 #define JAILHOUSE_MEMORY_IS_SUBPAGE(mem)	\

@@ -40,6 +40,7 @@
 
 #define IVSHMEM_CFG_SHMEM_STATE_TAB_SZ	(IVSHMEM_CFG_VNDR_CAP + 0x04)
 #define IVSHMEM_CFG_SHMEM_RW_SZ		(IVSHMEM_CFG_VNDR_CAP + 0x08)
+#define IVSHMEM_CFG_SHMEM_OUTPUT_SZ	(IVSHMEM_CFG_VNDR_CAP + 0x10)
 #define IVSHMEM_CFG_SHMEM_ADDR		(IVSHMEM_CFG_VNDR_CAP + 0x18)
 #define IVSHMEM_CFG_VNDR_LEN		0x20
 
@@ -491,6 +492,10 @@ void ivshmem_reset(struct pci_device *device)
 	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4] = (u32)ive->shmem[1].size;
 	ive->cspace[IVSHMEM_CFG_SHMEM_RW_SZ/4 + 1] =
 		(u32)(ive->shmem[1].size >> 32);
+
+	ive->cspace[IVSHMEM_CFG_SHMEM_OUTPUT_SZ/4] = (u32)ive->shmem[2].size;
+	ive->cspace[IVSHMEM_CFG_SHMEM_OUTPUT_SZ/4 + 1] =
+		(u32)(ive->shmem[2].size >> 32);
 
 	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4] = (u32)ive->shmem[0].virt_start;
 	ive->cspace[IVSHMEM_CFG_SHMEM_ADDR/4 + 1] =
