@@ -355,7 +355,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		       "\"%s\" <--> \"%s\"\n",
 		       cell->config->name, peer_dev->cell->config->name);
 	} else {
-		link = page_alloc(&mem_pool, 1);
+		link = page_alloc(&mem_pool, PAGES(sizeof(*link)));
 		if (!link)
 			return -ENOMEM;
 
