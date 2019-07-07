@@ -23,7 +23,7 @@
 
 #define IVSHMEM_CFG_SIZE	0x80
 
-#define IVSHMEM_INTX_ENABLE	0x1
+#define IVSHMEM_INT_ENABLE	0x1
 
 /**
  * @defgroup IVSHMEM ivshmem
@@ -34,9 +34,10 @@ struct ivshmem_link;
 
 struct ivshmem_endpoint {
 	u32 cspace[IVSHMEM_CFG_SIZE / sizeof(u32)];
-	/** Lock protecting accesses to irq_cache, also synchronizing
-	 * interrupt submissions with device shutdown. */
+	/** Lock protecting accesses to irq_cache and int_ctrl_reg, also
+	 * synchronizing interrupt submissions with device shutdown. */
 	spinlock_t irq_lock;
+	u32 int_ctrl_reg;
 	struct arch_ivshmem_irq_cache irq_cache;
 	u32 state;
 	u32 ioregion[2];
@@ -44,7 +45,6 @@ struct ivshmem_endpoint {
 	struct ivshmem_link *link;
 	const struct jailhouse_memory *shmem;
 	struct ivshmem_endpoint *remote;
-	u32 intx_ctrl_reg;
 };
 
 int ivshmem_init(struct cell *cell, struct pci_device *device);

@@ -51,7 +51,7 @@
 
 #define IVSHMEM_REG_ID			0x00
 #define IVSHMEM_REG_MAX_PEERS		0x04
-#define IVSHMEM_REG_INTX_CTRL		0x08
+#define IVSHMEM_REG_INT_CTRL		0x08
 #define IVSHMEM_REG_DOORBELL		0x0c
 #define IVSHMEM_REG_STATE		0x10
 
@@ -81,10 +81,14 @@ static void ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive,
 {
 	/*
 	 * Hold the IRQ lock while sending the interrupt so that ivshmem_exit
-	 * can synchronize on the completion of the delivery.
+	 * and ivshmem_register_mmio can synchronize on the completion of the
+	 * delivery.
 	 */
 	spin_lock(&ive->irq_lock);
-	arch_ivshmem_trigger_interrupt(ive, vector);
+
+	if (ive->int_ctrl_reg & IVSHMEM_INT_ENABLE)
+		arch_ivshmem_trigger_interrupt(ive, vector);
+
 	spin_unlock(&ive->irq_lock);
 }
 
@@ -142,11 +146,10 @@ int ivshmem_update_msix(struct pci_device *device)
 
 static void ivshmem_update_intx(struct ivshmem_endpoint *ive)
 {
-	bool enabled = ive->intx_ctrl_reg & IVSHMEM_INTX_ENABLE;
 	bool masked = ive->cspace[PCI_CFG_COMMAND/4] & PCI_CMD_INTX_OFF;
 
 	if (ive->device->info->num_msix_vectors == 0)
-		arch_ivshmem_update_intx(ive, enabled && !masked);
+		arch_ivshmem_update_intx(ive, !masked);
 }
 
 static enum mmio_result ivshmem_register_mmio(void *arg,
@@ -164,12 +167,21 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		/* read-only number of peers */
 		mmio->value = IVSHMEM_MAX_PEERS;
 		break;
-	case IVSHMEM_REG_INTX_CTRL:
+	case IVSHMEM_REG_INT_CTRL:
 		if (mmio->is_write) {
-			ive->intx_ctrl_reg = mmio->value & IVSHMEM_INTX_ENABLE;
+			/*
+			 * The spinlock acts as barrier, ensuring that
+			 * interrupts are disabled on return.
+			 */
+			spin_lock(&ive->irq_lock);
+			ive->int_ctrl_reg = mmio->value & IVSHMEM_INT_ENABLE;
+			spin_unlock(&ive->irq_lock);
+
 			ivshmem_update_intx(ive);
+			if (ivshmem_update_msix(ive->device))
+				return MMIO_ERROR;
 		} else {
-			mmio->value = ive->intx_ctrl_reg;
+			mmio->value = ive->int_ctrl_reg;
 		}
 		break;
 	case IVSHMEM_REG_DOORBELL:
@@ -432,6 +444,7 @@ void ivshmem_reset(struct pci_device *device)
 	 * any in-flight interrupt from remote sides.
 	 */
 	spin_lock(&ive->irq_lock);
+	ive->int_ctrl_reg = 0;
 	memset(&ive->irq_cache, 0, sizeof(ive->irq_cache));
 	spin_unlock(&ive->irq_lock);
 
