@@ -201,9 +201,10 @@ struct jailhouse_pci_device {
 	__u64 msix_address;
 	/** First memory region index of shared memory device. */
 	__u32 shmem_regions_start;
-	/** ID of shared memory device (0..1). */
+	/** ID of shared memory device (0..shmem_peers-1). */
 	__u8 shmem_dev_id;
-	__u8 padding;
+	/** Maximum number of peers connected via this shared memory device. */
+	__u8 shmem_peers;
 	/** PCI subclass and interface ID of shared memory device. */
 	__u16 shmem_protocol;
 } __attribute__((packed));

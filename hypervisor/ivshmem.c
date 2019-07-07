@@ -16,7 +16,7 @@
  * shared memory and interrupts based on MSI-X.
  *
  * The implementation in Jailhouse provides a shared memory device between
- * exactly 2 cells. The link between the two PCI devices is established by
+ * 2 or more cells. The link between the PCI devices is established by
  * choosing the same BDF.
  */
 
@@ -32,7 +32,7 @@
 #define PCI_VENDOR_ID_SIEMENS		0x110a
 #define IVSHMEM_DEVICE_ID		0x4106
 
-#define IVSHMEM_MAX_PEERS		2
+#define IVSHMEM_MAX_PEERS		12
 
 #define IVSHMEM_CFG_VNDR_CAP		0x40
 #define IVSHMEM_CFG_MSIX_CAP		(IVSHMEM_CFG_VNDR_CAP + \
@@ -60,6 +60,7 @@
 
 struct ivshmem_link {
 	struct ivshmem_endpoint eps[IVSHMEM_MAX_PEERS];
+	unsigned int peers;
 	u16 bdf;
 	struct ivshmem_link *next;
 };
@@ -105,6 +106,7 @@ static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 	const struct jailhouse_pci_device *dev_info = ive->device->info;
 	u32 *state_table = (u32 *)TEMPORARY_MAPPING_BASE;
 	struct ivshmem_endpoint *target_ive;
+	unsigned int id;
 
 	/*
 	 * Cannot fail: upper levels of page table were already created by
@@ -122,8 +124,11 @@ static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 	if (ive->state != new_state) {
 		ive->state = new_state;
 
-		target_ive = &ive->link->eps[dev_info->shmem_dev_id ^ 1];
-		ivshmem_trigger_interrupt(target_ive, 0);
+		for (id = 0; id < dev_info->shmem_peers; id++) {
+			target_ive = &ive->link->eps[id];
+			if (target_ive != ive)
+				ivshmem_trigger_interrupt(target_ive, 0);
+		}
 	}
 }
 
@@ -173,7 +178,7 @@ static enum mmio_result ivshmem_register_mmio(void *arg,
 		break;
 	case IVSHMEM_REG_MAX_PEERS:
 		/* read-only number of peers */
-		mmio->value = IVSHMEM_MAX_PEERS;
+		mmio->value = ive->device->info->shmem_peers;
 		break;
 	case IVSHMEM_REG_INT_CTRL:
 		if (mmio->is_write) {
@@ -388,15 +393,15 @@ enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
 int ivshmem_init(struct cell *cell, struct pci_device *device)
 {
 	const struct jailhouse_pci_device *dev_info = device->info;
-	struct ivshmem_endpoint *ive, *remote;
-	struct pci_device *peer_dev;
+	struct ivshmem_endpoint *ive;
 	struct ivshmem_link *link;
-	unsigned int id;
+	unsigned int peer_id, id;
+	struct pci_device *peer;
 
 	printk("Adding virtual PCI device %02x:%02x.%x to cell \"%s\"\n",
 	       PCI_BDF_PARAMS(dev_info->bdf), cell->config->name);
 
-	if (dev_info->shmem_regions_start + 2 >
+	if (dev_info->shmem_regions_start + 2 + dev_info->shmem_peers >
 	    cell->config->num_memory_regions ||
 	    dev_info->num_msix_vectors > IVSHMEM_MSIX_VECTORS)
 		return trace_error(-EINVAL);
@@ -414,11 +419,12 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		if (link->eps[id].device)
 			return trace_error(-EBUSY);
 
-		peer_dev = link->eps[id ^ 1].device;
-
-		printk("Shared memory connection established: "
-		       "\"%s\" <--> \"%s\"\n",
-		       cell->config->name, peer_dev->cell->config->name);
+		printk("Shared memory connection established, peer cells:\n");
+		for (peer_id = 0; peer_id < IVSHMEM_MAX_PEERS; peer_id++) {
+			peer = link->eps[peer_id].device;
+			if (peer && peer_id != id)
+				printk(" \"%s\"\n", peer->cell->config->name);
+		}
 	} else {
 		link = page_alloc(&mem_pool, PAGES(sizeof(*link)));
 		if (!link)
@@ -429,18 +435,14 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 		ivshmem_links = link;
 	}
 
-	ive = &link->eps[id];
-	remote = &link->eps[id ^ 1];
+	link->peers++;
+	ive = &link->eps[dev_info->shmem_dev_id];
 
 	ive->device = device;
 	ive->link = link;
 	ive->shmem = jailhouse_cell_mem_regions(cell->config) +
 		dev_info->shmem_regions_start;
 	device->ivshmem_endpoint = ive;
-	if (remote->device) {
-		ive->remote = remote;
-		remote->remote = ive;
-	}
 
 	device->cell = cell;
 	pci_reset_device(device);
@@ -512,7 +514,6 @@ void ivshmem_reset(struct pci_device *device)
 void ivshmem_exit(struct pci_device *device)
 {
 	struct ivshmem_endpoint *ive = device->ivshmem_endpoint;
-	struct ivshmem_endpoint *remote = ive->remote;
 	struct ivshmem_link **linkp;
 
 	/*
@@ -523,19 +524,19 @@ void ivshmem_exit(struct pci_device *device)
 	memset(&ive->irq_cache, 0, sizeof(ive->irq_cache));
 	spin_unlock(&ive->irq_lock);
 
-	if (remote) {
-		remote->remote = NULL;
+	ivshmem_write_state(ive, 0);
 
-		ivshmem_write_state(ive, 0);
+	ive->device = NULL;
 
-		ive->device = NULL;
-	} else {
-		for (linkp = &ivshmem_links; *linkp; linkp = &(*linkp)->next) {
-			if (*linkp == ive->link) {
-				*linkp = ive->link->next;
-				page_free(&mem_pool, ive->link, 1);
-				break;
-			}
-		}
+	if (--ive->link->peers > 0)
+		return;
+
+	for (linkp = &ivshmem_links; *linkp; linkp = &(*linkp)->next) {
+		if (*linkp != ive->link)
+			continue;
+
+		*linkp = ive->link->next;
+		page_free(&mem_pool, ive->link, PAGES(sizeof(*ive->link)));
+		break;
 	}
 }

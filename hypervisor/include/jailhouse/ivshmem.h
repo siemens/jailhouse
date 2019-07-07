@@ -44,7 +44,6 @@ struct ivshmem_endpoint {
 	struct pci_device *device;
 	struct ivshmem_link *link;
 	const struct jailhouse_memory *shmem;
-	struct ivshmem_endpoint *remote;
 };
 
 int ivshmem_init(struct cell *cell, struct pci_device *device);
