@@ -17,7 +17,7 @@
  *
  * The implementation in Jailhouse provides a shared memory device between
  * exactly 2 cells. The link between the two PCI devices is established by
- * choosing the same BDF, memory location, and memory size.
+ * choosing the same BDF.
  */
 
 #include <jailhouse/ivshmem.h>
@@ -314,8 +314,8 @@ enum pci_access ivshmem_pci_cfg_read(struct pci_device *device, u16 address,
 int ivshmem_init(struct cell *cell, struct pci_device *device)
 {
 	const struct jailhouse_pci_device *dev_info = device->info;
-	const struct jailhouse_memory *mem, *peer_mem;
 	struct ivshmem_endpoint *ive, *remote;
+	const struct jailhouse_memory *mem;
 	struct pci_device *peer_dev;
 	struct ivshmem_link *link;
 	unsigned int id;
@@ -342,14 +342,6 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 			return trace_error(-EBUSY);
 
 		peer_dev = link->eps[id ^ 1].device;
-		peer_mem = jailhouse_cell_mem_regions(peer_dev->cell->config) +
-			peer_dev->info->shmem_region;
-
-		/* check that the regions and protocols of both peers match */
-		if (peer_mem->phys_start != mem->phys_start ||
-		    peer_mem->size != mem->size ||
-		    peer_dev->info->shmem_protocol != dev_info->shmem_protocol)
-			return trace_error(-EINVAL);
 
 		printk("Shared memory connection established: "
 		       "\"%s\" <--> \"%s\"\n",
