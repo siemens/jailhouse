@@ -39,11 +39,11 @@ struct ivshmem_endpoint {
 	spinlock_t irq_lock;
 	u32 int_ctrl_reg;
 	struct arch_ivshmem_irq_cache irq_cache;
-	u32 state;
-	u32 ioregion[2];
 	struct pci_device *device;
 	struct ivshmem_link *link;
 	const struct jailhouse_memory *shmem;
+	u32 ioregion[2];
+	u32 state;
 };
 
 int ivshmem_init(struct cell *cell, struct pci_device *device);
