@@ -97,7 +97,7 @@ struct {
 		/* ACPI */ {
 			.phys_start = 0x3ffdf000,
 			.virt_start = 0x3ffdf000,
-			.size = 0x30000,
+			.size =          0x21000,
 			.flags = JAILHOUSE_MEM_READ,
 		},
 		/* MemRegion: fd000000-fdffffff : 0000:00:01.0 (vesafb) */
