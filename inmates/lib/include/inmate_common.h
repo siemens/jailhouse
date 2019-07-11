@@ -75,6 +75,8 @@ void arch_init_early(void);
 
 void __attribute__((format(printf, 1, 2))) printk(const char *fmt, ...);
 
+extern unsigned long heap_pos;
+
 void *alloc(unsigned long size, unsigned long align);
 
 void *memset(void *s, int c, unsigned long n);

@@ -38,7 +38,7 @@
 
 #include <inmate.h>
 
-static unsigned long heap_pos = (unsigned long)stack_top;
+unsigned long heap_pos = (unsigned long)stack_top;
 
 void *alloc(unsigned long size, unsigned long align)
 {
