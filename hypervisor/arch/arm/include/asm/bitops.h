@@ -31,7 +31,7 @@
 		      : "+Qo" (*(volatile unsigned long *)addr));
 
 static inline __attribute__((always_inline)) void
-clear_bit(int nr, volatile unsigned long *addr)
+clear_bit(unsigned int nr, volatile unsigned long *addr)
 {
 	unsigned long ret, val;
 

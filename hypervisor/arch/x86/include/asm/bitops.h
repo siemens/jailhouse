@@ -32,7 +32,7 @@
 #define CONST_MASK(nr)			(1 << ((nr) & 7))
 
 static inline __attribute__((always_inline)) void
-clear_bit(int nr, volatile unsigned long *addr)
+clear_bit(unsigned int nr, volatile unsigned long *addr)
 {
 	if (__builtin_constant_p(nr)) {
 		asm volatile("lock andb %1,%0"

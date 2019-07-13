@@ -26,7 +26,7 @@
 	} while (0)
 
 static inline __attribute__((always_inline)) void
-clear_bit(int nr, volatile unsigned long *addr)
+clear_bit(unsigned int nr, volatile unsigned long *addr)
 {
 	u32 ret;
 	u64 tmp;
