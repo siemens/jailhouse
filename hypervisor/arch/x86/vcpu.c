@@ -152,6 +152,9 @@ void vcpu_cell_exit(struct cell *cell)
 	     b++, pio_bitmap++, root_pio_bitmap++, pio_bitmap_size--)
 		*b &= *pio_bitmap | *root_pio_bitmap;
 
+	page_free(&mem_pool, cell->arch.io_bitmap,
+		  vcpu_vendor_get_io_bitmap_pages());
+
 	vcpu_vendor_cell_exit(cell);
 }
 

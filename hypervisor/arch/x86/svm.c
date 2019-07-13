@@ -381,7 +381,6 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->arch.svm.npt_iommu_structs, XAPIC_BASE,
 		       PAGE_SIZE, PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->arch.io_bitmap, IOPM_PAGES);
 }
 
 int vcpu_init(struct per_cpu *cpu_data)
