@@ -359,7 +359,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	return 0;
 
 err_free_io_bitmap:
-	page_free(&mem_pool, cell->arch.vmx.io_bitmap, 2);
+	page_free(&mem_pool, cell->arch.vmx.io_bitmap, PIO_BITMAP_PAGES);
 
 	return err;
 }
@@ -394,7 +394,7 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->arch.vmx.ept_structs, XAPIC_BASE, PAGE_SIZE,
 		       PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->arch.vmx.io_bitmap, 2);
+	page_free(&mem_pool, cell->arch.vmx.io_bitmap, PIO_BITMAP_PAGES);
 }
 
 void vcpu_tlb_flush(void)

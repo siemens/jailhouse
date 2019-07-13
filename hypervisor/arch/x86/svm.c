@@ -354,7 +354,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	return 0;
 
 err_free_iopm:
-	page_free(&mem_pool, cell->arch.svm.iopm, 3);
+	page_free(&mem_pool, cell->arch.svm.iopm, IOPM_PAGES);
 
 	return err;
 }
@@ -396,7 +396,7 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->arch.svm.npt_iommu_structs, XAPIC_BASE,
 		       PAGE_SIZE, PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->arch.svm.iopm, 3);
+	page_free(&mem_pool, cell->arch.svm.iopm, IOPM_PAGES);
 }
 
 int vcpu_init(struct per_cpu *cpu_data)
