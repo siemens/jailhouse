@@ -116,7 +116,6 @@ int vcpu_cell_init(struct cell *cell)
 		 * access rights.
 		 */
 		vcpu_vendor_get_cell_io_bitmap(&root_cell, &root_cell_iobm);
-		pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
 		for (b = root_cell_iobm.data; pio_bitmap_size > 0;
 		     b++, pio_bitmap++, pio_bitmap_size--)
 			*b |= ~*pio_bitmap;
