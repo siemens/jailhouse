@@ -21,13 +21,9 @@
 int i8042_access_handler(u16 port, bool dir_in, unsigned int size)
 {
 	union registers *guest_regs = &this_cpu_data()->guest_regs;
-	const struct jailhouse_cell_desc *config = this_cell()->config;
-	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(config);
 	u8 val;
 
-	if (port == I8042_CMD_REG &&
-	    config->pio_bitmap_size >= (I8042_CMD_REG + 7) / 8 &&
-	    !(pio_bitmap[I8042_CMD_REG / 8] & (1 << (I8042_CMD_REG % 8)))) {
+	if (port == I8042_CMD_REG && this_cell()->arch.pio_i8042_allowed) {
 		if (size != 1)
 			goto invalid_access;
 		if (dir_in) {

@@ -26,6 +26,8 @@ struct arch_cell {
 	/** Buffer for the EPT/NPT root-level page table. */
 	u8 __attribute__((aligned(PAGE_SIZE))) root_table_page[PAGE_SIZE];
 
+	bool pio_i8042_allowed;
+
 	/* Intel: PIO access bitmap.
 	 * AMD: I/O Permissions Map. */
 	u8 *io_bitmap;

@@ -107,8 +107,14 @@ int vcpu_cell_init(struct cell *cell)
 			cell_iobm.size : pio_bitmap_size;
 	memcpy(cell_iobm.data, pio_bitmap, size);
 
-	/* moderate access to i8042 command register */
+	/* always intercept access to i8042 command register */
 	cell_iobm.data[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
+
+	/* but moderate only if the config allows i8042 access */
+	cell->arch.pio_i8042_allowed =
+		pio_bitmap_size >= (I8042_CMD_REG + 7) / 8 ?
+		!(pio_bitmap[I8042_CMD_REG / 8] & (1 << (I8042_CMD_REG % 8))) :
+		false;
 
 	if (cell != &root_cell) {
 		/*
