@@ -137,7 +137,7 @@ static void set_svm_segment_from_segment(struct svm_segment *svm_segment,
 
 static void svm_set_cell_config(struct cell *cell, struct vmcb *vmcb)
 {
-	vmcb->iopm_base_pa = paging_hvirt2phys(cell->arch.svm.iopm);
+	vmcb->iopm_base_pa = paging_hvirt2phys(cell->arch.io_bitmap);
 	vmcb->n_cr3 =
 		paging_hvirt2phys(cell->arch.svm.npt_iommu_structs.root_table);
 }
@@ -324,8 +324,8 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	u64 flags;
 
 	/* allocate iopm  */
-	cell->arch.svm.iopm = page_alloc(&mem_pool, IOPM_PAGES);
-	if (!cell->arch.svm.iopm)
+	cell->arch.io_bitmap = page_alloc(&mem_pool, IOPM_PAGES);
+	if (!cell->arch.io_bitmap)
 		return err;
 
 	/* build root NPT of cell */
@@ -354,7 +354,7 @@ int vcpu_vendor_cell_init(struct cell *cell)
 	return 0;
 
 err_free_iopm:
-	page_free(&mem_pool, cell->arch.svm.iopm, IOPM_PAGES);
+	page_free(&mem_pool, cell->arch.io_bitmap, IOPM_PAGES);
 
 	return err;
 }
@@ -396,7 +396,7 @@ void vcpu_vendor_cell_exit(struct cell *cell)
 {
 	paging_destroy(&cell->arch.svm.npt_iommu_structs, XAPIC_BASE,
 		       PAGE_SIZE, PAGING_NON_COHERENT);
-	page_free(&mem_pool, cell->arch.svm.iopm, IOPM_PAGES);
+	page_free(&mem_pool, cell->arch.io_bitmap, IOPM_PAGES);
 }
 
 int vcpu_init(struct per_cpu *cpu_data)
@@ -1026,7 +1026,7 @@ const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *iobm)
 {
-	iobm->data = cell->arch.svm.iopm;
+	iobm->data = cell->arch.io_bitmap;
 	iobm->size = IOPM_PAGES * PAGE_SIZE;
 }
 

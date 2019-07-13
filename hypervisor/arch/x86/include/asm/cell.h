@@ -26,16 +26,15 @@ struct arch_cell {
 	/** Buffer for the EPT/NPT root-level page table. */
 	u8 __attribute__((aligned(PAGE_SIZE))) root_table_page[PAGE_SIZE];
 
+	/* Intel: PIO access bitmap.
+	 * AMD: I/O Permissions Map. */
+	u8 *io_bitmap;
 	union {
 		struct {
-			/** PIO access bitmap. */
-			u8 *io_bitmap;
 			/** Paging structures used for cell CPUs. */
 			struct paging_structures ept_structs;
 		} vmx; /**< Intel VMX-specific fields. */
 		struct {
-			/** I/O Permissions Map. */
-			u8 *iopm;
 			/** Paging structures used for cell CPUs and IOMMU. */
 			struct paging_structures npt_iommu_structs;
 		} svm; /**< AMD SVM-specific fields. */
