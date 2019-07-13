@@ -283,6 +283,7 @@
 #define arm_read_sysreg(...) _arm_read_sysreg(__VA_ARGS__)
 
 #ifndef __ASSEMBLY__
+/* for gcc < 5 */
 asm(".arch_extension virt\n");
 
 #define arm_write_sysreg_32(op1, crn, crm, op2, val) \

@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+/* for gcc < 5 */
 asm (".arch_extension sec\n");
 
 static inline int smc(unsigned long id)
