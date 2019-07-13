@@ -334,13 +334,6 @@ unsigned long arch_paging_gphys2phys(unsigned long gphys, unsigned long flags)
 
 int vcpu_vendor_cell_init(struct cell *cell)
 {
-	int err;
-
-	/* allocate io_bitmap */
-	cell->arch.io_bitmap = page_alloc(&mem_pool, PIO_BITMAP_PAGES);
-	if (!cell->arch.io_bitmap)
-		return -ENOMEM;
-
 	/* build root EPT of cell */
 	cell->arch.vmx.ept_structs.root_paging = ept_paging;
 	cell->arch.vmx.ept_structs.root_table =
@@ -348,20 +341,11 @@ int vcpu_vendor_cell_init(struct cell *cell)
 
 	/* Map the special APIC access page into the guest's physical address
 	 * space at the default address (XAPIC_BASE) */
-	err = paging_create(&cell->arch.vmx.ept_structs,
-			    paging_hvirt2phys(apic_access_page),
-			    PAGE_SIZE, XAPIC_BASE,
-			    EPT_FLAG_READ | EPT_FLAG_WRITE | EPT_FLAG_WB_TYPE,
-			    PAGING_NON_COHERENT);
-	if (err)
-		goto err_free_io_bitmap;
-
-	return 0;
-
-err_free_io_bitmap:
-	page_free(&mem_pool, cell->arch.io_bitmap, PIO_BITMAP_PAGES);
-
-	return err;
+	return paging_create(&cell->arch.vmx.ept_structs,
+			     paging_hvirt2phys(apic_access_page),
+			     PAGE_SIZE, XAPIC_BASE,
+			     EPT_FLAG_READ | EPT_FLAG_WRITE | EPT_FLAG_WB_TYPE,
+			     PAGING_NON_COHERENT);
 }
 
 int vcpu_map_memory_region(struct cell *cell,
@@ -1241,6 +1225,11 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 {
 	iobm->data = cell->arch.io_bitmap;
 	iobm->size = PIO_BITMAP_PAGES * PAGE_SIZE;
+}
+
+unsigned int vcpu_vendor_get_io_bitmap_pages(void)
+{
+	return PIO_BITMAP_PAGES;
 }
 
 #define VCPU_VENDOR_GET_REGISTER(__reg__, __field__)	\

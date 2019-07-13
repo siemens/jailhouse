@@ -320,13 +320,7 @@ int vcpu_vendor_early_init(void)
 
 int vcpu_vendor_cell_init(struct cell *cell)
 {
-	int err = -ENOMEM;
 	u64 flags;
-
-	/* allocate iopm  */
-	cell->arch.io_bitmap = page_alloc(&mem_pool, IOPM_PAGES);
-	if (!cell->arch.io_bitmap)
-		return err;
 
 	/* build root NPT of cell */
 	cell->arch.svm.npt_iommu_structs.root_paging = npt_iommu_paging;
@@ -338,25 +332,16 @@ int vcpu_vendor_cell_init(struct cell *cell)
 		 * Map xAPIC as is; reads are passed, writes are trapped.
 		 */
 		flags = PAGE_READONLY_FLAGS | PAGE_FLAG_US | PAGE_FLAG_DEVICE;
-		err = paging_create(&cell->arch.svm.npt_iommu_structs,
-				    XAPIC_BASE, PAGE_SIZE, XAPIC_BASE,
-				    flags, PAGING_NON_COHERENT);
+		return paging_create(&cell->arch.svm.npt_iommu_structs,
+				     XAPIC_BASE, PAGE_SIZE, XAPIC_BASE,
+				     flags, PAGING_NON_COHERENT);
 	} else {
 		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE;
-		err = paging_create(&cell->arch.svm.npt_iommu_structs,
-				    paging_hvirt2phys(avic_page),
-				    PAGE_SIZE, XAPIC_BASE,
-				    flags, PAGING_NON_COHERENT);
+		return paging_create(&cell->arch.svm.npt_iommu_structs,
+				     paging_hvirt2phys(avic_page),
+				     PAGE_SIZE, XAPIC_BASE,
+				     flags, PAGING_NON_COHERENT);
 	}
-	if (err)
-		goto err_free_iopm;
-
-	return 0;
-
-err_free_iopm:
-	page_free(&mem_pool, cell->arch.io_bitmap, IOPM_PAGES);
-
-	return err;
 }
 
 int vcpu_map_memory_region(struct cell *cell,
@@ -1028,6 +1013,11 @@ void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 {
 	iobm->data = cell->arch.io_bitmap;
 	iobm->size = IOPM_PAGES * PAGE_SIZE;
+}
+
+unsigned int vcpu_vendor_get_io_bitmap_pages(void)
+{
+	return IOPM_PAGES;
 }
 
 #define VCPU_VENDOR_GET_REGISTER(__reg__)	\

@@ -78,6 +78,7 @@ out_err:
 
 int vcpu_cell_init(struct cell *cell)
 {
+	const unsigned int io_bitmap_pages = vcpu_vendor_get_io_bitmap_pages();
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
 	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
 	struct vcpu_io_bitmap cell_iobm, root_cell_iobm;
@@ -86,9 +87,15 @@ int vcpu_cell_init(struct cell *cell)
 	int err;
 	u8 *b;
 
+	cell->arch.io_bitmap = page_alloc(&mem_pool, io_bitmap_pages);
+	if (!cell->arch.io_bitmap)
+		return -ENOMEM;
+
 	err = vcpu_vendor_cell_init(cell);
-	if (err)
+	if (err) {
+		page_free(&mem_pool, cell->arch.io_bitmap, io_bitmap_pages);
 		return err;
+	}
 
 	vcpu_vendor_get_cell_io_bitmap(cell, &cell_iobm);
 

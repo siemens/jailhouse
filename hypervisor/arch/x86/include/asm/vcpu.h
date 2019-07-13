@@ -90,6 +90,7 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len);
 
 void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
 		                    struct vcpu_io_bitmap *out);
+unsigned int vcpu_vendor_get_io_bitmap_pages(void);
 
 #define VCPU_CS_DPL_MASK	BIT_MASK(6, 5)
 #define VCPU_CS_L		(1 << 13)
