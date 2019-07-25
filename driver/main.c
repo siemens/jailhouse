@@ -100,7 +100,10 @@ static struct resource *hypervisor_mem_res;
 
 static typeof(ioremap_page_range) *ioremap_page_range_sym;
 #ifdef CONFIG_X86
-static typeof(lapic_timer_frequency) *lapic_timer_frequency_sym;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,3,0)
+#define lapic_timer_period	lapic_timer_frequency
+#endif
+static typeof(lapic_timer_period) *lapic_timer_period_sym;
 #endif
 #ifdef CONFIG_ARM
 static typeof(__boot_cpu_mode) *__boot_cpu_mode_sym;
@@ -550,7 +553,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		config->platform_info.x86.tsc_khz = tsc_khz;
 	if (config->platform_info.x86.apic_khz == 0)
 		config->platform_info.x86.apic_khz =
-			*lapic_timer_frequency_sym / (1000 / HZ);
+			*lapic_timer_period_sym / (1000 / HZ);
 #endif
 
 	err = jailhouse_cell_prepare_root(&config->root_cell);
@@ -897,7 +900,7 @@ static int __init jailhouse_init(void)
 
 	RESOLVE_EXTERNAL_SYMBOL(ioremap_page_range);
 #ifdef CONFIG_X86
-	RESOLVE_EXTERNAL_SYMBOL(lapic_timer_frequency);
+	RESOLVE_EXTERNAL_SYMBOL(lapic_timer_period);
 #endif
 #ifdef CONFIG_ARM
 	RESOLVE_EXTERNAL_SYMBOL(__boot_cpu_mode);
