@@ -31,7 +31,6 @@ struct {
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 		.num_irqchips = 0,
-		.pio_bitmap_size = 0,
 		.num_pci_devices = 0,
 
 		.console = {
