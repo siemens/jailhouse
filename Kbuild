@@ -51,14 +51,16 @@ GEN_PCI_DEFS_PY := $(obj)/pyjailhouse/pci_defs.py
 $(GEN_PCI_DEFS_PY): $(src)/scripts/gen_pci_defs.sh
 	$(call if_changed,gen_pci_defs)
 
-subdir-y := driver hypervisor configs inmates tools
+subdir-y := hypervisor configs inmates tools
 
 subdir-ccflags-y := -Werror
+
+obj-m := driver/
 
 # Do not generate files by creating dependencies if we are cleaning up
 ifeq ($(filter %/Makefile.clean,$(MAKEFILE_LIST)),)
 
-$(addprefix $(obj)/,$(subdir-y)): $(GEN_CONFIG_MK)
+$(obj)/driver $(addprefix $(obj)/,$(subdir-y)): $(GEN_CONFIG_MK)
 
 $(obj)/driver $(obj)/hypervisor: $(GEN_VERSION_H)
 
