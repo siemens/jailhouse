@@ -25,11 +25,6 @@
 	 X86_CR0_MP | X86_CR0_PE)
 #define X86_CR4_HOST_STATE	X86_CR4_PAE
 
-struct vcpu_io_bitmap {
-	u8 *data;
-	u32 size;
-};
-
 struct vcpu_io_intercept {
 	u16 port;
 	unsigned int size;
@@ -88,8 +83,6 @@ const u8 *vcpu_get_inst_bytes(const struct guest_paging_structures *pg_structs,
 
 void vcpu_skip_emulated_instruction(unsigned int inst_len);
 
-void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
-		                    struct vcpu_io_bitmap *out);
 unsigned int vcpu_vendor_get_io_bitmap_pages(void);
 
 #define VCPU_CS_DPL_MASK	BIT_MASK(6, 5)

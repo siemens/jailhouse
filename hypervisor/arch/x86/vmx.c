@@ -1219,13 +1219,6 @@ void vmx_entry_failure(void)
 	panic_stop();
 }
 
-void vcpu_vendor_get_cell_io_bitmap(struct cell *cell,
-		                    struct vcpu_io_bitmap *iobm)
-{
-	iobm->data = cell->arch.io_bitmap;
-	iobm->size = PIO_BITMAP_PAGES * PAGE_SIZE;
-}
-
 unsigned int vcpu_vendor_get_io_bitmap_pages(void)
 {
 	return PIO_BITMAP_PAGES;

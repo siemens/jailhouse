@@ -81,9 +81,8 @@ int vcpu_cell_init(struct cell *cell)
 	const unsigned int io_bitmap_pages = vcpu_vendor_get_io_bitmap_pages();
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
 	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
-	struct vcpu_io_bitmap cell_iobm, root_cell_iobm;
 	unsigned int n, pm_timer_addr;
-	u32 size;
+	u32 size, iobm_size;
 	int err;
 	u8 *b;
 
@@ -97,18 +96,16 @@ int vcpu_cell_init(struct cell *cell)
 		return err;
 	}
 
-	vcpu_vendor_get_cell_io_bitmap(cell, &cell_iobm);
-
 	/* initialize io bitmap to trap all accesses */
-	memset(cell_iobm.data, -1, cell_iobm.size);
+	iobm_size = io_bitmap_pages * PAGE_SIZE;
+	memset(cell->arch.io_bitmap, -1, iobm_size);
 
 	/* copy io bitmap from cell config */
-	size = pio_bitmap_size > cell_iobm.size ?
-			cell_iobm.size : pio_bitmap_size;
-	memcpy(cell_iobm.data, pio_bitmap, size);
+	size = pio_bitmap_size > iobm_size ?  iobm_size : pio_bitmap_size;
+	memcpy(cell->arch.io_bitmap, pio_bitmap, size);
 
 	/* always intercept access to i8042 command register */
-	cell_iobm.data[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
+	cell->arch.io_bitmap[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
 
 	/* but moderate only if the config allows i8042 access */
 	cell->arch.pio_i8042_allowed =
@@ -121,20 +118,17 @@ int vcpu_cell_init(struct cell *cell)
 		 * Shrink PIO access of root cell corresponding to new cell's
 		 * access rights.
 		 */
-		vcpu_vendor_get_cell_io_bitmap(&root_cell, &root_cell_iobm);
-		for (b = root_cell_iobm.data; pio_bitmap_size > 0;
+		for (b = root_cell.arch.io_bitmap; pio_bitmap_size > 0;
 		     b++, pio_bitmap++, pio_bitmap_size--)
 			*b |= ~*pio_bitmap;
 	}
 
 	/* permit access to the PM timer if there is any */
 	pm_timer_addr = system_config->platform_info.x86.pm_timer_address;
-	if (pm_timer_addr) {
-		for (n = 0; n < 4; n++, pm_timer_addr++) {
-			b = cell_iobm.data;
-			b[pm_timer_addr / 8] &= ~(1 << (pm_timer_addr % 8));
-		}
-	}
+	if (pm_timer_addr)
+		for (n = 0; n < 4; n++, pm_timer_addr++)
+			cell->arch.io_bitmap[pm_timer_addr / 8] &=
+				~(1 << (pm_timer_addr % 8));
 
 	return 0;
 }
@@ -145,15 +139,12 @@ void vcpu_cell_exit(struct cell *cell)
 		jailhouse_cell_pio_bitmap(root_cell.config);
 	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
 	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
-	struct vcpu_io_bitmap root_cell_iobm;
 	u8 *b;
-
-	vcpu_vendor_get_cell_io_bitmap(&root_cell, &root_cell_iobm);
 
 	if (root_cell.config->pio_bitmap_size < pio_bitmap_size)
 		pio_bitmap_size = root_cell.config->pio_bitmap_size;
 
-	for (b = root_cell_iobm.data; pio_bitmap_size > 0;
+	for (b = root_cell.arch.io_bitmap; pio_bitmap_size > 0;
 	     b++, pio_bitmap++, root_pio_bitmap++, pio_bitmap_size--)
 		*b &= *pio_bitmap | *root_pio_bitmap;
 
