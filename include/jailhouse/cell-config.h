@@ -206,6 +206,17 @@ struct jailhouse_iommu {
 	__u32 amd_features;
 } __attribute__((packed));
 
+struct jailhouse_pio {
+	__u16 base;
+	__u16 length;
+} __attribute__((packed));
+
+#define PIO_RANGE(__base, __length)	\
+	{				\
+		.base = __base,		\
+		.length = __length,	\
+	}
+
 #define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYST"
 
 /*
