@@ -21,7 +21,7 @@ struct {
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[2];
 	struct jailhouse_irqchip irqchips[1];
-	__u8 pio_bitmap[0x2000];
+	struct jailhouse_pio pio_regions[5];
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
@@ -33,7 +33,7 @@ struct {
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 		.num_irqchips = ARRAY_SIZE(config.irqchips),
-		.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
+		.num_pio_regions = ARRAY_SIZE(config.pio_regions),
 		.num_pci_devices = 0,
 
 		.console = {
@@ -73,17 +73,11 @@ struct {
 		},
 	},
 
-	.pio_bitmap = {
-		[     0/8 ...  0x2f7/8] = -1,
-		[ 0x2f8/8 ...  0x2ff/8] = 0, /* serial2 */
-		[ 0x300/8 ...  0x3f7/8] = -1,
-		[ 0x3f8/8 ...  0x3ff/8] = 0, /* serial1 */
-		[ 0x400/8 ...  0x5ff/8] = -1,
-		[ 0x600/8 ...  0x607/8] = 0xf0, /* acpi-evt */
-		[ 0x608/8 ...  0x7ff/8] = -1,
-		[ 0x800/8 ...  0x807/8] = 0xf0 /* apci-pm1a */,
-		[ 0x808/8 ... 0xdfff/8] = -1,
-		[0xe000/8 ... 0xe007/8] = 0, /* OXPCIe952 serial2 */
-		[0xe008/8 ... 0xffff/8] = -1,
+	.pio_regions = {
+		PIO_RANGE(0x2f8, 8), /* serial 2 */
+		PIO_RANGE(0x3f8, 8), /* serial 1 */
+		PIO_RANGE(0x600, 4), /* acpi-evt */
+		PIO_RANGE(0x800, 4), /* apci-pm1a */
+		PIO_RANGE(0xe010, 8), /* OXPCIe952 serial2 */
 	},
 };

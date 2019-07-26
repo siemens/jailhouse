@@ -24,7 +24,7 @@ struct {
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[16];
 	struct jailhouse_irqchip irqchips[1];
-	__u8 pio_bitmap[0x2000];
+	struct jailhouse_pio pio_regions[12];
 	struct jailhouse_pci_device pci_devices[9];
 	struct jailhouse_pci_capability pci_caps[11];
 } __attribute__((packed)) config = {
@@ -62,7 +62,7 @@ struct {
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
-			.pio_bitmap_size = ARRAY_SIZE(config.pio_bitmap),
+			.num_pio_regions = ARRAY_SIZE(config.pio_regions),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
 			.num_pci_caps = ARRAY_SIZE(config.pci_caps),
 		},
@@ -196,30 +196,19 @@ struct {
 		},
 	},
 
-	.pio_bitmap = {
-		[     0/8 ...   0x1f/8] = 0, /* floppy DMA controller */
-		[  0x20/8 ...   0x3f/8] = -1,
-		[  0x40/8 ...   0x47/8] = 0xf0, /* PIT */
-		[  0x48/8 ...   0x5f/8] = -1,
-		[  0x60/8 ...   0x67/8] = 0xec, /* HACK: NMI status/control */
-		[  0x68/8 ...   0x6f/8] = -1,
-		[  0x70/8 ...   0x77/8] = 0xfc, /* rtc */
-		[  0x78/8 ...  0x1c7/8] = -1,
-		[ 0x1c8/8 ...  0x1cf/8] = 0x3f, /* vbe */
-		[ 0x1d0/8 ...  0x1d7/8] = 0xfe, /* vbe */
-		[ 0x1d8/8 ...  0x2f7/8] = -1,
-		[ 0x2f8/8 ...  0x2ff/8] = 0, /* serial2 */
-		[ 0x300/8 ...  0x3af/8] = -1,
-		[ 0x3b0/8 ...  0x3df/8] = 0, /* VGA */
-		[ 0x3e0/8 ...  0x3ef/8] = -1,
-		[ 0x3f0/8 ...  0x3f7/8] = 0, /* floppy */
-		[ 0x3f8/8 ...  0x3ff/8] = -1,
-		[ 0x400/8 ...  0x407/8] = 0xfb, /* invalid but accessed by X */
-		[ 0x408/8 ... 0x5657/8] = -1,
-		[0x5658/8 ... 0x565f/8] = 0xf0, /* vmport */
-		[0x5660/8 ... 0xbfff/8] = -1,
-		[0xc000/8 ... 0xc0ff/8] = 0, /* PCI devices */
-		[0xc100/8 ... 0xffff/8] = -1,
+	.pio_regions = {
+		PIO_RANGE(0x0, 0x1f), /* floppy DMA controller */
+		PIO_RANGE(0x40, 0x4), /* PIT */
+		PIO_RANGE(0x60, 0x2), /* HACK: NMI status/control */
+		PIO_RANGE(0x64, 0x1), /* i8042 */
+		PIO_RANGE(0x70, 0x2), /* rtc */
+		PIO_RANGE(0x1ce, 0x3), /* vbe */
+		PIO_RANGE(0x2f8, 0x8), /* serial2 */
+		PIO_RANGE(0x3b0, 0x8), /* VGA */
+		PIO_RANGE(0x3f0, 0x8), /* floppy */
+		PIO_RANGE(0x402, 0x1), /* invalid but accessed by X */
+		PIO_RANGE(0x5658, 0x4), /* vmport */
+		PIO_RANGE(0xc000, 0xff), /* PCI devices */
 	},
 
 	.pci_devices = {

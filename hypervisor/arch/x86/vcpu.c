@@ -26,6 +26,12 @@
 #include <jailhouse/percpu.h>
 #include <asm/vcpu.h>
 
+#define for_each_pio_region(pio, config, counter)	\
+	for ((pio) = jailhouse_cell_pio(config),	\
+	     (counter) = 0;				\
+	     (counter) < (config)->num_pio_regions;	\
+	     (pio)++, (counter)++)
+
 static u8 __attribute__((aligned(PAGE_SIZE))) parking_code[PAGE_SIZE] = {
 	0xfa, /* 1: cli */
 	0xf4, /*    hlt */
@@ -76,15 +82,23 @@ out_err:
 	return NULL;
 }
 
+static void pio_allow_access(u8 *bm, const struct jailhouse_pio *pio,
+			     bool access)
+{
+	void (*access_method)(unsigned int, volatile unsigned long*) =
+		access ? clear_bit : set_bit;
+	unsigned int length, start_bit = pio->base;
+
+	for (length = pio->length; length > 0; length--, start_bit++)
+		access_method(start_bit, (unsigned long*)bm);
+}
+
 int vcpu_cell_init(struct cell *cell)
 {
 	const unsigned int io_bitmap_pages = vcpu_vendor_get_io_bitmap_pages();
-	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
-	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
+	const struct jailhouse_pio *pio;
 	unsigned int n, pm_timer_addr;
-	u32 size, iobm_size;
 	int err;
-	u8 *b;
 
 	cell->arch.io_bitmap = page_alloc(&mem_pool, io_bitmap_pages);
 	if (!cell->arch.io_bitmap)
@@ -97,30 +111,30 @@ int vcpu_cell_init(struct cell *cell)
 	}
 
 	/* initialize io bitmap to trap all accesses */
-	iobm_size = io_bitmap_pages * PAGE_SIZE;
-	memset(cell->arch.io_bitmap, -1, iobm_size);
+	memset(cell->arch.io_bitmap, -1, io_bitmap_pages * PAGE_SIZE);
 
-	/* copy io bitmap from cell config */
-	size = pio_bitmap_size > iobm_size ?  iobm_size : pio_bitmap_size;
-	memcpy(cell->arch.io_bitmap, pio_bitmap, size);
+	/* cells have no access to i8042, unless the port is whitelisted */
+	cell->arch.pio_i8042_allowed = false;
 
-	/* always intercept access to i8042 command register */
+	for_each_pio_region(pio, cell->config, n) {
+		pio_allow_access(cell->arch.io_bitmap, pio, true);
+
+		/* moderate i8042 only if the config allows it */
+		if (pio->base <= I8042_CMD_REG &&
+		    pio->base + pio->length > I8042_CMD_REG)
+			cell->arch.pio_i8042_allowed = true;
+	}
+
+	/* but always intercept access to i8042 command register */
 	cell->arch.io_bitmap[I8042_CMD_REG / 8] |= 1 << (I8042_CMD_REG % 8);
-
-	/* but moderate only if the config allows i8042 access */
-	cell->arch.pio_i8042_allowed =
-		pio_bitmap_size >= (I8042_CMD_REG + 7) / 8 ?
-		!(pio_bitmap[I8042_CMD_REG / 8] & (1 << (I8042_CMD_REG % 8))) :
-		false;
 
 	if (cell != &root_cell) {
 		/*
 		 * Shrink PIO access of root cell corresponding to new cell's
 		 * access rights.
 		 */
-		for (b = root_cell.arch.io_bitmap; pio_bitmap_size > 0;
-		     b++, pio_bitmap++, pio_bitmap_size--)
-			*b |= ~*pio_bitmap;
+		for_each_pio_region(pio, cell->config, n)
+			pio_allow_access(root_cell.arch.io_bitmap, pio, false);
 	}
 
 	/* permit access to the PM timer if there is any */
@@ -135,18 +149,25 @@ int vcpu_cell_init(struct cell *cell)
 
 void vcpu_cell_exit(struct cell *cell)
 {
-	const u8 *root_pio_bitmap =
-		jailhouse_cell_pio_bitmap(root_cell.config);
-	const u8 *pio_bitmap = jailhouse_cell_pio_bitmap(cell->config);
-	u32 pio_bitmap_size = cell->config->pio_bitmap_size;
-	u8 *b;
+	const struct jailhouse_pio *cell_wl, *root_wl;
+	unsigned int interval_start, interval_end, m, n;
+	struct jailhouse_pio refund;
 
-	if (root_cell.config->pio_bitmap_size < pio_bitmap_size)
-		pio_bitmap_size = root_cell.config->pio_bitmap_size;
-
-	for (b = root_cell.arch.io_bitmap; pio_bitmap_size > 0;
-	     b++, pio_bitmap++, root_pio_bitmap++, pio_bitmap_size--)
-		*b &= *pio_bitmap | *root_pio_bitmap;
+	/* Hand back ports to the root cell. But only hand back those ports
+	 * that overlap with the root cell's config. This is done by pairwise
+	 * comparison of the cell's and the root cell's whitelist entries. */
+	for_each_pio_region(cell_wl, cell->config, m)
+		for_each_pio_region(root_wl, root_cell.config, n) {
+			interval_start = MAX(cell_wl->base, root_wl->base);
+			interval_end = MIN(cell_wl->base + cell_wl->length,
+					   root_wl->base + root_wl->length);
+			if (interval_start < interval_end) {
+				refund.base = interval_start;
+				refund.length = interval_end - interval_start;
+				pio_allow_access(root_cell.arch.io_bitmap,
+						 &refund, true);
+			}
+		}
 
 	page_free(&mem_pool, cell->arch.io_bitmap,
 		  vcpu_vendor_get_io_bitmap_pages());
