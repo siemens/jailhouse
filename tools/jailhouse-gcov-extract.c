@@ -186,7 +186,8 @@ int main(int argc, char **argv)
 	assert(count == hypervisor_size);
 
 	header = (struct jailhouse_header *)hypervisor;
-	if (strcmp(header->signature, JAILHOUSE_SIGNATURE)) {
+	if (memcmp(header->signature, JAILHOUSE_SIGNATURE,
+		   sizeof(header->signature))) {
 		errno = EINVAL;
 		error(0, 0, "%s does not seem to be a hypervisor image",
 		      filename);
