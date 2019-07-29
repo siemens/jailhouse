@@ -563,6 +563,15 @@ class Irqchip:
         return self.address == 0xfec00000
 
 
+class PIORegion:
+    _REGION_FORMAT = 'HH'
+    SIZE = struct.calcsize(_REGION_FORMAT)
+
+    def __init__(self, pio_struct):
+        (self.base, self.length) = struct.unpack_from(self._REGION_FORMAT, \
+                                                      pio_struct)
+
+
 class Config:
     _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ8x32x'
     _HEADER_REVISION = 11
@@ -608,6 +617,12 @@ class Config:
             self.irqchips.append(
                 Irqchip(self.data[irqchip_offs:]))
             irqchip_offs += Irqchip.SIZE
+
+        pioregion_offs = irqchip_offs
+        self.pio_regions = []
+        for n in range(self.num_pio_regions):
+            self.pio_regions.append(PIORegion(self.data[pioregion_offs:]))
+            pioregion_offs += PIORegion.SIZE
 
 
 # see linux/Documentation/x86/boot.txt
