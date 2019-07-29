@@ -780,16 +780,22 @@ def x86_gen_setup_data(config):
     SETUP_DATA_COMPAT_VERSION = 1
     standard_ioapic = 0
     setup_data_hdr_struct = '8xII'
-    setup_data_struct = ('HH12x8xB%ux4x' % MAX_CPUS)
+    setup_data_struct = ('HH12x8xB%uxI' % MAX_CPUS)
 
     for irqchip in config.irqchips:
         if irqchip.is_standard():
             standard_ioapic = 1
 
+    flags = 0
+    platform_uarts = [0x3f8, 0x2f8, 0x3e8, 0x2e8]
+    for pio_region in config.pio_regions:
+        if pio_region.base in platform_uarts and pio_region.length == 8:
+            flags |= (1 << platform_uarts.index(pio_region.base))
+
     return struct.pack(setup_data_hdr_struct, SETUP_TYPE_JAILHOUSE,
                        struct.calcsize(setup_data_struct)) + \
            struct.pack(setup_data_struct, SETUP_DATA_VERSION,
-                       SETUP_DATA_COMPAT_VERSION, standard_ioapic)
+                       SETUP_DATA_COMPAT_VERSION, standard_ioapic, flags)
 
 
 # pretend to be part of the jailhouse tool
