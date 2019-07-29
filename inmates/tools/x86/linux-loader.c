@@ -34,6 +34,8 @@ struct setup_data {
 	u32	apic_khz;
 	u8	standard_ioapic;
 	u8	cpu_ids[SMP_MAX_CPUS];
+	/* Flags bits 0-3: has access to platform UART n */
+	u32	flags;
 } __attribute__((packed));
 
 /* We use the cmdline section for zero page and setup data. */
