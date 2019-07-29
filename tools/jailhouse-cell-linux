@@ -763,13 +763,17 @@ def x86_gen_setup_data(config):
     MAX_CPUS = 255
     SETUP_DATA_VERSION = 1
     standard_ioapic = 0
+    setup_data_hdr_struct = '8xII'
+    setup_data_struct = ('HH12x8xB%ux' % MAX_CPUS)
+
     for irqchip in config.irqchips:
         if irqchip.is_standard():
             standard_ioapic = 1
-    return struct.pack('8xIIHH12x8xB', SETUP_TYPE_JAILHOUSE, 25 + MAX_CPUS,
-                       SETUP_DATA_VERSION, SETUP_DATA_VERSION,
-                       standard_ioapic) + \
-        bytearray(MAX_CPUS)
+
+    return struct.pack(setup_data_hdr_struct, SETUP_TYPE_JAILHOUSE,
+                       struct.calcsize(setup_data_struct)) + \
+           struct.pack(setup_data_struct, SETUP_DATA_VERSION,
+                       SETUP_DATA_VERSION, standard_ioapic)
 
 
 # pretend to be part of the jailhouse tool
