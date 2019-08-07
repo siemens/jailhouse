@@ -15,12 +15,14 @@
 #include <jailhouse/printk.h>
 #include <asm/sysregs.h>
 #include <asm/control.h>
+#include <asm/iommu.h>
 
 int arch_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem)
 {
 	u64 phys_start = mem->phys_start;
 	u32 flags = PTE_FLAG_VALID | PTE_ACCESS_FLAG;
+	int err = 0;
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
 		flags |= S2_PTE_ACCESS_RO;
@@ -37,13 +39,27 @@ int arch_map_memory_region(struct cell *cell,
 		flags |= S2_PAGE_ACCESS_XN;
 	*/
 
-	return paging_create(&cell->arch.mm, phys_start, mem->size,
-			     mem->virt_start, flags, PAGING_COHERENT);
+	err = iommu_map_memory_region(cell, mem);
+	if (err)
+		return err;
+
+	err = paging_create(&cell->arch.mm, phys_start, mem->size,
+			    mem->virt_start, flags, PAGING_COHERENT);
+	if (err)
+		iommu_unmap_memory_region(cell, mem);
+
+	return err;
 }
 
 int arch_unmap_memory_region(struct cell *cell,
 			     const struct jailhouse_memory *mem)
 {
+	int err = 0;
+
+	err = iommu_unmap_memory_region(cell, mem);
+	if (err)
+		return err;
+
 	return paging_destroy(&cell->arch.mm, mem->virt_start, mem->size,
 			      PAGING_COHERENT);
 }
