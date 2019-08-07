@@ -50,6 +50,7 @@ struct {
 				.pm_timer_address = 0x808,
 				.iommu_units = {
 					{
+						.type = JAILHOUSE_IOMMU_AMD,
 						.base = 0xfeb80000,
 						.size = 0x80000,
 						.amd_bdf = 0x02,

@@ -448,7 +448,7 @@ static void amd_iommu_init_fault_nmi(void)
 		    &system_config->platform_info.x86.iommu_units[iommu->idx];
 
 		/* Disable MSI during interrupt reprogramming. */
-		pci_write_config(cfg->amd_bdf, cfg->amd_msi_cap + 2 , 0, 2);
+		pci_write_config(cfg->amd_bdf, cfg->amd_msi_cap + 2, 0, 2);
 
 		/*
 		 * Write new MSI capability block, re-enabling interrupts with
@@ -782,13 +782,12 @@ static int amd_iommu_init(void)
 
 	iommu = &system_config->platform_info.x86.iommu_units[0];
 	for (n = 0; iommu->base && n < iommu_count_units(); iommu++, n++) {
+		if (iommu->type != JAILHOUSE_IOMMU_AMD)
+			return trace_error(-EINVAL);
+
 		entry = &iommu_units[iommu_units_count];
 
 		entry->idx = n;
-
-		/* Protect against accidental VT-d configs. */
-		if (!iommu->amd_bdf)
-			return trace_error(-EINVAL);
 
 		printk("AMD IOMMU @0x%llx/0x%x\n", iommu->base, iommu->size);
 
