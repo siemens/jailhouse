@@ -573,8 +573,8 @@ class PIORegion:
 
 
 class Config:
-    _HEADER_FORMAT = '6sH32s4xIIIIIIIIIQ8x32x'
-    _HEADER_REVISION = 11
+    _HEADER_FORMAT = '=6sH32s4xIIIIIIIIIIQ8x32x'
+    _HEADER_REVISION = 12
 
     def __init__(self, config_file):
         self.data = config_file.read()
@@ -590,6 +590,7 @@ class Config:
          self.num_pio_regions,
          self.num_pci_devices,
          self.num_pci_caps,
+         self.num_stream_ids,
          self.vpci_irq_base,
          self.cpu_reset_address) = \
             struct.unpack_from(Config._HEADER_FORMAT, self.data)

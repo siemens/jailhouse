@@ -17,6 +17,11 @@
 #include <jailhouse/utils.h>
 #include <jailhouse/cell-config.h>
 
+#define for_each_stream_id(sid, config, counter)			       \
+	for ((sid) = (jailhouse_cell_stream_ids(config)[0]), (counter) = 0;    \
+	     (counter) < (config)->num_stream_ids;			       \
+	     (sid) = (jailhouse_cell_stream_ids(config)[++(counter)]))
+
 unsigned int iommu_count_units(void);
 int iommu_map_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem);
