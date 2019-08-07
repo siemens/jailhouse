@@ -202,6 +202,7 @@ struct jailhouse_pci_capability {
 
 #define JAILHOUSE_IOMMU_AMD		1
 #define JAILHOUSE_IOMMU_INTEL		2
+#define JAILHOUSE_IOMMU_SMMUV3		3
 
 struct jailhouse_iommu {
 	__u32 type;
