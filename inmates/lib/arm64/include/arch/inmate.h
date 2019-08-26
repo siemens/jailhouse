@@ -36,6 +36,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * 512 L1 translation table entries for arm64 bit architecture
+ * indexed from bits [38:30] of virtual address.
+ */
+#define JAILHOUSE_INMATE_MEM_PAGE_DIR_LEN	512
+
 void __attribute__((used)) vector_irq(void);
 
 static inline void arch_disable_irqs(void)
