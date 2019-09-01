@@ -11,7 +11,7 @@
 #
 
 language: c
-dist: xenial
+dist: bionic
 
 compiler:
   - gcc
@@ -20,9 +20,10 @@ addons:
   apt:
     packages:
       - python-mako
-      - gcc-arm-linux-gnueabihf
+      - gcc-8
+      - gcc-8-arm-linux-gnueabihf
       - libc6-dev-armhf-cross
-      - gcc-aarch64-linux-gnu
+      - gcc-8-aarch64-linux-gnu
       - libc6-dev-arm64-cross
   coverity_scan:
     project:
@@ -34,6 +35,9 @@ addons:
     branch_pattern: coverity_scan.*
 
 install:
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800
+  - sudo update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-8 800
+  - sudo update-alternatives --install /usr/bin/arm-linux-gnueabihf-gcc arm-linux-gnueabihf-gcc /usr/bin/arm-linux-gnueabihf-gcc-8 800
   # Work around broken certificate of scan.coverity.com
   - sudo curl -s -L https://entrust.com/root-certificates/entrust_l1k.cer -o /usr/local/share/ca-certificates/entrust_l1k.crt
   - sudo update-ca-certificates
