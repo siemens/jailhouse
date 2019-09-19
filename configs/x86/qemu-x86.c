@@ -205,7 +205,7 @@ struct {
 		PIO_RANGE(0x70, 0x2), /* rtc */
 		PIO_RANGE(0x1ce, 0x3), /* vbe */
 		PIO_RANGE(0x2f8, 0x8), /* serial2 */
-		PIO_RANGE(0x3b0, 0x8), /* VGA */
+		PIO_RANGE(0x3b0, 0x30), /* VGA */
 		PIO_RANGE(0x3f0, 0x8), /* floppy */
 		PIO_RANGE(0x402, 0x1), /* invalid but accessed by X */
 		PIO_RANGE(0x5658, 0x4), /* vmport */
