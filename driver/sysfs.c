@@ -353,7 +353,7 @@ static struct cell_cpu *find_cell_cpu(struct cell *cell, unsigned int cpu)
 {
 	struct cell_cpu *cell_cpu;
 
-	list_for_each_entry(cell_cpu, &root_cell->cell_cpus, entry)
+	list_for_each_entry(cell_cpu, &cell->cell_cpus, entry)
 		if (cell_cpu->cpu == cpu)
 			return cell_cpu;
 
