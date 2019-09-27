@@ -317,7 +317,7 @@ class ARMCommon:
 
         ramdisk_size = 0
         if args.initrd:
-            ramdisk_size = page_align(os.fstat(args.initrd.fileno()).st_size)
+            ramdisk_size = os.fstat(args.initrd.fileno()).st_size
             # leave sufficient space between the kernel and the initrd
             decompression_factor = self.default_decompression_factor()
             if args.kernel_decomp_factor:
