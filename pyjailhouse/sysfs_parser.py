@@ -113,7 +113,7 @@ def parse_iomem(pcidevices):
         append_r = True
         # filter the list for MSI-X pages
         for d in pcidevices:
-            if d.msix_address >= r.start and d.msix_address <= r.stop:
+            if r.start <= d.msix_address <= r.stop:
                 if d.msix_address > r.start:
                     head_r = MemRegion(r.start, d.msix_address - 1,
                                        r.typestr, r.comments)
