@@ -603,15 +603,15 @@ class Config:
             exit(1)
         self.name = str(name.decode())
 
-        memregion_offs = struct.calcsize(Config._HEADER_FORMAT) + \
+        mem_region_offs = struct.calcsize(Config._HEADER_FORMAT) + \
             self.cpu_set_size
         self.memory_regions = []
         for n in range(self.num_memory_regions):
             self.memory_regions.append(
-                MemoryRegion(self.data[memregion_offs:]))
-            memregion_offs += MemoryRegion.SIZE
+                MemoryRegion(self.data[mem_region_offs:]))
+            mem_region_offs += MemoryRegion.SIZE
 
-        irqchip_offs = memregion_offs + \
+        irqchip_offs = mem_region_offs + \
             self.num_cache_regions * CacheRegion.SIZE
         self.irqchips = []
         for n in range(self.num_irqchips):
