@@ -490,7 +490,7 @@ def parse_ivrs(pcidevices, ioapics):
 
             regions.append(
                 MemRegion(mem_addr, mem_addr + mem_len - 1, 'ACPI IVRS',
-                    comment))
+                          comment))
 
         elif type == 0x40:
             raise RuntimeError(
@@ -665,13 +665,13 @@ class PCICapability:
                     len = 4 + (vsec_len >> 20)
                 elif id == PCI_EXT_CAP_ID.ACS:
                     len = 8
-                    vector_size = 0
 
                     (acs_cap, acs_ctrl) = struct.unpack('<HH', f.read(4))
                     if acs_cap & (1 << 5) and acs_ctrl & (1 << 5):
                         vector_bits = acs_cap >> 8
                         if vector_bits == 0:
                             vector_bits = 256
+
                         vector_bytes = int((vector_bits + 31) / (8 * 4))
                         len += vector_bytes
                 elif id in [PCI_EXT_CAP_ID.VC, PCI_EXT_CAP_ID.VC9]:
@@ -679,7 +679,8 @@ class PCICapability:
                     len = 4 * 4
                 elif id == PCI_EXT_CAP_ID.MFVC:
                     len = 4
-                elif id in [PCI_EXT_CAP_ID.LTR, PCI_EXT_CAP_ID.ARI, PCI_EXT_CAP_ID.PASID]:
+                elif id in [PCI_EXT_CAP_ID.LTR, PCI_EXT_CAP_ID.ARI,
+                            PCI_EXT_CAP_ID.PASID]:
                     len = 8
                 elif id in [PCI_EXT_CAP_ID.DSN, PCI_EXT_CAP_ID.PTM]:
                     len = 12
