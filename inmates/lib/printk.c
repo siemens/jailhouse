@@ -294,6 +294,9 @@ static void __vprintk(const char *fmt, va_list ap)
 					p = hex2str(v, p, 0);
 				p = align(p, p0, width, fill);
 				break;
+			case '%':
+				*p++ = c;
+				break;
 			default:
 				*p++ = '%';
 				*p++ = c;
