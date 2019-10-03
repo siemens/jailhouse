@@ -343,33 +343,6 @@ void apic_clear(void)
 	apic_ops.write(APIC_REG_SVR, 0xff);
 }
 
-static bool apic_valid_ipi_mode(u32 lo_val)
-{
-	switch (lo_val & APIC_ICR_DLVR_MASK) {
-	case APIC_ICR_DLVR_INIT:
-	case APIC_ICR_DLVR_FIXED:
-	case APIC_ICR_DLVR_LOWPRI:
-	case APIC_ICR_DLVR_NMI:
-	case APIC_ICR_DLVR_SIPI:
-		break;
-	default:
-		panic_printk("FATAL: Unsupported APIC delivery mode, "
-			     "ICR.lo=%x\n", lo_val);
-		return false;
-	}
-
-	switch (lo_val & APIC_ICR_SH_MASK) {
-	case APIC_ICR_SH_NONE:
-	case APIC_ICR_SH_SELF:
-		break;
-	default:
-		panic_printk("FATAL: Unsupported shorthand, ICR.lo=%x\n",
-			     lo_val);
-		return false;
-	}
-	return true;
-}
-
 static void apic_send_ipi(unsigned int target_cpu_id, u32 orig_icr_hi,
 			  u32 icr_lo)
 {
@@ -430,6 +403,17 @@ static void apic_send_logical_dest_ipi(u32 lo_val, u32 hi_val)
 		}
 }
 
+static void apic_send_ipi_all(u32 lo_val, int except_cpu)
+{
+	unsigned int cpu;
+
+	/* This implicitly selects APIC_ICR_SH_NONE. */
+	lo_val &= APIC_ICR_LVTM_MASK | APIC_ICR_DLVR_MASK |
+		  APIC_ICR_VECTOR_MASK;
+	for_each_cpu_except(cpu, this_cell()->cpu_set, except_cpu)
+		apic_send_ipi(cpu, 0, lo_val);
+}
+
 /**
  * Handle ICR write request.
  * @param lo_val	Lower 32 bits of ICR
@@ -439,16 +423,35 @@ static void apic_send_logical_dest_ipi(u32 lo_val, u32 hi_val)
  */
 static bool apic_handle_icr_write(u32 lo_val, u32 hi_val)
 {
+	u32 shorthand = lo_val & APIC_ICR_SH_MASK;
 	unsigned int target_cpu_id;
 
-	if (!apic_valid_ipi_mode(lo_val))
+	switch (lo_val & APIC_ICR_DLVR_MASK) {
+	case APIC_ICR_DLVR_FIXED:
+		break;
+	case APIC_ICR_DLVR_INIT:
+	case APIC_ICR_DLVR_LOWPRI:
+	case APIC_ICR_DLVR_NMI:
+	case APIC_ICR_DLVR_SIPI:
+		if (shorthand == APIC_ICR_SH_NONE ||
+		    shorthand == APIC_ICR_SH_ALLOTHER)
+			break;
+		/* fall through */
+	default:
+		panic_printk("FATAL: Unsupported/invalid APIC delivery mode, "
+			     "ICR.lo=%x\n", lo_val);
 		return false;
+	}
 
-	if ((lo_val & APIC_ICR_SH_MASK) == APIC_ICR_SH_SELF) {
-		apic_ops.write(APIC_REG_ICR, (lo_val & APIC_ICR_VECTOR_MASK) |
-					     APIC_ICR_DLVR_FIXED |
-					     APIC_ICR_TM_EDGE |
-					     APIC_ICR_SH_SELF);
+	switch (shorthand) {
+	case APIC_ICR_SH_SELF:
+		apic_ops.write(APIC_REG_ICR, lo_val);
+		return true;
+	case APIC_ICR_SH_ALL:
+		apic_send_ipi_all(lo_val, -1);
+		return true;
+	case APIC_ICR_SH_ALLOTHER:
+		apic_send_ipi_all(lo_val, this_cpu_id());
 		return true;
 	}
 
