@@ -43,8 +43,8 @@ Contribution Checklist
 
 - add Fixes: to all bug-fix commits [*recommended*]
     - the Fixes: tag format shall be:
-        Fixes: 12-byte-hash ("subject of bug-introduction commit")
-    - if you are unsure of the bug-introduction commit do *not* add a
+        Fixes: 12-byte-hash ("subject of bug-introducing commit")
+    - if you are unsure of the bug-introducing  commit do *not* add a
       Fixes: tag - no Fixes: tag is better than a wrong Fixes: tag.
 
 - post patches to mailing list [**required**]
