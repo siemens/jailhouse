@@ -832,6 +832,23 @@ class IORegionTree:
         self.parent = None
         self.children = []
 
+    # find specific regions in tree
+    def find_regions_by_name(self, name):
+        regions = []
+
+        for tree in self.children:
+            r = tree.region
+            s = r.typestr
+
+            if s.find(name) >= 0:
+                regions.append(r)
+
+            # if the tree continues recurse further down ...
+            if len(tree.children) > 0:
+                regions.extend(tree.find_regions_by_name(name))
+
+        return regions
+
     @staticmethod
     def parse_io_line(line, TargetClass):
         (region, type) = line.split(' : ', 1)
@@ -903,25 +920,6 @@ class IOMemRegionTree:
 
         return [before_kernel, kernel_region, after_kernel]
 
-    # find specific regions in tree
-    @staticmethod
-    def find_regions_by_name(tree, name):
-        regions = []
-
-        for tree in tree.children:
-            r = tree.region
-            s = r.typestr
-
-            if s.find(name) >= 0:
-                regions.append(r)
-
-            # if the tree continues recurse further down ...
-            if len(tree.children) > 0:
-                regions.extend(
-                    IOMemRegionTree.find_regions_by_name(tree, name))
-
-        return regions
-
     # recurse down the tree
     @staticmethod
     def parse_iomem_tree(tree):
@@ -945,10 +943,8 @@ class IOMemRegionTree:
 
             # generally blacklisted, with a few exceptions
             if s.lower() == 'reserved':
-                regions.extend(
-                    IOMemRegionTree.find_regions_by_name(tree, 'HPET'))
-                dmar_regions.extend(
-                    IOMemRegionTree.find_regions_by_name(tree, 'dmar'))
+                regions.extend(tree.find_regions_by_name('HPET'))
+                dmar_regions.extend(tree.find_regions_by_name('dmar'))
                 continue
 
             # if the tree continues recurse further down ...
