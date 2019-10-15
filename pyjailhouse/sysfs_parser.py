@@ -825,6 +825,17 @@ class IOAPIC:
         return (self.iommu << 16) | self.bdf
 
 
+class IORegionTree:
+    @staticmethod
+    def parse_io_line(line, TargetClass):
+        (region, type) = line.split(' : ', 1)
+        level = int(region.count(' ') / 2) + 1
+        type = type.strip()
+        region = [r.strip() for r in region.split('-', 1)]
+
+        return level, TargetClass(int(region[0], 16), int(region[1], 16), type)
+
+
 class IOMemRegionTree:
     def __init__(self, region, level):
         self.region = region
@@ -866,21 +877,13 @@ class IOMemRegionTree:
         return [before_kernel, kernel_region, after_kernel]
 
     @staticmethod
-    def parse_iomem_line(line):
-        a = line.split(':', 1)
-        level = int(a[0].count(' ') / 2) + 1
-        region = a[0].split('-', 1)
-        a[1] = a[1].strip()
-        return level, MemRegion(int(region[0], 16), int(region[1], 16), a[1])
-
-    @staticmethod
     def parse_iomem_file():
         root = IOMemRegionTree(None, 0)
         f = input_open('/proc/iomem')
         lastlevel = 0
         lastnode = root
         for line in f:
-            (level, r) = IOMemRegionTree.parse_iomem_line(line)
+            (level, r) = IORegionTree.parse_io_line(line, MemRegion)
             t = IOMemRegionTree(r, level)
             if (t.level > lastlevel):
                 t.parent = lastnode
