@@ -97,8 +97,8 @@ def input_listdir(dir, wildcards):
 
 
 def parse_iomem(pcidevices):
-    (regions, dmar_regions) = IOMemRegionTree.parse_iomem_tree(
-        IOMemRegionTree.parse_iomem_file())
+    tree = IORegionTree.parse_io_file('/proc/iomem', MemRegion)
+    (regions, dmar_regions) = IOMemRegionTree.parse_iomem_tree(tree)
 
     rom_region = MemRegion(0xc0000, 0xdffff, 'ROMs')
     add_rom_region = False
@@ -902,10 +902,6 @@ class IOMemRegionTree:
             after_kernel = MemRegion(kernel_stop + 1, r.stop, s)
 
         return [before_kernel, kernel_region, after_kernel]
-
-    @staticmethod
-    def parse_iomem_file():
-        return IORegionTree.parse_io_file('/proc/iomem', MemRegion)
 
     # find specific regions in tree
     @staticmethod
