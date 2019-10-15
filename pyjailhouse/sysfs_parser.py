@@ -125,7 +125,7 @@ def parse_iomem(pcidevices):
                 append_r = False
                 break
         # filter out the ROMs
-        if (r.start >= rom_region.start and r.stop <= rom_region.stop):
+        if r.start >= rom_region.start and r.stop <= rom_region.stop:
             add_rom_region = True
             append_r = False
         # filter out and save DMAR regions
@@ -141,7 +141,7 @@ def parse_iomem(pcidevices):
 
     # newer Linux kernels will report the first page as reserved
     # it is needed for CPU init so include it anyways
-    if (ret[0].typestr == 'System RAM' and ret[0].start == 0x1000):
+    if ret[0].typestr == 'System RAM' and ret[0].start == 0x1000:
         ret[0].start = 0
 
     return ret, dmar_regions
@@ -836,7 +836,7 @@ class IOMemRegionTree:
         kernel = [x for x in self.children if
                   x.region.typestr.startswith('Kernel ')]
 
-        if (len(kernel) == 0):
+        if len(kernel) == 0:
             return [self.region]
 
         r = self.region
@@ -847,20 +847,20 @@ class IOMemRegionTree:
 
         # align this for 16M, but only if we have enough space
         kernel_stop = (kernel_stop & ~0xFFFFFF) + 0xFFFFFF
-        if (kernel_stop > r.stop):
+        if kernel_stop > r.stop:
             kernel_stop = r.stop
 
         before_kernel = None
         after_kernel = None
 
         # before Kernel if any
-        if (r.start < kernel_start):
+        if r.start < kernel_start:
             before_kernel = MemRegion(r.start, kernel_start - 1, s)
 
         kernel_region = MemRegion(kernel_start, kernel_stop, "Kernel")
 
         # after Kernel if any
-        if (r.stop > kernel_stop):
+        if r.stop > kernel_stop:
             after_kernel = MemRegion(kernel_stop + 1, r.stop, s)
 
         return [before_kernel, kernel_region, after_kernel]
@@ -908,11 +908,11 @@ class IOMemRegionTree:
             r = tree.region
             s = r.typestr
 
-            if (s.find(name) >= 0):
+            if s.find(name) >= 0:
                 regions.append(r)
 
             # if the tree continues recurse further down ...
-            if (len(tree.children) > 0):
+            if len(tree.children) > 0:
                 regions.extend(
                     IOMemRegionTree.find_regions_by_name(tree, name))
 
@@ -931,19 +931,16 @@ class IOMemRegionTree:
             # System RAM on the first level will be added completely,
             # if they don't contain the kernel itself, if they do,
             # we split them
-            if (tree.level == 1 and s == 'System RAM'):
+            if tree.level == 1 and s == 'System RAM':
                 regions.extend(tree.regions_split_by_kernel())
                 continue
 
-            # blacklisted on all levels
-            if (
-                (s.find('PCI MMCONFIG') >= 0) or
-                (s.find('APIC') >= 0)  # covers both APIC and IOAPIC
-            ):
+            # blacklisted on all levels, covers both APIC and IOAPIC
+            if s.find('PCI MMCONFIG') >= 0 or s.find('APIC') >= 0:
                 continue
 
             # generally blacklisted, with a few exceptions
-            if (s.lower() == 'reserved'):
+            if s.lower() == 'reserved':
                 regions.extend(
                     IOMemRegionTree.find_regions_by_name(tree, 'HPET'))
                 dmar_regions.extend(
@@ -951,7 +948,7 @@ class IOMemRegionTree:
                 continue
 
             # if the tree continues recurse further down ...
-            if (len(tree.children) > 0):
+            if len(tree.children) > 0:
                 (temp_regions, temp_dmar_regions) = \
                     IOMemRegionTree.parse_iomem_tree(tree)
                 regions.extend(temp_regions)
