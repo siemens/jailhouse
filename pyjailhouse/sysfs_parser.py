@@ -826,6 +826,12 @@ class IOAPIC:
 
 
 class IORegionTree:
+    def __init__(self, region, level):
+        self.region = region
+        self.level = level
+        self.parent = None
+        self.children = []
+
     @staticmethod
     def parse_io_line(line, TargetClass):
         (region, type) = line.split(' : ', 1)
@@ -837,13 +843,13 @@ class IORegionTree:
 
     @staticmethod
     def parse_io_file(filename, TargetClass):
-        root = IOMemRegionTree(None, 0)
+        root = IORegionTree(None, 0)
         f = input_open(filename)
         lastlevel = 0
         lastnode = root
         for line in f:
             (level, r) = IORegionTree.parse_io_line(line, TargetClass)
-            t = IOMemRegionTree(r, level)
+            t = IORegionTree(r, level)
             if t.level > lastlevel:
                 t.parent = lastnode
             if t.level == lastlevel:
@@ -863,12 +869,6 @@ class IORegionTree:
 
 
 class IOMemRegionTree:
-    def __init__(self, region, level):
-        self.region = region
-        self.level = level
-        self.parent = None
-        self.children = []
-
     @staticmethod
     def regions_split_by_kernel(tree):
         kernel = [x for x in tree.children if
