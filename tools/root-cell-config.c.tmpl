@@ -132,9 +132,9 @@ struct {
 		/* ${c} */
 		% endfor
 		{
-			.phys_start = ${hex(r.start).strip('L')},
-			.virt_start = ${hex(r.start).strip('L')},
-			.size = ${hex(r.size()).strip('L')},
+			.phys_start = ${r.start_str()},
+			.virt_start = ${r.start_str()},
+			.size = ${r.size_str()},
 			.flags = ${r.flagstr('\t\t')},
 		},
 		% endfor

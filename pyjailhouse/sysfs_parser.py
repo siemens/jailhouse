@@ -793,6 +793,17 @@ class IORegion(object):
     def size(self):
         return int(self.stop - self.start)
 
+    def start_str(self):
+        # This method is used in root-cell-config.c.tmpl
+
+        # Python 2 appends a 'L' to hexadecimal format of large integers,
+        # therefore .strip('L') is necessary.
+        return hex(self.start).strip('L')
+
+    def size_str(self):
+        # Comments from start_str() apply here as well.
+        return hex(self.size()).strip('L')
+
 
 class MemRegion(IORegion):
     def __init__(self, start, stop, typestr, comments=None):
