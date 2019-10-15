@@ -269,7 +269,7 @@ product = [input_readline('/sys/class/dmi/id/sys_vendor',
 inmatemem = kmg_multiply_str(options.mem_inmates)
 hvmem = [0, kmg_multiply_str(options.mem_hv)]
 
-(regions, dmar_regions) = sysfs_parser.parse_iomem(pcidevices)
+(mem_regions, dmar_regions) = sysfs_parser.parse_iomem(pcidevices)
 ourmem = parse_kernel_cmdline()
 total = hvmem[1] + inmatemem
 
@@ -283,11 +283,11 @@ if vendor == 'GenuineIntel':
                                                            dmar_regions)
 else:
     (iommu_units, extra_memregs) = sysfs_parser.parse_ivrs(pcidevices, ioapics)
-regions += extra_memregs
+mem_regions += extra_memregs
 
 # kernel does not have memmap region, pick one
 if ourmem is None:
-    ourmem = alloc_mem(regions, total)
+    ourmem = alloc_mem(mem_regions, total)
 elif (total > ourmem[1]):
     raise RuntimeError('Your memmap reservation is too small you need >="' +
                        hex(total) + '". Hint: your kernel cmd line needs '
@@ -298,7 +298,7 @@ hvmem[0] = ourmem[0]
 inmatereg = sysfs_parser.MemRegion(ourmem[0] + hvmem[1],
                                    ourmem[0] + hvmem[1] + inmatemem - 1,
                                    'JAILHOUSE Inmate Memory')
-regions.append(inmatereg)
+mem_regions.append(inmatereg)
 
 cpucount = count_cpus()
 
@@ -311,7 +311,7 @@ f = open(options.file, 'w')
 tmpl = Template(filename=os.path.join(options.template_dir,
                                       'root-cell-config.c.tmpl'))
 kwargs = {
-    'regions': regions,
+    'mem_regions': mem_regions,
     'ourmem': ourmem,
     'argstr': ' '.join(sys.argv),
     'hvmem': hvmem,

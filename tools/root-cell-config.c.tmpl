@@ -45,7 +45,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[${int((cpucount + 63) / 64)}];
-	struct jailhouse_memory mem_regions[${len(regions)}];
+	struct jailhouse_memory mem_regions[${len(mem_regions)}];
 	struct jailhouse_irqchip irqchips[${len(irqchips)}];
 	struct jailhouse_pio pio_regions[6];
 	struct jailhouse_pci_device pci_devices[${len(pcidevices)}];
@@ -126,7 +126,7 @@ struct {
 	},
 
 	.mem_regions = {
-		% for r in regions:
+		% for r in mem_regions:
 		/* ${str(r)} */
 		% for c in r.comments:
 		/* ${c} */
