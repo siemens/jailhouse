@@ -47,7 +47,7 @@ struct {
 	__u64 cpus[${int((cpucount + 63) / 64)}];
 	struct jailhouse_memory mem_regions[${len(mem_regions)}];
 	struct jailhouse_irqchip irqchips[${len(irqchips)}];
-	struct jailhouse_pio pio_regions[6];
+	struct jailhouse_pio pio_regions[${len([1 for r in port_regions if r.permit])}];
 	struct jailhouse_pci_device pci_devices[${len(pcidevices)}];
 	struct jailhouse_pci_capability pci_caps[${len(pcicaps)}];
 } __attribute__((packed)) config = {
@@ -154,12 +154,10 @@ struct {
 	},
 
 	.pio_regions = {
-		PIO_RANGE(0x40, 4), /* PIT */
-		PIO_RANGE(0x60, 2), /* HACK: NMI status/control */
-		PIO_RANGE(0x64, 1), /* I8042 */
-		PIO_RANGE(0x70, 2), /* RTC */
-		PIO_RANGE(0x3b0, 0x30), /* VGA */
-		PIO_RANGE(0xd00, 0xf300), /* HACK: PCI bus */
+		% for r in port_regions:
+		/* ${str(r)} */
+		${'' if r.permit else '/* '}PIO_RANGE(${r.start_str()}, ${r.size_str()}),${'' if r.permit else ' */'}
+		% endfor
 	},
 
 	.pci_devices = {

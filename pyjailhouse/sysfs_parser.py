@@ -18,6 +18,7 @@
 # to change the generated C-code.
 
 
+import re
 import struct
 import os
 import fnmatch
@@ -25,6 +26,7 @@ import fnmatch
 from .pci_defs import PCI_CAP_ID, PCI_EXT_CAP_ID
 
 root_dir = "/"
+bdf_regex = re.compile(r'\w{4}:\w{2}:\w{2}\.\w')
 
 
 def set_root_dir(dir):
@@ -145,6 +147,65 @@ def parse_iomem(pcidevices):
         ret[0].start = 0
 
     return ret, dmar_regions
+
+
+def ioports_search_pci_devices(tree):
+    ret = []
+
+    if tree.region and bdf_regex.match(tree.region.typestr):
+        ret.append(tree.region)
+    else:
+        for subtree in tree:
+            ret += ioports_search_pci_devices(subtree)
+
+    return ret
+
+
+def parse_ioports():
+    tree = IORegionTree.parse_io_file('/proc/ioports', PortRegion)
+
+    pm_timer_base = tree.find_regions_by_name('ACPI PM_TMR')
+    if len(pm_timer_base) != 1:
+        raise RuntimeError('Found %u entries for ACPI PM_TMR (expected 1)' %
+                           len(pm_timer_base))
+    pm_timer_base = pm_timer_base[0].start
+
+    leaves = tree.get_leaves()
+
+    # Never expose PCI config space ports to the user
+    leaves = list(filter(lambda p: p.start != 0xcf8, leaves))
+
+    # Drop everything above 0xd00
+    leaves = list(filter(lambda p: p.start < 0xd00, leaves))
+
+    whitelist = [
+        0x40,   # PIT
+        0x60,   # keyboard
+        0x61,   # HACK: NMI status/control
+        0x64,   # I8042
+        0x70,   # RTC
+        0x2f8,  # serial
+        0x3f8,  # serial
+    ]
+
+    pci_devices = ioports_search_pci_devices(tree)
+
+    # Drop devices below 0xd00 as leaves already contains them. Access should
+    # not be permitted by default.
+    pci_devices = list(filter(lambda p: p.start >= 0xd00, pci_devices))
+    for pci_device in pci_devices:
+        pci_device.permit = True
+
+    for r in leaves:
+        typestr = r.typestr.lower()
+        if r.start in whitelist or \
+           True in [vga in typestr for vga in ['vesa', 'vga']]:
+            r.permit = True
+
+    leaves += pci_devices
+    leaves.sort(key=lambda r: r.start)
+
+    return leaves, pm_timer_base
 
 
 def parse_pcidevices():
@@ -831,6 +892,19 @@ class MemRegion(IORegion):
         return 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE'
 
 
+class PortRegion(IORegion):
+    def __init__(self, start, stop, typestr, permit=False, comments=None):
+        super(PortRegion, self).__init__(start, stop, typestr, comments)
+        self.permit = permit
+
+    def __str__(self):
+        return 'Port I/O: %04x-%04x : %s' % \
+            (self.start, self.stop, super(PortRegion, self).__str__())
+
+    def size(self):
+        return super(PortRegion, self).size() + 1
+
+
 class IOAPIC:
     def __init__(self, id, address, gsi_base, iommu=0, bdf=0):
         self.id = id
@@ -853,6 +927,21 @@ class IORegionTree:
         self.level = level
         self.parent = None
         self.children = []
+
+    def __iter__(self):
+        for child in self.children:
+            yield child
+
+    def get_leaves(self):
+        leaves = []
+
+        if len(self.children):
+            for child in self.children:
+                leaves.extend(child.get_leaves())
+        elif self.region is not None:
+            leaves.append(self.region)
+
+        return leaves
 
     # find specific regions in tree
     def find_regions_by_name(self, name):
