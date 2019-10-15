@@ -835,6 +835,32 @@ class IORegionTree:
 
         return level, TargetClass(int(region[0], 16), int(region[1], 16), type)
 
+    @staticmethod
+    def parse_io_file(filename, TargetClass):
+        root = IOMemRegionTree(None, 0)
+        f = input_open(filename)
+        lastlevel = 0
+        lastnode = root
+        for line in f:
+            (level, r) = IORegionTree.parse_io_line(line, TargetClass)
+            t = IOMemRegionTree(r, level)
+            if t.level > lastlevel:
+                t.parent = lastnode
+            if t.level == lastlevel:
+                t.parent = lastnode.parent
+            if t.level < lastlevel:
+                p = lastnode.parent
+                while t.level < p.level:
+                    p = p.parent
+                t.parent = p.parent
+
+            t.parent.children.append(t)
+            lastnode = t
+            lastlevel = t.level
+        f.close()
+
+        return root
+
 
 class IOMemRegionTree:
     def __init__(self, region, level):
@@ -878,29 +904,7 @@ class IOMemRegionTree:
 
     @staticmethod
     def parse_iomem_file():
-        root = IOMemRegionTree(None, 0)
-        f = input_open('/proc/iomem')
-        lastlevel = 0
-        lastnode = root
-        for line in f:
-            (level, r) = IORegionTree.parse_io_line(line, MemRegion)
-            t = IOMemRegionTree(r, level)
-            if (t.level > lastlevel):
-                t.parent = lastnode
-            if (t.level == lastlevel):
-                t.parent = lastnode.parent
-            if (t.level < lastlevel):
-                p = lastnode.parent
-                while(t.level < p.level):
-                    p = p.parent
-                t.parent = p.parent
-
-            t.parent.children.append(t)
-            lastnode = t
-            lastlevel = t.level
-        f.close()
-
-        return root
+        return IORegionTree.parse_io_file('/proc/iomem', MemRegion)
 
     # find specific regions in tree
     @staticmethod
