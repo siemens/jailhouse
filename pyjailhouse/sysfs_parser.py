@@ -832,17 +832,6 @@ class IOMemRegionTree:
         self.parent = None
         self.children = []
 
-    def __str__(self):
-        s = ''
-        if (self.region):
-            s = (' ' * (self.level - 1)) + str(self.region)
-            if self.parent and self.parent.region:
-                s += ' --> ' + self.parent.region.typestr
-            s += '\n'
-        for c in self.children:
-            s += str(c)
-        return s
-
     def regions_split_by_kernel(self):
         kernel = [x for x in self.children if
                   x.region.typestr.startswith('Kernel ')]
