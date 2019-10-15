@@ -780,20 +780,31 @@ class PCIPCIBridge(PCIDevice):
         return (secondbus, subordinate)
 
 
-class MemRegion:
-    def __init__(self, start, stop, typestr, comments=None):
+class IORegion(object):
+    def __init__(self, start, stop, typestr, comments):
         self.start = start
         self.stop = stop
         self.typestr = typestr
         self.comments = comments or []
 
     def __str__(self):
+        return self.typestr
+
+    def size(self):
+        return int(self.stop - self.start)
+
+
+class MemRegion(IORegion):
+    def __init__(self, start, stop, typestr, comments=None):
+        super(MemRegion, self).__init__(start, stop, typestr, comments)
+
+    def __str__(self):
         return 'MemRegion: %08x-%08x : %s' % \
-            (self.start, self.stop, self.typestr)
+            (self.start, self.stop, super(MemRegion, self).__str__())
 
     def size(self):
         # round up to full PAGE_SIZE
-        return int((self.stop - self.start + 0xfff) / 0x1000) * 0x1000
+        return int((super(MemRegion, self).size() + 0xfff) / 0x1000) * 0x1000
 
     def flagstr(self, p=''):
         if (
