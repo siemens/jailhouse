@@ -652,6 +652,7 @@ def get_cpu_vendor():
             key, value = line.split(':')
             if key.strip() == 'vendor_id':
                 return value.strip()
+    raise RuntimeError('Broken %s/proc/cpuinfo' % root_dir)
 
 
 class PCIBARs:
