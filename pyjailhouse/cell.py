@@ -27,7 +27,7 @@ class JailhouseCell:
 
         self.dev = open('/dev/jailhouse')
 
-        cbuf = ctypes.c_buffer(config.data)
+        cbuf = ctypes.create_string_buffer(config.data)
         create = struct.pack('QI4x', ctypes.addressof(cbuf), len(config.data))
         try:
             fcntl.ioctl(self.dev, JailhouseCell.JAILHOUSE_CELL_CREATE, create)
