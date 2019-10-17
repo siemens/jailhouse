@@ -101,7 +101,7 @@ def input_listdir(dir, wildcards):
 def regions_split_by_kernel(tree):
     kernel = [x for x in tree.children
               if x.region.typestr.startswith('Kernel')]
-    if len(kernel) == 0:
+    if not kernel:
         return [tree.region]
 
     r = tree.region
@@ -157,7 +157,7 @@ def parse_iomem_tree(tree):
             continue
 
         # if the tree continues recurse further down ...
-        if len(tree.children) > 0:
+        if tree.children:
             (temp_regions, temp_dmar_regions) = parse_iomem_tree(tree)
             regions.extend(temp_regions)
             dmar_regions.extend(temp_dmar_regions)
@@ -288,7 +288,7 @@ def parse_pcidevices():
     for dir in list:
         d = PCIDevice.parse_pcidevice_sysfsdir(basedir, dir)
         if d is not None:
-            if len(d.caps) > 0:
+            if d.caps:
                 duplicate = False
                 # look for duplicate capability patterns
                 for d2 in devices:
@@ -1006,7 +1006,7 @@ class IORegionTree:
     def get_leaves(self):
         leaves = []
 
-        if len(self.children):
+        if self.children:
             for child in self.children:
                 leaves.extend(child.get_leaves())
         elif self.region is not None:
@@ -1026,7 +1026,7 @@ class IORegionTree:
                 regions.append(r)
 
             # if the tree continues recurse further down ...
-            if len(tree.children) > 0:
+            if tree.children:
                 regions.extend(tree.find_regions_by_name(name))
 
         return regions
