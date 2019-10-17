@@ -408,8 +408,8 @@ def parse_dmar(pcidevices, ioapics, dmar_regions):
                                 PCIPCIBridge.get_2nd_busses(d)
                             for d2 in pcidevices:
                                 if (
-                                    d2.bus >= secondbus and
-                                    d2.bus <= subordinate
+                                        d2.bus >= secondbus and
+                                        d2.bus <= subordinate
                                 ):
                                     d2.iommu = len(units) - 1
                             break
@@ -951,11 +951,11 @@ class MemRegion(IORegion):
 
     def flagstr(self, p=''):
         if (
-            self.typestr == 'System RAM' or
-            self.typestr == 'Kernel' or
-            self.typestr == 'RAM buffer' or
-            self.typestr == 'ACPI DMAR RMRR' or
-            self.typestr == 'ACPI IVRS'
+                self.typestr == 'System RAM' or
+                self.typestr == 'Kernel' or
+                self.typestr == 'RAM buffer' or
+                self.typestr == 'ACPI DMAR RMRR' or
+                self.typestr == 'ACPI IVRS'
         ):
             s = 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |\n'
             s += p + '\t\tJAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA'
