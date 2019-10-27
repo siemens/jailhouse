@@ -22,6 +22,7 @@ KBUILD_CFLAGS := -g -O3 -DLIBEXECDIR=\"$(libexecdir)\" \
 	-Wall -Wextra -Wmissing-declarations -Wmissing-prototypes -Werror \
 	-D__LINUX_COMPILER_TYPES_H \
 	-DJAILHOUSE_VERSION=\"$(shell cat $(src)/../VERSION)\" $(EXTRA_CFLAGS)
+KBUILD_CPPFLAGS :=
 # prior to 4.19
 LDFLAGS :=
 # since 4.19
