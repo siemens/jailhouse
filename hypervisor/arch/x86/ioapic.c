@@ -114,49 +114,52 @@ static int ioapic_virt_redir_write(struct cell_ioapic *ioapic,
 	struct phys_ioapic *phys_ioapic = ioapic->phys_ioapic;
 	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;
-	int result;
+	int result = 0xffff;
 
 	entry = phys_ioapic->shadow_redir_table[pin];
 	entry.raw[reg & 1] = value;
 	phys_ioapic->shadow_redir_table[pin] = entry;
 
-	/* Do not map the interrupt while masked. */
-	if (entry.native.mask) {
-		/*
-		 * The mask is part of the lower 32 bits. Apply it when that
-		 * register half is written.
-		 */
-		if ((reg & 1) == 0)
-			ioapic_reg_write(phys_ioapic, reg, IOAPIC_REDIR_MASK);
-		return 0;
+	/*
+	 * Do not map the interrupt while masked. It may contain invalid state.
+	 * Rather write the invalid index 0xffff. That will not be used anyway
+	 * while the mask is set.
+	 */
+	if (!entry.native.mask) {
+		irq_msg = ioapic_translate_redir_entry(ioapic, pin, entry);
+
+		result = iommu_map_interrupt(ioapic->cell,
+					     (u16)ioapic->info->id, pin,
+					     irq_msg);
+		// HACK for QEMU
+		if (result == -ENOSYS) {
+			/* see regular update below, lazy version */
+			ioapic_reg_write(phys_ioapic, reg | 1, entry.raw[1]);
+			ioapic_reg_write(phys_ioapic, reg, entry.raw[reg & 1]);
+			return 0;
+		}
+		if (result < 0)
+			return result;
 	}
-
-	irq_msg = ioapic_translate_redir_entry(ioapic, pin, entry);
-
-	result = iommu_map_interrupt(ioapic->cell, (u16)ioapic->info->id, pin,
-				     irq_msg);
-	// HACK for QEMU
-	if (result == -ENOSYS) {
-		/* see regular update below, lazy version */
-		ioapic_reg_write(phys_ioapic, reg | 1, entry.raw[1]);
-		ioapic_reg_write(phys_ioapic, reg, entry.raw[reg & 1]);
-		return 0;
-	}
-	if (result < 0)
-		return result;
-
-	entry.remap.zero = 0;
-	entry.remap.int_index15 = result >> 15;
-	entry.remap.remapped = 1;
-	entry.remap.int_index = result;
 
 	/*
-	 * Upper 32 bits weren't written physically if the entry was masked so
-	 * far. Write them unconditionally when setting the lower bits.
+	 * Write all 64 bits on updates of the lower 32 bits to ensure the
+	 * consistency of an entry.
+	 *
+	 * The index information in the higher bits does not change when the
+	 * guest programs an entry, but they need to be initialized when taking
+	 * their ownership (always out of masked state, see
+	 * ioapic_prepare_handover).
 	 */
-	if ((reg & 1) == 0)
+	if ((reg & 1) == 0) {
+		entry.remap.zero = 0;
+		entry.remap.int_index15 = result >> 15;
+		entry.remap.remapped = 1;
+		entry.remap.int_index = result;
+
 		ioapic_reg_write(phys_ioapic, reg | 1, entry.raw[1]);
-	ioapic_reg_write(phys_ioapic, reg, entry.raw[reg & 1]);
+		ioapic_reg_write(phys_ioapic, reg, entry.raw[0]);
+	}
 
 	return 0;
 }
