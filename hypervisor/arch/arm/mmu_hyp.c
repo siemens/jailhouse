@@ -81,9 +81,9 @@ static void create_id_maps(struct paging_structures *pg_structs)
 			 * This extraction should be implemented in the core.
 			 */
 		} else {
-			paging_create(pg_structs, id_maps[i].addr,
-				PAGE_SIZE, id_maps[i].addr, id_maps[i].flags,
-				PAGING_NON_COHERENT);
+			paging_create(pg_structs, id_maps[i].addr, PAGE_SIZE,
+				      id_maps[i].addr, id_maps[i].flags,
+				      PAGING_NON_COHERENT | PAGING_NO_HUGE);
 		}
 		id_maps[i].conflict = conflict;
 	}
@@ -349,10 +349,10 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	 */
 	spin_lock(&map_lock);
 	paging_create(&hv_paging_structs, stack_phys, PAGE_SIZE, stack_phys,
-		      PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
+		      PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT | PAGING_NO_HUGE);
 	paging_create(&hv_paging_structs, trampoline_phys, PAGE_SIZE,
 		      trampoline_phys, PAGE_DEFAULT_FLAGS,
-		      PAGING_NON_COHERENT);
+		      PAGING_NON_COHERENT | PAGING_NO_HUGE);
 	spin_unlock(&map_lock);
 
 	arm_dcaches_clean_by_sw();

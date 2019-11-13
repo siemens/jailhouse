@@ -333,14 +333,14 @@ int vcpu_vendor_cell_init(struct cell *cell)
 		 */
 		flags = PAGE_READONLY_FLAGS | PAGE_FLAG_US | PAGE_FLAG_DEVICE;
 		return paging_create(&cell->arch.svm.npt_iommu_structs,
-				     XAPIC_BASE, PAGE_SIZE, XAPIC_BASE,
-				     flags, PAGING_NON_COHERENT);
+				     XAPIC_BASE, PAGE_SIZE, XAPIC_BASE, flags,
+				     PAGING_NON_COHERENT | PAGING_NO_HUGE);
 	} else {
 		flags = PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE;
 		return paging_create(&cell->arch.svm.npt_iommu_structs,
 				     paging_hvirt2phys(avic_page),
-				     PAGE_SIZE, XAPIC_BASE,
-				     flags, PAGING_NON_COHERENT);
+				     PAGE_SIZE, XAPIC_BASE, flags,
+				     PAGING_NON_COHERENT | PAGING_NO_HUGE);
 	}
 }
 
@@ -349,6 +349,7 @@ int vcpu_map_memory_region(struct cell *cell,
 {
 	u64 phys_start = mem->phys_start;
 	u64 access_flags = PAGE_FLAG_US; /* See APMv2, Section 15.25.5 */
+	u64 paging_flags = PAGING_COHERENT | PAGING_HUGE;
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
 		access_flags |= PAGE_FLAG_PRESENT;
@@ -358,6 +359,8 @@ int vcpu_map_memory_region(struct cell *cell,
 		access_flags |= PAGE_FLAG_NOEXECUTE;
 	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
 		phys_start = paging_hvirt2phys(&cell->comm_page);
+	if (mem->flags & JAILHOUSE_MEM_NO_HUGEPAGES)
+		paging_flags &= ~PAGING_HUGE;
 
 	access_flags |= amd_iommu_get_memory_region_flags(mem);
 
@@ -367,7 +370,7 @@ int vcpu_map_memory_region(struct cell *cell,
 	 */
 	return paging_create(&cell->arch.svm.npt_iommu_structs, phys_start,
 			     mem->size, mem->virt_start, access_flags,
-			     PAGING_COHERENT);
+			     paging_flags);
 }
 
 int vcpu_unmap_memory_region(struct cell *cell,

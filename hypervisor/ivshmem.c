@@ -116,7 +116,7 @@ static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 	paging_create(&this_cpu_data()->pg_structs,
 		      ive->shmem[0].phys_start, PAGE_SIZE,
 		      (unsigned long)state_table, PAGE_DEFAULT_FLAGS,
-		      PAGING_NON_COHERENT);
+		      PAGING_NON_COHERENT | PAGING_NO_HUGE);
 
 	state_table[dev_info->shmem_dev_id] = new_state;
 	memory_barrier();

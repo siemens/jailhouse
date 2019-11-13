@@ -329,7 +329,7 @@ static enum mmio_result mmio_handle_subpage(void *arg, struct mmio_access *mmio)
 	err = paging_create(&this_cpu_data()->pg_structs, page_phys, PAGE_SIZE,
 			    TEMPORARY_MAPPING_BASE,
 			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			    PAGING_NON_COHERENT);
+			    PAGING_NON_COHERENT | PAGING_NO_HUGE);
 	if (err)
 		goto invalid_access;
 

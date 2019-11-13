@@ -50,7 +50,7 @@ int vcpu_early_init(void)
 	/* Map guest parking code (shared between cells and CPUs) */
 	return paging_create(&parking_pt, paging_hvirt2phys(parking_code),
 			     PAGE_SIZE, 0, PAGE_READONLY_FLAGS | PAGE_FLAG_US,
-			     PAGING_NON_COHERENT);
+			     PAGING_NON_COHERENT | PAGING_NO_HUGE);
 }
 
 /* Can be overridden in vendor-specific code if needed */

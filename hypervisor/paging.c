@@ -304,7 +304,9 @@ int paging_create(const struct paging_structures *pg_structs,
 			pte = paging->get_entry(pt, virt);
 			if (paging->page_size > 0 &&
 			    paging->page_size <= size &&
-			    ((phys | virt) & (paging->page_size - 1)) == 0) {
+			    ((phys | virt) & (paging->page_size - 1)) == 0 &&
+			    (paging_flags & PAGING_HUGE ||
+			     paging->page_size == PAGE_SIZE)) {
 				/*
 				 * We might be overwriting a more fine-grained
 				 * mapping, so release it first. This cannot
@@ -456,7 +458,7 @@ paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 			return INVALID_PHYS_ADDR;
 		err = paging_create(&this_cpu_data()->pg_structs, phys,
 				    PAGE_SIZE, tmp_page, PAGE_READONLY_FLAGS,
-				    PAGING_NON_COHERENT);
+				    PAGING_NON_COHERENT | PAGING_NO_HUGE);
 		if (err)
 			return INVALID_PHYS_ADDR;
 
@@ -489,7 +491,7 @@ void *paging_map_device(unsigned long phys, unsigned long size)
 
 	if (paging_create(&hv_paging_structs, phys, size, (unsigned long)virt,
 			  PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			  PAGING_NON_COHERENT) != 0) {
+			  PAGING_NON_COHERENT | PAGING_HUGE) != 0) {
 		page_free(&remap_pool, virt, PAGES(size));
 		return NULL;
 	}
@@ -590,7 +592,7 @@ void *paging_get_guest_pages(const struct guest_paging_structures *pg_structs,
 		/* map guest page */
 		err = paging_create(&this_cpu_data()->pg_structs, phys,
 				    PAGE_SIZE, page_virt, flags,
-				    PAGING_NON_COHERENT);
+				    PAGING_NON_COHERENT | PAGING_NO_HUGE);
 		if (err)
 			return NULL;
 		gaddr += PAGE_SIZE;
@@ -611,7 +613,7 @@ int paging_map_all_per_cpu(unsigned int cpu, bool enable)
 			sizeof(struct per_cpu) - sizeof(struct public_per_cpu),
 			(unsigned long)cpu_data,
 			enable ? PAGE_DEFAULT_FLAGS : PAGE_NONPRESENT_FLAGS,
-			PAGING_NON_COHERENT);
+			PAGING_NON_COHERENT | PAGING_HUGE);
 }
 
 /**
@@ -664,10 +666,11 @@ int paging_init(void)
 
 	/* Replicate hypervisor mapping of Linux */
 	err = paging_create(&hv_paging_structs,
-			     paging_hvirt2phys(&hypervisor_header),
-			     system_config->hypervisor_memory.size,
-			     (unsigned long)&hypervisor_header,
-			     PAGE_DEFAULT_FLAGS, PAGING_NON_COHERENT);
+			    paging_hvirt2phys(&hypervisor_header),
+			    system_config->hypervisor_memory.size,
+			    (unsigned long)&hypervisor_header,
+			    PAGE_DEFAULT_FLAGS,
+			    PAGING_NON_COHERENT | PAGING_HUGE);
 	if (err)
 		return err;
 
@@ -695,7 +698,7 @@ int paging_init(void)
 		err = paging_create(&hv_paging_structs,
 				    system_config->debug_console.address,
 				    system_config->debug_console.size, vaddr,
-				    flags, PAGING_NON_COHERENT);
+				    flags, PAGING_NON_COHERENT | PAGING_HUGE);
 		if (err)
 			return err;
 	}

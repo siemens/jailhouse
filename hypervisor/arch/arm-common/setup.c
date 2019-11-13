@@ -30,7 +30,7 @@ int arm_init_early(void)
 			    PAGE_SIZE, 0,
 			    (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
 			     S2_PTE_ACCESS_RO | S2_PTE_FLAG_NORMAL),
-			    PAGING_COHERENT);
+			    PAGING_COHERENT | PAGING_NO_HUGE);
 	if (err)
 		return err;
 

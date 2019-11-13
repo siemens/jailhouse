@@ -36,7 +36,7 @@ int arch_init_early(void)
 	 */
 	err = paging_create(&hv_paging_structs, trampoline_page, PAGE_SIZE,
 			    trampoline_page, PAGE_DEFAULT_FLAGS,
-			    PAGING_NON_COHERENT);
+			    PAGING_NON_COHERENT | PAGING_NO_HUGE);
 	if (err)
 		return err;
 

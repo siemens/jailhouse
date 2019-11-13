@@ -239,7 +239,7 @@ static int gicv2_cell_init(struct cell *cell)
 			     system_config->platform_info.arm.gicc_base,
 			     (PTE_FLAG_VALID | PTE_ACCESS_FLAG |
 			      S2_PTE_ACCESS_RW | S2_PTE_FLAG_DEVICE),
-			     PAGING_COHERENT);
+			     PAGING_COHERENT | PAGING_NO_HUGE);
 }
 
 static void gicv2_cell_exit(struct cell *cell)
