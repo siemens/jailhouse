@@ -21,17 +21,17 @@ int arch_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem)
 {
 	u64 phys_start = mem->phys_start;
-	u32 flags = PTE_FLAG_VALID | PTE_ACCESS_FLAG;
+	unsigned long access_flags = PTE_FLAG_VALID | PTE_ACCESS_FLAG;
 	int err = 0;
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
-		flags |= S2_PTE_ACCESS_RO;
+		access_flags |= S2_PTE_ACCESS_RO;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
-		flags |= S2_PTE_ACCESS_WO;
+		access_flags |= S2_PTE_ACCESS_WO;
 	if (mem->flags & JAILHOUSE_MEM_IO)
-		flags |= S2_PTE_FLAG_DEVICE;
+		access_flags |= S2_PTE_FLAG_DEVICE;
 	else
-		flags |= S2_PTE_FLAG_NORMAL;
+		access_flags |= S2_PTE_FLAG_NORMAL;
 	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
 		phys_start = paging_hvirt2phys(&cell->comm_page);
 	/*
@@ -44,7 +44,7 @@ int arch_map_memory_region(struct cell *cell,
 		return err;
 
 	err = paging_create(&cell->arch.mm, phys_start, mem->size,
-			    mem->virt_start, flags, PAGING_COHERENT);
+			    mem->virt_start, access_flags, PAGING_COHERENT);
 	if (err)
 		iommu_unmap_memory_region(cell, mem);
 

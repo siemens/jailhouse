@@ -348,25 +348,25 @@ int vcpu_map_memory_region(struct cell *cell,
 			   const struct jailhouse_memory *mem)
 {
 	u64 phys_start = mem->phys_start;
-	u64 flags = PAGE_FLAG_US; /* See APMv2, Section 15.25.5 */
+	u64 access_flags = PAGE_FLAG_US; /* See APMv2, Section 15.25.5 */
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
-		flags |= PAGE_FLAG_PRESENT;
+		access_flags |= PAGE_FLAG_PRESENT;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
-		flags |= PAGE_FLAG_RW;
+		access_flags |= PAGE_FLAG_RW;
 	if (!(mem->flags & JAILHOUSE_MEM_EXECUTE))
-		flags |= PAGE_FLAG_NOEXECUTE;
+		access_flags |= PAGE_FLAG_NOEXECUTE;
 	if (mem->flags & JAILHOUSE_MEM_COMM_REGION)
 		phys_start = paging_hvirt2phys(&cell->comm_page);
 
-	flags |= amd_iommu_get_memory_region_flags(mem);
+	access_flags |= amd_iommu_get_memory_region_flags(mem);
 
 	/*
 	 * As we also manipulate the IOMMU page table, changes need to be
 	 * coherent.
 	 */
 	return paging_create(&cell->arch.svm.npt_iommu_structs, phys_start,
-			     mem->size, mem->virt_start, flags,
+			     mem->size, mem->virt_start, access_flags,
 			     PAGING_COHERENT);
 }
 

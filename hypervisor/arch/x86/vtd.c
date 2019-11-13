@@ -750,7 +750,7 @@ static int vtd_cell_init(struct cell *cell)
 int iommu_map_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem)
 {
-	u32 flags = 0;
+	unsigned long access_flags = 0;
 
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
@@ -759,12 +759,12 @@ int iommu_map_memory_region(struct cell *cell,
 		return trace_error(-E2BIG);
 
 	if (mem->flags & JAILHOUSE_MEM_READ)
-		flags |= VTD_PAGE_READ;
+		access_flags |= VTD_PAGE_READ;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
-		flags |= VTD_PAGE_WRITE;
+		access_flags |= VTD_PAGE_WRITE;
 
 	return paging_create(&cell->arch.vtd.pg_structs, mem->phys_start,
-			     mem->size, mem->virt_start, flags,
+			     mem->size, mem->virt_start, access_flags,
 			     PAGING_COHERENT);
 }
 
