@@ -63,6 +63,11 @@ struct page_pool {
 #define PAGING_NON_COHERENT	0
 /** Make changes visible to non-snooping readers, i.e. commit them to RAM. */
 #define PAGING_COHERENT		0x1
+
+/** Do not use huge pages for creating a mapping. */
+#define PAGING_NO_HUGE		0
+/** When possible, use huge pages for creating a mapping. */
+#define PAGING_ALLOW_HUGE	0x2
 /** @} */
 
 /** Page table reference. */

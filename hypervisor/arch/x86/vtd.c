@@ -750,6 +750,7 @@ int iommu_map_memory_region(struct cell *cell,
 			    const struct jailhouse_memory *mem)
 {
 	unsigned long access_flags = 0;
+	unsigned long paging_flags = PAGING_COHERENT | PAGING_ALLOW_HUGE;
 
 	if (!(mem->flags & JAILHOUSE_MEM_DMA))
 		return 0;
@@ -761,10 +762,12 @@ int iommu_map_memory_region(struct cell *cell,
 		access_flags |= VTD_PAGE_READ;
 	if (mem->flags & JAILHOUSE_MEM_WRITE)
 		access_flags |= VTD_PAGE_WRITE;
+	if (mem->flags & JAILHOUSE_MEM_NO_HUGEPAGES)
+		paging_flags &= ~PAGING_ALLOW_HUGE;
 
 	return paging_create(&cell->arch.vtd.pg_structs, mem->phys_start,
 			     mem->size, mem->virt_start, access_flags,
-			     PAGING_COHERENT);
+			     paging_flags);
 }
 
 int iommu_unmap_memory_region(struct cell *cell,

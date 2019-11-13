@@ -302,7 +302,8 @@ int paging_create(const struct paging_structures *pg_structs,
 
 		while (1) {
 			pte = paging->get_entry(pt, virt);
-			if (paging->page_size > 0 &&
+			if (paging_flags & PAGING_ALLOW_HUGE &&
+			    paging->page_size > 0 &&
 			    paging->page_size <= size &&
 			    ((phys | virt) & (paging->page_size - 1)) == 0) {
 				/*
