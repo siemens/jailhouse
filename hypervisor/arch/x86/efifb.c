@@ -111,6 +111,6 @@ void efifb_init(void)
 		efifb_height = 1080 / EFIFB_FONT_HEIGHT;
 	} else {
 		efifb_width  = 1024 / EFIFB_FONT_WIDTH;
-		efifb_height =  876 / EFIFB_FONT_HEIGHT;
+		efifb_height =  768 / EFIFB_FONT_HEIGHT;
 	}
 }
