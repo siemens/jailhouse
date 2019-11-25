@@ -227,7 +227,7 @@ if options.generate_collector:
     f.close()
     sys.exit(0)
 
-if ((options.root is '/') and (os.geteuid() is not 0)):
+if options.root == '/' and os.geteuid() != 0:
     print('ERROR: You have to be root to work on "/"!', file=sys.stderr)
     sys.exit(1)
 
