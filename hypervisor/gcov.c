@@ -35,6 +35,7 @@ void gcov_init(void) {
 
 void __gcov_init(struct gcov_min_info *info);
 void __gcov_merge_add(void *counters, unsigned int n_counters);
+void __gcov_exit(void);
 
 /* just link them all together and leave the head in the header
  * where a processing tool can find it */
@@ -46,5 +47,9 @@ void __gcov_init(struct gcov_min_info *info)
 
 /* Satisfy the linker, never called */
 void __gcov_merge_add(void *counters, unsigned int n_counters)
+{
+}
+
+void __gcov_exit(void)
 {
 }
