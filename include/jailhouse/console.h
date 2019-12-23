@@ -78,7 +78,12 @@
 
 #define CON_HAS_INVERTED_GATE(flags)	!!((flags) & JAILHOUSE_CON_INVERTED_GATE)
 
-/* Bits 13-15: Reserved */
+/* Bit 13 is used to apply (set) or skip (clear) a MDR quirk on the console */
+#define JAILHOUSE_CON_MDR_QUIRK		0x2000
+
+#define CON_HAS_MDR_QUIRK(flags)	!!((flags) & JAILHOUSE_CON_MDR_QUIRK)
+
+/* Bits 14-15: Reserved */
 
 struct jailhouse_console {
 	__u64 address;
