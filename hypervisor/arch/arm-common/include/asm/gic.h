@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_GIC_COMMON_H
 #define _JAILHOUSE_ASM_GIC_COMMON_H
 
-#include <asm/spinlock.h>
+#include <asm/irqchip.h>
 
 #define GICD_CTLR			0x0000
 # define GICD_CTLR_ARE_NS		(1 << 4)

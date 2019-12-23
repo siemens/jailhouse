@@ -13,7 +13,7 @@
 #ifndef _JAILHOUSE_ASM_IOMMU_H
 #define _JAILHOUSE_ASM_IOMMU_H
 
-#include <jailhouse/types.h>
+#include <jailhouse/cell.h>
 #include <jailhouse/utils.h>
 #include <jailhouse/cell-config.h>
 
