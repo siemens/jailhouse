@@ -52,6 +52,7 @@ static inline void memory_barrier(void)
 
 static inline void memory_load_barrier(void)
 {
+	dmb(ish);
 }
 
 #endif /* !__ASSEMBLY__ */

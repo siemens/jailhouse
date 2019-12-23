@@ -57,6 +57,7 @@ static inline void memory_barrier(void)
 
 static inline void memory_load_barrier(void)
 {
+	dmb(ish);
 }
 
 static inline bool is_el2(void)
