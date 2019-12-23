@@ -10,6 +10,11 @@
  * the COPYING file in the top-level directory.
  */
 
+#ifndef _JAILHOUSE_ASM_TRAPS_H
+#define _JAILHOUSE_ASM_TRAPS_H
+
+#include <jailhouse/processor.h>
+
 struct trap_context {
 	unsigned long *regs;
 	u64 esr;
@@ -19,3 +24,8 @@ struct trap_context {
 
 void arch_handle_trap(union registers *guest_regs);
 void arch_el2_abt(union registers *regs);
+
+/* now include from arm-common */
+#include_next <asm/traps.h>
+
+#endif /* !_JAILHOUSE_ASM_TRAPS_H */

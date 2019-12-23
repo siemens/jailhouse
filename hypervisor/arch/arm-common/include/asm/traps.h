@@ -10,12 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef _JAILHOUSE_ASM_TRAPS_H
-#define _JAILHOUSE_ASM_TRAPS_H
-
-#include <jailhouse/types.h>
-#include <arch/asm/traps.h>
-
 enum trap_return {
 	TRAP_HANDLED		= 1,
 	TRAP_UNHANDLED		= 0,
@@ -27,5 +21,3 @@ typedef enum trap_return (*trap_handler)(struct trap_context *ctx);
 void arch_skip_instruction(struct trap_context *ctx);
 
 enum trap_return arch_handle_dabt(struct trap_context *ctx);
-
-#endif /* !_JAILHOUSE_ASM_TRAPS_H */
