@@ -30,6 +30,13 @@ typedef struct {
 	u16 next;
 } spinlock_t __attribute__((aligned(4)));
 
+/*
+ * According to ARMv8 DDI 0487D.a, B2-108:
+ * "The Load-Acquire, Load-AcquirePC, and Store-Release instructions
+ *  can remove the requirement to use the explicit DMB instruction."
+ *
+ *  So no need explicit memory_barrier bound with spin_lock/unlock
+ */
 static inline void spin_lock(spinlock_t *lock)
 {
 	unsigned int tmp;
@@ -61,6 +68,9 @@ static inline void spin_lock(spinlock_t *lock)
 	: "memory");
 }
 
+/*
+ * See spin_lock: This implementation implies a memory barrier.
+ */
 static inline void spin_unlock(spinlock_t *lock)
 {
 	asm volatile(
