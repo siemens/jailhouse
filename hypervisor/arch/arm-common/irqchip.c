@@ -246,14 +246,18 @@ void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id)
 	if (new_tail != pending->head) {
 		pending->irqs[pending->tail] = irq_id;
 		pending->sender[pending->tail] = sender;
-		pending->tail = new_tail;
 		/*
-		 * Make the change to pending_irqs.tail visible before the
-		 * caller sends SGI_INJECT.
+		 * Make the entry content is visible before updating the tail
+		 * index.
 		 */
 		memory_barrier();
+		pending->tail = new_tail;
 	}
 
+	/*
+	 * The unlock has memory barrier semantic on ARM v7 and v8. Therefore
+	 * the change to tail will be visible when sending SGI_INJECT later on.
+	 */
 	spin_unlock(&pending->lock);
 
 	/*
@@ -292,6 +296,11 @@ void irqchip_inject_pending(void)
 			return;
 		}
 
+		/*
+		 * Ensure that the entry was read before updating the head
+		 * index.
+		 */
+		memory_barrier();
 		pending->head = (pending->head + 1) % MAX_PENDING_IRQS;
 	}
 
@@ -389,6 +398,11 @@ void irqchip_cpu_shutdown(struct public_per_cpu *cpu_public)
 
 		irqchip.inject_phys_irq(irq_id);
 
+		/*
+		 * Ensure that the entry was read before updating the head
+		 * index.
+		 */
+		memory_barrier();
 		pending->head = (pending->head + 1) % MAX_PENDING_IRQS;
 	}
 }
