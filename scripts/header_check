@@ -42,6 +42,12 @@ test_compile()
 		prepend="#define __ASSEMBLY__
 			 #include <jailhouse/types.h>"
 		;;
+	traps.h)
+		if [ "$2" == "hypervisor/arch/arm-common/include/asm/traps.h" ]; then
+			# must be included by arm{,64}/include/asm/traps.h only
+			return
+		fi
+		;;
 	esac
 
 	echo "$prepend" > .header_check.tmp.c
@@ -60,6 +66,12 @@ done
 for header in hypervisor/arch/$ARCH/include/asm/*.h; do
 	test_compile asm $header
 done
+
+if [ "$ARCH" == "arm" -o "$ARCH" == "arm64" ]; then
+	for header in hypervisor/arch/arm-common/include/asm/*.h; do
+		test_compile asm $header
+	done
+fi
 
 for header in include/jailhouse/*.h; do
 	test_compile jailhouse $header
