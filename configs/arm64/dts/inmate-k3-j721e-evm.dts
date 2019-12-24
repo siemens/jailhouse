@@ -416,7 +416,8 @@
 &main_pmx0 {
 	sw10_button_pins_default: sw10_button_pins_default {
 		pinctrl-single,pins = <
-			J721E_IOPAD(0x0, PIN_INPUT, 7) /* (AC18) EXTINTn.GPIO0_0 */
+			/* PADCONFIG[5:4] = GPIO group select = 1 */
+			J721E_IOPAD(0x0, PIN_INPUT, 23) /* (AC18) EXTINTn.GPIO2_0 */
 		>;
 	};
 
