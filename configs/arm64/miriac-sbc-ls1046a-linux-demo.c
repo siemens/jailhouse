@@ -82,13 +82,8 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-		/* IVSHMEM shared memory region */ {
-                        .phys_start = 0xc0400000,
-                        .virt_start = 0xc0400000,
-                        .size = 0x100000,
-                        .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-                                JAILHOUSE_MEM_ROOTSHARED,
-                },
+		/* IVSHMEM shared memory region */
+		JAILHOUSE_SHMEM_NET_REGIONS(0xc0400000, 1),
 	},
 
 	.irqchips = {

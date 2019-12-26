@@ -91,13 +91,8 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
-		/* IVSHMEM shared memory region */ {
-			.phys_start = 0x83e4000000,
-			.virt_start = 0x83e4000000,
-			.size =           0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_ROOTSHARED,
-		},
+		/* IVSHMEM shared memory region */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x83e4000000, 1),
 		/* v2m */ {
 			.phys_start = 0xe1180000,
 			.virt_start = 0xe1180000,

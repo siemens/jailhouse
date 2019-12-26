@@ -91,18 +91,10 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* IVSHMEM shared memory region for 00:00.0 */ {
-			.phys_start = 0x800400000,
-			.virt_start = 0x800400000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
-		/* IVSHMEM shared memory region for 00:01.0 */ {
-			.phys_start = 0x800500000,
-			.virt_start = 0x800500000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
+		/* IVSHMEM shared memory region for 0001:00:00.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x800400000, 0),
+		/* IVSHMEM shared memory region for 0001:00:01.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x800500000, 0),
 		/* PCI host bridge */ {
 			.phys_start = 0x8000000000,
 			.virt_start = 0x8000000000,

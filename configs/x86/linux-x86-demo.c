@@ -77,13 +77,7 @@ struct {
 				JAILHOUSE_MEM_LOADABLE,
 		},
 		/* IVSHMEM shared memory region */
-		{
-			.phys_start = 0x3f100000,
-			.virt_start = 0x3f100000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_ROOTSHARED,
-		},
+		JAILHOUSE_SHMEM_NET_REGIONS(0x3f100000, 1),
 #ifdef CONFIG_QEMU_E1000E_ASSIGNMENT
 		/* MemRegion: feb40000-feb7ffff : 0000:00:02.0 */
 		{

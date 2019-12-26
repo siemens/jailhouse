@@ -129,6 +129,15 @@ struct jailhouse_memory {
 	__u64 flags;
 } __attribute__((packed));
 
+#define JAILHOUSE_SHMEM_NET_REGIONS(start, dev_id)			\
+	{								\
+		.phys_start = start,					\
+		.virt_start = start,					\
+		.size = 0x100000,					\
+		.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |	\
+			JAILHOUSE_MEM_ROOTSHARED,			\
+	}
+
 #define JAILHOUSE_MEMORY_IS_SUBPAGE(mem)	\
 	((mem)->virt_start & PAGE_OFFS_MASK || (mem)->size & PAGE_OFFS_MASK)
 

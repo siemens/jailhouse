@@ -65,20 +65,10 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
-		/* IVSHMEM shared memory region */ {
-			.phys_start = 0x800500000,
-			.virt_start = 0x800500000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_ROOTSHARED,
-		},
-		/* IVSHMEM shared memory region */ {
-			.phys_start = 0x800700000,
-			.virt_start = 0x800700000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_ROOTSHARED,
-		},
+		/* IVSHMEM shared memory region for 00:01.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x800500000, 1),
+		/* IVSHMEM shared memory region for 00:02.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x800700000, 1),
 		/* communication region */ {
 			.virt_start = 0x80000000,
 			.size = 0x00001000,

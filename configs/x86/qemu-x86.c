@@ -179,12 +179,7 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 		/* IVSHMEM shared memory region (networking) */
-		{
-			.phys_start = 0x3f100000,
-			.virt_start = 0x3f100000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
+		JAILHOUSE_SHMEM_NET_REGIONS(0x3f100000, 0),
 	},
 
 	.irqchips = {
