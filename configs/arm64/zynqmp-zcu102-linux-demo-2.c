@@ -50,6 +50,10 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region for 00:01.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x800500000, 1),
+		/* IVSHMEM shared memory region for 00:02.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x800700000, 1),
 		/* RAM */ {
 			.phys_start = 0x800610000,
 			.virt_start = 0,
@@ -65,10 +69,6 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
-		/* IVSHMEM shared memory region for 00:01.0 */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x800500000, 1),
-		/* IVSHMEM shared memory region for 00:02.0 */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x800700000, 1),
 		/* communication region */ {
 			.virt_start = 0x80000000,
 			.size = 0x00001000,
@@ -95,7 +95,7 @@ struct {
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.bdf = 1 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
-			.shmem_region = 2,
+			.shmem_region = 0,
 			.shmem_dev_id = 1,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
@@ -103,7 +103,7 @@ struct {
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.bdf = 2 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
-			.shmem_region = 3,
+			.shmem_region = 1,
 			.shmem_dev_id = 1,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},

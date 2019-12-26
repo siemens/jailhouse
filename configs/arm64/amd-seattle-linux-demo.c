@@ -47,6 +47,8 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x83e4000000, 1),
 		/* UART */ {
 			.phys_start = 0xe1010000,
 			.virt_start = 0xe1010000,
@@ -91,8 +93,6 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
-		/* IVSHMEM shared memory region */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x83e4000000, 1),
 		/* v2m */ {
 			.phys_start = 0xe1180000,
 			.virt_start = 0xe1180000,
@@ -138,7 +138,7 @@ struct {
 			.bdf = 0x0078,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
-			.shmem_region = 6,
+			.shmem_region = 0,
 			.shmem_dev_id = 1,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},

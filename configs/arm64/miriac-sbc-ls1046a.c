@@ -72,6 +72,8 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region for 00:00.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0xc0400000, 0),
 		/* DDR memory controller */ {
 			.phys_start = 0x01080000,
 			.virt_start = 0x01080000,
@@ -427,8 +429,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* IVSHMEM shared memory region for 00:00.0 */
-		JAILHOUSE_SHMEM_NET_REGIONS(0xc0400000, 0),
 	},
 
 	.irqchips = {
@@ -454,7 +454,7 @@ struct {
 			.domain = 1,
 			.bdf = 0 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
-			.shmem_region = ARRAY_SIZE(config.mem_regions) - 1,
+			.shmem_region = 0,
 			.shmem_dev_id = 0,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},

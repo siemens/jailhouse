@@ -51,6 +51,8 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region */
+		JAILHOUSE_SHMEM_NET_REGIONS(0xc0400000, 1),
 		/* DUART1 */
         	{
 			.phys_start = 0x21c0000,
@@ -82,8 +84,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-		/* IVSHMEM shared memory region */
-		JAILHOUSE_SHMEM_NET_REGIONS(0xc0400000, 1),
 	},
 
 	.irqchips = {
@@ -119,7 +119,7 @@ struct {
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.bdf = 0 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
-			.shmem_region = 4,
+			.shmem_region = 0,
 			.shmem_dev_id = 1,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},

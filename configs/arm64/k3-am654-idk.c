@@ -65,6 +65,8 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region for 00:00.0 */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x8dfb00000, 0),
 		/* RAM */ {
 			.phys_start = 0x80000000,
 			.virt_start = 0x80000000,
@@ -79,8 +81,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* IVSHMEM shared memory region for 00:00.0 */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x8dfb00000, 0),
 		/* RAM. Reserved for inmates */ {
 			.phys_start = 0x8E0000000,
 			.virt_start = 0x8E0000000,
@@ -211,7 +211,7 @@ struct {
 			.domain = 1,
 			.bdf = 0x00,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
-			.shmem_region = 2,
+			.shmem_region = 0,
 			.shmem_dev_id = 0,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},

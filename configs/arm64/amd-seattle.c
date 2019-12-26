@@ -64,6 +64,8 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x83e4000000, 0),
 		/* gpio */ {
 			.phys_start = 0xe0030000,
 			.virt_start = 0xe0030000,
@@ -176,8 +178,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* IVSHMEM shared memory region */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x83e4000000, 0),
 	},
 	.irqchips = {
 		/* GIC */ {
@@ -216,7 +216,7 @@ struct {
 			.bdf = 0x0078,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
-			.shmem_region = 16,
+			.shmem_region = 0,
 			.shmem_dev_id = 0,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},

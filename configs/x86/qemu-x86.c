@@ -74,6 +74,15 @@ struct {
 	},
 
 	.mem_regions = {
+		/* IVSHMEM shared memory region (demo) */
+		{
+			.phys_start = 0x3f0f0000,
+			.virt_start = 0x3f0f0000,
+			.size = 0x1000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
+		/* IVSHMEM shared memory region (networking) */
+		JAILHOUSE_SHMEM_NET_REGIONS(0x3f100000, 0),
 		/* RAM */ {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
@@ -171,15 +180,6 @@ struct {
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* IVSHMEM shared memory region (demo) */
-		{
-			.phys_start = 0x3f0f0000,
-			.virt_start = 0x3f0f0000,
-			.size = 0x1000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
-		/* IVSHMEM shared memory region (networking) */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x3f100000, 0),
 	},
 
 	.irqchips = {
@@ -277,7 +277,7 @@ struct {
 			.bdf = 0x0e << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
-			.shmem_region = 14,
+			.shmem_region = 0,
 			.shmem_dev_id = 0,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_UNDEFINED,
 		},
@@ -287,7 +287,7 @@ struct {
 			.bdf = 0x0f << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
-			.shmem_region = 15,
+			.shmem_region = 1,
 			.shmem_dev_id = 0,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
