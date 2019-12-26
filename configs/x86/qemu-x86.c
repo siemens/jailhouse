@@ -280,10 +280,7 @@ struct {
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0000,
 			.bdf = 0x0e << 3,
-			.bar_mask = {
-				0xffffff00, 0xffffffff, 0x00000000,
-				0x00000000, 0xffffffe0, 0xffffffff,
-			},
+			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
 			.shmem_region = 14,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
@@ -292,10 +289,7 @@ struct {
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0000,
 			.bdf = 0x0f << 3,
-			.bar_mask = {
-				0xffffff00, 0xffffffff, 0x00000000,
-				0x00000000, 0xffffffe0, 0xffffffff,
-			},
+			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
 			.shmem_region = 15,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_UNDEFINED,
