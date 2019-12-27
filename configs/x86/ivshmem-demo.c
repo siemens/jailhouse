@@ -51,7 +51,7 @@ struct {
 
 	.mem_regions = {
 		/* RAM */ {
-			.phys_start = 0x3f000000,
+			.phys_start = 0x3ee00000,
 			.virt_start = 0,
 			.size = 0x00100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -65,8 +65,8 @@ struct {
 		},
 		/* IVSHMEM shared memory region */
 		{
-			.phys_start = 0x3f1ff000,
-			.virt_start = 0x3f1ff000,
+			.phys_start = 0x3f0f0000,
+			.virt_start = 0x3f0f0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_ROOTSHARED,
@@ -82,7 +82,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0000,
-			.bdf = 0x0f << 3,
+			.bdf = 0x0e << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
 			.shmem_region = 2,

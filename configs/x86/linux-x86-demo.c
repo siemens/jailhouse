@@ -71,7 +71,7 @@ struct {
 		/* high RAM */ {
 			.phys_start = 0x3a700000,
 			.virt_start = 0x00200000,
-			.size = 0x4a00000,
+			.size = 0x4900000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
@@ -80,7 +80,7 @@ struct {
 		{
 			.phys_start = 0x3f100000,
 			.virt_start = 0x3f100000,
-			.size = 0xff000,
+			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_ROOTSHARED,
 		},
@@ -144,7 +144,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0,
-			.bdf = 0x0e << 3,
+			.bdf = 0x0f << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 1,
 			.shmem_region = 3,

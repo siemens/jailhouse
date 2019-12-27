@@ -84,7 +84,7 @@ struct {
 		/* RAM (inmates) */ {
 			.phys_start = 0x3a600000,
 			.virt_start = 0x3a600000,
-			.size = 0x4b00000,
+			.size = 0x4a00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA,
 		},
@@ -171,18 +171,18 @@ struct {
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
+		/* IVSHMEM shared memory region (demo) */
+		{
+			.phys_start = 0x3f0f0000,
+			.virt_start = 0x3f0f0000,
+			.size = 0x1000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
+		},
 		/* IVSHMEM shared memory region (networking) */
 		{
 			.phys_start = 0x3f100000,
 			.virt_start = 0x3f100000,
-			.size = 0xff000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
-		},
-		/* IVSHMEM shared memory region (demo) */
-		{
-			.phys_start = 0x3f1ff000,
-			.virt_start = 0x3f1ff000,
-			.size = 0x1000,
+			.size = 0x100000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
 	},
@@ -276,7 +276,7 @@ struct {
 			.msix_region_size = 0x1000,
 			.msix_address = 0xfebda000,
 		},
-		{ /* IVSHMEM (networking) */
+		{ /* IVSHMEM (demo) */
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0000,
 			.bdf = 0x0e << 3,
@@ -284,9 +284,9 @@ struct {
 			.num_msix_vectors = 1,
 			.shmem_region = 14,
 			.shmem_dev_id = 0,
-			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
+			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_UNDEFINED,
 		},
-		{ /* IVSHMEM (demo) */
+		{ /* IVSHMEM (networking) */
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0000,
 			.bdf = 0x0f << 3,
@@ -294,7 +294,7 @@ struct {
 			.num_msix_vectors = 1,
 			.shmem_region = 15,
 			.shmem_dev_id = 0,
-			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_UNDEFINED,
+			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
 	},
 
