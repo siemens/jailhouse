@@ -221,6 +221,10 @@ if cpu_vendor == 'GenuineIntel':
     check_feature('  RDTSCP', procbased2 & (1 << 3),
                   'rdtscp' not in cpu_features)
     check_feature('  Unrestricted guest', procbased2 & (1 << 7))
+    check_feature('  INVPCID', procbased2 & (1 << 12),
+                  'invpcid' not in cpu_features)
+    check_feature('  XSAVES', procbased2 & (1 << 20),
+                  'xsaves' not in cpu_features)
 
     check_feature('  EPT', procbased2 & (1 << 1))
     ept_cap = msr.read(MSR.IA32_VMX_EPT_VPID_CAP)
