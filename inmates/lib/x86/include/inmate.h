@@ -219,8 +219,6 @@ unsigned long long pm_timer_read(void);
 unsigned long tsc_read_ns(void);
 unsigned long tsc_init(void);
 
-void delay_us(unsigned long microsecs);
-
 unsigned long apic_timer_init(unsigned int vector);
 void apic_timer_set(unsigned long long timeout_ns);
 

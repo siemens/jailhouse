@@ -79,3 +79,12 @@ void timer_start(u64 timeout)
 	arm_write_sysreg(CNTV_TVAL_EL0, timeout);
 	arm_write_sysreg(CNTV_CTL_EL0, 1);
 }
+
+void delay_us(unsigned long microsecs)
+{
+	unsigned long long timeout = timer_get_ticks() +
+		microsecs * (timer_get_frequency() / 1000 / 1000);
+
+	while ((long long)(timeout - timer_get_ticks()) > 0)
+		cpu_relax();
+}

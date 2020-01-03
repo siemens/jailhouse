@@ -136,6 +136,8 @@ int pci_find_cap(u16 bdf, u16 cap);
 void pci_msi_set_vector(u16 bdf, unsigned int vector);
 void pci_msix_set_vector(u16 bdf, unsigned int vector, u32 index);
 
+void delay_us(unsigned long microsecs);
+
 #define CMDLINE_BUFFER(size) \
 	const char cmdline[size] __attribute__((section(".cmdline")))
 

@@ -38,7 +38,7 @@
 
 objs-y := ../string.o ../cmdline.o ../setup.o ../alloc.o ../uart-8250.o
 objs-y += ../printk.o ../pci.o
-objs-y += printk.o gic.o mem.o pci.o timer.o setup.o uart.o
+objs-y += printk.o gic.o mem.o pci.o timing.o setup.o uart.o
 objs-y += uart-xuartps.o uart-mvebu.o uart-hscif.o uart-scifa.o uart-imx.o
 objs-y += uart-pl011.o
 objs-y += gic-v2.o gic-v3.o
