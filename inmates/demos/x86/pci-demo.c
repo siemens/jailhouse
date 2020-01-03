@@ -26,9 +26,14 @@
 
 static void *hdbar;
 
-static void irq_handler(void)
+static void irq_handler(unsigned int irq)
 {
-	u16 statests = mmio_read16(hdbar + HDA_STATESTS);
+	u16 statests;
+
+	if (irq != IRQ_VECTOR)
+		return;
+
+	statests = mmio_read16(hdbar + HDA_STATESTS);
 
 	printk("HDA MSI received (STATESTS: %04x)\n", statests);
 	mmio_write16(hdbar + HDA_STATESTS, statests);
@@ -39,8 +44,7 @@ void inmate_main(void)
 	u64 bar;
 	int bdf;
 
-	int_init();
-	int_set_handler(IRQ_VECTOR, irq_handler);
+	irq_init(irq_handler);
 
 	bdf = pci_find_device(PCI_ID_ANY, PCI_ID_ANY, 0);
 	if (bdf < 0) {

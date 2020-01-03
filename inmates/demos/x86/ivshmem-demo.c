@@ -107,7 +107,7 @@ static void send_irq(struct ivshmem_dev_data *d)
 	mmio_write32(d->registers + 3, 1);
 }
 
-static void irq_handler(void)
+static void irq_handler(unsigned int irq)
 {
 	printk("IVSHMEM: got interrupt ... %d\n", irq_counter++);
 }
@@ -120,7 +120,7 @@ void inmate_main(void)
 	struct ivshmem_dev_data *d;
 	volatile char *shmem;
 
-	int_init();
+	irq_init(irq_handler);
 
 	while ((ndevices < MAX_NDEV) &&
 	       (-1 != (bdf = pci_find_device(VENDORID, DEVICEID, bdf)))) {
@@ -145,7 +145,6 @@ void inmate_main(void)
 
 		memcpy(d->shmem, str, 32);
 
-		int_set_handler(IRQ_VECTOR + ndevices - 1, irq_handler);
 		pci_msix_set_vector(bdf, IRQ_VECTOR + ndevices - 1, 0);
 		bdf++;
 	}

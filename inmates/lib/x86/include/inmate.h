@@ -225,11 +225,7 @@ extern void *stack;
 
 void excp_reporting_init(void);
 
-typedef void(*int_handler_t)(void);
-
-void int_init(void);
-void int_set_handler(unsigned int vector, int_handler_t handler);
-void int_send_ipi(unsigned int cpu_id, unsigned int vector);
+void irq_send_ipi(unsigned int cpu_id, unsigned int vector);
 
 enum ioapic_trigger_mode {
 	TRIGGER_EDGE = 0,

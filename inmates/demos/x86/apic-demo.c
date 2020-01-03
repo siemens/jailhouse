@@ -50,10 +50,13 @@ static bool cpu_has_smi_count(void)
 	return false;
 }
 
-static void irq_handler(void)
+static void irq_handler(unsigned int irq)
 {
 	unsigned long delta;
 	u32 smis;
+
+	if (irq != APIC_TIMER_VECTOR)
+		return;
 
 	delta = tsc_read_ns() - expected_time;
 	if (delta < min)
@@ -77,8 +80,7 @@ static void init_apic(void)
 {
 	unsigned long apic_freq_khz;
 
-	int_init();
-	int_set_handler(APIC_TIMER_VECTOR, irq_handler);
+	irq_init(irq_handler);
 
 	apic_freq_khz = apic_timer_init(APIC_TIMER_VECTOR);
 	printk("Calibrated APIC frequency: %lu kHz\n", apic_freq_khz);

@@ -17,8 +17,11 @@
 static volatile bool done;
 static unsigned int main_cpu;
 
-static void ipi_handler(void)
+static void ipi_handler(unsigned int irq)
 {
+	if (irq != IPI_VECTOR)
+		return;
+
 	printk("Received IPI on %d\n", cpu_id());
 	done = true;
 }
@@ -26,7 +29,7 @@ static void ipi_handler(void)
 static void secondary_main(void)
 {
 	printk("Hello from CPU %d!\n", cpu_id());
-	int_send_ipi(main_cpu, IPI_VECTOR);
+	irq_send_ipi(main_cpu, IPI_VECTOR);
 }
 
 void inmate_main(void)
@@ -40,8 +43,7 @@ void inmate_main(void)
 	smp_wait_for_all_cpus();
 	printk("\nFound %d other CPU(s)\n", smp_num_cpus - 1);
 
-	int_init();
-	int_set_handler(IPI_VECTOR, ipi_handler);
+	irq_init(ipi_handler);
 
 	asm volatile("sti");
 

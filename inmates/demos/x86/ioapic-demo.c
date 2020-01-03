@@ -32,9 +32,14 @@
 
 static unsigned int pm_base;
 
-static void irq_handler(void)
+static void irq_handler(unsigned int irq)
 {
-	u16 status = inw(pm_base + PM1_STATUS);
+	u16 status;
+
+	if (irq != IRQ_VECTOR)
+		return;
+
+	status = inw(pm_base + PM1_STATUS);
 
 	printk("ACPI IRQ received, status: %04x\n", status);
 	outw(status, pm_base);
@@ -42,8 +47,7 @@ static void irq_handler(void)
 
 void inmate_main(void)
 {
-	int_init();
-	int_set_handler(IRQ_VECTOR, irq_handler);
+	irq_init(irq_handler);
 
 	ioapic_init();
 	ioapic_pin_set_vector(ACPI_GSI, TRIGGER_LEVEL_ACTIVE_HIGH, IRQ_VECTOR);

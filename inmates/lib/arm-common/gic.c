@@ -42,7 +42,7 @@
 extern const struct gic gic_v2;
 extern const struct gic gic_v3;
 
-static irq_handler_t irq_handler = (irq_handler_t)NULL;
+static irq_handler_t irq_handler;
 static const struct gic *gic = &gic_v2;
 
 /* Replaces the weak reference in header.S */
@@ -62,7 +62,7 @@ void vector_irq(void)
 	}
 }
 
-void gic_setup(irq_handler_t handler)
+void irq_init(irq_handler_t handler)
 {
 	if (comm_region->gic_version == 3)
 		gic = &gic_v3;

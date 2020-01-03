@@ -97,6 +97,10 @@ enum map_type { MAP_CACHED, MAP_UNCACHED };
 
 void map_range(void *start, unsigned long size, enum map_type map_type);
 
+typedef void(*irq_handler_t)(unsigned int);
+
+void irq_init(irq_handler_t handler);
+
 #define CMDLINE_BUFFER(size) \
 	const char cmdline[size] __attribute__((section(".cmdline")))
 
