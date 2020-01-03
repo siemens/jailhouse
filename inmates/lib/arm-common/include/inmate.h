@@ -95,8 +95,6 @@ static inline void __attribute__((noreturn)) halt(void)
 		asm volatile("wfi" : : : "memory");
 }
 
-void gic_enable_irq(unsigned int irq);
-
 unsigned long timer_get_frequency(void);
 u64 timer_get_ticks(void);
 u64 timer_ticks_to_ns(u64 ticks);

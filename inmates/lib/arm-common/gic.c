@@ -74,7 +74,7 @@ void irq_init(irq_handler_t handler)
 	gic_setup_irq_stack();
 }
 
-void gic_enable_irq(unsigned int irq)
+void irq_enable(unsigned int irq)
 {
 	gic->enable(irq);
 }

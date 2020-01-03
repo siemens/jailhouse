@@ -58,7 +58,7 @@ void inmate_main(void)
 {
 	printk("Initializing the GIC...\n");
 	irq_init(handle_IRQ);
-	gic_enable_irq(TIMER_IRQ);
+	irq_enable(TIMER_IRQ);
 
 	printk("Initializing the timer...\n");
 	ticks_per_beat = timer_get_frequency() / BEATS_PER_SEC;
