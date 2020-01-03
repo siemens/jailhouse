@@ -76,7 +76,12 @@ typedef unsigned int u32;
 typedef signed long long s64;
 typedef unsigned long long u64;
 
-static inline void arch_disable_irqs(void)
+static inline void enable_irqs(void)
+{
+	asm volatile("sti");
+}
+
+static inline void disable_irqs(void)
 {
 	asm volatile("cli");
 }

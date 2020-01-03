@@ -44,7 +44,12 @@
 
 void __attribute__((used)) vector_irq(void);
 
-static inline void arch_disable_irqs(void)
+static inline void enable_irqs(void)
+{
+	asm volatile("msr daifclr, #3"); /* enable IRQs and FIQs */
+}
+
+static inline void disable_irqs(void)
 {
 	asm volatile("msr daifset, #3"); /* disable IRQs and FIQs */
 }

@@ -92,7 +92,7 @@ typedef enum { true = 1, false = 0 } bool;
 
 static inline void __attribute__((noreturn)) stop(void)
 {
-	arch_disable_irqs();
+	disable_irqs();
 	halt();
 }
 
