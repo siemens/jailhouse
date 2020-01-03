@@ -118,8 +118,10 @@
 	volatile __u32 reply_from_cell;					\
 	/** Holds information special flags */				\
 	volatile __u32 flags;						\
-	/** Debug console that may be accessed by the inmate */		\
-	struct jailhouse_console console;
+	/** Debug console that may be accessed by the inmate. */	\
+	struct jailhouse_console console;				\
+	/** Base address of PCI memory mapped config. */		\
+	__u64 pci_mmconfig_base;
 
 #include <asm/jailhouse_hypercall.h>
 

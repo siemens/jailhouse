@@ -655,6 +655,8 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	if (CELL_FLAGS_VIRTUAL_CONSOLE_ACTIVE(cell->config->flags))
 		comm_region->flags |= JAILHOUSE_COMM_FLAG_DBG_PUTC_ACTIVE;
 	comm_region->console = cell->config->console;
+	comm_region->pci_mmconfig_base =
+		system_config->platform_info.pci_mmconfig_base;
 
 	pci_cell_reset(cell);
 	arch_cell_reset(cell);
