@@ -1,5 +1,6 @@
 # Build outputs - only!
 *.[oa]
+*.mod
 *.mod.[co]
 *.cell
 *.cmd
