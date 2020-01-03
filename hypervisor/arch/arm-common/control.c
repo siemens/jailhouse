@@ -168,6 +168,7 @@ void arch_cell_reset(struct cell *cell)
 	comm_region->gicd_base = system_config->platform_info.arm.gicd_base;
 	comm_region->gicc_base = system_config->platform_info.arm.gicc_base;
 	comm_region->gicr_base = system_config->platform_info.arm.gicr_base;
+	comm_region->vpci_irq_base = cell->config->vpci_irq_base;
 
 	/*
 	 * All CPUs but the first are initially suspended.  The first CPU

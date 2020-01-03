@@ -40,4 +40,5 @@
 	__u8 gic_version;			\
 	__u64 gicd_base;			\
 	__u64 gicc_base;			\
-	__u64 gicr_base;
+	__u64 gicr_base;			\
+	__u32 vpci_irq_base;
