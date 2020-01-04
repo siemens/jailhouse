@@ -32,7 +32,7 @@ KBUILD_LDFLAGS :=
 KBUILD_CFLAGS += $(call cc-option, -fno-pie)
 KBUILD_CFLAGS += $(call cc-option, -no-pie)
 
-BINARIES := jailhouse
+BINARIES := jailhouse ivshmem-demo
 always := $(BINARIES)
 
 HAS_PYTHON_MAKO := \
@@ -100,9 +100,12 @@ define cmd_gen_man
 	sed 's/$${VERSION}/$(shell cat $(src)/../VERSION)/g' $< > $@
 endef
 
-targets += jailhouse.o
+targets += jailhouse.o ivshmem-demo.o
 
 $(obj)/jailhouse: $(obj)/jailhouse.o
+	$(call if_changed,ld)
+
+$(obj)/ivshmem-demo: $(obj)/ivshmem-demo.o
 	$(call if_changed,ld)
 
 CFLAGS_jailhouse-gcov-extract.o	:= -I$(src)/../hypervisor/include \
