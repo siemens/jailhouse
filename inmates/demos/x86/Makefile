@@ -20,7 +20,7 @@ apic-demo-y	:= apic-demo.o
 ioapic-demo-y	:= ioapic-demo.o
 pci-demo-y	:= pci-demo.o
 e1000-demo-y	:= e1000-demo.o
-ivshmem-demo-y	:= ivshmem-demo.o
+ivshmem-demo-y	:= ../ivshmem-demo.o
 smp-demo-y	:= smp-demo.o
 
 $(eval $(call DECLARE_32_BIT,32-bit-demo))
