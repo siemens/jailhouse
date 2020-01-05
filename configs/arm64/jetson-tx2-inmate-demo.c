@@ -1,13 +1,8 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for uart-demo inmate on emCON-RZ/G1H:
- * 1 CPU, 64K RAM, serial ports SCIFA0, CCU
- *
- * Copyright (c) emtrion GmbH, 2017
- *
- * Authors:
- *  Jan von Wiarda <jan.vonwiarda@emtrion.de>
+ * Configuration for demo inmate on Nvidia Jetson TX2:
+ * 1 CPU, 64 MB RAM, serial port 0
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -24,39 +19,36 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "emtrion-emconrzg1h-uart-demo",
+		.name = "jetson-tx2-inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 
 		.console = {
-			.address = 0xe6c40000,
-			.clock_reg = 0xe6150138,
-			.gate_nr = 4,
-			.divider = 0x1b,
-			.type = JAILHOUSE_CON_TYPE_SCIFA,
+			.address = 0x3100000,
+			.type = JAILHOUSE_CON_TYPE_8250,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x2,
+		0x1,
 	},
 
 	.mem_regions = {
-		/* SCIFA0 */ {
-			.phys_start = 0xe6c40000,
-			.virt_start = 0xe6c40000,
+		/* UART */ {
+			.phys_start = 0x3100000,
+			.virt_start = 0x3100000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
 		/* RAM */ {
-			.phys_start = 0x7bff0000,
+			.phys_start = 0x270000000,
 			.virt_start = 0,
-			.size = 0x00010000,
+			.size = 0x1000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_LOADABLE,
 		},
@@ -66,5 +58,5 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-	}
+	},
 };

@@ -1,10 +1,10 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo or uart-demo inmate on Nvidia Jetson TX1:
- * 1 CPU, 64K RAM, serial port 0
+ * Configuration for demo inmate on Avnet Ultra96 board:
+ * 1 CPU, 64K RAM, 1 serial port
  *
- * Copyright (c) Siemens AG, 2015
+ * Copyright (c) Siemens AG, 2016-2019
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -24,15 +24,17 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "jetson-tx1-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+		.num_irqchips = 0,
+		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0x70006000,
-			.type = JAILHOUSE_CON_TYPE_8250,
+			.address = 0xff010000,
+			.type = JAILHOUSE_CON_TYPE_XUARTPS,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
@@ -44,14 +46,14 @@ struct {
 
 	.mem_regions = {
 		/* UART */ {
-			.phys_start = 0x70006000,
-			.virt_start = 0x70006000,
+			.phys_start = 0xff010000,
+			.virt_start = 0xff010000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0x17bef0000,
+			.phys_start = 0x7bfe0000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -63,5 +65,5 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-	},
+	}
 };

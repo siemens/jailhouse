@@ -381,6 +381,6 @@ Jailhouse can be started after loading its kernel module. Run:
 
 The corresponding test to apic-demo on x86 is the gic-demo:
 
-    jailhouse cell create /path/to/qemu-arm64-gic-demo.cell
-    jailhouse cell load gic-demo /path/to/gic-demo.bin
-    jailhouse cell start gic-demo
+    jailhouse cell create /path/to/qemu-arm64-inmate-demo.cell
+    jailhouse cell load inmate-demo /path/to/gic-demo.bin
+    jailhouse cell start inmate-demo

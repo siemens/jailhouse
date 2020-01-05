@@ -1,10 +1,14 @@
 /*
- * iMX8MQ target - gic-demo
+ * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright NXP 2018
+ * Configuration for demo inmate on K3 based platforms.
+ * 1CPU, 64K RAM, 1 serial port(MCU UART 0).
+ *
+ * Copyright (c) 2019 Texas Instruments Incorporated - http://www.ti.com/
  *
  * Authors:
- *  Peng Fan <peng.fan@nxp.com>
+ *  Nikhil Devshatwar <nikhil.nd@ti.com>
+ *  Lokesh Vutla <lokeshvutla@ti.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -21,7 +25,7 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "gic-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
@@ -30,27 +34,28 @@ struct {
 		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0x30860000,
-			.type = JAILHOUSE_CON_TYPE_IMX,
+			.address = 0x40a00000,
+			.divider = 0x35,
+			.type = JAILHOUSE_CON_TYPE_8250,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x8,
+		0x4,
 	},
 
 	.mem_regions = {
-		/* UART1 */ {
-			.phys_start = 0x30860000,
-			.virt_start = 0x30860000,
-			.size = 0x1000,
+		/* MCU UART0 */ {
+			.phys_start = 0x40a00000,
+			.virt_start = 0x40a00000,
+			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
+				JAILHOUSE_MEM_IO,
 		},
-		/* RAM: Top at 4GB Space */ {
-			.phys_start = 0xffaf0000,
+		/* RAM */ {
+			.phys_start = 0x8e0000000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |

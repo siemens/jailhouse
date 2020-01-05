@@ -1,13 +1,13 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo inmate on Foundation Model v8:
- * 1 CPU, 64K RAM, serial port 1
+ * Configuration for demo inmate on QEMU arm64 virtual target
+ * 1 CPU, 64K RAM, 1 serial port
  *
- * Copyright (c) ARM Limited, 2014
+ * Copyright (c) Siemens AG, 2017
  *
  * Authors:
- *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -24,7 +24,7 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "gic-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
@@ -33,7 +33,7 @@ struct {
 		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0x1c090000,
+			.address = 0x09000000,
 			.type = JAILHOUSE_CON_TYPE_PL011,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
@@ -41,19 +41,19 @@ struct {
 	},
 
 	.cpus = {
-		0x2,
+		0x8,
 	},
 
 	.mem_regions = {
-		/* UART 1 */ {
-			.phys_start = 0x1c0a0000,
-			.virt_start = 0x1c090000,
-			.size = 0x10000,
+		/* UART */ {
+			.phys_start = 0x09000000,
+			.virt_start = 0x09000000,
+			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0xfbfe0000,
+			.phys_start = 0x7faf0000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -65,5 +65,5 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-	},
+	}
 };

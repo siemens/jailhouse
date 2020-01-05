@@ -103,15 +103,15 @@ running:
     Activating hypervisor
     [   39.844953] The Jailhouse is opening.
 
-    # jailhouse cell create zynqmp-zcu102-gic-demo.cell
+    # jailhouse cell create zynqmp-zcu102-inmate-demo.cell
     [   55.351670] CPU3: shutdown
     [   55.354303] psci: CPU3 killed.
-    Created cell "gic-demo"
+    Created cell "inmate-demo"
     Page pool usage after cell creation: mem 56/993, remap 69/131072
-    [   55.388029] Created Jailhouse cell "gic-demo"
+    [   55.388029] Created Jailhouse cell "inmate-demo"
 
     # jailhouse cell load 1 gic-demo.bin
-    Cell "gic-demo" can be loaded
+    Cell "inmate-demo" can be loaded
     # jailhouse cell start 1
 
 Second UART starts showing jitter data:

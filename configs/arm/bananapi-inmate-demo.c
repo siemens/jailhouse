@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo inmate on Banana Pi:
+ * Configuration for demo inmate on Banana Pi:
  * 1 CPU, 64K RAM, serial ports 4-7, CCU+GPIO
  *
  * Copyright (c) Siemens AG, 2014
@@ -24,7 +24,7 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "bananapi-gic-demo",
+		.name = "bananapi-inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),

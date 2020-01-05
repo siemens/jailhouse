@@ -1,10 +1,10 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo inmate on LeMaker HiKey board, 2GiB:
- * 1 CPU, 64K RAM, 1 serial port
+ * Configuration for demo inmate on Orange Pi Zero:
+ * 1 CPU, 64K RAM, serial ports 0-3, GPIO PA
  *
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2014-2016
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -19,41 +19,46 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[3];
+	struct jailhouse_memory mem_regions[4];
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "gic-demo",
+		.name = "orangepi0-inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
-		.num_irqchips = 0,
-		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0xf7113000,
-			.type = JAILHOUSE_CON_TYPE_PL011,
+			.address = 0x01c28000,
+			.type = JAILHOUSE_CON_TYPE_8250,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x10,
+		0x2,
 	},
 
 	.mem_regions = {
-		/* UART */ {
-			.phys_start = 0xf7113000,
-			.virt_start = 0xf7113000,
+		/* GPIO: port A */ {
+			.phys_start = 0x01c20800,
+			.virt_start = 0x01c20800,
+			.size = 0x24,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+		},
+		/* UART 0-3 */ {
+			.phys_start = 0x01c28000,
+			.virt_start = 0x01c28000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0x7bfe0000,
+			.phys_start = 0x4f6f0000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -65,5 +70,5 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-	}
+	},
 };

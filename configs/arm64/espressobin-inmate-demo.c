@@ -1,10 +1,10 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo or uart-demo inmate on Nvidia Jetson TK1:
- * 1 CPU, 64K RAM, serial port 0
+ * Configuration for demo inmate on Marvell ESPRESSObin board:
+ * 1 CPU, 64K RAM, 1 serial port
  *
- * Copyright (c) Siemens AG, 2015
+ * Copyright (c) Siemens AG, 2017
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -16,10 +16,6 @@
 #include <jailhouse/types.h>
 #include <jailhouse/cell-config.h>
 
-#ifndef CONFIG_INMATE_BASE
-#define CONFIG_INMATE_BASE 0x0
-#endif
-
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
@@ -28,49 +24,46 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "jetson-tk1-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
-
-		.cpu_reset_address = CONFIG_INMATE_BASE,
+		.num_irqchips = 0,
+		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0x70006300,
-			/* .clock_reg = 0x60006000 + 0x330, */
-			/* .gate_nr = (65 % 32), */
-			/* .divider = 0xdd, */
-			.type = JAILHOUSE_CON_TYPE_8250,
+			.address = 0xd0012000,
+			.type = JAILHOUSE_CON_TYPE_MVEBU,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x8,
+		0x2,
 	},
 
 	.mem_regions = {
 		/* UART */ {
-			.phys_start = 0x70006000,
-			.virt_start = 0x70006000,
+			.phys_start = 0xd0012000,
+			.virt_start = 0xd0012000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0xfbef0000,
-			.virt_start = CONFIG_INMATE_BASE,
+			.phys_start = 0x3faf0000,
+			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_LOADABLE,
 		},
-                /* communication region */ {
-                        .virt_start = 0x80000000,
-                        .size = 0x00001000,
-                        .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-                                JAILHOUSE_MEM_COMM_REGION,
-                },
-	},
+		/* communication region */ {
+			.virt_start = 0x80000000,
+			.size = 0x00001000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_COMM_REGION,
+		},
+	}
 };

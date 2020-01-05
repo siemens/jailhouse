@@ -1,13 +1,13 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo inmate on Marvell ESPRESSObin board:
+ * Configuration for demo inmate on AMD Seattle:
  * 1 CPU, 64K RAM, 1 serial port
  *
- * Copyright (c) Siemens AG, 2017
+ * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
  *
  * Authors:
- *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Antonios Motakis <antonios.motakis@huawei.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -24,7 +24,7 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "gic-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
@@ -33,27 +33,27 @@ struct {
 		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0xd0012000,
-			.type = JAILHOUSE_CON_TYPE_MVEBU,
+			.address = 0xe1010000,
+			.type = JAILHOUSE_CON_TYPE_PL011,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x2,
+		0x10,
 	},
 
 	.mem_regions = {
 		/* UART */ {
-			.phys_start = 0xd0012000,
-			.virt_start = 0xd0012000,
-			.size = 0x1000,
+			.phys_start = 0xe1010000,
+			.virt_start = 0xe1010000,
+			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0x3faf0000,
+			.phys_start = 0x83b0000000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |

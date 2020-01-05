@@ -1,13 +1,13 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for uart-demo inmate on emCON-RZ/G1M:
- * 1 CPU, 64K RAM, serial ports SCIF4, CCU
+ * Configuration for demo inmate on LeMaker HiKey board, 2GiB:
+ * 1 CPU, 64K RAM, 1 serial port
  *
- * Copyright (c) emtrion GmbH, 2017
+ * Copyright (c) Siemens AG, 2016
  *
  * Authors:
- *  Jan von Wiarda <jan.vonwiarda@emtrion.de>
+ *  Jan Kiszka <jan.kiszka@siemens.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -24,37 +24,36 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "emtrion-emconrzg1m-uart-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+		.num_irqchips = 0,
+		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0xe6ee0000,
-			.clock_reg = 0xe615014c,
-			.gate_nr = 15,
-			.divider = 0x10,
-			.type = JAILHOUSE_CON_TYPE_HSCIF,
+			.address = 0xf7113000,
+			.type = JAILHOUSE_CON_TYPE_PL011,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x2,
+		0x10,
 	},
 
 	.mem_regions = {
-		/* SCIF4 */ {
-			.phys_start = 0xe6ee0000,
-			.virt_start = 0xe6ee0000,
+		/* UART */ {
+			.phys_start = 0xf7113000,
+			.virt_start = 0xf7113000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
+				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0x7bff0000,
+			.phys_start = 0x7bfe0000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |

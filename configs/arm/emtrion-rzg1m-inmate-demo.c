@@ -1,14 +1,13 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo inmate on K3 based platforms.
- * 1CPU, 64K RAM, 1 serial port(MCU UART 0).
+ * Configuration for demo inmate on emCON-RZ/G1M:
+ * 1 CPU, 64K RAM, serial ports SCIF4, CCU
  *
- * Copyright (c) 2019 Texas Instruments Incorporated - http://www.ti.com/
+ * Copyright (c) emtrion GmbH, 2017
  *
  * Authors:
- *  Nikhil Devshatwar <nikhil.nd@ti.com>
- *  Lokesh Vutla <lokeshvutla@ti.com>
+ *  Jan von Wiarda <jan.vonwiarda@emtrion.de>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -25,37 +24,37 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "gic-demo",
+		.name = "emtrion-emconrzg1m-inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
-		.num_irqchips = 0,
-		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0x40a00000,
-			.divider = 0x35,
-			.type = JAILHOUSE_CON_TYPE_8250,
+			.address = 0xe6ee0000,
+			.clock_reg = 0xe615014c,
+			.gate_nr = 15,
+			.divider = 0x10,
+			.type = JAILHOUSE_CON_TYPE_HSCIF,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
 
 	.cpus = {
-		0x4,
+		0x2,
 	},
 
 	.mem_regions = {
-		/* MCU UART0 */ {
-			.phys_start = 0x40a00000,
-			.virt_start = 0x40a00000,
-			.size = 0x10000,
+		/* SCIF4 */ {
+			.phys_start = 0xe6ee0000,
+			.virt_start = 0xe6ee0000,
+			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
 		/* RAM */ {
-			.phys_start = 0x8e0000000,
+			.phys_start = 0x7bff0000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |

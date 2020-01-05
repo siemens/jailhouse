@@ -1,13 +1,14 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for gic-demo inmate on Orange Pi Zero:
- * 1 CPU, 64K RAM, serial ports 0-3, GPIO PA
+ * Configuration for demo inmate on K3 based platforms.
+ * 1CPU, 64K RAM, 1 serial port.
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) 2019 Texas Instruments Incorporated - http://www.ti.com/
  *
  * Authors:
- *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Nikhil Devshatwar <nikhil.nd@ti.com>
+ *  Lokesh Vutla <lokeshvutla@ti.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -19,21 +20,25 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[4];
+	struct jailhouse_memory mem_regions[3];
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
-		.name = "orangepi0-gic-demo",
+		.name = "inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+		.num_irqchips = 0,
+		.num_pci_devices = 0,
 
 		.console = {
-			.address = 0x01c28000,
+			.address = 0x02810000,
+			.divider = 0x1b,
 			.type = JAILHOUSE_CON_TYPE_8250,
 			.flags = JAILHOUSE_CON_ACCESS_MMIO |
+				 JAILHOUSE_CON_MDR_QUIRK |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 	},
@@ -43,22 +48,15 @@ struct {
 	},
 
 	.mem_regions = {
-		/* GPIO: port A */ {
-			.phys_start = 0x01c20800,
-			.virt_start = 0x01c20800,
-			.size = 0x24,
+		/* main_uart1 */ {
+			.phys_start = 0x02810000,
+			.virt_start = 0x02810000,
+			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
-		},
-		/* UART 0-3 */ {
-			.phys_start = 0x01c28000,
-			.virt_start = 0x01c28000,
-			.size = 0x1000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
+				JAILHOUSE_MEM_IO,
 		},
 		/* RAM */ {
-			.phys_start = 0x4f6f0000,
+			.phys_start = 0x89ff00000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
@@ -70,5 +68,5 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
 		},
-	},
+	}
 };
