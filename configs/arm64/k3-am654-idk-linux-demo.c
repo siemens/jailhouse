@@ -54,7 +54,7 @@ struct {
 	},
 
 	.mem_regions = {
-		/* IVSHMEM shared memory region for 00:00.0 */
+		/* IVSHMEM shared memory region for 00:01.0 */
 		JAILHOUSE_SHMEM_NET_REGIONS(0x8dfb00000, 1),
 		/* RAM load */ {
 			.phys_start = 0x8FFFF0000,
@@ -133,9 +133,9 @@ struct {
 	},
 
 	.pci_devices = {
-		/* 00:00.0 */ {
+		/* 00:01.0 */ {
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
-			.bdf = 0x00,
+			.bdf = 1 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
 			.shmem_regions_start = 0,
 			.shmem_dev_id = 1,
