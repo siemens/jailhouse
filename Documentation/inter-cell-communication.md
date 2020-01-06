@@ -70,10 +70,62 @@ For an example have a look at the cell configuration files `qemu-x86.c`,
 Demo code
 ---------
 
-TODO
+The first demo case is the peer-to-peer networking device ivshmem-net. Virtual
+networking is pre-configured in most ARM and ARM64 targets as well as in the
+qemu-x86 virtual one. Also all targets supported by the demo image generator
+[3] have this feature enabled. It depends on the ivshmem-net driver that is
+available through the Linux kernel for Jailhouse, see [3] and jailhouse-enabling
+branches in [4].
+
+Some targets, e.g. qemu-x86, qemu-arm64 and orangepi0, have a raw ivshmem
+multi-peer demo preconfigured. It can be used by running the ivshmem-demo
+application under Linux and loading ivshmem-demo.bin into bare-metal cell. The
+Linux application is also a demonstrator for the uio_ivshmem driver, providing
+unprivileged access to a ivshmem device it regular processes. See the code in
+`tools/ivshmem-demo.c` for details on the usage. The bare-metal ivshmem-demo is
+loaded under x86 into the ivshmem-demo.cell while ARM and ARM64 use a
+*-inmate.demo.cell corresponding to the target.
+
+There is also work-in-progress support for transporting virtio over ivshmem.
+Note that this is still experimental and can change until it may become part of
+the official virtio specification.
+
+Two virtio-ivshmem demo cases are prepared so far for qemu-x86, one providing a
+virtio console from the root cell to the Linux non-root cell, the other a
+virtio block device. Starting the demo requires a number of manual steps at
+this point. Under the root cell, execute
+
+    echo "110a 4106 110a 4106 ffc003 ffffff" > \
+        /sys/bus/pci/drivers/uio_ivshmem/new_id
+
+to bind the UIO driver to the ivshmem device acting as virtio console backend.
+Then run
+
+    virtio-ivshmem-console /dev/uio1
+
+This tool can be built in the `tools/virtio` directory of [3]. Now you can
+start a non-root Linux cell with `console=hvc0`, interacting with it in the
+shell that runs the backend application. Make sure that the non-root Linux
+kernel has the driver `virtio_ivshmem` (`CONFIG_VIRTIO_IVSHMEM`) from [3]
+enabled.
+
+Analogously, you can create a virtio block backend by running
+
+    echo "110a 4106 110a 4106 ffc002 ffffff" > \
+        /sys/bus/pci/drivers/uio_ivshmem/new_id
+
+in the root cell. Then start the backend service like this:
+
+    virtio-ivshmem-console /dev/uio2 /path/to/disk.image
+
+The disk will show up as /dev/vda in the non-root Linux and can be accessed
+normally.
 
 
 References
 ----------
 
 [1] Documentation/ivshmem-v2-specification.md
+[2] https://github.com/siemens/jailhouse-images
+[3] http://git.kiszka.org/?p=linux.git;a=shortlog;h=refs/heads/queues/jailhouse
+[4] https://github.com/siemens/linux
