@@ -130,7 +130,7 @@ struct jailhouse_memory {
 } __attribute__((packed));
 
 #define JAILHOUSE_MEMORY_IS_SUBPAGE(mem)	\
-	((mem)->virt_start & ~PAGE_MASK || (mem)->size & ~PAGE_MASK)
+	((mem)->virt_start & PAGE_OFFS_MASK || (mem)->size & PAGE_OFFS_MASK)
 
 #define JAILHOUSE_CACHE_L3_CODE		0x01
 #define JAILHOUSE_CACHE_L3_DATA		0x02

@@ -398,7 +398,7 @@ static void cell_destroy_internal(struct cell *cell)
 
 static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 {
-	unsigned long cfg_page_offs = config_address & ~PAGE_MASK;
+	unsigned long cfg_page_offs = config_address & PAGE_OFFS_MASK;
 	unsigned int cfg_pages, cell_pages, cpu, n;
 	const struct jailhouse_memory *mem;
 	struct jailhouse_cell_desc *cfg;

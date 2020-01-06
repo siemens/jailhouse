@@ -498,7 +498,7 @@ static enum mmio_result vtd_unit_access_handler(void *arg,
 				goto invalid_iq_entry;
 
 			unit->iqh += 1 << VTD_IQH_QH_SHIFT;
-			unit->iqh &= ~PAGE_MASK;
+			unit->iqh &= PAGE_OFFS_MASK;
 		}
 		return MMIO_HANDLED;
 	}
@@ -799,7 +799,8 @@ iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
 	if (!irte_page)
 		return irq_msg;
 
-	root_irte = *(union vtd_irte *)(irte_page + (irte_addr & ~PAGE_MASK));
+	root_irte = *(union vtd_irte *)(irte_page +
+					(irte_addr & PAGE_OFFS_MASK));
 
 	irq_msg.valid =
 		(root_irte.field.p && root_irte.field.sid == device_id);
