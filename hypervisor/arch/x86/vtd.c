@@ -483,7 +483,8 @@ static enum mmio_result vtd_unit_access_handler(void *arg,
 		return MMIO_HANDLED;
 	}
 	if (mmio->address == VTD_IQT_REG && mmio->is_write) {
-		while (unit->iqh != (mmio->value & ~PAGE_MASK)) {
+		while (unit->iqh !=
+		       (mmio->value & VTD_IQT_QT_MASK & PAGE_OFFS_MASK)) {
 			inv_desc_page =
 				paging_get_guest_pages(NULL, unit->iqa, 1,
 						       PAGE_READONLY_FLAGS);
