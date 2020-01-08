@@ -74,8 +74,6 @@
 
 #define JAILHOUSE_CELL_DESC_SIGNATURE	"JHCELL"
 
-#define JAILHOUSE_INVALID_STREAMID			(~0)
-
 /**
  * The jailhouse cell configuration.
  *
