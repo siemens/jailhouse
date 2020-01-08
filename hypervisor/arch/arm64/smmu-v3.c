@@ -1057,12 +1057,12 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 			if (ret)
 				return ret;
 		}
-	}
 
-	cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;
-	cmd.tlbi.vmid	= cell->config->id;
-	arm_smmu_cmdq_issue_cmd(smmu, &cmd);
-	arm_smmu_cmdq_issue_sync(smmu);
+		cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;
+		cmd.tlbi.vmid	= cell->config->id;
+		arm_smmu_cmdq_issue_cmd(&smmu[i], &cmd);
+		arm_smmu_cmdq_issue_sync(&smmu[i]);
+	}
 
 	return 0;
 }
@@ -1084,12 +1084,12 @@ static void arm_smmuv3_cell_exit(struct cell *cell)
 		for_each_stream_id(sid, cell->config, j) {
 			arm_smmu_uninit_ste(&smmu[i], sid, cell->config->id);
 		}
-	}
 
-	cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;
-	cmd.tlbi.vmid	= cell->config->id;
-	arm_smmu_cmdq_issue_cmd(smmu, &cmd);
-	arm_smmu_cmdq_issue_sync(smmu);
+		cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;
+		cmd.tlbi.vmid	= cell->config->id;
+		arm_smmu_cmdq_issue_cmd(&smmu[i], &cmd);
+		arm_smmu_cmdq_issue_sync(&smmu[i]);
+	}
 }
 
 static int arm_smmuv3_init(void)
