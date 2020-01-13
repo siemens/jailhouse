@@ -27,6 +27,7 @@ struct {
 	struct jailhouse_memory mem_regions[25];
 	struct jailhouse_irqchip irqchips[4];
 	struct jailhouse_pci_device pci_devices[1];
+	__u32 stream_ids[2];
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
@@ -38,6 +39,7 @@ struct {
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 		.num_irqchips = ARRAY_SIZE(config.irqchips),
 		.num_pci_devices = ARRAY_SIZE(config.pci_devices),
+		.num_stream_ids = ARRAY_SIZE(config.stream_ids),
 		.cpu_reset_address = 0x0,
 		.vpci_irq_base = 195 - 32,
 		.console = {
@@ -266,5 +268,10 @@ struct {
 			.shmem_peers = 2,
 			.shmem_protocol = JAILHOUSE_SHMEM_PROTO_VETH,
 		},
+	},
+
+	.stream_ids = {
+		/* Non PCIe peripherals */
+		0x0003, 0xf003,
 	},
 };
