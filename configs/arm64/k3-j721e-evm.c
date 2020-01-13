@@ -56,7 +56,29 @@ struct {
 					.base = 0x36600000,
 					.size = 0x100000,
 				},
+				{
+					.type = JAILHOUSE_IOMMU_PVU,
+					.base = 0x30f80000,
+					.size = 0x1000,
+					.tipvu.tlb_base = 0x36000000,
+					.tipvu.tlb_size = 0x40000,
+				},
+				{
+					.type = JAILHOUSE_IOMMU_PVU,
+					.base = 0x30f81000,
+					.size = 0x1000,
+					.tipvu.tlb_base = 0x36040000,
+					.tipvu.tlb_size = 0x40000,
+				},
+				{
+					.type = JAILHOUSE_IOMMU_PVU,
+					.base = 0x30f83000,
+					.size = 0x1000,
+					.tipvu.tlb_base = 0x360c0000,
+					.tipvu.tlb_size = 0x40000,
+				},
 			},
+
 		},
 		.root_cell = {
 			.name = "k3-j721e-evm",
