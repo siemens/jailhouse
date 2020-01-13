@@ -15,10 +15,17 @@
 
 #include <jailhouse/paging.h>
 
+struct pvu_tlb_entry;
+
 struct arch_cell {
 	struct paging_structures mm;
 
 	u32 irq_bitmap[1024/32];
+
+	struct {
+		u8 ent_count;
+		struct pvu_tlb_entry *entries;
+	} iommu_pvu; /**< ARM PVU specific fields. */
 };
 
 #endif /* !_JAILHOUSE_ASM_CELL_H */

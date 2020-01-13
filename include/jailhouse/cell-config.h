@@ -245,6 +245,7 @@ struct jailhouse_pci_capability {
 #define JAILHOUSE_IOMMU_AMD		1
 #define JAILHOUSE_IOMMU_INTEL		2
 #define JAILHOUSE_IOMMU_SMMUV3		3
+#define JAILHOUSE_IOMMU_PVU		4
 
 struct jailhouse_iommu {
 	__u32 type;
@@ -258,6 +259,11 @@ struct jailhouse_iommu {
 			__u8 msi_cap;
 			__u32 features;
 		} __attribute__((packed)) amd;
+
+		struct {
+			__u64 tlb_base;
+			__u32 tlb_size;
+		} __attribute__((packed)) tipvu;
 	};
 } __attribute__((packed));
 
