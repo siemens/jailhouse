@@ -363,6 +363,8 @@ static void cell_destroy_internal(struct cell *cell)
 	unsigned int cpu, n;
 	struct unit *unit;
 
+	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
+
 	for_each_cpu(cpu, cell->cpu_set) {
 		arch_park_cpu(cpu);
 
