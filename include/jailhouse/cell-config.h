@@ -251,10 +251,14 @@ struct jailhouse_iommu {
 	__u64 base;
 	__u32 size;
 
-	__u16 amd_bdf;
-	__u8 amd_base_cap;
-	__u8 amd_msi_cap;
-	__u32 amd_features;
+	union {
+		struct {
+			__u16 bdf;
+			__u8 base_cap;
+			__u8 msi_cap;
+			__u32 features;
+		} __attribute__((packed)) amd;
+	};
 } __attribute__((packed));
 
 struct jailhouse_pio {

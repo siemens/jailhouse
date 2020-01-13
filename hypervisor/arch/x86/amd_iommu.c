@@ -448,14 +448,14 @@ static void amd_iommu_init_fault_nmi(void)
 		    &system_config->platform_info.x86.iommu_units[iommu->idx];
 
 		/* Disable MSI during interrupt reprogramming. */
-		pci_write_config(cfg->amd_bdf, cfg->amd_msi_cap + 2, 0, 2);
+		pci_write_config(cfg->amd.bdf, cfg->amd.msi_cap + 2, 0, 2);
 
 		/*
 		 * Write new MSI capability block, re-enabling interrupts with
 		 * the last word.
 		 */
 		for (n = 3; n >= 0; n--)
-			pci_write_config(cfg->amd_bdf, cfg->amd_msi_cap + 4 * n,
+			pci_write_config(cfg->amd.bdf, cfg->amd.msi_cap + 4 * n,
 					 msi_reg.raw[n], 4);
 	}
 
@@ -637,14 +637,14 @@ static int amd_iommu_init_pci(struct amd_iommu *entry,
 		return trace_error(-EINVAL);
 
 	/* Check that EFR is supported */
-	caps_header = pci_read_config(iommu->amd_bdf, iommu->amd_base_cap, 4);
+	caps_header = pci_read_config(iommu->amd.bdf, iommu->amd.base_cap, 4);
 	if (!(caps_header & CAPS_IOMMU_EFR_SUP))
 		return trace_error(-EIO);
 
-	lo = pci_read_config(iommu->amd_bdf,
-			     iommu->amd_base_cap + CAPS_IOMMU_BASE_LOW_REG, 4);
-	hi = pci_read_config(iommu->amd_bdf,
-			     iommu->amd_base_cap + CAPS_IOMMU_BASE_HI_REG, 4);
+	lo = pci_read_config(iommu->amd.bdf,
+			     iommu->amd.base_cap + CAPS_IOMMU_BASE_LOW_REG, 4);
+	hi = pci_read_config(iommu->amd.bdf,
+			     iommu->amd.base_cap + CAPS_IOMMU_BASE_HI_REG, 4);
 
 	if (lo & CAPS_IOMMU_ENABLE &&
 	    ((hi << 32) | lo) != (iommu->base | CAPS_IOMMU_ENABLE)) {
@@ -654,11 +654,11 @@ static int amd_iommu_init_pci(struct amd_iommu *entry,
 	}
 
 	/* Should be configured by BIOS, but we want to be sure */
-	pci_write_config(iommu->amd_bdf,
-			 iommu->amd_base_cap + CAPS_IOMMU_BASE_HI_REG,
+	pci_write_config(iommu->amd.bdf,
+			 iommu->amd.base_cap + CAPS_IOMMU_BASE_HI_REG,
 			 (u32)(iommu->base >> 32), 4);
-	pci_write_config(iommu->amd_bdf,
-			 iommu->amd_base_cap + CAPS_IOMMU_BASE_LOW_REG,
+	pci_write_config(iommu->amd.bdf,
+			 iommu->amd.base_cap + CAPS_IOMMU_BASE_LOW_REG,
 			 (u32)(iommu->base & 0xffffffff) | CAPS_IOMMU_ENABLE,
 			 4);
 
@@ -687,9 +687,9 @@ static int amd_iommu_init_features(struct amd_iommu *entry,
 		return trace_error(-EIO);
 
 	/* Figure out if hardware events are supported. */
-	if (iommu->amd_features)
+	if (iommu->amd.features)
 		entry->he_supported =
-			iommu->amd_features & ACPI_REPORTING_HE_SUP;
+			iommu->amd.features & ACPI_REPORTING_HE_SUP;
 	else
 		entry->he_supported = efr & AMD_EXT_FEAT_HE_SUP;
 
