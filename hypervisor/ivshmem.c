@@ -411,11 +411,10 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 			break;
 
 	id = dev_info->shmem_dev_id;
+	if (id >= IVSHMEM_MAX_PEERS)
+		return trace_error(-EINVAL);
 
 	if (link) {
-		if (id >= IVSHMEM_MAX_PEERS)
-			return trace_error(-EINVAL);
-
 		if (link->eps[id].device)
 			return trace_error(-EBUSY);
 
