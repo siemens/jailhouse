@@ -113,6 +113,12 @@ static void gicv3_write_lr(unsigned int reg, u64 val)
 	__WRITE_LR8_15(7)
 #undef __WRITE_LR8_15
 	}
+
+	/*
+	 * Ensure the write to the LR is visible to the GIC (so that ICH_ELRSR
+	 * is updated to indicate that the just-written LR is no longer empty)
+	 */
+	isb();
 }
 
 static int gicv3_init(void)
