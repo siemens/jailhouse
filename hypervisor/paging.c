@@ -389,7 +389,19 @@ int paging_destroy(const struct paging_structures *pg_structs,
 			if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
 				break;
 			if (paging->get_phys(pte, virt) != INVALID_PHYS_ADDR) {
-				if (paging->page_size <= size)
+				unsigned long page_start;
+
+				/*
+				 * If the region to be unmapped doesn't fully
+				 * cover the hugepage, the hugepage will need to
+				 * be split.
+				 */
+				page_size = paging->page_size ?
+					paging->page_size : PAGE_SIZE;
+				page_start = virt & ~(page_size-1);
+
+				if (virt <= page_start &&
+				    virt + size >= page_start + page_size)
 					break;
 
 				err = split_hugepage(pg_structs->hv_paging,
