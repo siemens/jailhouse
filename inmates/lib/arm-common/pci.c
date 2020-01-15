@@ -50,7 +50,7 @@ static void *pci_get_device_mmcfg_base(u16 bdf)
 {
 	void *mmcfg = (void *)(unsigned long)comm_region->pci_mmconfig_base;
 
-        return mmcfg + ((unsigned long)bdf << 12);
+	return mmcfg + ((unsigned long)bdf << 12);
 }
 
 u32 pci_read_config(u16 bdf, unsigned int addr, unsigned int size)
