@@ -437,7 +437,7 @@ int pvu_iommu_unmap_memory(struct cell *cell,
 int pvu_iommu_config_commit(struct cell *cell)
 {
 	unsigned int i, virtid;
-	int ret;
+	int ret = 0;
 
 	if (pvu_count == 0 || !cell)
 		return 0;
