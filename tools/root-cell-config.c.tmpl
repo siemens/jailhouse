@@ -94,10 +94,10 @@ struct {
 						.base = ${hex(unit.base_addr)},
 						.size = ${hex(unit.mmio_size)},
 						% if unit.is_amd_iommu:
-						.amd_bdf = ${hex(unit.amd_bdf)},
-						.amd_base_cap = ${hex(unit.amd_base_cap)},
-						.amd_msi_cap = ${hex(unit.amd_msi_cap)},
-						.amd_features = ${hex(unit.amd_features)},
+						.amd.bdf = ${hex(unit.amd_bdf)},
+						.amd.base_cap = ${hex(unit.amd_base_cap)},
+						.amd.msi_cap = ${hex(unit.amd_msi_cap)},
+						.amd.features = ${hex(unit.amd_features)},
 						% endif
 					},
 					% endfor
