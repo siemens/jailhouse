@@ -38,6 +38,7 @@
 
 #define COMM_REGION_COMMON_PLATFORM_INFO	\
 	__u8 gic_version;			\
+	__u8 padding[7];			\
 	__u64 gicd_base;			\
 	__u64 gicc_base;			\
 	__u64 gicr_base;			\
