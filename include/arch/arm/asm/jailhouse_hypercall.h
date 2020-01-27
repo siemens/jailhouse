@@ -60,7 +60,7 @@
 struct jailhouse_comm_region {
 	COMM_REGION_GENERIC_HEADER;
 	COMM_REGION_COMMON_PLATFORM_INFO;
-};
+} __attribute__((packed));
 
 static inline __u32 jailhouse_call(__u32 num)
 {

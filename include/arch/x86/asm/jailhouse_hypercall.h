@@ -108,7 +108,7 @@ struct jailhouse_comm_region {
 	/** Calibrated APIC timer frequency in kHz or 0 if TSC deadline timer
 	 * is available (x86-specific). */
 	__u32 apic_khz;
-};
+} __attribute__((packed));
 
 /**
  * Invoke a hypervisor without additional arguments.
