@@ -36,10 +36,25 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define COMM_REGION_COMMON_PLATFORM_INFO	\
-	__u8 gic_version;			\
-	__u8 padding[7];			\
-	__u64 gicd_base;			\
-	__u64 gicc_base;			\
-	__u64 gicr_base;			\
+#define JAILHOUSE_HVC_CODE		0x4a48
+
+/* CPU statistics, common part */
+#define JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE	JAILHOUSE_GENERIC_CPU_STATS
+#define JAILHOUSE_CPU_STAT_VMEXITS_VIRQ		JAILHOUSE_GENERIC_CPU_STATS + 1
+#define JAILHOUSE_CPU_STAT_VMEXITS_VSGI		JAILHOUSE_GENERIC_CPU_STATS + 2
+#define JAILHOUSE_CPU_STAT_VMEXITS_PSCI		JAILHOUSE_GENERIC_CPU_STATS + 3
+#define JAILHOUSE_CPU_STAT_VMEXITS_SMCCC	JAILHOUSE_GENERIC_CPU_STATS + 4
+
+#ifndef __ASSEMBLY__
+
+struct jailhouse_comm_region {
+	COMM_REGION_GENERIC_HEADER;
+	__u8 gic_version;
+	__u8 padding[7];
+	__u64 gicd_base;
+	__u64 gicc_base;
+	__u64 gicr_base;
 	__u32 vpci_irq_base;
+} __attribute__((packed));
+
+#endif /* !__ASSEMBLY__ */

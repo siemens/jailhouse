@@ -38,29 +38,17 @@
 
 #include "../arm-common/asm/jailhouse_hypercall.h"
 
-#define JAILHOUSE_HVC_CODE		0x4a48
-
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \
 					"hvc #0x4a48"
 #define JAILHOUSE_CALL_NUM_RESULT	"r0"
 #define JAILHOUSE_CALL_ARG1		"r1"
 #define JAILHOUSE_CALL_ARG2		"r2"
 
-/* CPU statistics */
-#define JAILHOUSE_CPU_STAT_VMEXITS_MAINTENANCE	JAILHOUSE_GENERIC_CPU_STATS
-#define JAILHOUSE_CPU_STAT_VMEXITS_VIRQ		JAILHOUSE_GENERIC_CPU_STATS + 1
-#define JAILHOUSE_CPU_STAT_VMEXITS_VSGI		JAILHOUSE_GENERIC_CPU_STATS + 2
-#define JAILHOUSE_CPU_STAT_VMEXITS_PSCI		JAILHOUSE_GENERIC_CPU_STATS + 3
-#define JAILHOUSE_CPU_STAT_VMEXITS_SMCCC	JAILHOUSE_GENERIC_CPU_STATS + 4
+/* CPU statistics, arm-specific part */
 #define JAILHOUSE_CPU_STAT_VMEXITS_CP15		JAILHOUSE_GENERIC_CPU_STATS + 5
 #define JAILHOUSE_NUM_CPU_STATS			JAILHOUSE_GENERIC_CPU_STATS + 6
 
 #ifndef __ASSEMBLY__
-
-struct jailhouse_comm_region {
-	COMM_REGION_GENERIC_HEADER;
-	COMM_REGION_COMMON_PLATFORM_INFO;
-} __attribute__((packed));
 
 static inline __u32 jailhouse_call(__u32 num)
 {
