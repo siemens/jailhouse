@@ -12,6 +12,9 @@ x86 support
     - add support for CDP (code/data L3 partitioning)
     - add support for L2 partitioning (-> Apollo Lake), including accurate
       modeling of the partitioning scope (affected CPUs)
+  - Enable first-level only paging for VT-d
+    - share page table with EPT
+    - deprecate support for legacy format (second-level only)?
 
 ARM support
   - v7 (32-bit)
@@ -21,13 +24,9 @@ ARM support
     - analyze system control registers access, specifically regarding cache
       maintenance and side effects on neighboring cores
   - common (v7 and v8)
-    - System MMU support
+    - System MMU v2 support
     - re-evaluate IRQ priorities for GIC emulation and possibly add support
     - properly reset interrupts on cell reset or reassignment
-    - support for big endian? (depends on relevant targets)
-      - infrastructure to support BE architectures (byte-swapping services)
-      - usage of that infrastructure in generic subsystems
-      - specific BE support for first target
 
 Configuration
  - review of format, rework of textual representation
