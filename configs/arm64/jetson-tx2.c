@@ -11,7 +11,7 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  *
- * NOTE: Add "mem=7808M vmalloc=512M" to the kernel command line.
+ * NOTE: Add "mem=7808M" to the kernel command line.
  *
  *	2:7000:0000 inmate (size: 100:0000 = 16 MB)
  *	2:7100:0000 hypervisor (size: 400:0000 = 64 MB)
