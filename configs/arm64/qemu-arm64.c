@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for QEMU arm64 virtual target
+ * Configuration for QEMU arm64 virtual target, 1G RAM, 16 cores
  *
  * Copyright (c) Siemens AG, 2017
  *
@@ -11,7 +11,7 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  *
- * Reservation via device tree: 0x800000000..0x83fffffff
+ * NOTE: Add "mem=768M" to the kernel command line.
  */
 
 #include <jailhouse/types.h>
