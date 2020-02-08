@@ -128,9 +128,6 @@ int jailhouse_cell_prepare_root(const struct jailhouse_cell_desc *cell_desc)
 	if (IS_ERR(root_cell))
 		return PTR_ERR(root_cell);
 
-	cpumask_and(&root_cell->cpus_assigned, &root_cell->cpus_assigned,
-		    cpu_online_mask);
-
 	return 0;
 }
 
