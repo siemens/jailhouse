@@ -572,6 +572,11 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 
 	header->online_cpus = num_online_cpus();
 
+	/*
+	 * Cannot use wait=true here because all CPUs have to enter the
+	 * hypervisor to start the handover while on_each_cpu holds the calling
+	 * CPU back.
+	 */
 	atomic_set(&call_done, 0);
 	on_each_cpu(enter_hypervisor, header, 0);
 	while (atomic_read(&call_done) != num_online_cpus())
@@ -697,6 +702,7 @@ static int jailhouse_cmd_disable(void)
 #endif
 
 	atomic_set(&call_done, 0);
+	/* See jailhouse_cmd_enable while wait=true does not work. */
 	on_each_cpu(leave_hypervisor, NULL, 0);
 	while (atomic_read(&call_done) != num_online_cpus())
 		cpu_relax();
