@@ -59,10 +59,6 @@ static void init_early(unsigned int cpu_id)
 
 	root_cell.config = &system_config->root_cell;
 
-	error = cell_init(&root_cell);
-	if (error)
-		return;
-
 	error = arch_init_early();
 	if (error)
 		return;
@@ -167,6 +163,10 @@ static void init_late(void)
 	unsigned int n, cpu, expected_cpus = 0;
 	const struct jailhouse_memory *mem;
 	struct unit *unit;
+
+	error = cell_init(&root_cell);
+	if (error)
+		return;
 
 	for_each_cpu(cpu, &root_cell.cpu_set)
 		expected_cpus++;
