@@ -250,7 +250,7 @@ bool apic_filter_irq_dest(struct cell *cell, struct apic_irq_message *irq_msg)
 		if (using_x2apic)
 			dest = x2apic_filter_logical_dest(cell, dest);
 		else
-			dest &= cell->cpu_set->bitmap[0];
+			dest &= cell->cpu_set.bitmap[0];
 		/*
 		 * Linux may have programmed inactive vectors with too broad
 		 * destination masks. Return the adjusted mask and do not fail.
@@ -420,7 +420,7 @@ static void apic_send_ipi_all(u32 lo_val, int except_cpu)
 	/* This implicitly selects APIC_ICR_SH_NONE. */
 	lo_val &= APIC_ICR_LVTM_MASK | APIC_ICR_DLVR_MASK |
 		  APIC_ICR_VECTOR_MASK;
-	for_each_cpu_except(cpu, this_cell()->cpu_set, except_cpu)
+	for_each_cpu_except(cpu, &this_cell()->cpu_set, except_cpu)
 		apic_send_ipi(cpu, 0, lo_val);
 }
 

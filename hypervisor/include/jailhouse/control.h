@@ -115,8 +115,8 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
  */
 static inline bool cell_owns_cpu(struct cell *cell, unsigned int cpu_id)
 {
-	return (cpu_id <= cell->cpu_set->max_cpu_id &&
-		test_bit(cpu_id, cell->cpu_set->bitmap));
+	return (cpu_id <= cell->cpu_set.max_cpu_id &&
+		test_bit(cpu_id, cell->cpu_set.bitmap));
 }
 
 bool cpu_id_valid(unsigned long cpu_id);

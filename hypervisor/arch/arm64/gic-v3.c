@@ -340,7 +340,7 @@ static int gicv3_cpu_shutdown(struct public_per_cpu *cpu_public)
 static void gicv3_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
 	void *irouter = gicd_base + GICD_IROUTER + 8 * irq_id;
-	u64 mpidr = public_per_cpu(first_cpu(cell->cpu_set))->mpidr;
+	u64 mpidr = public_per_cpu(first_cpu(&cell->cpu_set))->mpidr;
 	u32 route = arm_cpu_by_mpidr(cell,
 				     mmio_read64(irouter) & MPIDR_CPUID_MASK);
 
@@ -508,7 +508,7 @@ static enum mmio_result gicv3_handle_irq_route(struct mmio_access *mmio,
 		 * Validate that the target CPU is part of the cell.
 		 * Note that we do not support Interrupt Routing Mode = 1.
 		 */
-		for_each_cpu(cpu, cell->cpu_set)
+		for_each_cpu(cpu, &cell->cpu_set)
 			if ((public_per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK) ==
 			    mmio->value) {
 				mmio_perform_access(gicd_base, mmio);

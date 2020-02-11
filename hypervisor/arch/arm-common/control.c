@@ -162,7 +162,7 @@ int arch_cell_create(struct cell *cell)
 
 void arch_cell_reset(struct cell *cell)
 {
-	unsigned int first = first_cpu(cell->cpu_set);
+	unsigned int first = first_cpu(&cell->cpu_set);
 	unsigned int cpu;
 	struct jailhouse_comm_region *comm_region =
 		&cell->comm_page.comm_region;
@@ -179,7 +179,7 @@ void arch_cell_reset(struct cell *cell)
 	 * starts at cpu_reset_address, defined in the cell configuration.
 	 */
 	public_per_cpu(first)->cpu_on_entry = cell->config->cpu_reset_address;
-	for_each_cpu_except(cpu, cell->cpu_set, first)
+	for_each_cpu_except(cpu, &cell->cpu_set, first)
 		public_per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
 	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
@@ -194,7 +194,7 @@ void arch_cell_destroy(struct cell *cell)
 	arm_cell_dcaches_flush(cell, DCACHE_INVALIDATE);
 
 	/* All CPUs are handed back to the root cell in suspended mode. */
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, &cell->cpu_set)
 		public_per_cpu(cpu)->cpu_on_entry = PSCI_INVALID_ADDRESS;
 
 	arm_paging_cell_destroy(cell);
@@ -204,7 +204,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, &cell->cpu_set)
 		if (cpu == this_cpu_id())
 			arm_paging_vcpu_flush_tlbs();
 		else

@@ -72,7 +72,7 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu(cpu, cell->cpu_set) {
+	for_each_cpu(cpu, &cell->cpu_set) {
 		if (cpu == this_cpu_id())
 			vcpu_tlb_flush();
 		else
@@ -93,7 +93,7 @@ void arch_cell_reset(struct cell *cell)
 	comm_region->pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
 	/* comm_region, and hence num_cpus, is zero-initialised */
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, &cell->cpu_set)
 		comm_region->num_cpus++;
 	comm_region->tsc_khz = system_config->platform_info.x86.tsc_khz;
 	comm_region->apic_khz = system_config->platform_info.x86.apic_khz;

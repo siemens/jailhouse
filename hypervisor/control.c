@@ -143,7 +143,7 @@ static void cell_suspend(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu_except(cpu, cell->cpu_set, this_cpu_id())
+	for_each_cpu_except(cpu, &cell->cpu_set, this_cpu_id())
 		suspend_cpu(cpu);
 }
 
@@ -151,7 +151,7 @@ static void cell_resume(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu_except(cpu, cell->cpu_set, this_cpu_id())
+	for_each_cpu_except(cpu, &cell->cpu_set, this_cpu_id())
 		resume_cpu(cpu);
 }
 
@@ -243,36 +243,18 @@ int cell_init(struct cell *cell)
 	const unsigned long *config_cpu_set =
 		jailhouse_cell_cpu_set(cell->config);
 	unsigned long cpu_set_size = cell->config->cpu_set_size;
-	struct cpu_set *cpu_set;
-	int err;
 
-	if (cpu_set_size > PAGE_SIZE)
+	if (cpu_set_size > sizeof(cell->cpu_set.bitmap))
 		return trace_error(-EINVAL);
-	if (cpu_set_size > sizeof(cell->small_cpu_set.bitmap)) {
-		cpu_set = page_alloc(&mem_pool, 1);
-		if (!cpu_set)
-			return -ENOMEM;
-	} else {
-		cpu_set = &cell->small_cpu_set;
-	}
-	cpu_set->max_cpu_id = cpu_set_size * 8 - 1;
-	memcpy(cpu_set->bitmap, config_cpu_set, cpu_set_size);
+	cell->cpu_set.max_cpu_id = cpu_set_size * 8 - 1;
+	memcpy(cell->cpu_set.bitmap, config_cpu_set, cpu_set_size);
 
-	cell->cpu_set = cpu_set;
-
-	err = mmio_cell_init(cell);
-	if (err && cell->cpu_set != &cell->small_cpu_set)
-		page_free(&mem_pool, cell->cpu_set, 1);
-
-	return err;
+	return mmio_cell_init(cell);
 }
 
 static void cell_exit(struct cell *cell)
 {
 	mmio_cell_exit(cell);
-
-	if (cell->cpu_set != &cell->small_cpu_set)
-		page_free(&mem_pool, cell->cpu_set, 1);
 }
 
 /**
@@ -375,10 +357,10 @@ static void cell_destroy_internal(struct cell *cell)
 
 	cell->comm_page.comm_region.cell_state = JAILHOUSE_CELL_SHUT_DOWN;
 
-	for_each_cpu(cpu, cell->cpu_set) {
+	for_each_cpu(cpu, &cell->cpu_set) {
 		arch_park_cpu(cpu);
 
-		set_bit(cpu, root_cell.cpu_set->bitmap);
+		set_bit(cpu, root_cell.cpu_set.bitmap);
 		public_per_cpu(cpu)->cell = &root_cell;
 		public_per_cpu(cpu)->failed = false;
 		memset(public_per_cpu(cpu)->stats, 0,
@@ -488,7 +470,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	}
 
 	/* the root cell's cpu set must be super-set of new cell's set */
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, &cell->cpu_set)
 		if (!cell_owns_cpu(&root_cell, cpu)) {
 			err = trace_error(-EBUSY);
 			goto err_cell_exit;
@@ -511,10 +493,10 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 	 * Shrinking: the new cell's CPUs are parked, then removed from the root
 	 * cell, assigned to the new cell and get their stats cleared.
 	 */
-	for_each_cpu(cpu, cell->cpu_set) {
+	for_each_cpu(cpu, &cell->cpu_set) {
 		arch_park_cpu(cpu);
 
-		clear_bit(cpu, root_cell.cpu_set->bitmap);
+		clear_bit(cpu, root_cell.cpu_set.bitmap);
 		public_per_cpu(cpu)->cell = cell;
 		memset(public_per_cpu(cpu)->stats, 0,
 		       sizeof(public_per_cpu(cpu)->stats));
@@ -673,7 +655,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 	pci_cell_reset(cell);
 	arch_cell_reset(cell);
 
-	for_each_cpu(cpu, cell->cpu_set) {
+	for_each_cpu(cpu, &cell->cpu_set) {
 		public_per_cpu(cpu)->failed = false;
 		arch_reset_cpu(cpu);
 	}
@@ -701,7 +683,7 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	 * Unconditionally park so that the target cell's CPUs don't stay in
 	 * suspension mode.
 	 */
-	for_each_cpu(cpu, cell->cpu_set) {
+	for_each_cpu(cpu, &cell->cpu_set) {
 		public_per_cpu(cpu)->failed = false;
 		arch_park_cpu(cpu);
 	}
@@ -845,7 +827,7 @@ static int hypervisor_disable(struct per_cpu *cpu_data)
 
 	if (cpu_data->public.shutdown_state == SHUTDOWN_NONE) {
 		state = num_cells == 1 ? SHUTDOWN_STARTED : -EBUSY;
-		for_each_cpu(cpu, root_cell.cpu_set)
+		for_each_cpu(cpu, &root_cell.cpu_set)
 			public_per_cpu(cpu)->shutdown_state = state;
 	}
 
@@ -1018,7 +1000,7 @@ void panic_park(void)
 		     cell->config->name);
 
 	this_cpu_public()->failed = true;
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, &cell->cpu_set)
 		if (!public_per_cpu(cpu)->failed) {
 			cell_failed = false;
 			break;
