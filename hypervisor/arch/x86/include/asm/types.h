@@ -16,6 +16,4 @@
  * Documentation for the x86 processor architecture.
  */
 
-#ifndef BITS_PER_LONG
 #define BITS_PER_LONG			64
-#endif /* ! BITS_PER_LONG */
