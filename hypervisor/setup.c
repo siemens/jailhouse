@@ -168,7 +168,7 @@ static void init_late(void)
 	const struct jailhouse_memory *mem;
 	struct unit *unit;
 
-	for_each_cpu(cpu, root_cell.cpu_set)
+	for_each_cpu(cpu, &root_cell.cpu_set)
 		expected_cpus++;
 	if (hypervisor_header.online_cpus != expected_cpus) {
 		error = trace_error(-EINVAL);

@@ -34,7 +34,7 @@ struct public_per_cpu *iommu_select_fault_reporting_cpu(void)
 	 * Save this value globally to avoid multiple reports of the same
 	 * case from different CPUs.
 	 */
-	unsigned int fault_reporting_cpu_id = first_cpu(root_cell.cpu_set);
+	unsigned int fault_reporting_cpu_id = first_cpu(&root_cell.cpu_set);
 
 	return public_per_cpu(fault_reporting_cpu_id);
 }

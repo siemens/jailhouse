@@ -25,10 +25,8 @@ typedef enum { true = 1, false = 0 } bool;
 struct cpu_set {
 	/** Maximum CPU ID expressible with this set. */
 	unsigned long max_cpu_id;
-	/** Bitmap of CPUs in the set.
-	 * @note Typically, the bitmap is extended by embedding this structure
-	 * into a larger buffer. */
-	unsigned long bitmap[1];
+	/** Bitmap of CPUs in the set. */
+	unsigned long bitmap[(MAX_CPUS + BITS_PER_LONG - 1) / BITS_PER_LONG];
 };
 
 typedef signed char s8;

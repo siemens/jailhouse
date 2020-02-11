@@ -11,3 +11,5 @@
  */
 
 #define BITS_PER_LONG			32
+
+#define MAX_CPUS			8

@@ -41,10 +41,8 @@ struct cell {
 	/** Pointer to static cell description. */
 	struct jailhouse_cell_desc *config;
 
-	/** Pointer to cell's CPU set. */
-	struct cpu_set *cpu_set;
-	/** Stores the cell's CPU set if small enough. */
-	struct cpu_set small_cpu_set;
+	/** Effective cell CPU set. */
+	struct cpu_set cpu_set;
 
 	/** True while the cell can be loaded by the root cell. */
 	bool loadable;

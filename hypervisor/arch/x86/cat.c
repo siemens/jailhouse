@@ -38,7 +38,7 @@ static void cat_update_cell(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu(cpu, cell->cpu_set)
+	for_each_cpu(cpu, &cell->cpu_set)
 		if (cpu == this_cpu_id())
 			cat_update();
 		else

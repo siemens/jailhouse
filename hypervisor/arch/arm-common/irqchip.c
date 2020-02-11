@@ -112,7 +112,7 @@ void gic_handle_sgir_write(struct sgi *sgi)
 		/* Route to the caller itself */
 		irqchip_set_pending(cpu_public, sgi->id);
 	else
-		for_each_cpu(cpu, this_cell()->cpu_set) {
+		for_each_cpu(cpu, &this_cell()->cpu_set) {
 			if (sgi->routing_mode == 1) {
 				/* Route to all (cell) CPUs but the caller. */
 				if (cpu == cpu_public->cpu_id)
