@@ -50,6 +50,5 @@ extern void *gicd_base;
 extern spinlock_t dist_lock;
 
 void gic_handle_sgir_write(struct sgi *sgi);
-bool gicv3_handle_sgir_write(u64 sgir);
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_GIC_COMMON_H */

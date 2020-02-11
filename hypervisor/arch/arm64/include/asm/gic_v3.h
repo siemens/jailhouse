@@ -13,8 +13,8 @@
 #ifndef _JAILHOUSE_ASM_GIC_V3_H
 #define _JAILHOUSE_ASM_GIC_V3_H
 
+#include <jailhouse/types.h>
 #include <asm/sysregs.h>
-#include <asm/arch_gicv3.h>
 
 #define GICDv3_CIDR0		0xfff0
 #define GICDv3_PIDR0		0xffe0
@@ -68,6 +68,11 @@
 #define ICH_AP1R1_EL2		SYSREG_32(4, c12, c9, 1)
 #define ICH_AP1R2_EL2		SYSREG_32(4, c12, c9, 2)
 #define ICH_AP1R3_EL2		SYSREG_32(4, c12, c9, 3)
+
+#define ICH_LR0_7_EL2(x)	SYSREG_64(4, c12, c12, x)
+#define ICH_LR8_15_EL2(x)	SYSREG_64(4, c12, c13, x)
+
+#define ICC_SGI1R_EL1		SYSREG_64(0, c12, c11, 5)
 
 #define ICC_CTLR_EOImode	0x2
 #define ICC_PMR_MASK		0xff
@@ -125,4 +130,7 @@
 #define ICH_LR_PRIORITY_SHIFT	48
 #define ICH_LR_SGI_EOI		(0x1ULL << 41)
 #define ICH_LR_PHYS_ID_SHIFT	32
+
+bool gicv3_handle_sgir_write(u64 sgir);
+
 #endif /* _JAILHOUSE_ASM_GIC_V3_H */
