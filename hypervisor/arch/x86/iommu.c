@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014, 2015
+ * Copyright (c) Siemens AG, 2014-2020
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -27,18 +27,14 @@ unsigned int iommu_count_units(void)
 
 struct public_per_cpu *iommu_select_fault_reporting_cpu(void)
 {
-	struct public_per_cpu *target_data;
-	unsigned int n;
+	/*
+	 * The selection process assumes that at least one bit is set somewhere
+	 * because we don't support configurations where Linux is left with no
+	 * CPUs.
+	 * Save this value globally to avoid multiple reports of the same
+	 * case from different CPUs.
+	 */
+	unsigned int fault_reporting_cpu_id = first_cpu(root_cell.cpu_set);
 
-	/* This assumes that at least one bit is set somewhere because we
-	 * don't support configurations where Linux is left with no CPUs. */
-	for (n = 0; root_cell.cpu_set->bitmap[n] == 0; n++)
-		/* Empty loop */;
-	target_data = public_per_cpu(ffsl(root_cell.cpu_set->bitmap[n]));
-
-	/* Save this value globally to avoid multiple reports of the same
-	 * case from different CPUs */
-	fault_reporting_cpu_id = target_data->cpu_id;
-
-	return target_data;
+	return public_per_cpu(fault_reporting_cpu_id);
 }
