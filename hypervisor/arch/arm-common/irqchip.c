@@ -330,9 +330,11 @@ int irqchip_cpu_init(struct per_cpu *cpu_data)
 		case 2:
 			irqchip = gicv2_irqchip;
 			break;
+#ifdef __aarch64__
 		case 3:
 			irqchip = gicv3_irqchip;
 			break;
+#endif
 		default:
 			return trace_error(-EINVAL);
 		}

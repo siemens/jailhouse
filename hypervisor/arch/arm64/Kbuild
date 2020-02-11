@@ -20,5 +20,5 @@ always-y := lib.a
 # irqchip (common-objs-y), smmu-v3, ti-pvu, smmu, <generic units>
 
 lib-y := $(common-objs-y)
-lib-y += entry.o setup.o control.o mmio.o paging.o caches.o traps.o
+lib-y += entry.o setup.o control.o gic-v3.o mmio.o paging.o caches.o traps.o
 lib-y += iommu.o smmu-v3.o ti-pvu.o smmu.o

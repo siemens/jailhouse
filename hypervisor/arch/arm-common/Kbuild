@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2013-2017
+# Copyright (c) Siemens AG, 2013-2022
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -19,6 +19,6 @@ ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 objs-y += dbg-write.o lib.o psci.o control.o paging.o mmu_cell.o setup.o
 objs-y += irqchip.o pci.o ivshmem.o uart-pl011.o uart-xuartps.o uart-mvebu.o
 objs-y += uart-hscif.o uart-scifa.o uart-imx.o uart-imx-lpuart.o uart-scif.o
-objs-y += gic-v2.o gic-v3.o smccc.o
+objs-y += gic-v2.o smccc.o
 
 common-objs-y = $(addprefix ../arm-common/,$(objs-y))
