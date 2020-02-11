@@ -34,7 +34,7 @@ bool using_x2apic;
 /**
  * Mapping from a physical APIC ID to the logical CPU ID as used by Jailhouse.
  */
-u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
+static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
 
 /* Initialized for x2APIC, adjusted for xAPIC during init */
 static u32 apic_reserved_bits[] = {
