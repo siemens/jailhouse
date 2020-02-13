@@ -12,7 +12,7 @@
 
 #include <jailhouse/header.h>
 
-#include <asm/paging.h>
+#include <jailhouse/paging.h>
 #include <asm/sections.h>
 
 SECTIONS

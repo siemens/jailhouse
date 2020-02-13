@@ -31,7 +31,7 @@
 #ifndef _JAILHOUSE_ASM_VMX_H
 #define _JAILHOUSE_ASM_VMX_H
 
-#include <asm/paging.h>
+#include <jailhouse/paging.h>
 
 struct per_cpu;
 

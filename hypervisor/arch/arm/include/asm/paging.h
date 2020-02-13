@@ -20,9 +20,6 @@
 #include <asm/sysregs.h>
 
 #define PAGE_SHIFT		12
-#define PAGE_SIZE		(1 << PAGE_SHIFT)
-#define PAGE_MASK		~(PAGE_SIZE - 1)
-#define PAGE_OFFS_MASK		(PAGE_SIZE - 1)
 
 #define MAX_PAGE_TABLE_LEVELS	3
 
