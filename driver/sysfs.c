@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2017
+ * Copyright (c) Siemens AG, 2014-2020
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -406,7 +406,7 @@ int jailhouse_sysfs_cell_create(struct cell *cell)
 			list_add_tail(&cell_cpu->entry, &cell->cell_cpus);
 		} else {
 			cell_cpu = find_cell_cpu(root_cell, cpu);
-			if (WARN_ON(cell_cpu == NULL))
+			if (cell_cpu == NULL)
 				continue;
 
 			err = kobject_move(&cell_cpu->kobj, &cell->stats_kobj);
