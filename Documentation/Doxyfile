@@ -264,7 +264,6 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = \
 	DOXYGEN_CPP \
 	__attribute__(x)= \
-	DEFINE_SPINLOCK(s)="spinlock_t s" \
 	DEFINE_MMIO_READ(s)="static inline u##s mmio_read##s(void *address);" \
 	DEFINE_MMIO_WRITE(s)="static inline void mmio_write##s(void *address, u##s value);"
 EXPAND_AS_DEFINED      = COMM_REGION_GENERIC_HEADER

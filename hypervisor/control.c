@@ -32,7 +32,7 @@ struct jailhouse_system *system_config;
 /** State structure of the root cell. @ingroup Control */
 struct cell root_cell;
 
-static DEFINE_SPINLOCK(shutdown_lock);
+static spinlock_t shutdown_lock;
 static unsigned int num_cells = 1;
 
 volatile unsigned long panic_in_progress;

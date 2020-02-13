@@ -29,7 +29,7 @@
 	     (counter) < (config)->num_irqchips;			\
 	     (chip)++, (counter)++)
 
-DEFINE_SPINLOCK(dist_lock);
+spinlock_t dist_lock;
 
 void *gicd_base;
 

@@ -330,7 +330,7 @@ int switch_exception_level(struct per_cpu *cpu_data)
 
 void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 {
-	static DEFINE_SPINLOCK(map_lock);
+	static spinlock_t map_lock;
 
 	virt2phys_t virt2phys = paging_hvirt2phys;
 	unsigned long stack_phys = virt2phys(cpu_data->stack);

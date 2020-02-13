@@ -201,7 +201,7 @@ static void *unit_inv_queue;
 static unsigned int dmar_units;
 static unsigned int dmar_pt_levels;
 static unsigned int dmar_num_did = ~0U;
-static DEFINE_SPINLOCK(inv_queue_lock);
+static spinlock_t inv_queue_lock;
 static struct vtd_emulation root_cell_units[JAILHOUSE_MAX_IOMMU_UNITS];
 static bool dmar_units_initialized;
 

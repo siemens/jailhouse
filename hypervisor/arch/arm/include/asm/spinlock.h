@@ -18,7 +18,6 @@
 
 #ifndef __ASSEMBLY__
 
-#define DEFINE_SPINLOCK(name)	spinlock_t (name)
 #define TICKET_SHIFT		16
 
 typedef struct {

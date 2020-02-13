@@ -22,7 +22,7 @@ bool virtual_console = false;
 volatile struct jailhouse_virt_console console
 	__attribute__((section(".console")));
 
-static DEFINE_SPINLOCK(printk_lock);
+static spinlock_t printk_lock;
 
 static void console_write(const char *msg)
 {

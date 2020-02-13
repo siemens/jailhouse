@@ -23,7 +23,7 @@
 #include <asm/processor.h>
 
 /** Protects the root bridge's PIO interface to the PCI config space. */
-static DEFINE_SPINLOCK(pci_lock);
+static spinlock_t pci_lock;
 
 u32 arch_pci_read_config(u16 bdf, u16 address, unsigned int size)
 {

@@ -23,8 +23,6 @@ typedef struct {
 	u16 owner, next;
 } spinlock_t;
 
-#define DEFINE_SPINLOCK(name)	spinlock_t (name)
-
 static inline void spin_lock(spinlock_t *lock)
 {
 	register spinlock_t inc = { .next = 1 };
