@@ -58,6 +58,12 @@
 #error 64-bit kernel required!
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
+#define MSR_IA32_FEAT_CTL			MSR_IA32_FEATURE_CONTROL
+#define FEAT_CTL_VMX_ENABLED_OUTSIDE_SMX \
+	FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX
+#endif
+
 #if JAILHOUSE_CELL_ID_NAMELEN != JAILHOUSE_CELL_NAME_MAXLEN
 # warning JAILHOUSE_CELL_ID_NAMELEN and JAILHOUSE_CELL_NAME_MAXLEN out of sync!
 #endif
@@ -406,9 +412,8 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	if (boot_cpu_has(X86_FEATURE_VMX)) {
 		u64 features;
 
-		rdmsrl(MSR_IA32_FEATURE_CONTROL, features);
-		if ((features &
-		     FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX) == 0) {
+		rdmsrl(MSR_IA32_FEAT_CTL, features);
+		if ((features & FEAT_CTL_VMX_ENABLED_OUTSIDE_SMX) == 0) {
 			pr_err("jailhouse: VT-x disabled by Firmware/BIOS\n");
 			err = -ENODEV;
 			goto error_put_module;
