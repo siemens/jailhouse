@@ -1,1 +1,0 @@
-#define CONFIG_TRACE_ERROR		1
