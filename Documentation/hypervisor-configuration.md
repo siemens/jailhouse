@@ -33,16 +33,6 @@ General configuration parameters
     #define CONFIG_INMATE_BASE 0x90000000
 
     /*
-     * Strip Jailhouse specific parts from inmates (e.g., heartbeat()).  This
-     * allows inmates to be booted on bare-metal, without Jailhouse and is
-     * mainly used for testing purposes.
-     *
-     * See configs/arm/jetson-tk1-demo.c for the usage of this parameter in cell
-     * configurations.
-     */
-    #define CONFIG_BARE_METAL 1
-
-    /*
      * Only available on x86. This debugging option that needs to be activated
      * when running mmio-access tests.
      */
