@@ -67,3 +67,6 @@ endif
 ifeq ($(ARCH),aarch64)
 override ARCH = arm64
 endif
+ifeq ($(ARCH),riscv64)
+override ARCH = riscv
+endif

@@ -161,6 +161,8 @@ static u64 get_physical_cpu_id(void)
 	return read_cpuid_mpidr() & MPIDR_HWID_BITMASK;
 #elif defined(CONFIG_X86)
 	return apic_read(APIC_ID);
+#elif defined(CONFIG_RISCV)
+	return cpuid_to_hartid_map(smp_processor_id());
 #else
 #	error Unsupported architecture
 #endif
