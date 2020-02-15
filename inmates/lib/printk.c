@@ -3,7 +3,7 @@
  *
  * Copyright (c) ARM Limited, 2014
  * Copyright (c) OTH Regensburg, 2018
- * Copyright (c) Siemens AG, 2013-2019
+ * Copyright (c) Siemens AG, 2013-2020
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
@@ -49,29 +49,34 @@
 static struct uart_chip *chip;
 static bool virtual_console;
 
+static void console_write_char(char c)
+{
+	if (chip) {
+		while (chip->is_busy(chip))
+			cpu_relax();
+		chip->write(chip, c);
+	}
+
+	if (virtual_console)
+		jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
+}
+
 static void console_write(const char *msg)
 {
-	char c = 0;
+	char c;
 
 	if (!chip && !virtual_console)
 		return;
 
 	while (1) {
-		if (c == '\n')
-			c = '\r';
-		else
-			c = *msg++;
+		c = *msg++;
 		if (!c)
 			break;
 
-		if (chip) {
-			while (chip->is_busy(chip))
-				cpu_relax();
-			chip->write(chip, c);
-		}
+		if (c == '\n')
+			console_write_char('\r');
 
-		if (virtual_console)
-			jailhouse_call_arg1(JAILHOUSE_HC_DEBUG_CONSOLE_PUTC, c);
+		console_write_char(c);
 	}
 }
 
