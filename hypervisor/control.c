@@ -59,6 +59,25 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 }
 
 /**
+ * Update CPU set min/max boundaries.
+ * @param cpu_set	CPU set to update.
+ *
+ * @note For internal use only. CPU set must not be empty.
+ */
+static void cpu_set_update(struct cpu_set *cpu_set)
+{
+	unsigned int cpu, max_cpu = 0;
+
+	cpu_set->min_cpu_id = 0;
+	cpu_set->max_cpu_id = sizeof(cpu_set->bitmap) * 8 - 1;
+
+	cpu_set->min_cpu_id = first_cpu(cpu_set);
+	for_each_cpu(cpu, cpu_set)
+		max_cpu = cpu;
+	cpu_set->max_cpu_id = max_cpu;
+}
+
+/**
  * Suspend a remote CPU.
  * @param cpu_id	ID of the target CPU.
  *
@@ -226,12 +245,10 @@ int cell_init(struct cell *cell)
 {
 	const struct jailhouse_cpu *cell_cpu =
 		jailhouse_cell_cpus(cell->config);
-	unsigned long cpu_set_size = (cell->config->num_cpus + 7) / 8;
 	unsigned int cpu_idx, result;
 
-	if (cpu_set_size > sizeof(cell->cpu_set.bitmap))
+	if (cell->config->num_cpus > sizeof(cell->cpu_set.bitmap) * 8)
 		return trace_error(-EINVAL);
-	cell->cpu_set.max_cpu_id = cpu_set_size * 8 - 1;
 
 	for (cpu_idx = 0; cpu_idx < cell->config->num_cpus; cpu_idx++) {
 		result = cpu_by_phys_processor_id(cell_cpu[cpu_idx].phys_id);
@@ -240,6 +257,7 @@ int cell_init(struct cell *cell)
 
 		set_bit(result, cell->cpu_set.bitmap);
 	}
+	cpu_set_update(&cell->cpu_set);
 
 	return mmio_cell_init(cell);
 }
@@ -358,6 +376,7 @@ static void cell_destroy_internal(struct cell *cell)
 		memset(public_per_cpu(cpu)->stats, 0,
 		       sizeof(public_per_cpu(cpu)->stats));
 	}
+	cpu_set_update(&root_cell.cpu_set);
 
 	for_each_mem_region(mem, cell->config, n) {
 		if (!JAILHOUSE_MEMORY_IS_SUBPAGE(mem))
@@ -493,6 +512,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		memset(public_per_cpu(cpu)->stats, 0,
 		       sizeof(public_per_cpu(cpu)->stats));
 	}
+	cpu_set_update(&root_cell.cpu_set);
 
 	/*
 	 * Unmap the cell's memory regions from the root cell and map them to

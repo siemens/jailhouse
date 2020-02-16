@@ -44,7 +44,7 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
  *
  * @return First CPU in set, or max_cpu_id + 1 if the set is empty.
  */
-#define first_cpu(set)		next_cpu(INVALID_CPU_ID, (set), INVALID_CPU_ID)
+#define first_cpu(set)	next_cpu((set)->min_cpu_id - 1, (set), INVALID_CPU_ID)
 
 /**
  * Loop-generating macro for iterating over all CPUs in a set.
@@ -67,7 +67,7 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
  * @see for_each_cpu
  */
 #define for_each_cpu_except(cpu, set, exception)		\
-	for ((cpu) = -1;					\
+	for ((cpu) = (set)->min_cpu_id - 1;			\
 	     (cpu) = next_cpu((cpu), (set), (exception)),	\
 	     (cpu) <= (set)->max_cpu_id;			\
 	    )
