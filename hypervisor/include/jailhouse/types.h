@@ -23,8 +23,10 @@ typedef enum { true = 1, false = 0 } bool;
 
 /** Describes a CPU set. */
 struct cpu_set {
-	/** Maximum CPU ID expressible with this set. */
-	unsigned long max_cpu_id;
+	/** Smallest CPU ID in the set. */
+	unsigned int min_cpu_id;
+	/** Largest CPU ID in the set. */
+	unsigned int max_cpu_id;
 	/** Bitmap of CPUs in the set. */
 	unsigned long bitmap[(MAX_CPUS + BITS_PER_LONG - 1) / BITS_PER_LONG];
 };
