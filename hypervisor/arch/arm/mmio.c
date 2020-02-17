@@ -18,6 +18,14 @@
 #include <asm/processor.h>
 #include <asm/traps.h>
 
+/* Extend the value of 'size' bits to a signed long */
+static inline unsigned long sign_extend(unsigned long val, unsigned int size)
+{
+	unsigned long mask = 1UL << (size - 1);
+
+	return (val ^ mask) - mask;
+}
+
 /* Taken from the ARM ARM pseudocode for taking a data abort */
 static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 {
@@ -103,7 +111,7 @@ enum trap_return arch_handle_dabt(struct trap_context *ctx)
 	if (is_write) {
 		/* Load the value to write from the src register */
 		access_cell_reg(ctx, srt, &mmio.value, true);
-		if (sse)
+		if (sse && size < sizeof(unsigned long))
 			mmio.value = sign_extend(mmio.value, 8 * size);
 	} else {
 		mmio.value = 0;
@@ -119,7 +127,7 @@ enum trap_return arch_handle_dabt(struct trap_context *ctx)
 
 	/* Put the read value into the dest register */
 	if (!is_write) {
-		if (sse)
+		if (sse && size < sizeof(unsigned long))
 			mmio.value = sign_extend(mmio.value, 8 * size);
 		access_cell_reg(ctx, srt, &mmio.value, false);
 	}

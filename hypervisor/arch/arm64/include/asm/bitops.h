@@ -124,18 +124,5 @@ static inline unsigned long ffzl(unsigned long word)
 	return ffsl(~word);
 }
 
-/* AARCH64_TODO: we can use SXTB, SXTH, SXTW */
-/* Extend the value of 'size' bits to a signed long */
-static inline unsigned long sign_extend(unsigned long val, unsigned int size)
-{
-	unsigned long mask;
-
-	if (size >= sizeof(unsigned long) * 8)
-		return val;
-
-	mask = 1ul << (size - 1);
-	return (val ^ mask) - mask;
-}
-
 #endif /* !__ASSEMBLY__ */
 #endif /* !_JAILHOUSE_ASM_BITOPS_H */

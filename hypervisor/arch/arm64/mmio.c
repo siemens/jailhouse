@@ -24,6 +24,15 @@
 
 /* AARCH64_TODO: consider merging this with the AArch32 version */
 
+/* AARCH64_TODO: we can use SXTB, SXTH, SXTW */
+/* Extend the value of 'size' bits to a signed long */
+static inline unsigned long sign_extend(unsigned long val, unsigned int size)
+{
+	unsigned long mask = 1UL << (size - 1);
+
+	return (val ^ mask) - mask;
+}
+
 static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 {
 	int err __attribute__((unused)) = trace_error(-EINVAL);
@@ -71,7 +80,7 @@ enum trap_return arch_handle_dabt(struct trap_context *ctx)
 	if (is_write) {
 		/* Load the value to write from the src register */
 		mmio.value = (srt == 31) ? 0 : ctx->regs[srt];
-		if (sse)
+		if (sse && size < sizeof(unsigned long))
 			mmio.value = sign_extend(mmio.value, 8 * size);
 	} else {
 		mmio.value = 0;
@@ -87,7 +96,7 @@ enum trap_return arch_handle_dabt(struct trap_context *ctx)
 
 	/* Put the read value into the dest register */
 	if (!is_write && (srt != 31)) {
-		if (sse)
+		if (sse && size < sizeof(unsigned long))
 			mmio.value = sign_extend(mmio.value, 8 * size);
 		ctx->regs[srt] = mmio.value;
 	}
