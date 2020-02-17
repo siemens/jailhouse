@@ -14,7 +14,6 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
 #include <jailhouse/control.h>
-#include <asm/bitops.h>
 
 #define BITS_PER_PAGE		(PAGE_SIZE * 8)
 

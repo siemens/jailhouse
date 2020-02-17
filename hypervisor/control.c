@@ -19,7 +19,6 @@
 #include <jailhouse/string.h>
 #include <jailhouse/unit.h>
 #include <jailhouse/utils.h>
-#include <asm/bitops.h>
 #include <asm/control.h>
 #include <asm/spinlock.h>
 

@@ -17,7 +17,6 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <asm/apic.h>
-#include <asm/bitops.h>
 #include <asm/vcpu.h>
 
 #define IDT_PRESENT_INT		0x00008e00

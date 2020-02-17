@@ -22,7 +22,6 @@
 #include <jailhouse/unit.h>
 #include <asm/apic.h>
 #include <asm/iommu.h>
-#include <asm/bitops.h>
 #include <asm/ioapic.h>
 #include <asm/spinlock.h>
 

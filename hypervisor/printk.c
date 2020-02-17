@@ -15,7 +15,6 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
 #include <jailhouse/string.h>
-#include <asm/bitops.h>
 #include <asm/spinlock.h>
 
 bool virtual_console = false;

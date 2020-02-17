@@ -18,7 +18,6 @@
 #include <jailhouse/control.h>
 #include <jailhouse/mmio.h>
 #include <asm/apic.h>
-#include <asm/bitops.h>
 #include <asm/control.h>
 
 #define XAPIC_REG(x2apic_reg)		((x2apic_reg) << 4)
