@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <asm/bitops.h>
+#include <jailhouse/bitops.h>
 #include <jailhouse/percpu.h>
 #include <jailhouse/cell.h>
 #include <jailhouse/cell-config.h>

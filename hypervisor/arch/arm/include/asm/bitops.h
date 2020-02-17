@@ -10,13 +10,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#ifndef _JAILHOUSE_ASM_BITOPS_H
-#define _JAILHOUSE_ASM_BITOPS_H
-
-#include <jailhouse/types.h>
-
-#ifndef __ASSEMBLY__
-
 #define BITOPT_ALIGN(bits, addr)				\
 	do {							\
 		(addr) = (unsigned long *)((u32)(addr) & ~0x3)	\
@@ -120,6 +113,3 @@ static inline unsigned long ffzl(unsigned long word)
 {
 	return ffsl(~word);
 }
-
-#endif /* !__ASSEMBLY__ */
-#endif /* !_JAILHOUSE_ASM_BITOPS_H */

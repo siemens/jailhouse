@@ -10,10 +10,10 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/bitops.h>
 #include <jailhouse/mmio.h>
 #include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
-#include <asm/bitops.h>
 #include <jailhouse/percpu.h>
 #include <asm/processor.h>
 #include <asm/traps.h>

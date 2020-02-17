@@ -15,11 +15,6 @@
  * Copyright (c) Linux kernel developers, 2013
  */
 
-#ifndef _JAILHOUSE_ASM_BITOPS_H
-#define _JAILHOUSE_ASM_BITOPS_H
-
-#include <jailhouse/types.h>
-
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 1)
 /* Technically wrong, but this avoids compilation errors on some gcc
    versions. */
@@ -109,5 +104,3 @@ static inline unsigned long ffsl(unsigned long word)
 		: "rm" (word));
 	return word;
 }
-
-#endif /* !_JAILHOUSE_ASM_BITOPS_H */
