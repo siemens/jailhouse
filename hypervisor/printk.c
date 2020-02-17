@@ -262,7 +262,8 @@ void panic_printk(const char *fmt, ...)
 	unsigned long cpu_id = phys_processor_id();
 	va_list ap;
 
-	if (test_and_set_bit(0, &panic_in_progress) && panic_cpu != cpu_id)
+	if (atomic_test_and_set_bit(0, &panic_in_progress) &&
+	    panic_cpu != cpu_id)
 		return;
 	panic_cpu = cpu_id;
 

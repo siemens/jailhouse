@@ -47,7 +47,7 @@ static inline int variable_test_bit(int nr, volatile const unsigned long *addr)
 	 ? constant_test_bit((nr), (addr))	\
 	 : variable_test_bit((nr), (addr)))
 
-static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
+static inline int atomic_test_and_set_bit(int nr, volatile unsigned long *addr)
 {
 	int oldbit;
 

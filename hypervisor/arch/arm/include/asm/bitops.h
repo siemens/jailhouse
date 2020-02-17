@@ -17,7 +17,7 @@ test_bit(unsigned int nr, const volatile unsigned long *addr)
 		(addr[nr / BITS_PER_LONG])) != 0;
 }
 
-static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
+static inline int atomic_test_and_set_bit(int nr, volatile unsigned long *addr)
 {
 	unsigned long ret, val, test;
 
