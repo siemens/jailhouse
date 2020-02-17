@@ -11,55 +11,6 @@
  * the COPYING file in the top-level directory.
  */
 
-#define BITOPT_ALIGN(bits, addr)				\
-	do {							\
-		(addr) = (unsigned long *)((u64)(addr) & ~0x7)	\
-			+ (bits) / BITS_PER_LONG;		\
-		(bits) %= BITS_PER_LONG;			\
-	} while (0)
-
-static inline __attribute__((always_inline)) void
-clear_bit(unsigned int nr, volatile unsigned long *addr)
-{
-	u32 ret;
-	u64 tmp;
-
-	BITOPT_ALIGN(nr, addr);
-
-	/* AARCH64_TODO: do we need to preload? */
-	do {
-		asm volatile (
-			"ldxr	%2, %1\n\t"
-			"bic	%2, %2, %3\n\t"
-			"stxr	%w0, %2, %1\n\t"
-			: "=r" (ret),
-			  "+Q" (*(volatile unsigned long *)addr),
-			  "=r" (tmp)
-			: "r" (1ul << nr));
-	} while (ret);
-}
-
-static inline __attribute__((always_inline)) void
-set_bit(unsigned int nr, volatile unsigned long *addr)
-{
-	u32 ret;
-	u64 tmp;
-
-	BITOPT_ALIGN(nr, addr);
-
-	/* AARCH64_TODO: do we need to preload? */
-	do {
-		asm volatile (
-			"ldxr	%2, %1\n\t"
-			"orr	%2, %2, %3\n\t"
-			"stxr	%w0, %2, %1\n\t"
-			: "=r" (ret),
-			  "+Q" (*(volatile unsigned long *)addr),
-			  "=r" (tmp)
-			: "r" (1ul << nr));
-	} while (ret);
-}
-
 static inline __attribute__((always_inline)) int
 test_bit(unsigned int nr, const volatile unsigned long *addr)
 {
@@ -72,7 +23,10 @@ static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
 	u32 ret;
 	u64 test, tmp;
 
-	BITOPT_ALIGN(nr, addr);
+	/* word-align */
+	addr = (unsigned long *)((u64)addr & ~0x7) + nr / BITS_PER_LONG;
+	nr %= BITS_PER_LONG;
+
 
 	/* AARCH64_TODO: using Inner Shareable DMB at the moment,
 	 * revisit when we will deal with shareability domains */

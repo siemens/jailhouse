@@ -16,4 +16,16 @@
 #include <jailhouse/types.h>
 #include <asm/bitops.h>
 
+static inline __attribute__((always_inline)) void
+clear_bit(unsigned int nr, volatile unsigned long *addr)
+{
+	addr[nr / BITS_PER_LONG] &= ~(1UL << (nr % BITS_PER_LONG));
+}
+
+static inline __attribute__((always_inline)) void
+set_bit(unsigned int nr, volatile unsigned long *addr)
+{
+	addr[nr / BITS_PER_LONG] |= 1UL << (nr % BITS_PER_LONG);
+}
+
 #endif /* !_JAILHOUSE_BITOPS_H */

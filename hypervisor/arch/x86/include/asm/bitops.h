@@ -23,37 +23,6 @@
 #define BITOP_ADDR(x) "+m" (*(volatile long *) (x))
 #endif
 
-#define CONST_MASK_ADDR(nr, addr)	BITOP_ADDR((void *)(addr) + ((nr)>>3))
-#define CONST_MASK(nr)			(1 << ((nr) & 7))
-
-static inline __attribute__((always_inline)) void
-clear_bit(unsigned int nr, volatile unsigned long *addr)
-{
-	if (__builtin_constant_p(nr)) {
-		asm volatile("lock andb %1,%0"
-			: CONST_MASK_ADDR(nr, addr)
-			: "iq" ((u8)~CONST_MASK(nr)));
-	} else {
-		asm volatile("lock btr %1,%0"
-			: BITOP_ADDR(addr)
-			: "Ir" (nr));
-	}
-}
-
-static inline __attribute__((always_inline)) void
-set_bit(unsigned int nr, volatile unsigned long *addr)
-{
-	if (__builtin_constant_p(nr)) {
-		asm volatile("lock orb %1,%0"
-			: CONST_MASK_ADDR(nr, addr)
-			: "iq" ((u8)CONST_MASK(nr))
-			: "memory");
-	} else {
-		asm volatile("lock bts %1,%0"
-			: BITOP_ADDR(addr) : "Ir" (nr) : "memory");
-	}
-}
-
 static inline __attribute__((always_inline)) int
 constant_test_bit(unsigned int nr, const volatile unsigned long *addr)
 {

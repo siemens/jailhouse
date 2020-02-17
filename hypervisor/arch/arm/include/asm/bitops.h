@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2020
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -9,58 +9,6 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
-
-#define BITOPT_ALIGN(bits, addr)				\
-	do {							\
-		(addr) = (unsigned long *)((u32)(addr) & ~0x3)	\
-			+ (bits) / BITS_PER_LONG;		\
-		(bits) %= BITS_PER_LONG;			\
-	} while (0)
-
-/* Load the cacheline in exclusive state */
-#define PRELOAD(addr)						\
-	asm volatile (".arch_extension mp\n\t"			\
-		      "pldw %0\n\t"				\
-		      : "+Qo" (*(volatile unsigned long *)addr));
-
-static inline __attribute__((always_inline)) void
-clear_bit(unsigned int nr, volatile unsigned long *addr)
-{
-	unsigned long ret, val;
-
-	BITOPT_ALIGN(nr, addr);
-
-	PRELOAD(addr);
-	do {
-		asm volatile (
-			"ldrex	%1, %2\n\t"
-			"bic	%1, %3\n\t"
-			"strex	%0, %1, %2\n\t"
-			: "=r" (ret), "=r" (val),
-			/* declare clobbering of this address to the compiler */
-			  "+Qo" (*(volatile unsigned long *)addr)
-			: "r" (1 << nr));
-	} while (ret);
-}
-
-static inline __attribute__((always_inline)) void
-set_bit(unsigned int nr, volatile unsigned long *addr)
-{
-	unsigned long ret, val;
-
-	BITOPT_ALIGN(nr, addr);
-
-	PRELOAD(addr);
-	do {
-		asm volatile (
-			"ldrex	%1, %2\n\t"
-			"orr	%1, %3\n\t"
-			"strex	%0, %1, %2\n\t"
-			: "=r" (ret), "=r" (val),
-			  "+Qo" (*(volatile unsigned long *)addr)
-			: "r" (1 << nr));
-	} while (ret);
-}
 
 static inline __attribute__((always_inline)) int
 test_bit(unsigned int nr, const volatile unsigned long *addr)
@@ -73,9 +21,15 @@ static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
 {
 	unsigned long ret, val, test;
 
-	BITOPT_ALIGN(nr, addr);
+	/* word-align */
+	addr = (unsigned long *)((u32)addr & ~0x3) + nr / BITS_PER_LONG;
+	nr %= BITS_PER_LONG;
 
-	PRELOAD(addr);
+	/* Load the cacheline in exclusive state */
+	asm volatile (
+		".arch_extension mp\n\t"
+		"pldw %0\n\t"
+		: "+Qo" (*(volatile unsigned long *)addr));
 	do {
 		asm volatile (
 			"ldrex	%1, %3\n\t"
@@ -90,7 +44,6 @@ static inline int test_and_set_bit(int nr, volatile unsigned long *addr)
 
 	return !!(test);
 }
-
 
 /* Count leading zeroes */
 static inline unsigned long clz(unsigned long word)
