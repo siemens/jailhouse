@@ -32,9 +32,18 @@ After checking out the above kernel branch, create a configuration that
 contains at least the following adjustments:
 
 - enable CONFIG_JAILHOUSE_GUEST
+- enable CONFIG_X86_X2APIC
 - disable CONFIG_SERIO
 - disable CONFIG_PM_TRACE_RTC
 
+Note that there are various configs enabled in the default x86 defconfig that
+will select CONFIG_SERIO again, so you have to disable those as well. Examples
+include:
+
+- disable CONFIG_KEYBOARD_ATKBD
+- disable CONFIG_MOUSE_PS2
+
+These options apply to a 5.5.0 kernel at the time of writing.
 Note that only 64-bit kernels are supported.
 
 The proper UART configuration depends on the desired console setup. There is
