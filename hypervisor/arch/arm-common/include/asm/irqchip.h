@@ -97,6 +97,8 @@ bool irqchip_has_pending_irqs(void);
 void irqchip_inject_pending(void);
 void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id);
 
+void irqchip_trigger_external_irq(u16 irq_id);
+
 bool irqchip_irq_in_cell(struct cell *cell, unsigned int irq_id);
 
 #endif /* __ASSEMBLY__ */

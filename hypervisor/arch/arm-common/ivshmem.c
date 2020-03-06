@@ -25,7 +25,7 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive,
 		 */
 		memory_barrier();
 
-		irqchip_set_pending(NULL, irq_id);
+		irqchip_trigger_external_irq(irq_id);
 	}
 }
 

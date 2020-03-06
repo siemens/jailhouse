@@ -228,13 +228,6 @@ void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id)
 	unsigned int new_tail;
 	struct sgi sgi;
 
-	if (!cpu_public) {
-		/* Injection via GICD */
-		mmio_write32(gicd_base + GICD_ISPENDR + (irq_id / 32) * 4,
-			     1 << (irq_id % 32));
-		return;
-	}
-
 	if (local_injection && irqchip.inject_irq(irq_id, sender) != -EBUSY)
 		return;
 
@@ -309,6 +302,13 @@ void irqchip_inject_pending(void)
 	 * interrupt.
 	 */
 	irqchip.enable_maint_irq(false);
+}
+
+void irqchip_trigger_external_irq(u16 irq_id)
+{
+	/* Injection via GICD */
+	mmio_write32(gicd_base + GICD_ISPENDR + (irq_id / 32) * 4,
+		     1 << (irq_id % 32));
 }
 
 int irqchip_send_sgi(struct sgi *sgi)
