@@ -18,8 +18,15 @@ void arch_ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive,
 {
 	unsigned int irq_id = ive->irq_cache.id[vector];
 
-	if (irq_id)
+	if (irq_id) {
+		/*
+		 * Ensure that all data written by the sending guest is visible
+		 * to the target before triggering the interrupt.
+		 */
+		memory_barrier();
+
 		irqchip_set_pending(NULL, irq_id);
+	}
 }
 
 int arch_ivshmem_update_msix(struct ivshmem_endpoint *ive, unsigned int vector,
