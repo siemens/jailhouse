@@ -102,6 +102,10 @@ static void suspend_cpu(unsigned int cpu_id)
 	target_data->suspend_cpu = true;
 	target_suspended = target_data->cpu_suspended;
 
+	/*
+	 * Acts as memory barrier on certain architectures to make suspend_cpu
+	 * visible. Otherwise, arch_send_event() will take care of that.
+	 */
 	spin_unlock(&target_data->control_lock);
 
 	if (!target_suspended) {

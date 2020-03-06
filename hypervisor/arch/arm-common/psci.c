@@ -46,6 +46,11 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 		result = PSCI_ALREADY_ON;
 	}
 
+	/*
+	 * The unlock has memory barrier semantic on ARM v7 and v8. Therefore
+	 * the changes to target_data will be visible when sending the kick
+	 * below.
+	 */
 	spin_unlock(&target_data->control_lock);
 
 	if (kick_cpu)

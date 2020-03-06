@@ -180,6 +180,11 @@ void arch_park_cpu(unsigned int cpu_id);
  * When the state of the target CPU was updated and action is required on the
  * remote side, this function can be called. Processing of the state change is
  * architecture specific.
+ *
+ * The caller of this function is required to have performed the state changes
+ * under a spinlock and called spin_unlock prior to this. The implementation of
+ * arch_send_event() has to account for the case when spin_unlock does not
+ * imply a memory barrier and issue this explicitly.
  */
 void arch_send_event(struct public_per_cpu *target_data);
 
