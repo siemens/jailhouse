@@ -314,6 +314,10 @@ selected protocol.
 Addressing a non-existing or inactive target has no effect. Peers can
 identify active targets via the State Table.
 
+Implementations of the Doorbell register must ensure that data written by the
+CPU prior to issuing the register write is visible to the receiving peer before
+the interrupt arrives.
+
 The behavior on reading from this register is undefined.
 
 #### State Register (Offset 10h)
