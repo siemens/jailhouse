@@ -23,5 +23,3 @@ void x86_check_events(void);
 
 void __attribute__((noreturn))
 x86_exception_handler(struct exception_frame *frame);
-
-void arch_send_event(struct public_per_cpu *target_data);

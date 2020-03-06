@@ -174,6 +174,16 @@ void arch_reset_cpu(unsigned int cpu_id);
 void arch_park_cpu(unsigned int cpu_id);
 
 /**
+ * Send internal event to remote CPU.
+ * @param cpu_id	ID of the target CPU.
+ *
+ * When the state of the target CPU was updated and action is required on the
+ * remote side, this function can be called. Processing of the state change is
+ * architecture specific.
+ */
+void arch_send_event(struct public_per_cpu *target_data);
+
+/**
  * Performs the architecture-specific steps for mapping a memory region into a
  * cell's address space.
  * @param cell		Cell for which the mapping shall be done.

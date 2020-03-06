@@ -49,7 +49,7 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 	spin_unlock(&target_data->control_lock);
 
 	if (kick_cpu)
-		arm_cpu_kick(cpu);
+		arch_send_event(target_data);
 
 	return result;
 }

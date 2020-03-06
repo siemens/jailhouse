@@ -36,8 +36,9 @@ void arm_cpu_park(void)
 	arm_paging_vcpu_init(&parking_pt);
 }
 
-void arm_cpu_kick(unsigned int cpu_id)
+void arch_send_event(struct public_per_cpu *target_data)
 {
+	unsigned int cpu_id = target_data->cpu_id;
 	struct sgi sgi;
 
 	sgi.targets = irqchip_get_cpu_target(cpu_id);
