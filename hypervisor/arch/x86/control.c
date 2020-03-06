@@ -77,9 +77,6 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 			vcpu_tlb_flush();
 		} else {
 			public_per_cpu(cpu)->flush_vcpu_caches = true;
-			/* make sure the value is written before we kick
-			 * the remote core */
-			memory_barrier();
 			apic_send_nmi_ipi(public_per_cpu(cpu));
 		}
 }
