@@ -11,7 +11,7 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  *
- * Reservation via device tree: 0x800000000..0x83fffffff
+ * Reservation 0x30000000..0x3fffffff via cmdline: mem=768M
  */
 
 #include <jailhouse/types.h>
