@@ -143,12 +143,12 @@ static int ioapic_virt_redir_write(struct cell_ioapic *ioapic,
 	}
 
 	/*
-	 * Write all 64 bits on updates of the lower 32 bits to ensure the
-	 * consistency of an entry.
+	 * Write all 64 bits on updates of the lower 32 bits when unmasked to
+	 * ensure the consistency of an entry.
 	 *
 	 * The index information in the higher bits does not change when the
-	 * guest programs an entry, but they need to be initialized when taking
-	 * their ownership (always out of masked state, see
+	 * guest programs an unmasked entry, but they need to be initialized
+	 * when taking their ownership (always out of masked state, see
 	 * ioapic_prepare_handover).
 	 */
 	if ((reg & 1) == 0) {
@@ -157,7 +157,8 @@ static int ioapic_virt_redir_write(struct cell_ioapic *ioapic,
 		entry.remap.remapped = 1;
 		entry.remap.int_index = result;
 
-		ioapic_reg_write(phys_ioapic, reg | 1, entry.raw[1]);
+		if (!entry.native.mask)
+			ioapic_reg_write(phys_ioapic, reg | 1, entry.raw[1]);
 		ioapic_reg_write(phys_ioapic, reg, entry.raw[0]);
 	}
 
