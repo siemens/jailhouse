@@ -101,13 +101,8 @@ static void ivshmem_trigger_interrupt(struct ivshmem_endpoint *ive,
 	spin_unlock(&ive->irq_lock);
 }
 
-static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
+static u32 *ivshmem_map_state_table(struct ivshmem_endpoint *ive)
 {
-	const struct jailhouse_pci_device *dev_info = ive->device->info;
-	u32 *state_table = (u32 *)TEMPORARY_MAPPING_BASE;
-	struct ivshmem_endpoint *target_ive;
-	unsigned int id;
-
 	/*
 	 * Cannot fail: upper levels of page table were already created by
 	 * paging_init, and we always map single pages, thus only update the
@@ -115,8 +110,19 @@ static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
 	 */
 	paging_create(&this_cpu_data()->pg_structs,
 		      ive->shmem[0].phys_start, PAGE_SIZE,
-		      (unsigned long)state_table, PAGE_DEFAULT_FLAGS,
+		      TEMPORARY_MAPPING_BASE, PAGE_DEFAULT_FLAGS,
 		      PAGING_NON_COHERENT | PAGING_NO_HUGE);
+
+	return (u32 *)TEMPORARY_MAPPING_BASE;
+}
+
+
+static void ivshmem_write_state(struct ivshmem_endpoint *ive, u32 new_state)
+{
+	const struct jailhouse_pci_device *dev_info = ive->device->info;
+	u32 *state_table = ivshmem_map_state_table(ive);
+	struct ivshmem_endpoint *target_ive;
+	unsigned int id;
 
 	state_table[dev_info->shmem_dev_id] = new_state;
 	memory_barrier();
@@ -441,6 +447,9 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	ive->link = link;
 	ive->shmem = jailhouse_cell_mem_regions(cell->config) +
 		dev_info->shmem_regions_start;
+	if (link->peers == 1)
+		memset(ivshmem_map_state_table(ive), 0,
+		       dev_info->shmem_peers * sizeof(u32));
 	device->ivshmem_endpoint = ive;
 
 	device->cell = cell;
