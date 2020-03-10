@@ -441,7 +441,7 @@ int ivshmem_init(struct cell *cell, struct pci_device *device)
 	}
 
 	link->peers++;
-	ive = &link->eps[dev_info->shmem_dev_id];
+	ive = &link->eps[id];
 
 	ive->device = device;
 	ive->link = link;
