@@ -116,7 +116,7 @@ Analogously, you can create a virtio block backend by running
 
 in the root cell. Then start the backend service like this:
 
-    virtio-ivshmem-console /dev/uio2 /path/to/disk.image
+    virtio-ivshmem-block /dev/uio2 /path/to/disk.image
 
 The disk will show up as /dev/vda in the non-root Linux and can be accessed
 normally.
