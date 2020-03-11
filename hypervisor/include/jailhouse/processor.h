@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -15,5 +15,7 @@
 #include <asm/processor.h>
 
 unsigned long phys_processor_id(void);
+
+unsigned int cpu_by_phys_processor_id(u64 phys_id);
 
 #endif

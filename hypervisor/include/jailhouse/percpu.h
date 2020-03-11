@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2018
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -34,7 +34,7 @@ struct public_per_cpu {
 	 *  page walks at any time. */
 	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 
-	/** Logical CPU ID (same as Linux). */
+	/** Logical CPU ID. */
 	unsigned int cpu_id;
 	/** Owning cell. */
 	struct cell *cell;

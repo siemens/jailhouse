@@ -119,8 +119,6 @@ static inline bool cell_owns_cpu(struct cell *cell, unsigned int cpu_id)
 		test_bit(cpu_id, cell->cpu_set.bitmap));
 }
 
-bool cpu_id_valid(unsigned long cpu_id);
-
 int cell_init(struct cell *cell);
 
 void config_commit(struct cell *cell_added_removed);

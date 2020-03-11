@@ -88,13 +88,10 @@ void arch_cell_destroy(struct cell *cell)
 void arch_cell_reset(struct cell *cell)
 {
 	struct jailhouse_comm_region *comm_region = &cell->comm_page.comm_region;
-	unsigned int cpu;
 
 	comm_region->pm_timer_address =
 		system_config->platform_info.x86.pm_timer_address;
-	/* comm_region, and hence num_cpus, is zero-initialised */
-	for_each_cpu(cpu, &cell->cpu_set)
-		comm_region->num_cpus++;
+	comm_region->num_cpus = cell->config->num_cpus;
 	comm_region->tsc_khz = system_config->platform_info.x86.tsc_khz;
 	comm_region->apic_khz = system_config->platform_info.x86.apic_khz;
 

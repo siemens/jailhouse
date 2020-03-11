@@ -23,12 +23,12 @@ unsigned long phys_processor_id(void)
 	return mpidr & MPIDR_CPUID_MASK;
 }
 
-unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr)
+unsigned int cpu_by_phys_processor_id(u64 phys_id)
 {
 	unsigned int cpu;
 
-	for_each_cpu(cpu, &cell->cpu_set)
-		if (mpidr == (public_per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK))
+	for (cpu = 0; cpu < system_config->root_cell.num_cpus; cpu++)
+		if (phys_id == (public_per_cpu(cpu)->mpidr & MPIDR_CPUID_MASK))
 			return cpu;
 
 	return INVALID_CPU_ID;

@@ -59,22 +59,6 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
 }
 
 /**
- * Check if a CPU ID is contained in the system's CPU set, i.e. the initial CPU
- * set of the root cell.
- * @param cpu_id	CPU ID to check.
- *
- * @return True if CPU ID is valid.
- */
-bool cpu_id_valid(unsigned long cpu_id)
-{
-	const unsigned long *system_cpu_set =
-		jailhouse_cell_cpu_set(&system_config->root_cell);
-
-	return (cpu_id < system_config->root_cell.cpu_set_size * 8 &&
-		test_bit(cpu_id, system_cpu_set));
-}
-
-/**
  * Suspend a remote CPU.
  * @param cpu_id	ID of the target CPU.
  *
@@ -240,14 +224,22 @@ static void cell_reconfig_completed(void)
  */
 int cell_init(struct cell *cell)
 {
-	const unsigned long *config_cpu_set =
-		jailhouse_cell_cpu_set(cell->config);
-	unsigned long cpu_set_size = cell->config->cpu_set_size;
+	const struct jailhouse_cpu *cell_cpu =
+		jailhouse_cell_cpus(cell->config);
+	unsigned long cpu_set_size = (cell->config->num_cpus + 7) / 8;
+	unsigned int cpu_idx, result;
 
 	if (cpu_set_size > sizeof(cell->cpu_set.bitmap))
 		return trace_error(-EINVAL);
 	cell->cpu_set.max_cpu_id = cpu_set_size * 8 - 1;
-	memcpy(cell->cpu_set.bitmap, config_cpu_set, cpu_set_size);
+
+	for (cpu_idx = 0; cpu_idx < cell->config->num_cpus; cpu_idx++) {
+		result = cpu_by_phys_processor_id(cell_cpu[cpu_idx].phys_id);
+		if (result == INVALID_CPU_ID)
+			return -ENOENT;
+
+		set_bit(result, cell->cpu_set.bitmap);
+	}
 
 	return mmio_cell_init(cell);
 }
@@ -892,7 +884,7 @@ static long hypervisor_get_info(struct per_cpu *cpu_data, unsigned long type)
 static int cpu_get_info(struct per_cpu *cpu_data, unsigned long cpu_id,
 			unsigned long type)
 {
-	if (!cpu_id_valid(cpu_id))
+	if (cpu_id >= system_config->root_cell.num_cpus)
 		return -EINVAL;
 
 	/*

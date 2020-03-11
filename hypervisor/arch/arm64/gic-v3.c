@@ -35,7 +35,6 @@
 
 static unsigned int gic_num_lr;
 static unsigned int gic_num_priority_bits;
-static unsigned int last_gicr;
 static u32 gic_version;
 
 static void *gicr_base;
@@ -136,10 +135,6 @@ static int gicv3_init(void)
 	if (!(mmio_read32(gicd_base + GICD_CTLR) & GICD_CTLR_ARE_NS))
 		return trace_error(-EIO);
 
-	last_gicr = system_config->root_cell.cpu_set_size * 8 - 1;
-	while (!cpu_id_valid(last_gicr))
-		last_gicr--;
-
 	/*
 	 * Let the per-cpu code access the redistributors. This makes the
 	 * assumption, that redistributors can be found in a sequence.
@@ -147,7 +142,7 @@ static int gicv3_init(void)
 	if (gic_version == 4)
 		redist_size = GIC_V4_REDIST_SIZE;
 
-	gicr_size = redist_size * (last_gicr + 1);
+	gicr_size = redist_size * system_config->root_cell.num_cpus;
 	gicr_base = paging_map_device(
 			system_config->platform_info.arm.gicr_base, gicr_size);
 	if (!gicr_base)
@@ -341,8 +336,8 @@ static void gicv3_adjust_irq_target(struct cell *cell, u16 irq_id)
 {
 	void *irouter = gicd_base + GICD_IROUTER + 8 * irq_id;
 	u64 mpidr = public_per_cpu(first_cpu(&cell->cpu_set))->mpidr;
-	u32 route = arm_cpu_by_mpidr(cell,
-				     mmio_read64(irouter) & MPIDR_CPUID_MASK);
+	unsigned int route = cpu_by_phys_processor_id(mmio_read64(irouter) &
+						      MPIDR_CPUID_MASK);
 
 	if (!cell_owns_cpu(cell, route))
 		mmio_write64(irouter, mpidr);
@@ -357,8 +352,8 @@ static enum mmio_result gicv3_handle_redist_access(void *arg,
 	switch (mmio->address) {
 	case GICR_TYPER:
 		mmio_perform_access(cpu_public->gicr.base, mmio);
-		if (cpu_public->cpu_id == last_gicr)
-				mmio->value |= GICR_TYPER_Last;
+		if (cpu_public->cpu_id == system_config->root_cell.num_cpus - 1)
+			mmio->value |= GICR_TYPER_Last;
 		return MMIO_HANDLED;
 	case GICR_TYPER + 4:
 		mmio_perform_access(cpu_public->gicr.base, mmio);
@@ -409,14 +404,11 @@ static int gicv3_cell_init(struct cell *cell)
 	 * We register all regions so that the cell can iterate over the
 	 * original range in order to find corresponding redistributors.
 	 */
-	for (cpu = 0; cpu < system_config->root_cell.cpu_set_size * 8; cpu++) {
-		if (!cpu_id_valid(cpu))
-			continue;
+	for (cpu = 0; cpu < system_config->root_cell.num_cpus; cpu++)
 		mmio_region_register(cell, public_per_cpu(cpu)->gicr.phys_addr,
 				     gic_version == 4 ? 0x40000 : 0x20000,
 				     gicv3_handle_redist_access,
 				     public_per_cpu(cpu));
-	}
 
 	return 0;
 }

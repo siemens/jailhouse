@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2016-2022
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
@@ -13,6 +13,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/processor.h>
 #include <asm/control.h>
 #include <asm/psci.h>
 #include <asm/smccc.h>
@@ -26,9 +27,8 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 	unsigned int cpu;
 	long result;
 
-	cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1] & mask);
-	if (cpu == INVALID_CPU_ID)
-		/* Virtual id not in set */
+	cpu = cpu_by_phys_processor_id(ctx->regs[1] & mask);
+	if (!cell_owns_cpu(this_cell(), cpu))
 		return PSCI_DENIED;
 
 	target_data = public_per_cpu(cpu);
@@ -61,10 +61,9 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 
 static long psci_emulate_affinity_info(struct trap_context *ctx)
 {
-	unsigned int cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1]);
+	unsigned int cpu = cpu_by_phys_processor_id(ctx->regs[1]);
 
-	if (cpu == INVALID_CPU_ID)
-		/* Virtual id not in set */
+	if (!cell_owns_cpu(this_cell(), cpu))
 		return PSCI_DENIED;
 
 	return public_per_cpu(cpu)->wait_for_poweron ?
