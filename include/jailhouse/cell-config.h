@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -59,7 +59,7 @@
  * Incremented on any layout or semantic change of system or cell config.
  * Also update formats and HEADER_REVISION in pyjailhouse/config_parser.py.
  */
-#define JAILHOUSE_CONFIG_REVISION	14
+#define JAILHOUSE_CONFIG_REVISION	15
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -99,7 +99,7 @@ struct jailhouse_cell_desc {
 	__u32 id; /* set by the driver */
 	__u32 flags;
 
-	__u32 cpu_set_size;
+	__u32 num_cpus;
 	__u32 num_memory_regions;
 	__u32 num_cache_regions;
 	__u32 num_irqchips;
@@ -114,6 +114,11 @@ struct jailhouse_cell_desc {
 	__u64 msg_reply_timeout;
 
 	struct jailhouse_console console;
+} __attribute__((packed));
+
+struct jailhouse_cpu {
+	__u64 phys_id;
+	__u8 padding[8];
 } __attribute__((packed));
 
 #define JAILHOUSE_MEM_READ		0x0001
@@ -373,7 +378,7 @@ static inline __u32
 jailhouse_cell_config_size(struct jailhouse_cell_desc *cell)
 {
 	return sizeof(struct jailhouse_cell_desc) +
-		cell->cpu_set_size +
+		cell->num_cpus * sizeof(struct jailhouse_cpu) +
 		cell->num_memory_regions * sizeof(struct jailhouse_memory) +
 		cell->num_cache_regions * sizeof(struct jailhouse_cache) +
 		cell->num_irqchips * sizeof(struct jailhouse_irqchip) +
@@ -390,10 +395,10 @@ jailhouse_system_config_size(struct jailhouse_system *system)
 		jailhouse_cell_config_size(&system->root_cell);
 }
 
-static inline const unsigned long *
-jailhouse_cell_cpu_set(const struct jailhouse_cell_desc *cell)
+static inline const struct jailhouse_cpu *
+jailhouse_cell_cpus(const struct jailhouse_cell_desc *cell)
 {
-	return (const unsigned long *)((const void *)cell +
+	return (const struct jailhouse_cpu *)((const void *)cell +
 		sizeof(struct jailhouse_cell_desc));
 }
 
@@ -401,7 +406,8 @@ static inline const struct jailhouse_memory *
 jailhouse_cell_mem_regions(const struct jailhouse_cell_desc *cell)
 {
 	return (const struct jailhouse_memory *)
-		((void *)jailhouse_cell_cpu_set(cell) + cell->cpu_set_size);
+		((void *)jailhouse_cell_cpus(cell) +
+		 cell->num_cpus * sizeof(struct jailhouse_cpu));
 }
 
 static inline const struct jailhouse_cache *
