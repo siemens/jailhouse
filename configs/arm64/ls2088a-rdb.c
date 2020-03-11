@@ -15,7 +15,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[8];
 	struct jailhouse_memory mem_regions[70];
 	struct jailhouse_irqchip irqchips[2];
 	struct jailhouse_pci_device pci_devices[2];
@@ -54,8 +54,8 @@ struct {
 		},
 		.root_cell = {
 			.name = "ls2088a",
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
-			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.vpci_irq_base = 160 - 32,
@@ -63,7 +63,30 @@ struct {
 	},
 
 	.cpus = {
-		0xff,
+		{
+			.phys_id = 0x0,
+		},
+		{
+			.phys_id = 0x1,
+		},
+		{
+			.phys_id = 0x100,
+		},
+		{
+			.phys_id = 0x101,
+		},
+		{
+			.phys_id = 0x200,
+		},
+		{
+			.phys_id = 0x201,
+		},
+		{
+			.phys_id = 0x300,
+		},
+		{
+			.phys_id = 0x301,
+		},
 	},
 
 	.mem_regions = {

@@ -15,7 +15,7 @@
 
 struct {
 	struct jailhouse_cell_desc cell;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[2];
 	struct jailhouse_memory mem_regions[18];
 	struct jailhouse_irqchip irqchips[4];
 	struct jailhouse_pci_device pci_devices[2];
@@ -28,7 +28,7 @@ struct {
 		.name = "imx8qm-linux-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
-		.cpu_set_size = sizeof(config.cpus),
+		.num_cpus = ARRAY_SIZE(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 		.num_stream_ids = ARRAY_SIZE(config.stream_ids),
 		.num_irqchips = ARRAY_SIZE(config.irqchips),
@@ -37,7 +37,12 @@ struct {
 	},
 
 	.cpus = {
-		0xc,
+		{
+			.phys_id = 2,
+		},
+		{
+			.phys_id = 3,
+		},
 	},
 
 	.mem_regions = {

@@ -3,7 +3,7 @@
  *
  * Configuration for QEMU arm64 virtual target, 1G RAM, 16 cores
  *
- * Copyright (c) Siemens AG, 2017
+ * Copyright (c) Siemens AG, 2017-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -19,7 +19,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[16];
 	struct jailhouse_memory mem_regions[12];
 	struct jailhouse_irqchip irqchips[1];
 	struct jailhouse_pci_device pci_devices[2];
@@ -55,7 +55,7 @@ struct {
 		.root_cell = {
 			.name = "qemu-arm64",
 
-			.cpu_set_size = sizeof(config.cpus),
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
@@ -65,7 +65,54 @@ struct {
 	},
 
 	.cpus = {
-		0xffff,
+		{
+			.phys_id = 0,
+		},
+		{
+			.phys_id = 1,
+		},
+		{
+			.phys_id = 2,
+		},
+		{
+			.phys_id = 3,
+		},
+		{
+			.phys_id = 4,
+		},
+		{
+			.phys_id = 5,
+		},
+		{
+			.phys_id = 6,
+		},
+		{
+			.phys_id = 7,
+		},
+		{
+			.phys_id = 8,
+		},
+		{
+			.phys_id = 9,
+		},
+		{
+			.phys_id = 10,
+		},
+		{
+			.phys_id = 11,
+		},
+		{
+			.phys_id = 12,
+		},
+		{
+			.phys_id = 13,
+		},
+		{
+			.phys_id = 14,
+		},
+		{
+			.phys_id = 15,
+		},
 	},
 
 	.mem_regions = {

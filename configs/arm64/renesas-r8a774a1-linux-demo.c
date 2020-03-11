@@ -19,7 +19,7 @@
 
 struct {
 	struct jailhouse_cell_desc cell;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[4];
 	struct jailhouse_memory mem_regions[16];
 	struct jailhouse_irqchip irqchips[2];
 	struct jailhouse_pci_device pci_devices[2];
@@ -32,7 +32,7 @@ struct {
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG |
 			 JAILHOUSE_CELL_VIRTUAL_CONSOLE_ACTIVE,
 
-		.cpu_set_size = sizeof(config.cpus),
+		.num_cpus = ARRAY_SIZE(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 		.num_irqchips = ARRAY_SIZE(config.irqchips),
 		.num_pci_devices = ARRAY_SIZE(config.pci_devices),
@@ -49,7 +49,18 @@ struct {
 	},
 
 	.cpus = {
-		0x3c,
+		{
+			.phys_id = 0x0100,
+		},
+		{
+			.phys_id = 0x0101,
+		},
+		{
+			.phys_id = 0x0102,
+		},
+		{
+			.phys_id = 0x0103,
+		},
 	},
 
 	.mem_regions = {

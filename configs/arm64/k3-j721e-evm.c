@@ -18,7 +18,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[2];
 	struct jailhouse_memory mem_regions[40];
 	struct jailhouse_irqchip irqchips[6];
 	struct jailhouse_pci_device pci_devices[2];
@@ -84,7 +84,7 @@ struct {
 		.root_cell = {
 			.name = "k3-j721e-evm",
 
-			.cpu_set_size = sizeof(config.cpus),
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
@@ -94,7 +94,12 @@ struct {
 	},
 
 	.cpus = {
-		0x3,
+		{
+			.phys_id = 0,
+		},
+		{
+			.phys_id = 1,
+		},
 	},
 
 	.mem_regions = {
