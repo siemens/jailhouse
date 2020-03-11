@@ -17,7 +17,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[8];
 	struct jailhouse_memory mem_regions[8];
 	struct jailhouse_irqchip irqchips[1];
 	struct jailhouse_pci_device pci_devices[1];
@@ -53,7 +53,7 @@ struct {
 		.root_cell = {
 			.name = "HiKey",
 
-			.cpu_set_size = sizeof(config.cpus),
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.num_pci_devices = ARRAY_SIZE(config.pci_devices),
@@ -63,7 +63,30 @@ struct {
 	},
 
 	.cpus = {
-		0xff,
+		{
+			.phys_id = 0x0000,
+		},
+		{
+			.phys_id = 0x0001,
+		},
+		{
+			.phys_id = 0x0002,
+		},
+		{
+			.phys_id = 0x0003,
+		},
+		{
+			.phys_id = 0x0100,
+		},
+		{
+			.phys_id = 0x0101,
+		},
+		{
+			.phys_id = 0x0102,
+		},
+		{
+			.phys_id = 0x0103,
+		},
 	},
 
 	.mem_regions = {

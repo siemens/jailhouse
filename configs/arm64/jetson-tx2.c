@@ -23,7 +23,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[4];
 	struct jailhouse_memory mem_regions[61];
 	struct jailhouse_irqchip irqchips[3];
 } __attribute__((packed)) config = {
@@ -55,14 +55,25 @@ struct {
 		},
 		.root_cell = {
 			.name = "Jetson-TX2",
-			.cpu_set_size = sizeof(config.cpus),
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 		},
 	},
 
 	.cpus = {
-		0x39,
+		{
+			.phys_id = 0x0100,
+		},
+		{
+			.phys_id = 0x0101,
+		},
+		{
+			.phys_id = 0x0102,
+		},
+		{
+			.phys_id = 0x0103,
+		},
 	},
 
 
