@@ -154,14 +154,6 @@ def alloc_mem(regions, size):
     raise RuntimeError('failed to allocate memory')
 
 
-def count_cpus():
-    list = sysfs_parser.input_listdir('/sys/devices/system/cpu', ['cpu*/uevent'])
-    count = 0
-    for f in list:
-        if re.match(r'cpu[0-9]+', f):
-            count += 1
-    return count
-
 class MMConfig:
     def __init__(self, base, end_bus):
         self.base = base
@@ -257,6 +249,7 @@ product = [input_readline('/sys/class/dmi/id/sys_vendor',
 inmatemem = kmg_multiply_str(options.mem_inmates)
 hvmem = [0, kmg_multiply_str(options.mem_hv)]
 
+cpus = sysfs_parser.parse_cpus()
 (mem_regions, dmar_regions) = sysfs_parser.parse_iomem(pcidevices)
 ourmem = parse_kernel_cmdline()
 total = hvmem[1] + inmatemem
@@ -288,8 +281,6 @@ inmatereg = sysfs_parser.MemRegion(ourmem[0] + hvmem[1],
                                    'JAILHOUSE Inmate Memory')
 mem_regions.append(inmatereg)
 
-cpucount = count_cpus()
-
 port_regions, pm_timer_base = sysfs_parser.parse_ioports()
 
 debug_console = DebugConsole(options.console)
@@ -299,6 +290,7 @@ f = open(options.file, 'w')
 tmpl = Template(filename=os.path.join(options.template_dir,
                                       'root-cell-config.c.tmpl'))
 kwargs = {
+    'cpus': cpus,
     'mem_regions': mem_regions,
     'port_regions': port_regions,
     'ourmem': ourmem,
@@ -307,7 +299,6 @@ kwargs = {
     'product': product,
     'pcidevices': pcidevices,
     'pcicaps': pcicaps,
-    'cpucount': cpucount,
     'irqchips': ioapics,
     'pm_timer_base': pm_timer_base,
     'vtd_interrupt_limit': vtd_interrupt_limit,

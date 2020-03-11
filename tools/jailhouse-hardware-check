@@ -136,7 +136,7 @@ class Sysconfig:
     X86_MAX_IOMMU_UNITS = 8
     X86_IOMMU_SIZE = 20
 
-    HEADER_REVISION = 12
+    HEADER_REVISION = 13
     HEADER_FORMAT = '6sH'
 
     def __init__(self, path):
