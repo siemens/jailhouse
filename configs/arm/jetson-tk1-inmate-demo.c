@@ -4,7 +4,7 @@
  * Configuration for demo inmate on Nvidia Jetson TK1:
  * 1 CPU, 64K RAM, serial port 0
  *
- * Copyright (c) Siemens AG, 2015
+ * Copyright (c) Siemens AG, 2015-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -22,7 +22,7 @@
 
 struct {
 	struct jailhouse_cell_desc cell;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[1];
 	struct jailhouse_memory mem_regions[3];
 } __attribute__((packed)) config = {
 	.cell = {
@@ -32,7 +32,7 @@ struct {
 		.name = "jetson-tk1-inmate-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 
-		.cpu_set_size = sizeof(config.cpus),
+		.num_cpus = ARRAY_SIZE(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 
 		.cpu_reset_address = CONFIG_INMATE_BASE,
@@ -49,7 +49,9 @@ struct {
 	},
 
 	.cpus = {
-		0x2,
+		{
+			.phys_id = 1,
+		},
 	},
 
 	.mem_regions = {
