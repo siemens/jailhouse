@@ -140,6 +140,14 @@ unsigned long phys_processor_id(void)
 	return apic_ops.read_id();
 }
 
+int cpu_by_phys_processor_id(u64 phys_id)
+{
+	int cpu_id = phys_id < APIC_MAX_PHYS_ID ? apic_to_cpu_id[phys_id]
+						: -ENOENT;
+
+	return cpu_id != CPU_ID_INVALID ? cpu_id : -ENOENT;
+}
+
 int apic_cpu_init(struct per_cpu *cpu_data)
 {
 	unsigned int xlc = MAX((apic_ext_features() >> 16) & 0xff,

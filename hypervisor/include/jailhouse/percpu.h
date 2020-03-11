@@ -33,7 +33,7 @@ struct public_per_cpu {
 	 *  page walks at any time. */
 	u8 root_table_page[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 
-	/** Logical CPU ID (same as Linux). */
+	/** Logical CPU ID. */
 	unsigned int cpu_id;
 	/** Owning cell. */
 	struct cell *cell;

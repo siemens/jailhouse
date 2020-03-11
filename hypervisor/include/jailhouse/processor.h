@@ -13,3 +13,5 @@
 #include <asm/processor.h>
 
 unsigned long phys_processor_id(void);
+
+int cpu_by_phys_processor_id(u64 phys_id);

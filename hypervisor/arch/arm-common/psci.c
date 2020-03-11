@@ -13,6 +13,7 @@
  */
 
 #include <jailhouse/control.h>
+#include <jailhouse/processor.h>
 #include <asm/control.h>
 #include <asm/psci.h>
 #include <asm/smccc.h>
@@ -23,12 +24,11 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 	u64 mask = SMCCC_IS_CONV_64(ctx->regs[0]) ? (u64)-1L : (u32)-1;
 	struct public_per_cpu *target_data;
 	bool kick_cpu = false;
-	unsigned int cpu;
+	int cpu;
 	long result;
 
-	cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1] & mask);
-	if (cpu == -1)
-		/* Virtual id not in set */
+	cpu = cpu_by_phys_processor_id(ctx->regs[1] & mask);
+	if (!cell_owns_cpu(this_cell(), cpu))
 		return PSCI_DENIED;
 
 	target_data = public_per_cpu(cpu);
@@ -61,10 +61,9 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 
 static long psci_emulate_affinity_info(struct trap_context *ctx)
 {
-	unsigned int cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1]);
+	int cpu = cpu_by_phys_processor_id(ctx->regs[1]);
 
-	if (cpu == -1)
-		/* Virtual id not in set */
+	if (!cell_owns_cpu(this_cell(), cpu))
 		return PSCI_DENIED;
 
 	return public_per_cpu(cpu)->wait_for_poweron ?

@@ -34,9 +34,8 @@ unsigned int get_cpu_parange(void)
 	 * for_each_cpu yet. So we need to iterate over the configuration
 	 * of the root cell.
 	 */
-	for (cpu = 0; cpu < system_config->root_cell.cpu_set_size * 8; cpu++)
-		if (cpu_id_valid(cpu) &&
-		    (per_cpu(cpu)->id_aa64mmfr0 & 0xf) < parange)
+	for (cpu = 0; cpu < system_config->root_cell.num_cpus; cpu++)
+		if ((per_cpu(cpu)->id_aa64mmfr0 & 0xf) < parange)
 			parange = per_cpu(cpu)->id_aa64mmfr0 & 0xf;
 
 	switch (parange) {

@@ -59,6 +59,11 @@ static void init_early(unsigned int cpu_id)
 
 	root_cell.config = &system_config->root_cell;
 
+	if (hypervisor_header.online_cpus != root_cell.config->num_cpus) {
+		error = trace_error(-EINVAL);
+		return;
+	}
+
 	error = arch_init_early();
 	if (error)
 		return;
@@ -99,7 +104,8 @@ static void cpu_init(struct per_cpu *cpu_data)
 
 	printk(" CPU %d... ", cpu_data->public.cpu_id);
 
-	if (!cpu_id_valid(cpu_data->public.cpu_id))
+	if (cpu_data->public.cpu_id >= system_config->root_cell.num_cpus ||
+	    cpu_data->public.cell != NULL)
 		goto failed;
 
 	cpu_data->public.cell = &root_cell;
@@ -160,20 +166,13 @@ failed:
 
 static void init_late(void)
 {
-	unsigned int n, cpu, expected_cpus = 0;
 	const struct jailhouse_memory *mem;
 	struct unit *unit;
+	unsigned int n;
 
 	error = cell_init(&root_cell);
 	if (error)
 		return;
-
-	for_each_cpu(cpu, &root_cell.cpu_set)
-		expected_cpus++;
-	if (hypervisor_header.online_cpus != expected_cpus) {
-		error = trace_error(-EINVAL);
-		return;
-	}
 
 	for_each_unit(unit) {
 		printk("Initializing unit: %s\n", unit->name);
