@@ -21,7 +21,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[4];
 	struct jailhouse_memory mem_regions[42];
 	struct jailhouse_irqchip irqchips[1];
 	struct jailhouse_pio pio_regions[8];
@@ -51,7 +51,7 @@ struct {
 		},
 		.root_cell = {
 			.name = "IMB-A180",
-			.cpu_set_size = sizeof(config.cpus),
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.num_pio_regions = ARRAY_SIZE(config.pio_regions),
@@ -61,7 +61,18 @@ struct {
 	},
 
 	.cpus = {
-		0x000000000000000f,
+		{
+			.phys_id = 0,
+		},
+		{
+			.phys_id = 1,
+		},
+		{
+			.phys_id = 2,
+		},
+		{
+			.phys_id = 3,
+		},
 	},
 
 	.mem_regions = {

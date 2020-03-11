@@ -17,7 +17,7 @@
 
 struct {
 	struct jailhouse_cell_desc cell;
-	__u64 cpus[1];
+	struct jailhouse_cpu cpus[1];
 	struct jailhouse_memory mem_regions[2];
 	struct jailhouse_cache cache_regions[1];
 	struct jailhouse_pio pio_regions[3];
@@ -30,7 +30,7 @@ struct {
 			JAILHOUSE_CELL_TEST_DEVICE |
 			JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED,
 
-		.cpu_set_size = sizeof(config.cpus),
+		.num_cpus = ARRAY_SIZE(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 		.num_cache_regions = ARRAY_SIZE(config.cache_regions),
 		.num_irqchips = 0,
@@ -45,7 +45,9 @@ struct {
 	},
 
 	.cpus = {
-		0x4,
+		{
+			.phys_id = 2,
+		},
 	},
 
 	.mem_regions = {
