@@ -2,7 +2,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014-2017
+# Copyright (c) Siemens AG, 2014-2022
 # Copyright (c) Valentine Sinitsyn, 2014-2015
 #
 # Authors:
@@ -153,14 +153,6 @@ def alloc_mem(regions, size):
     raise RuntimeError('failed to allocate memory')
 
 
-def count_cpus():
-    list = sysfs_parser.input_listdir('/sys/devices/system/cpu', ['cpu*/uevent'])
-    count = 0
-    for f in list:
-        if re.match(r'cpu[0-9]+', f):
-            count += 1
-    return count
-
 class MMConfig:
     def __init__(self, base, end_bus):
         self.base = base
@@ -252,10 +244,10 @@ product = [
     input_readline('/sys/class/dmi/id/sys_vendor', True).rstrip(),
     input_readline('/sys/class/dmi/id/product_name', True).rstrip(),
 ]
-cpu_count = count_cpus()
 mmconfig = MMConfig.parse()
 
 # Query devices
+cpus = sysfs_parser.parse_cpus()
 pci_devices = sysfs_parser.parse_pcidevices()
 (mem_regions, dmar_regions) = sysfs_parser.parse_iomem(pci_devices)
 (port_regions, pm_timer_base) = sysfs_parser.parse_ioports()
@@ -312,6 +304,7 @@ mem_regions.append(sysfs_parser.MemRegion(ourmem[0] + hvmem[1],
                                           'JAILHOUSE Inmate Memory'))
 
 kwargs = {
+    'cpus': cpus,
     'mem_regions': mem_regions,
     'port_regions': port_regions,
     'ourmem': ourmem,
@@ -320,7 +313,6 @@ kwargs = {
     'product': product,
     'pcidevices': pci_devices,
     'pcicaps': pci_caps,
-    'cpucount': cpu_count,
     'irqchips': ioapics,
     'pm_timer_base': pm_timer_base,
     'vtd_interrupt_limit': vtd_interrupt_limit,

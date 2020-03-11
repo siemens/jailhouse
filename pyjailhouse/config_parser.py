@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2015-2020
+# Copyright (c) Siemens AG, 2015-2022
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -19,7 +19,7 @@ import struct
 from .extendedenum import ExtendedEnum
 
 # Keep the whole file in sync with include/jailhouse/cell-config.h.
-_CONFIG_REVISION = 14
+_CONFIG_REVISION = 15
 JAILHOUSE_X86 = 0
 JAILHOUSE_ARM = 1
 JAILHOUSE_ARM64 = 2
@@ -119,6 +119,14 @@ class MemRegion:
             self.virt_address_in_region(region.virt_start)
 
 
+class Cpu:
+    _CPU_FORMAT = 'QI4x'
+    SIZE = struct.calcsize(_CPU_FORMAT)
+
+    def __init__(self, cpu_struct):
+        self.phys_id = struct.unpack_from(self._CPU_FORMAT, cpu_struct)
+
+
 class CacheRegion:
     _REGION_FORMAT = 'IIBxH'
     SIZE = struct.calcsize(_REGION_FORMAT)
@@ -161,7 +169,7 @@ class CellConfig:
              revision,
              name,
              self.flags,
-             self.cpu_set_size,
+             self.num_cpus,
              self.num_memory_regions,
              self.num_cache_regions,
              self.num_irqchips,
@@ -181,15 +189,11 @@ class CellConfig:
             self.arch = convert_arch(self.arch)
 
             cpu_set_offs = struct.calcsize(CellConfig._HEADER_FORMAT)
-            mask_array = struct.unpack_from('%dB' % self.cpu_set_size,
-                                            self.data[cpu_set_offs:])
             self.cpus = set()
-            for n in range(self.cpu_set_size):
-                for bit in range(8):
-                    if mask_array[n] & (1 << bit) != 0:
-                        self.cpus.add(n * 8 + bit)
+            for n in range(self.num_cpus):
+                self.cpus.add(Cpu(self.data[cpu_set_offs:]).phys_id)
 
-            mem_region_offs = cpu_set_offs + self.cpu_set_size
+            mem_region_offs = cpu_set_offs + self.num_cpus * Cpu.SIZE
             self.memory_regions = []
             for n in range(self.num_memory_regions):
                 self.memory_regions.append(

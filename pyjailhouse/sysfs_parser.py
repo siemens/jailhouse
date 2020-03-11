@@ -1,7 +1,7 @@
 #
 # Jailhouse, a Linux-based partitioning hypervisor
 #
-# Copyright (c) Siemens AG, 2014-2017
+# Copyright (c) Siemens AG, 2014-2022
 # Copyright (c) Valentine Sinitsyn, 2014-2015
 #
 # Authors:
@@ -48,7 +48,6 @@ inputs['files'].add('/proc/cmdline')
 inputs['files'].add('/proc/ioports')
 inputs['files'].add('/sys/bus/pci/devices/*/config')
 inputs['files'].add('/sys/bus/pci/devices/*/resource')
-inputs['files'].add('/sys/devices/system/cpu/cpu*/uevent')
 inputs['files'].add('/sys/firmware/acpi/tables/APIC')
 inputs['files'].add('/sys/firmware/acpi/tables/MCFG')
 # optional files
@@ -636,6 +635,18 @@ def parse_ivrs(pcidevices, ioapics):
         return units, regions
 
 
+def parse_cpus():
+    cpus = []
+    with input_open('/proc/cpuinfo') as f:
+        for line in f:
+            if not line.strip():
+                continue
+            key, value = line.split(':')
+            if key.strip() == 'initial apicid':
+                cpus.append(CPU(int(value)))
+    return cpus
+
+
 def get_cpu_vendor():
     with open(root_dir + '/proc/cpuinfo') as f:
         for line in f:
@@ -645,6 +656,11 @@ def get_cpu_vendor():
             if key.strip() == 'vendor_id':
                 return value.strip()
     raise RuntimeError('Broken %s/proc/cpuinfo' % root_dir)
+
+
+class CPU:
+    def __init__(self, phys_id):
+        self.phys_id = phys_id
 
 
 class PCIBARs:

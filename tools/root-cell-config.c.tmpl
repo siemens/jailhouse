@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2017
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -44,7 +44,7 @@
 
 struct {
 	struct jailhouse_system header;
-	__u64 cpus[${int((cpucount + 63) / 64)}];
+	struct jailhouse_cpu cpus[${len(cpus)}];
 	struct jailhouse_memory mem_regions[${len(mem_regions)}];
 	struct jailhouse_irqchip irqchips[${len(irqchips)}];
 	struct jailhouse_pio pio_regions[${len([1 for r in port_regions if r.permit])}];
@@ -107,7 +107,7 @@ struct {
 		},
 		.root_cell = {
 			.name = "RootCell",
-			.cpu_set_size = sizeof(config.cpus),
+			.num_cpus = ARRAY_SIZE(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
 			.num_irqchips = ARRAY_SIZE(config.irqchips),
 			.num_pio_regions = ARRAY_SIZE(config.pio_regions),
@@ -117,12 +117,11 @@ struct {
 	},
 
 	.cpus = {
-		% for n in range(int(cpucount / 64)):
-		0xffffffffffffffff,
+		% for c in cpus:
+		{
+			.phys_id = ${c.phys_id},
+		},
 		% endfor
-		% if (cpucount % 64):
-		${'0x%016x,' % ((1 << (cpucount % 64)) - 1)}
-		% endif
 	},
 
 	.mem_regions = {
