@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2020
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -91,10 +91,11 @@ static ssize_t cell_stats_show(struct kobject *kobj,
 	unsigned int code = JAILHOUSE_CPU_INFO_STAT_BASE + stats_attr->code;
 	struct cell *cell = container_of(kobj, struct cell, stats_kobj);
 	unsigned long sum = 0;
+	int jailhouse_cpu, value;
 	unsigned int cpu;
-	int value;
 
 	for_each_cpu(cpu, &cell->cpus_assigned) {
+		jailhouse_cpu = per_cpu(jailhouse_cpu_id, cpu);
 		value = jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
 					    code);
 		if (value > 0)
@@ -112,9 +113,11 @@ static ssize_t cpu_stats_show(struct kobject *kobj,
 		container_of(attr, struct jailhouse_cpu_stats_attr, kattr);
 	unsigned int code = JAILHOUSE_CPU_INFO_STAT_BASE + stats_attr->code;
 	struct cell_cpu *cell_cpu = container_of(kobj, struct cell_cpu, kobj);
-	int value;
+	int jailhouse_cpu, value;
 
-	value = jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cell_cpu->cpu,
+	jailhouse_cpu = per_cpu(jailhouse_cpu_id, cell_cpu->cpu);
+
+	value = jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, jailhouse_cpu,
 				    code);
 	if (value < 0)
 		value = 0;
@@ -252,18 +255,21 @@ static int print_cpumask(char *buf, size_t size, cpumask_t *mask, bool as_list)
 static int print_failed_cpus(char *buf, size_t size, const struct cell *cell,
 			 bool as_list)
 {
+	int jailhouse_cpu, written;
 	cpumask_var_t cpus_failed;
 	unsigned int cpu;
-	int written;
 
 	if (!zalloc_cpumask_var(&cpus_failed, GFP_KERNEL))
 		return -ENOMEM;
 
-	for_each_cpu(cpu, &cell->cpus_assigned)
-		if (jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO, cpu,
+	for_each_cpu(cpu, &cell->cpus_assigned) {
+		jailhouse_cpu = per_cpu(jailhouse_cpu_id, cpu);
+		if (jailhouse_call_arg2(JAILHOUSE_HC_CPU_GET_INFO,
+					jailhouse_cpu,
 					JAILHOUSE_CPU_INFO_STATE) ==
 		    JAILHOUSE_CPU_FAILED)
 			cpumask_set_cpu(cpu, cpus_failed);
+	}
 
 	written = print_cpumask(buf, size, cpus_failed, as_list);
 

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2017
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -28,6 +28,9 @@
 extern struct mutex jailhouse_lock;
 extern bool jailhouse_enabled;
 extern void *hypervisor_mem;
+
+DECLARE_PER_CPU(u64, phys_cpu_id);
+DECLARE_PER_CPU(int, jailhouse_cpu_id);
 
 void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 			unsigned long size);

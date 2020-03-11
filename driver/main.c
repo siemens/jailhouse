@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2017
+ * Copyright (c) Siemens AG, 2013-2022
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -39,6 +39,7 @@
 #include <asm/tlbflush.h>
 #ifdef CONFIG_ARM
 #include <asm/virt.h>
+#include <asm/cputype.h>
 #endif
 #ifdef CONFIG_X86
 #include <asm/msr.h>
@@ -97,9 +98,13 @@ DEFINE_MUTEX(jailhouse_lock);
 bool jailhouse_enabled;
 void *hypervisor_mem;
 
+DEFINE_PER_CPU(u64, phys_cpu_id);
+DEFINE_PER_CPU(int, jailhouse_cpu_id) = -1;
+
 static struct device *jailhouse_dev;
 static unsigned long hv_core_and_percpu_size;
 static atomic_t call_done;
+static atomic_t cpu_mismatch;
 static int error_code;
 static struct jailhouse_virt_console* volatile console_page;
 static bool console_available;
@@ -151,6 +156,42 @@ static void init_hypercall(void)
 }
 #endif
 
+static u64 get_physical_cpu_id(void)
+{
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	return read_cpuid_mpidr() & MPIDR_HWID_BITMASK;
+#elif defined(CONFIG_X86)
+	return read_apic_id();
+#else
+#	error Unsupported architecture
+#endif
+}
+
+static void identify_cpu(void *info)
+{
+	struct jailhouse_cell_desc *root_desc = info;
+	const struct jailhouse_cpu *cell_cpu = jailhouse_cell_cpus(root_desc);
+	u64 phys_id = get_physical_cpu_id();
+	unsigned int cpu;
+
+	for (cpu = 0; cpu < root_desc->num_cpus; cpu++) {
+		if (cell_cpu[cpu].phys_id == phys_id) {
+			this_cpu_write(phys_cpu_id, phys_id);
+			this_cpu_write(jailhouse_cpu_id, cpu);
+
+			if (cpu != smp_processor_id() &&
+			    atomic_inc_return(&cpu_mismatch) == 1)
+				pr_warn("jailhouse: Logical CPU IDs differ between Linux and Jailhouse\n");
+
+			return;
+		}
+	}
+
+	pr_err("jailhouse: Cannot find Linux CPU %d (physical ID 0x%llx) in configuration\n",
+	       smp_processor_id(), phys_id);
+	error_code = -EINVAL;
+}
+
 static void copy_console_page(struct jailhouse_virt_console *dst)
 {
 	unsigned int tail;
@@ -177,27 +218,6 @@ static inline void update_last_console(void)
 	copy_console_page(&last_console.page);
 	last_console.id++;
 	last_console.valid = true;
-}
-
-static long get_max_cpus(u32 cpu_set_size,
-			 const struct jailhouse_system __user *system_config)
-{
-	u8 __user *cpu_set =
-		(u8 __user *)jailhouse_cell_cpu_set(
-				(const struct jailhouse_cell_desc * __force)
-				&system_config->root_cell);
-	unsigned int pos = cpu_set_size;
-	long max_cpu_id;
-	u8 bitmap;
-
-	while (pos-- > 0) {
-		if (get_user(bitmap, cpu_set + pos))
-			return -EFAULT;
-		max_cpu_id = fls(bitmap);
-		if (max_cpu_id > 0)
-			return pos * 8 + max_cpu_id;
-	}
-	return -EINVAL;
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
@@ -240,18 +260,14 @@ void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 static void enter_hypervisor(void *info)
 {
 	struct jailhouse_header *header = info;
-	unsigned int cpu = smp_processor_id();
+	unsigned int cpu = this_cpu_read(jailhouse_cpu_id);
 	int (*entry)(unsigned int);
 	int err;
 
 	entry = header->entry + (unsigned long) hypervisor_mem;
 
-	if (cpu < header->max_cpus)
-		/* either returns 0 or the same error code across all CPUs */
-		err = entry(cpu);
-	else
-		err = -EINVAL;
-
+	/* either returns 0 or the same error code across all CPUs */
+	err = entry(cpu);
 	if (err)
 		error_code = err;
 
@@ -375,7 +391,6 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	unsigned long config_size;
 	unsigned int clock_gates;
 	const char *fw_name;
-	long max_cpus;
 	int err;
 
 	fw_name = jailhouse_get_fw_name();
@@ -402,12 +417,6 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	}
 
 	config_header.root_cell.name[JAILHOUSE_CELL_NAME_MAXLEN] = 0;
-
-	max_cpus = get_max_cpus(config_header.root_cell.cpu_set_size, arg);
-	if (max_cpus < 0)
-		return max_cpus;
-	if (max_cpus > UINT_MAX)
-		return -EINVAL;
 
 	if (mutex_lock_interruptible(&jailhouse_lock) != 0)
 		return -EINTR;
@@ -454,7 +463,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		goto error_release_fw;
 
 	hv_core_and_percpu_size = header->core_size +
-		max_cpus * header->percpu_size;
+		config_header.root_cell.num_cpus * header->percpu_size;
 	config_size = jailhouse_system_config_size(&config_header);
 	if (hv_core_and_percpu_size >= hv_mem->size ||
 	    config_size >= hv_mem->size - hv_core_and_percpu_size)
@@ -498,7 +507,7 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	       hv_mem->size - hypervisor->size);
 
 	header = (struct jailhouse_header *)hypervisor_mem;
-	header->max_cpus = max_cpus;
+	header->max_cpus = config_header.root_cell.num_cpus;
 
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 	header->arm_linux_hyp_vectors = virt_to_phys(*__hyp_stub_vectors_sym);
@@ -528,6 +537,15 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 		(hypervisor_mem + hv_core_and_percpu_size);
 	if (copy_from_user(config, arg, config_size)) {
 		err = -EFAULT;
+		goto error_unmap;
+	}
+
+	atomic_set(&cpu_mismatch, 0);
+	error_code = 0;
+
+	on_each_cpu(identify_cpu, &config->root_cell, true);
+	if (error_code) {
+		err = error_code;
 		goto error_unmap;
 	}
 
@@ -582,8 +600,6 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	err = jailhouse_cell_prepare_root(&config->root_cell);
 	if (err)
 		goto error_unmap;
-
-	error_code = 0;
 
 	preempt_disable();
 

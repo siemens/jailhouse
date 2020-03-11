@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2016
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -47,8 +47,10 @@ void jailhouse_cell_kobj_release(struct kobject *kobj)
 
 static struct cell *cell_create(const struct jailhouse_cell_desc *cell_desc)
 {
+	const struct jailhouse_cpu *cell_cpu = jailhouse_cell_cpus(cell_desc);
+	unsigned int id, n, cpu;
 	struct cell *cell;
-	unsigned int id;
+	u64 phys_cpu;
 	int err;
 
 	if (cell_desc->num_memory_regions >=
@@ -72,10 +74,16 @@ retry:
 
 	cell->id = id;
 
-	bitmap_copy(cpumask_bits(&cell->cpus_assigned),
-		    jailhouse_cell_cpu_set(cell_desc),
-		    min((unsigned int)nr_cpumask_bits,
-		        cell_desc->cpu_set_size * 8));
+	for (n = 0; n < cell_desc->num_cpus; n++) {
+		phys_cpu = cell_cpu[n].phys_id;
+
+		for_each_possible_cpu(cpu) {
+			if (per_cpu(phys_cpu_id, cpu) == phys_cpu) {
+				cpumask_set_cpu(cpu, &cell->cpus_assigned);
+				break;
+			}
+		}
+	}
 
 	cell->num_memory_regions = cell_desc->num_memory_regions;
 	cell->memory_regions = vmalloc(sizeof(struct jailhouse_memory) *
