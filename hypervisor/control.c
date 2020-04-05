@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2016
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -285,9 +285,16 @@ static void cell_exit(struct cell *cell)
  */
 void config_commit(struct cell *cell_added_removed)
 {
-	arch_flush_cell_vcpu_caches(&root_cell);
-	if (cell_added_removed && cell_added_removed != &root_cell)
-		arch_flush_cell_vcpu_caches(cell_added_removed);
+	/*
+	 * We do not need to flush the caches during setup, i.e. when the root
+	 * cell was added, because there was no reconfiguration of the new
+	 * mapping done yet.
+	 */
+	if (cell_added_removed != &root_cell) {
+		arch_flush_cell_vcpu_caches(&root_cell);
+		if (cell_added_removed)
+			arch_flush_cell_vcpu_caches(cell_added_removed);
+	}
 
 	arch_config_commit(cell_added_removed);
 	pci_config_commit(cell_added_removed);
