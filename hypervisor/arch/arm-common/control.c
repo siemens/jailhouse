@@ -200,7 +200,6 @@ void arch_cell_destroy(struct cell *cell)
 	arm_paging_cell_destroy(cell);
 }
 
-/* Note: only supports synchronous flushing as triggered by config_commit! */
 void arch_flush_cell_vcpu_caches(struct cell *cell)
 {
 	unsigned int cpu;

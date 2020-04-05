@@ -228,6 +228,8 @@ int arch_unmap_memory_region(struct cell *cell,
  * got restricted, and the cell should keep running.
  * @param cell		Cell for which the caches should get flushed
  *
+ * @note Target cell must be suspended.
+ *
  * @see public_per_cpu::flush_vcpu_caches
  */
 void arch_flush_cell_vcpu_caches(struct cell *cell);
