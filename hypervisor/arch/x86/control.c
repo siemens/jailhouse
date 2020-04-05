@@ -72,13 +72,12 @@ void arch_flush_cell_vcpu_caches(struct cell *cell)
 {
 	unsigned int cpu;
 
-	for_each_cpu(cpu, cell->cpu_set)
-		if (cpu == this_cpu_id()) {
+	for_each_cpu(cpu, cell->cpu_set) {
+		if (cpu == this_cpu_id())
 			vcpu_tlb_flush();
-		} else {
+		else
 			public_per_cpu(cpu)->flush_vcpu_caches = true;
-			apic_send_nmi_ipi(public_per_cpu(cpu));
-		}
+	}
 }
 
 void arch_cell_destroy(struct cell *cell)
