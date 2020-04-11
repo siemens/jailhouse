@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -18,8 +18,6 @@ enum x86_init_sipi { X86_INIT, X86_SIPI };
 
 void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 			int sipi_vector);
-
-void x86_check_events(void);
 
 void __attribute__((noreturn))
 x86_exception_handler(struct exception_frame *frame);

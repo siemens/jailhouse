@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2017
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -260,6 +260,9 @@ int entry(unsigned int cpu_id, struct per_cpu *cpu_data)
 		arch_cpu_restore(cpu_id, error);
 		return error;
 	}
+
+	/* Process any internal events generated during setup. */
+	arch_check_events();
 
 	if (master)
 		printk("Activating hypervisor\n");

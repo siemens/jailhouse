@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2022
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -893,7 +893,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT]++;
 		/* Temporarily enable GIF to consume pending NMI */
 		asm volatile("stgi; clgi" : : : "memory");
-		x86_check_events();
+		arch_check_events();
 		goto vmentry;
 	case VMEXIT_VMMCALL:
 		vcpu_handle_hypercall();
@@ -944,7 +944,7 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			vmcb->eventinj |= SVM_EVENTINJ_ERR_VALID;
 			vmcb->eventinj_err = vmcb->exitinfo1;
 		}
-		x86_check_events();
+		arch_check_events();
 		goto vmentry;
 	/* TODO: Handle VMEXIT_AVIC_NOACCEL and VMEXIT_AVIC_INCOMPLETE_IPI */
 	default:

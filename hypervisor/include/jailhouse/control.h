@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -189,6 +189,11 @@ void arch_park_cpu(unsigned int cpu_id);
  * imply a memory barrier and issue this explicitly.
  */
 void arch_send_event(struct public_per_cpu *target_data);
+
+/**
+ * Check and process any internal events pending for the current CPU.
+ */
+void arch_check_events(void);
 
 /**
  * Performs the architecture-specific steps for mapping a memory region into a

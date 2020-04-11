@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -160,7 +160,7 @@ void x86_send_init_sipi(unsigned int cpu_id, enum x86_init_sipi type,
 	 */
 	if (type == X86_INIT) {
 		while (target_data->init_signaled) {
-			x86_check_events();
+			arch_check_events();
 			cpu_relax();
 		}
 	}
@@ -177,7 +177,7 @@ void __attribute__((weak)) cat_update(void)
 {
 }
 
-void x86_check_events(void)
+void arch_check_events(void)
 {
 	struct public_per_cpu *cpu_public = this_cpu_public();
 	int sipi_vector = -1;

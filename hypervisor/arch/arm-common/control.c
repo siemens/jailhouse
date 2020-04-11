@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2016-2022
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
@@ -62,8 +62,9 @@ void arch_park_cpu(unsigned int cpu_id)
 	resume_cpu(cpu_id);
 }
 
-static void check_events(struct public_per_cpu *cpu_public)
+void arch_check_events(void)
 {
+	struct public_per_cpu *cpu_public = this_cpu_public();
 	bool reset = false;
 
 	spin_lock(&cpu_public->control_lock);
@@ -125,7 +126,7 @@ void arch_handle_sgi(u32 irqn, unsigned int count_event)
 	case SGI_EVENT:
 		cpu_public->stats[JAILHOUSE_CPU_STAT_VMEXITS_MANAGEMENT] +=
 			count_event;
-		check_events(cpu_public);
+		arch_check_events();
 		break;
 	default:
 		printk("WARN: unknown SGI received %d\n", irqn);

@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2016
+ * Copyright (c) Siemens AG, 2013-2022
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -918,7 +918,7 @@ void vcpu_skip_emulated_instruction(unsigned int inst_len)
 static void vmx_check_events(void)
 {
 	vmx_preemption_timer_set_enable(false);
-	x86_check_events();
+	arch_check_events();
 }
 
 static void vmx_handle_exception_nmi(void)
