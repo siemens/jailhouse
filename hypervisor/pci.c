@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2016
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * Authors:
  *  Ivan Kolchin <ivan.kolchin@siemens.com>
@@ -785,14 +785,7 @@ static void pci_cell_exit(struct cell *cell)
 	page_free(&mem_pool, cell->pci_devices, devlist_pages);
 }
 
-/**
- * Apply PCI-specific configuration changes.
- * @param cell_added_removed	Cell that was added or removed to/from the
- * 				system or NULL.
- *
- * @see arch_config_commit
- */
-void pci_config_commit(struct cell *cell_added_removed)
+static void pci_config_commit(struct cell *cell_added_removed)
 {
 	const struct jailhouse_pci_capability *cap;
 	struct pci_device *device;

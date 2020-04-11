@@ -1134,4 +1134,5 @@ static int arm_smmuv3_init(void)
 
 DEFINE_UNIT_MMIO_COUNT_REGIONS_STUB(arm_smmuv3);
 DEFINE_UNIT_SHUTDOWN_STUB(arm_smmuv3);
+DEFINE_UNIT_CONFIG_COMMIT_STUB(arm_smmuv3);
 DEFINE_UNIT(arm_smmuv3, "ARM SMMU v3");

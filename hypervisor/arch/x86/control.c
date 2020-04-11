@@ -101,12 +101,6 @@ void arch_cell_reset(struct cell *cell)
 	ioapic_cell_reset(cell);
 }
 
-void arch_config_commit(struct cell *cell_added_removed)
-{
-	iommu_config_commit(cell_added_removed);
-	ioapic_config_commit(cell_added_removed);
-}
-
 void arch_prepare_shutdown(void)
 {
 	ioapic_prepare_handover();

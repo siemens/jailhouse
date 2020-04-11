@@ -442,12 +442,12 @@ int pvu_iommu_unmap_memory(struct cell *cell,
 	return 0;
 }
 
-void pvu_iommu_config_commit(struct cell *cell)
+static void pvu_iommu_config_commit(struct cell *cell_added_removed)
 {
 	union jailhouse_stream_id virtid;
 	unsigned int i;
 
-	if (pvu_count == 0 || !cell)
+	if (pvu_count == 0 || !cell_added_removed)
 		return;
 
 	/*
@@ -456,17 +456,17 @@ void pvu_iommu_config_commit(struct cell *cell)
 	 * Sort the entries in descending order of page sizes to reduce effects
 	 * of chaining and thus reducing average translation latency
 	 */
-	pvu_entrylist_sort(cell->arch.iommu_pvu.entries,
-			   cell->arch.iommu_pvu.ent_count);
+	pvu_entrylist_sort(cell_added_removed->arch.iommu_pvu.entries,
+			   cell_added_removed->arch.iommu_pvu.ent_count);
 
-	for_each_stream_id(virtid, cell->config, i) {
+	for_each_stream_id(virtid, cell_added_removed->config, i) {
 		if (virtid.id > MAX_VIRTID)
 			continue;
 
-		pvu_iommu_program_entries(cell, virtid.id);
+		pvu_iommu_program_entries(cell_added_removed, virtid.id);
 	}
 
-	cell->arch.iommu_pvu.ent_count = 0;
+	cell_added_removed->arch.iommu_pvu.ent_count = 0;
 }
 
 static int pvu_iommu_cell_init(struct cell *cell)

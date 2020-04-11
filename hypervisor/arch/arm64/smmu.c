@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright 2018-2020 NXP
- * Copyright Siemens AG, 2020
+ * Copyright Siemens AG, 2020-2022
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -14,7 +14,6 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/unit.h>
 #include <asm/iommu.h>
-#include <asm/smmu.h>
 
 #include <jailhouse/cell-config.h>
 
@@ -522,12 +521,12 @@ static void arm_smmu_cell_exit(struct cell *cell)
 	}
 }
 
-void arm_smmu_config_commit(struct cell *cell)
+static void arm_smmu_config_commit(struct cell *cell_added_removed)
 {
 	struct arm_smmu_device *smmu;
 	unsigned int dev;
 
-	if (cell != &root_cell)
+	if (cell_added_removed != &root_cell)
 		return;
 
 	for_each_smmu(smmu, dev) {

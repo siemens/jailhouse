@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2018
+ * Copyright (c) Siemens AG, 2018-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -21,6 +21,7 @@ struct unit {
 	unsigned int (*mmio_count_regions)(struct cell *);
 	int (*cell_init)(struct cell *);
 	void (*cell_exit)(struct cell *);
+	void (*config_commit)(struct cell *);
 };
 
 #define DEFINE_UNIT(__name, __description)				\
@@ -32,6 +33,7 @@ struct unit {
 		.mmio_count_regions	= __name##_mmio_count_regions,	\
 		.cell_init		= __name##_cell_init,		\
 		.cell_exit		= __name##_cell_exit,		\
+		.config_commit		= __name##_config_commit,	\
 	}
 
 #define DEFINE_UNIT_SHUTDOWN_STUB(__name)				\
@@ -40,6 +42,9 @@ struct unit {
 #define DEFINE_UNIT_MMIO_COUNT_REGIONS_STUB(__name)			\
 	static unsigned int __name##_mmio_count_regions(struct cell *cell) \
 	{ return 0; }
+
+#define DEFINE_UNIT_CONFIG_COMMIT_STUB(__name)				\
+	static void __name##_config_commit(struct cell *cell_added_removed) { }
 
 extern struct unit __unit_array_start[0], __unit_array_end[0];
 

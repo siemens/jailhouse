@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) ARM Limited, 2014
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2016-2022
  *
  * Authors:
  *  Jean-Philippe Brucker <jean-philippe.brucker@arm.com>
@@ -506,7 +506,7 @@ static void irqchip_cell_exit(struct cell *cell)
 		irqchip.cell_exit(cell);
 }
 
-void irqchip_config_commit(struct cell *cell_added_removed)
+static void irqchip_config_commit(struct cell *cell_added_removed)
 {
 	unsigned int n;
 

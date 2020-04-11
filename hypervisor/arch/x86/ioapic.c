@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014-2017
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -412,7 +412,7 @@ static void ioapic_cell_exit(struct cell *cell)
 	page_free(&mem_pool, cell->arch.ioapics, 1);
 }
 
-void ioapic_config_commit(struct cell *cell_added_removed)
+static void ioapic_config_commit(struct cell *cell_added_removed)
 {
 	struct apic_irq_message irq_msg;
 	union ioapic_redir_entry entry;

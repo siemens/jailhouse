@@ -126,6 +126,4 @@ int pvu_iommu_map_memory(struct cell *cell,
 int pvu_iommu_unmap_memory(struct cell *cell,
 		const struct jailhouse_memory *mem);
 
-void pvu_iommu_config_commit(struct cell *cell);
-
 #endif /* _IOMMMU_PVU_H_ */

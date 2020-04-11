@@ -28,7 +28,3 @@ int iommu_unmap_memory_region(struct cell *cell,
 {
 	return 0;
 }
-
-void iommu_config_commit(struct cell *cell)
-{
-}

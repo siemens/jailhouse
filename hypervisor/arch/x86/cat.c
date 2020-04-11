@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2015, 2016
+ * Copyright (c) Siemens AG, 2015-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -226,4 +226,5 @@ static int cat_init(void)
 
 DEFINE_UNIT_SHUTDOWN_STUB(cat);
 DEFINE_UNIT_MMIO_COUNT_REGIONS_STUB(cat);
+DEFINE_UNIT_CONFIG_COMMIT_STUB(cat);
 DEFINE_UNIT(cat, "Cache Allocation Technology");

@@ -279,12 +279,11 @@ static void cell_exit(struct cell *cell)
  * Apply system configuration changes.
  * @param cell_added_removed	Cell that was added or removed to/from the
  * 				system or NULL.
- *
- * @see arch_config_commit
- * @see pci_config_commit
  */
 void config_commit(struct cell *cell_added_removed)
 {
+	struct unit *unit;
+
 	/*
 	 * We do not need to flush the caches during setup, i.e. when the root
 	 * cell was added, because there was no reconfiguration of the new
@@ -296,8 +295,8 @@ void config_commit(struct cell *cell_added_removed)
 			arch_flush_cell_vcpu_caches(cell_added_removed);
 	}
 
-	arch_config_commit(cell_added_removed);
-	pci_config_commit(cell_added_removed);
+	for_each_unit(unit)
+		unit->config_commit(cell_added_removed);
 }
 
 static bool address_in_region(unsigned long addr,

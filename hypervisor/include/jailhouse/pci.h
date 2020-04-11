@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2014
+ * Copyright (c) Siemens AG, 2014-2022
  *
  * Authors:
  *  Ivan Kolchin <ivan.kolchin@siemens.com>
@@ -156,8 +156,6 @@ enum pci_access pci_cfg_write_moderate(struct pci_device *device, u16 address,
 void pci_reset_device(struct pci_device *device);
 
 void pci_cell_reset(struct cell *cell);
-
-void pci_config_commit(struct cell *cell_added_removed);
 
 unsigned int pci_enabled_msi_vectors(struct pci_device *device);
 

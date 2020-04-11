@@ -87,8 +87,6 @@ void irqchip_cpu_shutdown(struct public_per_cpu *cpu_public);
 
 void irqchip_cell_reset(struct cell *cell);
 
-void irqchip_config_commit(struct cell *cell_added_removed);
-
 void irqchip_send_sgi(unsigned int cpu_id, u16 sgi_id);
 void irqchip_handle_irq(void);
 

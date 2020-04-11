@@ -264,16 +264,6 @@ void arch_cell_destroy(struct cell *cell);
 void arch_cell_reset(struct cell *cell);
 
 /**
- * Performs the architecture-specific steps for applying configuration changes.
- * @param cell_added_removed	Cell that was added or removed to/from the
- * 				system or NULL.
- *
- * @see config_commit
- * @see pci_config_commit
- */
-void arch_config_commit(struct cell *cell_added_removed);
-
-/**
  * Architecture-specific preparations before shutting down the hypervisor.
  */
 void arch_prepare_shutdown(void);

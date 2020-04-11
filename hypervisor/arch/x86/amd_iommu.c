@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright (c) Valentine Sinitsyn, 2014, 2015
- * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Siemens AG, 2016-2022
  *
  * Authors:
  *  Valentine Sinitsyn <valentine.sinitsyn@gmail.com>
@@ -472,7 +472,7 @@ static void amd_iommu_init_fault_nmi(void)
 	apic_send_nmi_ipi(target_data);
 }
 
-void iommu_config_commit(struct cell *cell_added_removed)
+static void amd_iommu_config_commit(struct cell *cell_added_removed)
 {
 	struct amd_iommu *iommu;
 

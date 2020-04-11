@@ -41,8 +41,6 @@ int iommu_map_interrupt(struct cell *cell,
 			unsigned int vector,
 			struct apic_irq_message irq_msg);
 
-void iommu_config_commit(struct cell *cell_added_removed);
-
 void iommu_prepare_shutdown(void);
 
 struct public_per_cpu *iommu_select_fault_reporting_cpu(void);
