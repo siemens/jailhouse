@@ -18,6 +18,13 @@
 
 #define APIC_TIMER_VECTOR	32
 
+/*
+ * Enables blinking LED
+ * SIMATIC IPC127E:     register 0xd0c506a8, pin 0
+ */
+static void *led_reg;
+static unsigned int led_pin;
+
 static unsigned long expected_time;
 static unsigned long min = -1, max;
 static bool has_smi_count;
@@ -71,6 +78,9 @@ static void irq_handler(unsigned int irq)
 			printk(", SMIs: %d", smis - initial_smis);
 	}
 	printk("\n");
+
+	if (led_reg)
+		mmio_write32(led_reg, mmio_read32(led_reg) ^ (1 << led_pin));
 
 	expected_time += 100 * NS_PER_MSEC;
 	apic_timer_set(expected_time - tsc_read_ns());
@@ -131,6 +141,12 @@ void inmate_main(void)
 	       tsc_freq % 1000);
 
 	init_apic();
+
+	led_reg = (void *)(unsigned long)cmdline_parse_int("led-reg", 0);
+	led_pin = cmdline_parse_int("led-pin", 0);
+
+	if (led_reg)
+		map_range(led_reg, 4, MAP_UNCACHED);
 
 	while (!terminate) {
 		cpu_relax();
