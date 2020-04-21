@@ -5,6 +5,8 @@
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Luca Miccio <lucmiccio@gmail.com> (cache coloring support)
+ *  Marco Solieri <ms@xt3.it> (cache coloring support)
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -14,6 +16,7 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/string.h>
 #include <jailhouse/control.h>
+#include <jailhouse/coloring.h>
 
 #define BITS_PER_PAGE		(PAGE_SIZE * 8)
 
@@ -438,6 +441,153 @@ int paging_destroy(const struct paging_structures *pg_structs,
 	return 0;
 }
 
+/**
+ * Create or modify a colored page map.
+ * @param pg_structs	Descriptor of paging structures to be used.
+ * @param phys		Physical address of the region to be mapped.
+ * @param size		Size of the region.
+ * @param virt		Virtual address the region should be mapped to.
+ * @param access_flags	Flags describing the permitted page access, see
+ * @ref PAGE_ACCESS_FLAGS.
+ * @param color_bitmask	Bitmask specifying value of coloring.
+ * @param identity_map	If true the mapping will be 1:1.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @note The function uses only 4 KiB page size for mapping.
+ *
+ * @see paging_destroy_colored
+ * @see paging_get_guest_pages
+ */
+int paging_create_colored(const struct paging_structures *pg_structs,
+			  unsigned long phys, unsigned long size,
+			  unsigned long virt, unsigned long access_flags,
+			  unsigned long paging_flags,
+			  unsigned long *color_bitmask, bool identity_map)
+{
+
+	phys &= PAGE_MASK;
+	virt &= PAGE_MASK;
+	size = PAGE_ALIGN(size);
+
+	while (size > 0) {
+		const struct paging *paging = pg_structs->root_paging;
+		page_table_t pt = pg_structs->root_table;
+		pt_entry_t pte;
+		int err;
+
+		phys = next_colored(phys, color_bitmask);
+		if (identity_map)
+			virt = phys;
+
+		while (1) {
+			pte = paging->get_entry(pt, virt);
+			if (paging->page_size == PAGE_SIZE) {
+				paging->set_terminal(pte, phys, access_flags);
+				flush_pt_entry(pte, paging_flags);
+				break;
+			}
+			/* Loop until 4K page size by splitting hugepages */
+			if (paging->entry_valid(pte, PAGE_PRESENT_FLAGS)) {
+				err = split_hugepage(pg_structs->hv_paging,
+							paging, pte, virt,
+							paging_flags);
+				if (err)
+					return err;
+				pt = paging_phys2hvirt(
+					paging->get_next_pt(pte));
+			} else {
+				pt = page_alloc(&mem_pool, 1);
+				if (!pt)
+					return -ENOMEM;
+
+				paging->set_next_pt(pte, paging_hvirt2phys(pt));
+				flush_pt_entry(pte, paging_flags);
+			}
+			paging++;
+		}
+		if (pg_structs == &hv_paging_structs)
+			arch_paging_flush_page_tlbs(virt);
+
+		phys += paging->page_size;
+		virt += paging->page_size;
+		size -= paging->page_size;
+	}
+	return 0;
+}
+
+/**
+ * Destroy a colored page map.
+ * @param pg_structs	Descriptor of paging structures to be used.
+ * @param virt		Virtual address the region to be unmapped.
+ * @param size		Size of the region.
+ * @param paging_flags	Flags describing the paging mode, see @ref PAGING_FLAGS.
+ * @param color_bitmask	Bitmask specifying value of coloring.
+ *
+ * @return 0 on success, negative error code otherwise.
+ *
+ * @see paging_create_colored
+ */
+int paging_destroy_colored(const struct paging_structures *pg_structs,
+			   unsigned long virt, unsigned long size,
+			   unsigned long paging_flags,
+			   unsigned long *color_bitmask)
+{
+	size = PAGE_ALIGN(size);
+
+	while (size > 0) {
+		const struct paging *paging = pg_structs->root_paging;
+		page_table_t pt[MAX_PAGE_TABLE_LEVELS];
+		unsigned long page_size;
+		pt_entry_t pte;
+		int n = 0;
+		int err;
+
+		virt = next_colored(virt, color_bitmask);
+
+		/* walk down the page table, saving intermediate tables */
+		pt[0] = pg_structs->root_table;
+		while (1) {
+			pte = paging->get_entry(pt[n], virt);
+			if (!paging->entry_valid(pte, PAGE_PRESENT_FLAGS))
+				break;
+			if (paging->get_phys(pte, virt) != INVALID_PHYS_ADDR) {
+				if (paging->page_size == PAGE_SIZE)
+					break;
+
+				err = split_hugepage(pg_structs->hv_paging,
+						     paging, pte, virt,
+						     paging_flags);
+				if (err)
+					return err;
+			}
+			pt[++n] = paging_phys2hvirt(paging->get_next_pt(pte));
+			paging++;
+		}
+		/* advance by page size of current level paging */
+		page_size = paging->page_size ? paging->page_size : PAGE_SIZE;
+
+		/* walk up again, clearing entries, releasing empty tables */
+		while (1) {
+			paging->clear_entry(pte);
+			flush_pt_entry(pte, paging_flags);
+			if (n == 0 || !paging->page_table_empty(pt[n]))
+				break;
+			page_free(&mem_pool, pt[n], 1);
+			paging--;
+			pte = paging->get_entry(pt[--n], virt);
+		}
+		if (pg_structs == &hv_paging_structs)
+			arch_paging_flush_page_tlbs(virt);
+
+		if (page_size > size)
+			break;
+		virt += page_size;
+		size -= page_size;
+	}
+	return 0;
+}
+
 static unsigned long
 paging_gvirt2gphys(const struct guest_paging_structures *pg_structs,
 		   unsigned long gvirt, unsigned long tmp_page,
@@ -702,6 +852,11 @@ int paging_init(void)
 			return err;
 	}
 
+	/* Setup coloring */
+	if (coloring_paging_init(system_config->platform_info.llc_way_size)) {
+		printk("Error: Unable to init cache coloring data\n");
+		return -ENOMEM;
+	}
 	return 0;
 }
 
