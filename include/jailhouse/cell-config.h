@@ -326,6 +326,12 @@ struct jailhouse_system {
 		 * the platform in use.
 		 */
 		__u64 llc_way_size;
+		/**
+		 * Start address used when loading binaries into colored memory
+		 * regions. This value should be set so that it does not overlap
+		 * with platform memory mappings.
+		 */
+		__u64 col_load_address;
 		struct jailhouse_iommu iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 		union {
 			struct {

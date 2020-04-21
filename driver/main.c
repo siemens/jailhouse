@@ -118,6 +118,9 @@ static typeof(__boot_cpu_mode) *__boot_cpu_mode_sym;
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 static typeof(__hyp_stub_vectors) *__hyp_stub_vectors_sym;
 #endif
+#ifdef CONFIG_COLORING
+#define DEFAULT_JAILHOUSE_CELL_LOAD_VADDR	0x400000000
+#endif
 
 /* last_console contains three members:
  *   - valid: indicates if content in the page member is present
@@ -566,6 +569,18 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 	if (err)
 		goto error_unmap;
 
+#ifdef CONFIG_COLORING
+	/**
+	 * Be sure that col_load_address is set if coloring is enabled.
+	 */
+	if (!config->platform_info.col_load_address) {
+		pr_notice("No coloring load address defined, using default\n");
+		config->platform_info.col_load_address =
+			DEFAULT_JAILHOUSE_CELL_LOAD_VADDR;
+	}
+
+	root_cell->col_load_address = config->platform_info.col_load_address;
+#endif
 	error_code = 0;
 
 	preempt_disable();

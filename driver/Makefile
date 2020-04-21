@@ -18,6 +18,10 @@ ccflags-y := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
 	     -I$(src)/../include/arch/$(SRCARCH) \
 	     -I$(src)/../include
 
+ifneq ($(wildcard $(obj)/../include/jailhouse/config.h),)
+KBUILD_CFLAGS += -include $(src)/../include/jailhouse/config.h
+endif
+
 jailhouse-y := cell.o main.o sysfs.o
 jailhouse-$(CONFIG_PCI) += pci.o
 jailhouse-$(CONFIG_OF) += vpci_template.dtb.o
