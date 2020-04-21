@@ -1,0 +1,162 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2020 NXP
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Freescale i.MX8MP EVK";
+	compatible = "fsl,imx8mp-evk", "fsl,imx8mp";
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial3 = &uart4;
+		mmc2 = &usdhc3;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		A53_2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x2>;
+			clock-latency = <61036>; /* two CLK32 periods */
+			next-level-cache = <&A53_L2>;
+			enable-method = "psci";
+			#cooling-cells = <2>;
+		};
+
+		A53_3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x3>;
+			clock-latency = <61036>; /* two CLK32 periods */
+			next-level-cache = <&A53_L2>;
+			enable-method = "psci";
+			#cooling-cells = <2>;
+		};
+
+		A53_L2: l2-cache0 {
+			compatible = "cache";
+		};
+	};
+
+	gic: interrupt-controller@38800000 {
+		compatible = "arm,gic-v3";
+		reg = <0x0 0x38800000 0 0x10000>, /* GIC Dist */
+		      <0x0 0x38880000 0 0xC0000>; /* GICR (RD_base + SGI_base) */
+		#interrupt-cells = <3>;
+		interrupt-controller;
+		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-parent = <&gic>;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_LOW)>, /* Physical Secure */
+			     <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_LOW)>, /* Physical Non-Secure */
+			     <GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_LOW)>, /* Virtual */
+			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_LOW)>; /* Hypervisor */
+		clock-frequency = <8333333>;
+	};
+
+	clk_dummy: clock@7 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <0>;
+		clock-output-names = "clk_dummy";
+	};
+
+	/* The clocks are configured by 1st OS */
+	clk_400m: clock@8 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;
+		clock-output-names = "200m";
+	};
+
+	clk_266m: clock@9 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <266000000>;
+		clock-output-names = "266m";
+	};
+
+	osc_24m: clock@1 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "osc_24m";
+	};
+
+	pci@fd700000 {
+		compatible = "pci-host-ecam-generic";
+		device_type = "pci";
+		bus-range = <0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 154 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 2 &gic GIC_SPI 155 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 3 &gic GIC_SPI 156 IRQ_TYPE_EDGE_RISING>,
+				<0 0 0 4 &gic GIC_SPI 157 IRQ_TYPE_EDGE_RISING>;
+		reg = <0x0 0xfd700000 0x0 0x100000>;
+		ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+	};
+
+	soc@0 {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x0 0x0 0x3e000000>;
+
+		aips3: bus@30800000 {
+			compatible = "simple-bus";
+			reg = <0x30800000 0x400000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			uart4: serial@30a60000 {
+				compatible = "fsl,imx8mp-uart", "fsl,imx6q-uart";
+				reg = <0x30a60000 0x10000>;
+				interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>;
+				status = "disabled";
+			};
+
+			usdhc3: mmc@30b60000 {
+				compatible = "fsl,imx8mm-usdhc", "fsl,imx7d-usdhc";
+				reg = <0x30b60000 0x10000>;
+				interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
+				fsl,tuning-start-tap = <20>;
+				fsl,tuning-step= <2>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&uart4 {
+	clocks = <&osc_24m>,
+		<&osc_24m>;
+	clock-names = "ipg", "per";
+	status = "okay";
+};
+
+&usdhc3 {
+	clocks = <&clk_dummy>,
+		<&clk_266m>,
+		<&clk_400m>;
+	clock-names = "ipg", "ahb", "per";
+	bus-width = <8>;
+	non-removable;
+	status = "okay";
+};
