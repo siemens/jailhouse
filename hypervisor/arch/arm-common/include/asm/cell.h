@@ -14,6 +14,7 @@
 #define _JAILHOUSE_ASM_CELL_H
 
 #include <jailhouse/paging.h>
+#include <asm/coloring.h>
 
 struct pvu_tlb_entry;
 
@@ -26,6 +27,9 @@ struct arch_cell {
 		u8 ent_count;
 		struct pvu_tlb_entry *entries;
 	} iommu_pvu; /**< ARM PVU specific fields. */
+
+	/** Color configuration as a bitmask */
+	unsigned long color_bitmask[COLOR_BITMASK_SIZE];
 };
 
 #endif /* !_JAILHOUSE_ASM_CELL_H */

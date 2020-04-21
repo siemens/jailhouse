@@ -13,6 +13,7 @@
 #include <jailhouse/control.h>
 #include <jailhouse/paging.h>
 #include <jailhouse/printk.h>
+#include <jailhouse/coloring.h>
 #include <asm/sysregs.h>
 #include <asm/control.h>
 #include <asm/iommu.h>
@@ -46,8 +47,29 @@ int arch_map_memory_region(struct cell *cell,
 	if (err)
 		return err;
 
-	err = paging_create(&cell->arch.mm, phys_start, mem->size,
-			    mem->virt_start, access_flags, paging_flags);
+	if (mem->flags & JAILHOUSE_MEM_COLORED)
+		/**
+		 * Identity mapping is necessary only when remapping to the root
+		 * cell during destroy phase. To check if we are in the destroy
+		 * phase the control is made on the memory virtual start and
+		 * col_load_address. We cannot have a scenario where these
+		 * addresses are equal because:
+		 * 1) virt_start == phys_start.
+		 * 2) we assume that col_load_address is configured so that it
+		 * does not interfere with memory layout.
+		 * 3) if col_load_address is equal to phys_start there is a
+		 * wrong root-cell configuration.
+		 * It means that in the previous wrong scenario col_load_address
+		 * overlaps some root-cell memory space.
+		 */
+		err = paging_create_colored(&cell->arch.mm, phys_start,
+			mem->size, mem->virt_start, access_flags, paging_flags,
+			cell->arch.color_bitmask, (cell == &root_cell) &&
+			(mem->virt_start !=
+				system_config->platform_info.col_load_address));
+	else
+		err = paging_create(&cell->arch.mm, phys_start, mem->size,
+			mem->virt_start, access_flags, paging_flags);
 	if (err)
 		iommu_unmap_memory_region(cell, mem);
 
@@ -63,8 +85,19 @@ int arch_unmap_memory_region(struct cell *cell,
 	if (err)
 		return err;
 
-	return paging_destroy(&cell->arch.mm, mem->virt_start, mem->size,
-			      PAGING_COHERENT);
+	/*
+	 * Do not be confused -- since paging_destroy* acts on virtual
+	 * addresses, paging_destroy can be physically colored, too.
+	 * We need to destroy the mapping using coloring only when unmapping
+	 * from the root cell during cell_create so that the correct regions are
+	 * removed and then used from the cells.
+	 */
+	if (mem->flags & JAILHOUSE_MEM_COLORED && (cell == &root_cell))
+		return paging_destroy_colored(&cell->arch.mm, mem->virt_start,
+			mem->size, PAGING_COHERENT, cell->arch.color_bitmask);
+	else
+		return paging_destroy(&cell->arch.mm, mem->virt_start,
+			mem->size, PAGING_COHERENT);
 }
 
 unsigned long arch_paging_gphys2phys(unsigned long gphys, unsigned long flags)
@@ -91,10 +124,20 @@ void arm_cell_dcaches_flush(struct cell *cell, enum dcache_flush flush)
 				   NUM_TEMPORARY_PAGES * PAGE_SIZE);
 
 			/* cannot fail, mapping area is preallocated */
-			paging_create(&this_cpu_data()->pg_structs, region_addr,
-				      size, TEMPORARY_MAPPING_BASE,
-				      PAGE_DEFAULT_FLAGS,
-				      PAGING_NON_COHERENT | PAGING_NO_HUGE);
+			if (mem->flags & JAILHOUSE_MEM_COLORED)
+				paging_create_colored(
+					&this_cpu_data()->pg_structs,
+					region_addr, size,
+					TEMPORARY_MAPPING_BASE,
+					PAGE_DEFAULT_FLAGS,
+					PAGING_NON_COHERENT | PAGING_NO_HUGE,
+					cell->arch.color_bitmask, false);
+			else
+				paging_create(&this_cpu_data()->pg_structs,
+					region_addr,
+					size, TEMPORARY_MAPPING_BASE,
+					PAGE_DEFAULT_FLAGS,
+					PAGING_NON_COHERENT | PAGING_NO_HUGE);
 
 			arm_dcaches_flush((void *)TEMPORARY_MAPPING_BASE, size,
 					  flush);
@@ -120,7 +163,8 @@ int arm_paging_cell_init(struct cell *cell)
 	if (!cell->arch.mm.root_table)
 		return -ENOMEM;
 
-	return 0;
+	/* Init coloring configuration of the cell */
+	return coloring_cell_init(cell);
 }
 
 void arm_paging_cell_destroy(struct cell *cell)
