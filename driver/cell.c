@@ -333,7 +333,13 @@ static int load_image(struct cell *cell,
 	if (regions == 0)
 		return -EINVAL;
 
-	phys_start = (mem->phys_start + image_offset) & PAGE_MASK;
+#ifdef CONFIG_COLORING
+	if (mem->flags & JAILHOUSE_MEM_COLORED)
+		phys_start = (root_cell->col_load_address + image_offset)
+			& PAGE_MASK;
+	else
+#endif
+		phys_start = (mem->phys_start + image_offset) & PAGE_MASK;
 	page_offs = offset_in_page(image_offset);
 	image_mem = jailhouse_ioremap(phys_start, 0,
 				      PAGE_ALIGN(image.size + page_offs));
