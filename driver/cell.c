@@ -10,6 +10,9 @@
  * the COPYING file in the top-level directory.
  */
 
+/* For compatibility with older kernel versions */
+#include <linux/version.h>
+
 #include <linux/cpu.h>
 #include <linux/mm.h>
 #include <linux/slab.h>
@@ -22,6 +25,11 @@
 #include "sysfs.h"
 
 #include <jailhouse/hypercall.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,7,0)
+#define add_cpu(cpu)		cpu_up(cpu)
+#define remove_cpu(cpu)		cpu_down(cpu)
+#endif
 
 struct cell *root_cell;
 
@@ -232,7 +240,7 @@ int jailhouse_cmd_cell_create(struct jailhouse_cell_create __user *arg)
 		}
 #endif
 		if (cpu_online(cpu)) {
-			err = cpu_down(cpu);
+			err = remove_cpu(cpu);
 			if (err)
 				goto error_cpu_online;
 			cpumask_set_cpu(cpu, &offlined_cpus);
@@ -261,7 +269,7 @@ kfree_config_out:
 
 error_cpu_online:
 	for_each_cpu(cpu, &cell->cpus_assigned) {
-		if (!cpu_online(cpu) && cpu_up(cpu) == 0)
+		if (!cpu_online(cpu) && add_cpu(cpu) == 0)
 			cpumask_clear_cpu(cpu, &offlined_cpus);
 		cpumask_set_cpu(cpu, &root_cell->cpus_assigned);
 	}
@@ -421,7 +429,7 @@ static int cell_destroy(struct cell *cell)
 
 	for_each_cpu(cpu, &cell->cpus_assigned) {
 		if (cpumask_test_cpu(cpu, &offlined_cpus)) {
-			if (cpu_up(cpu) != 0)
+			if (add_cpu(cpu) != 0)
 				pr_err("Jailhouse: failed to bring CPU %d "
 				       "back online\n", cpu);
 			cpumask_clear_cpu(cpu, &offlined_cpus);

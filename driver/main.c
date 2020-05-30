@@ -900,7 +900,7 @@ static int __init jailhouse_init(void)
 {
 	int err;
 
-#ifdef CONFIG_KALLSYMS_ALL
+#if defined(CONFIG_KALLSYMS_ALL) && LINUX_VERSION_CODE < KERNEL_VERSION(5,7,0)
 #define __RESOLVE_EXTERNAL_SYMBOL(symbol)			\
 	symbol##_sym = (void *)kallsyms_lookup_name(#symbol);	\
 	if (!symbol##_sym)					\
