@@ -11,7 +11,6 @@
 # the COPYING file in the top-level directory.
 
 from __future__ import print_function
-import collections
 import mmap
 import os
 import struct
@@ -120,53 +119,6 @@ class MMIO:
             return None
         self.mmap.seek(offset)
         return struct.unpack('Q', self.mmap.read(8))[0]
-
-
-class Sysconfig:
-    HEADER_SIGNATURE_SIZE = 6
-    HEADER_REVISION_SIZE = 2
-    FLAGS_SIZE = 4
-    HVMEM_SIZE = 32
-    DBGCON_SIZE = 32
-    MMCFGBASE_SIZE = 8
-    MMCFGENDBUS_SIZE = 1
-    PCIISVIRT_SIZE = 1
-    PCIDOMAIN_SIZE = 2
-    X86_PADDING = 18
-    X86_MAX_IOMMU_UNITS = 8
-    X86_IOMMU_SIZE = 20
-
-    HEADER_REVISION = 12
-    HEADER_FORMAT = '6sH'
-
-    def __init__(self, path):
-        self.config = open(path, 'rb')
-        data = self.config.read()
-        signature, revision = struct.unpack_from(Sysconfig.HEADER_FORMAT, data)
-        if signature.decode() != 'JHSYST':
-            print('Not a system configuration', file=sys.stderr)
-            sys.exit(1)
-        if revision != Sysconfig.HEADER_REVISION:
-            print('Configuration file revision mismatch', file=sys.stderr)
-            sys.exit(1)
-
-    def parse_iommus(self):
-        self.config.seek(Sysconfig.HEADER_SIGNATURE_SIZE +
-                         Sysconfig.HEADER_REVISION_SIZE + Sysconfig.FLAGS_SIZE +
-                         Sysconfig.HVMEM_SIZE + Sysconfig.DBGCON_SIZE +
-                         Sysconfig.MMCFGBASE_SIZE + Sysconfig.MMCFGENDBUS_SIZE +
-                         Sysconfig.PCIISVIRT_SIZE + Sysconfig.PCIDOMAIN_SIZE +
-                         Sysconfig.X86_PADDING)
-
-        keys = 'base_addr mmio_size amd_bdf amd_base_cap amd_features'
-        IOMMU = collections.namedtuple('IOMMU', keys)
-
-        iommus = []
-        for n in range(Sysconfig.X86_MAX_IOMMU_UNITS):
-            data = self.config.read(Sysconfig.X86_IOMMU_SIZE)
-            iommu = IOMMU(*struct.unpack('QIHBxI', data))
-            iommus.append(iommu)
-        return iommus
 
 
 if os.uname()[4] not in ('x86_64', 'i686'):
