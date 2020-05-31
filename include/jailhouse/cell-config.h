@@ -48,7 +48,7 @@
 
 /*
  * Incremented on any layout or semantic change of system or cell config.
- * Also update HEADER_REVISION in tools.
+ * Also update formats and HEADER_REVISION in pyjailhouse/config_parser.py.
  */
 #define JAILHOUSE_CONFIG_REVISION	13
 
