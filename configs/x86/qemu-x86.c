@@ -45,16 +45,16 @@ struct {
 		.platform_info = {
 			.pci_mmconfig_base = 0xb0000000,
 			.pci_mmconfig_end_bus = 0xff,
+			.iommu_units = {
+				{
+					.type = JAILHOUSE_IOMMU_INTEL,
+					.base = 0xfed90000,
+					.size = 0x1000,
+				},
+			},
 			.x86 = {
 				.pm_timer_address = 0x608,
 				.vtd_interrupt_limit = 256,
-				.iommu_units = {
-					{
-						.type = JAILHOUSE_IOMMU_INTEL,
-						.base = 0xfed90000,
-						.size = 0x1000,
-					},
-				},
 			},
 		},
 		.root_cell = {

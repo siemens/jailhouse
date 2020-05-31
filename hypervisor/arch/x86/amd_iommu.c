@@ -445,7 +445,7 @@ static void amd_iommu_init_fault_nmi(void)
 
 	for_each_iommu(iommu) {
 		struct jailhouse_iommu *cfg =
-		    &system_config->platform_info.x86.iommu_units[iommu->idx];
+		    &system_config->platform_info.iommu_units[iommu->idx];
 
 		/* Disable MSI during interrupt reprogramming. */
 		pci_write_config(cfg->amd.bdf, cfg->amd.msi_cap + 2, 0, 2);
@@ -780,7 +780,7 @@ static int amd_iommu_init(void)
 	unsigned int n;
 	int err;
 
-	iommu = &system_config->platform_info.x86.iommu_units[0];
+	iommu = &system_config->platform_info.iommu_units[0];
 	for (n = 0; iommu->base && n < iommu_count_units(); iommu++, n++) {
 		if (iommu->type != JAILHOUSE_IOMMU_AMD)
 			return trace_error(-EINVAL);

@@ -19,7 +19,7 @@ unsigned int iommu_count_units(void)
 	unsigned int units = 0;
 
 	while (units < JAILHOUSE_MAX_IOMMU_UNITS &&
-	       system_config->platform_info.arm.iommu_units[units].base)
+	       system_config->platform_info.iommu_units[units].base)
 		units++;
 	return units;
 }

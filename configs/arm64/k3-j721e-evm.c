@@ -45,13 +45,7 @@ struct {
 			.pci_mmconfig_end_bus = 0,
 			.pci_is_virtual = 1,
 			.pci_domain = 3,
-			.arm = {
-				.gic_version = 3,
-				.gicd_base = 0x01800000,
-				.gicr_base = 0x01900000,
-				.maintenance_irq = 25,
-			},
-			.arm.iommu_units= {
+			.iommu_units= {
 				{
 					.type = JAILHOUSE_IOMMU_SMMUV3,
 					.base = 0x36600000,
@@ -79,7 +73,12 @@ struct {
 					.tipvu.tlb_size = 0x40000,
 				},
 			},
-
+			.arm = {
+				.gic_version = 3,
+				.gicd_base = 0x01800000,
+				.gicr_base = 0x01900000,
+				.maintenance_irq = 25,
+			},
 		},
 		.root_cell = {
 			.name = "k3-j721e-evm",

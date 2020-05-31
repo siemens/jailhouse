@@ -536,7 +536,7 @@ static int pvu_iommu_init(void)
 	unsigned int i;
 	int ret;
 
-	iommu = &system_config->platform_info.arm.iommu_units[0];
+	iommu = &system_config->platform_info.iommu_units[0];
 	for (i = 0; i < iommu_count_units(); iommu++, i++) {
 
 		if (iommu->type != JAILHOUSE_IOMMU_PVU)

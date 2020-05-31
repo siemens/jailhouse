@@ -83,26 +83,26 @@ struct {
 		.platform_info = {
 			.pci_mmconfig_base = ${hex(mmconfig.base)},
 			.pci_mmconfig_end_bus = ${hex(mmconfig.end_bus)},
+			% if iommu_units:
+			.iommu_units = {
+				% for unit in iommu_units:
+				{
+					.type = ${unit.type},
+					.base = ${hex(unit.base_addr)},
+					.size = ${hex(unit.mmio_size)},
+					% if unit.is_amd_iommu:
+					.amd.bdf = ${hex(unit.amd_bdf)},
+					.amd.base_cap = ${hex(unit.amd_base_cap)},
+					.amd.msi_cap = ${hex(unit.amd_msi_cap)},
+					.amd.features = ${hex(unit.amd_features)},
+					% endif
+				},
+				% endfor
+			},
+			% endif
 			.x86 = {
 				.pm_timer_address = ${hex(pm_timer_base)},
 				.vtd_interrupt_limit = ${int(vtd_interrupt_limit)},
-				% if iommu_units:
-				.iommu_units = {
-					% for unit in iommu_units:
-					{
-						.type = ${unit.type},
-						.base = ${hex(unit.base_addr)},
-						.size = ${hex(unit.mmio_size)},
-						% if unit.is_amd_iommu:
-						.amd.bdf = ${hex(unit.amd_bdf)},
-						.amd.base_cap = ${hex(unit.amd_base_cap)},
-						.amd.msi_cap = ${hex(unit.amd_msi_cap)},
-						.amd.features = ${hex(unit.amd_features)},
-						% endif
-					},
-					% endfor
-				},
-				% endif
 			},
 		},
 		.root_cell = {

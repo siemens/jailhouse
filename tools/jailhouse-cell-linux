@@ -574,7 +574,7 @@ class PIORegion:
 
 class Config:
     _HEADER_FORMAT = '=6sH32s4xIIIIIIIIIIQ8x32x'
-    _HEADER_REVISION = 12
+    _HEADER_REVISION = 13
 
     def __init__(self, config_file):
         self.data = config_file.read()

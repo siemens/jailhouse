@@ -46,19 +46,19 @@ struct {
 		.platform_info = {
 			.pci_mmconfig_base = 0xe0000000,
 			.pci_mmconfig_end_bus = 0xff,
+			.iommu_units = {
+				{
+					.type = JAILHOUSE_IOMMU_AMD,
+					.base = 0xfeb80000,
+					.size = 0x80000,
+					.amd.bdf = 0x02,
+					.amd.base_cap = 0x40,
+					.amd.msi_cap = 0x54,
+					.amd.features = 0x80048824,
+				},
+			},
 			.x86 = {
 				.pm_timer_address = 0x808,
-				.iommu_units = {
-					{
-						.type = JAILHOUSE_IOMMU_AMD,
-						.base = 0xfeb80000,
-						.size = 0x80000,
-						.amd.bdf = 0x02,
-						.amd.base_cap = 0x40,
-						.amd.msi_cap = 0x54,
-						.amd.features = 0x80048824,
-					},
-				},
 			},
 		},
 		.root_cell = {

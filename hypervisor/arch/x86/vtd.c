@@ -965,7 +965,7 @@ static int vtd_init_ir_emulation(unsigned int unit_no, void *reg_base)
 
 	root_cell.arch.vtd.ir_emulation = true;
 
-	base = system_config->platform_info.x86.iommu_units[unit_no].base;
+	base = system_config->platform_info.iommu_units[unit_no].base;
 	mmio_region_register(&root_cell, base, PAGE_SIZE,
 			     vtd_unit_access_handler, unit);
 
@@ -1027,7 +1027,7 @@ static int vtd_init(void)
 		return -ENOMEM;
 
 	for (n = 0; n < units; n++) {
-		unit = &system_config->platform_info.x86.iommu_units[n];
+		unit = &system_config->platform_info.iommu_units[n];
 		if (unit->type != JAILHOUSE_IOMMU_INTEL)
 			return trace_error(-EINVAL);
 
