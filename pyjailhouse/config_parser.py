@@ -90,7 +90,7 @@ class PIORegion:
 class CellConfig:
     _HEADER_FORMAT = '=6sH32s4xIIIIIIIIIIQ8x32x'
 
-    def __init__(self, data):
+    def __init__(self, data, root_cell=False):
         self.data = data
 
         try:
@@ -109,10 +109,11 @@ class CellConfig:
              self.vpci_irq_base,
              self.cpu_reset_address) = \
                 struct.unpack_from(CellConfig._HEADER_FORMAT, self.data)
-            if str(signature.decode()) != 'JHCELL':
-                raise RuntimeError('Not a cell configuration')
-            if revision != _CONFIG_REVISION:
-                raise RuntimeError('Configuration file revision mismatch')
+            if not root_cell:
+                if str(signature.decode()) != 'JHCELL':
+                    raise RuntimeError('Not a cell configuration')
+                if revision != _CONFIG_REVISION:
+                    raise RuntimeError('Configuration file revision mismatch')
             self.name = str(name.decode())
 
             mem_region_offs = struct.calcsize(CellConfig._HEADER_FORMAT) + \
@@ -137,4 +138,34 @@ class CellConfig:
                 self.pio_regions.append(PIORegion(self.data[pioregion_offs:]))
                 pioregion_offs += PIORegion.SIZE
         except struct.error:
-            raise RuntimeError('Not a cell configuration')
+            raise RuntimeError('Not a %scell configuration' %
+                               ('root ' if root_cell else ''))
+
+
+class SystemConfig:
+    _HEADER_FORMAT = '=6sH4x'
+    # ...followed by MemRegion as hypervisor memory
+    _CONSOLE_AND_PLATFORM_FORMAT = '32x12x224x44x'
+
+    def __init__(self, data):
+        self.data = data
+
+        try:
+            (signature,
+             revision) = \
+                struct.unpack_from(SystemConfig._HEADER_FORMAT, self.data)
+
+            if str(signature.decode()) != 'JHSYST':
+                raise RuntimeError('Not a root cell configuration')
+            if revision != _CONFIG_REVISION:
+                raise RuntimeError('Configuration file revision mismatch')
+
+            offs = struct.calcsize(SystemConfig._HEADER_FORMAT)
+            self.hypervisor_memory = MemRegion(self.data[offs:])
+
+            offs += struct.calcsize(MemRegion._REGION_FORMAT)
+            offs += struct.calcsize(SystemConfig._CONSOLE_AND_PLATFORM_FORMAT)
+        except struct.error:
+            raise RuntimeError('Not a root cell configuration')
+
+        self.root_cell = CellConfig(self.data[offs:], root_cell=True)
