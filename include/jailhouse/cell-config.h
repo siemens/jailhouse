@@ -310,15 +310,16 @@ struct jailhouse_system {
 		union {
 			struct {
 				__u16 pm_timer_address;
-				__u32 vtd_interrupt_limit;
 				__u8 apic_mode;
-				__u8 padding[3];
+				__u8 padding;
+				__u32 vtd_interrupt_limit;
 				__u32 tsc_khz;
 				__u32 apic_khz;
 			} __attribute__((packed)) x86;
 			struct {
 				u8 maintenance_irq;
 				u8 gic_version;
+				u8 padding[2];
 				u64 gicd_base;
 				u64 gicc_base;
 				u64 gich_base;
