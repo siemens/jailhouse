@@ -687,24 +687,26 @@ parser = argparse.ArgumentParser(description='Boot Linux in a non-root cell.')
 parser.add_argument('config', metavar='CELLCONFIG',
                     type=argparse.FileType('rb'),
                     help='cell configuration file')
-parser.add_argument('kernel', metavar='KERNEL', type=argparse.FileType('rb'),
+parser.add_argument('kernel', metavar='KERNEL',
+		    type=argparse.FileType('rb'),
                     help='image of the kernel to be booted')
-parser.add_argument('--dtb', '-d', metavar='DTB', type=argparse.FileType('rb'),
+parser.add_argument('-d', '--dtb', metavar='DTB',
+		    type=argparse.FileType('rb'),
                     help='device tree for the kernel [arm/arm64 only]')
-parser.add_argument('--initrd', '-i', metavar='FILE',
+parser.add_argument('-i', '--initrd', metavar='INITRD',
                     type=argparse.FileType('rb'),
                     help='initrd/initramfs for the kernel')
-parser.add_argument('--cmdline', '-c', metavar='"STRING"',
+parser.add_argument('-c', '--cmdline', metavar='"CMDLINE"',
                     help='kernel command line')
-parser.add_argument('--write-params', '-w', metavar='FILE',
+parser.add_argument('-w', '--write-params', metavar='PARAMS_FILE',
                     type=argparse.FileType('wb'),
                     help='only parse cell configuration, write out '
                          'parameters into the specified file and print '
                          'required jailhouse cell commands to boot Linux '
                          'to the console')
-parser.add_argument('--arch', '-a', metavar='ARCH',
+parser.add_argument('-a', '--arch', metavar='ARCH',
                     help='target architecture')
-parser.add_argument('--kernel-decomp-factor', '-k', metavar='N',
+parser.add_argument('-k', '--kernel-decomp-factor', metavar='FACTOR',
                     type=int,
                     help='decompression factor of the kernel image, used to '
                          'reserve space between the kernel and the initramfs')

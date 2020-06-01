@@ -44,13 +44,15 @@ struct jailhouse_cell_info {
 };
 
 static const struct extension extensions[] = {
-	{ "cell", "linux", "CELLCONFIG KERNEL [-i | --initrd FILE]\n"
-	  "              [-c | --cmdline \"STRING\"] "
-					"[-w | --write-params FILE]" },
+	{ "cell", "linux", "[-h] [-d DTB] [-i INITRD] [-c \"CMDLINE\"]"
+	  " [-w PARAMS_FILE]\n"
+	  "              [-a ARCH] [-k FACTOR]\n"
+	  "              CELLCONFIG KERNEL" },
 	{ "cell", "stats", "{ ID | [--name] NAME }" },
-	{ "config", "create", "[-h] [-g] [-r ROOT] "
-	  "[--mem-inmates MEM_INMATES]\n"
-	  "                 [--mem-hv MEM_HV] FILE" },
+	{ "config", "create", "[-h] [-g] [-r ROOT] [-t TEMPLATE_DIR]"
+	  " [-c CONSOLE]\n"
+	  "                 [--mem-inmates MEM_INMATES] [--mem-hv MEM_HV]\n"
+	  "                 FILE" },
 	{ "config", "collect", "FILE.TAR" },
 	{ "config", "check", "[-h] SYSCONFIG [CELLCONFIG [CELLCONFIG ...]]" },
 	{ "hardware", "check", "" },
