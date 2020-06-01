@@ -57,6 +57,7 @@ HELPERS += \
 	jailhouse-cell-linux \
 	jailhouse-cell-stats \
 	jailhouse-config-create \
+	jailhouse-config-check \
 	jailhouse-hardware-check
 TEMPLATES := jailhouse-config-collect.tmpl root-cell-config.c.tmpl
 
@@ -65,6 +66,7 @@ install-libexec: $(HELPERS) $(DESTDIR)$(libexecdir)/jailhouse
 	$(Q)$(call patch_dirvar,libexecdir,$(lastword $^)/jailhouse-cell-linux)
 	$(Q)$(call patch_dirvar,datadir,$(lastword $^)/jailhouse-config-create)
 	$(Q)$(call patch_pyjh_import,$(lastword $^)/jailhouse-cell-linux)
+	$(Q)$(call patch_pyjh_import,$(lastword $^)/jailhouse-config-check)
 
 install-data: $(TEMPLATES) $(DESTDIR)$(datadir)/jailhouse
 	$(INSTALL_DATA) $^

@@ -52,6 +52,7 @@ static const struct extension extensions[] = {
 	  "[--mem-inmates MEM_INMATES]\n"
 	  "                 [--mem-hv MEM_HV] FILE" },
 	{ "config", "collect", "FILE.TAR" },
+	{ "config", "check", "[-h] SYSCONFIG [CELLCONFIG [CELLCONFIG ...]]" },
 	{ "hardware", "check", "" },
 	{ NULL }
 };

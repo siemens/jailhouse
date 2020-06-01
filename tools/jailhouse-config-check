@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2020
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+# This script should help to create a basic jailhouse configuration file.
+# It needs to be executed on the target machine, where it will gather
+# information about the system. For more advanced scenarios you will have
+# to change the generated C-code.
+
+from __future__ import print_function
+import argparse
+import os
+import sys
+
+# Imports from directory containing this must be done before the following
+sys.path[0] = os.path.dirname(os.path.abspath(__file__)) + "/.."
+import pyjailhouse.config_parser as config_parser
+
+# pretend to be part of the jailhouse tool
+sys.argv[0] = sys.argv[0].replace('-', ' ')
+
+parser = argparse.ArgumentParser(description='Check system and cell configurations.')
+parser.add_argument('syscfg', metavar='SYSCONFIG',
+                    type=argparse.FileType('rb'),
+                    help='system configuration file')
+parser.add_argument('cellcfgs', metavar='CELLCONFIG', nargs="*",
+                    type=argparse.FileType('rb'),
+                    help='cell configuration file')
+
+try:
+    args = parser.parse_args()
+except IOError as e:
+    print(e.strerror, file=sys.stderr)
+    exit(1)
+
+print("Reading configuration set:")
+
+try:
+    sysconfig = config_parser.SystemConfig(args.syscfg.read())
+    root_cell = sysconfig.root_cell
+except RuntimeError as e:
+    print(str(e) + ": " + args.syscfg.name, file=sys.stderr)
+    exit(1)
+cells = [root_cell]
+print("  Root cell:     %s (%s)" % (root_cell.name, args.syscfg.name))
+
+non_root_cells = []
+for cfg in args.cellcfgs:
+    try:
+        cell = config_parser.CellConfig(cfg.read())
+    except RuntimeError as e:
+        print(str(e) + ": " + cfg.name, file=sys.stderr)
+        exit(1)
+    non_root_cells.append(cell)
+    cells.append(cell)
+    print("  Non-root cell: %s (%s)" % (cell.name, cfg.name))
+
+ret=0
+
+print("Overlapping memory regions inside cell:", end='')
+found=False
+for cell in cells:
+    for mem in cell.memory_regions:
+        idx = cell.memory_regions.index(mem)
+        for mem2 in cell.memory_regions[idx + 1:]:
+            idx2 = cell.memory_regions.index(mem2)
+            overlaps = []
+            if (mem.phys_overlaps(mem2)):
+                overlaps.append("physically")
+            if (mem.virt_overlaps(mem2)):
+                overlaps.append("virtually")
+            if overlaps:
+                print("\n\nIn cell '%s', region %d" % (cell.name, idx))
+                print(str(mem))
+                print(" and ".join(overlaps) + \
+                    " overlaps with region %d\n" % idx2 + str(mem2), end='')
+                found=True
+                ret=1
+print("\n" if found else " None")
+
+exit(ret)
