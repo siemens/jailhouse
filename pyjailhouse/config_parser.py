@@ -23,6 +23,15 @@ from .extendedenum import ExtendedEnum
 _CONFIG_REVISION = 13
 
 
+def flag_str(enum_class, value, separator=' | '):
+    flags = []
+    while value:
+        mask = 1 << (value.bit_length() - 1)
+        flags.insert(0, str(enum_class(mask)))
+        value &= ~mask
+    return separator.join(flags)
+
+
 class JAILHOUSE_MEM(ExtendedEnum, int):
     _ids = {
         'READ':         0x00001,
@@ -52,6 +61,12 @@ class MemRegion:
          self.size,
          self.flags) = \
             struct.unpack_from(MemRegion._REGION_FORMAT, region_struct)
+
+    def __str__(self):
+        return ("  phys_start: 0x%016x\n" % self.phys_start) + \
+               ("  virt_start: 0x%016x\n" % self.virt_start) + \
+               ("  size:       0x%016x\n" % self.size) + \
+               ("  flags:      " + flag_str(JAILHOUSE_MEM, self.flags))
 
     def is_ram(self):
         return ((self.flags & (JAILHOUSE_MEM.READ |
