@@ -17,19 +17,32 @@
 from __future__ import print_function
 import struct
 
+from .extendedenum import ExtendedEnum
+
 # Keep the whole file in sync with include/jailhouse/cell-config.h.
 _CONFIG_REVISION = 13
 
 
-class MemRegion:
-    JAILHOUSE_MEM_READ = 0x0001
-    JAILHOUSE_MEM_WRITE = 0x0002
-    JAILHOUSE_MEM_EXECUTE = 0x0004
-    JAILHOUSE_MEM_DMA = 0x0008
-    JAILHOUSE_MEM_IO = 0x0010
-    JAILHOUSE_MEM_COMM_REGION = 0x0020
-    JAILHOUSE_MEM_ROOTSHARED = 0x0080
+class JAILHOUSE_MEM(ExtendedEnum, int):
+    _ids = {
+        'READ':         0x00001,
+        'WRITE':        0x00002,
+        'EXECUTE':      0x00004,
+        'DMA':          0x00008,
+        'IO':           0x00010,
+        'COMM_REGION':  0x00020,
+        'LOADABLE':     0x00040,
+        'ROOTSHARED':   0x00080,
+        'NO_HUGEPAGES': 0x00100,
+        'IO_UNALIGNED': 0x08000,
+        'IO_8':         0x10000,
+        'IO_16':        0x20000,
+        'IO_32':        0x40000,
+        'IO_64':        0x80000,
+    }
 
+
+class MemRegion:
     _REGION_FORMAT = 'QQQQ'
     SIZE = struct.calcsize(_REGION_FORMAT)
 
@@ -41,20 +54,20 @@ class MemRegion:
             struct.unpack_from(MemRegion._REGION_FORMAT, region_struct)
 
     def is_ram(self):
-        return ((self.flags & (MemRegion.JAILHOUSE_MEM_READ |
-                               MemRegion.JAILHOUSE_MEM_WRITE |
-                               MemRegion.JAILHOUSE_MEM_EXECUTE |
-                               MemRegion.JAILHOUSE_MEM_DMA |
-                               MemRegion.JAILHOUSE_MEM_IO |
-                               MemRegion.JAILHOUSE_MEM_COMM_REGION |
-                               MemRegion.JAILHOUSE_MEM_ROOTSHARED)) ==
-                (MemRegion.JAILHOUSE_MEM_READ |
-                 MemRegion.JAILHOUSE_MEM_WRITE |
-                 MemRegion.JAILHOUSE_MEM_EXECUTE |
-                 MemRegion.JAILHOUSE_MEM_DMA))
+        return ((self.flags & (JAILHOUSE_MEM.READ |
+                               JAILHOUSE_MEM.WRITE |
+                               JAILHOUSE_MEM.EXECUTE |
+                               JAILHOUSE_MEM.DMA |
+                               JAILHOUSE_MEM.IO |
+                               JAILHOUSE_MEM.COMM_REGION |
+                               JAILHOUSE_MEM.ROOTSHARED)) ==
+                (JAILHOUSE_MEM.READ |
+                 JAILHOUSE_MEM.WRITE |
+                 JAILHOUSE_MEM.EXECUTE |
+                 JAILHOUSE_MEM.DMA))
 
     def is_comm_region(self):
-        return (self.flags & MemRegion.JAILHOUSE_MEM_COMM_REGION) != 0
+        return (self.flags & JAILHOUSE_MEM.COMM_REGION) != 0
 
 
 class CacheRegion:
