@@ -93,45 +93,48 @@ class CellConfig:
     def __init__(self, data):
         self.data = data
 
-        (signature,
-         revision,
-         name,
-         self.flags,
-         self.cpu_set_size,
-         self.num_memory_regions,
-         self.num_cache_regions,
-         self.num_irqchips,
-         self.num_pio_regions,
-         self.num_pci_devices,
-         self.num_pci_caps,
-         self.num_stream_ids,
-         self.vpci_irq_base,
-         self.cpu_reset_address) = \
-            struct.unpack_from(CellConfig._HEADER_FORMAT, self.data)
-        if str(signature.decode()) != 'JHCELL':
+        try:
+            (signature,
+             revision,
+             name,
+             self.flags,
+             self.cpu_set_size,
+             self.num_memory_regions,
+             self.num_cache_regions,
+             self.num_irqchips,
+             self.num_pio_regions,
+             self.num_pci_devices,
+             self.num_pci_caps,
+             self.num_stream_ids,
+             self.vpci_irq_base,
+             self.cpu_reset_address) = \
+                struct.unpack_from(CellConfig._HEADER_FORMAT, self.data)
+            if str(signature.decode()) != 'JHCELL':
+                raise RuntimeError('Not a cell configuration')
+            if revision != _CONFIG_REVISION:
+                raise RuntimeError('Configuration file revision mismatch')
+            self.name = str(name.decode())
+
+            mem_region_offs = struct.calcsize(CellConfig._HEADER_FORMAT) + \
+                self.cpu_set_size
+            self.memory_regions = []
+            for n in range(self.num_memory_regions):
+                self.memory_regions.append(
+                    MemRegion(self.data[mem_region_offs:]))
+                mem_region_offs += MemRegion.SIZE
+
+            irqchip_offs = mem_region_offs + \
+                self.num_cache_regions * CacheRegion.SIZE
+            self.irqchips = []
+            for n in range(self.num_irqchips):
+                self.irqchips.append(
+                    Irqchip(self.data[irqchip_offs:]))
+                irqchip_offs += Irqchip.SIZE
+
+            pioregion_offs = irqchip_offs
+            self.pio_regions = []
+            for n in range(self.num_pio_regions):
+                self.pio_regions.append(PIORegion(self.data[pioregion_offs:]))
+                pioregion_offs += PIORegion.SIZE
+        except struct.error:
             raise RuntimeError('Not a cell configuration')
-        if revision != _CONFIG_REVISION:
-            raise RuntimeError('Configuration file revision mismatch')
-        self.name = str(name.decode())
-
-        mem_region_offs = struct.calcsize(CellConfig._HEADER_FORMAT) + \
-            self.cpu_set_size
-        self.memory_regions = []
-        for n in range(self.num_memory_regions):
-            self.memory_regions.append(
-                MemRegion(self.data[mem_region_offs:]))
-            mem_region_offs += MemRegion.SIZE
-
-        irqchip_offs = mem_region_offs + \
-            self.num_cache_regions * CacheRegion.SIZE
-        self.irqchips = []
-        for n in range(self.num_irqchips):
-            self.irqchips.append(
-                Irqchip(self.data[irqchip_offs:]))
-            irqchip_offs += Irqchip.SIZE
-
-        pioregion_offs = irqchip_offs
-        self.pio_regions = []
-        for n in range(self.num_pio_regions):
-            self.pio_regions.append(PIORegion(self.data[pioregion_offs:]))
-            pioregion_offs += PIORegion.SIZE
