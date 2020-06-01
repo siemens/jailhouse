@@ -84,6 +84,26 @@ class MemRegion:
     def is_comm_region(self):
         return (self.flags & JAILHOUSE_MEM.COMM_REGION) != 0
 
+    def phys_address_in_region(self, address):
+        return address >= self.phys_start and \
+            address < (self.phys_start + self.size)
+
+    def phys_overlaps(self, region):
+        if self.size == 0 or region.size == 0:
+            return False
+        return region.phys_address_in_region(self.phys_start) or \
+            self.phys_address_in_region(region.phys_start)
+
+    def virt_address_in_region(self, address):
+        return address >= self.virt_start and \
+            address < (self.virt_start + self.size)
+
+    def virt_overlaps(self, region):
+        if self.size == 0 or region.size == 0:
+            return False
+        return region.virt_address_in_region(self.virt_start) or \
+            self.virt_address_in_region(region.virt_start)
+
 
 class CacheRegion:
     _REGION_FORMAT = 'IIBxH'
