@@ -421,8 +421,10 @@ static int irqchip_cell_init(struct cell *cell)
 		    chip->pin_base + sizeof(chip->pin_bitmap) * 8 >
 		    sizeof(cell->arch.irq_bitmap) * 8)
 			return trace_error(-EINVAL);
-		memcpy(&cell->arch.irq_bitmap[chip->pin_base / 32],
-		       chip->pin_bitmap, sizeof(chip->pin_bitmap));
+		for (pos = 0; pos < ARRAY_SIZE(chip->pin_bitmap); pos++) {
+			cell->arch.irq_bitmap[chip->pin_base / 32 + pos] |=
+				chip->pin_bitmap[pos];
+		}
 	}
 	/*
 	 * Permit direct access to all SGIs and PPIs except for those used by
