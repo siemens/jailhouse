@@ -158,7 +158,7 @@ class CellConfig:
              self.cpu_reset_address) = \
                 struct.unpack_from(CellConfig._HEADER_FORMAT, self.data)
             if not root_cell:
-                if str(signature.decode()) != 'JHCELL':
+                if signature != b'JHCELL':
                     raise RuntimeError('Not a cell configuration')
                 if revision != _CONFIG_REVISION:
                     raise RuntimeError('Configuration file revision mismatch')
@@ -203,7 +203,7 @@ class SystemConfig:
              revision) = \
                 struct.unpack_from(SystemConfig._HEADER_FORMAT, self.data)
 
-            if str(signature.decode()) != 'JHSYST':
+            if signature != b'JHSYST':
                 raise RuntimeError('Not a root cell configuration')
             if revision != _CONFIG_REVISION:
                 raise RuntimeError('Configuration file revision mismatch')
