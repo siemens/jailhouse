@@ -414,6 +414,13 @@
 };
 
 &main_pmx0 {
+	main_uart1_pins_default: main_uart1_pins_default {
+		pinctrl-single,pins = <
+			J721E_IOPAD(0x1f8, PIN_INPUT, 0) /* (AA4) UART1_RXD */
+			J721E_IOPAD(0x1fc, PIN_OUTPUT, 0) /* (AB4) UART1_TXD */
+		>;
+	};
+
 	sw10_button_pins_default: sw10_button_pins_default {
 		pinctrl-single,pins = <
 			/* PADCONFIG[5:4] = GPIO group select = 1 */
@@ -426,6 +433,11 @@
 			J721E_IOPAD(0x214, PIN_OUTPUT, 4) /* (V4) MCAN1_TX.USB1_DRVVBUS */
 		>;
 	};
+};
+
+&main_uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&main_uart1_pins_default>;
 };
 
 &main_sdhci0 {
