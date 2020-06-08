@@ -24,7 +24,7 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[27];
+	struct jailhouse_memory mem_regions[18];
 	struct jailhouse_irqchip irqchips[4];
 	struct jailhouse_pci_device pci_devices[1];
 	__u32 stream_ids[2];
@@ -132,69 +132,6 @@ struct {
 			.phys_start = 0x32c0f000,
 			.virt_start = 0x32c0f000,
 			.size = 0x05000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* D552 decoder */ {
-			.phys_start = 0x4300000,
-			.virt_start = 0x4300000,
-			.size = 0x100000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* GPU */ {
-			.phys_start = 0x4e20000000,
-			.virt_start = 0x4e20000000,
-			.size = 0x80000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* dss.common_s1 */ {
-			.phys_start = 0x4B00000,
-			.virt_start = 0x4B00000,
-			.size = 0x00010000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* dss.vidl1 */ {
-			.phys_start = 0x4A20000,
-			.virt_start = 0x4A20000,
-			.size = 0x00010000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* dss.ovr1 */ {
-			.phys_start = 0x4A70000,
-			.virt_start = 0x4A70000,
-			.size = 0x00010000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* dss.vp1 */ {
-			.phys_start = 0x4A80000,
-			.virt_start = 0x4A80000,
-			.size = 0x00010000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* serdes 10G */ {
-			.phys_start = 0x05050000,
-			.virt_start = 0x05050000,
-			.size = 0x10000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* DSS_EDP0_V2A_CORE_VP_REGS_AP */ {
-			.phys_start = 0x0A000000,
-			.virt_start = 0x0A000000,
-			.size = 0x31000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* DSS_EDP0_INTG_CFG_VP */ {
-			.phys_start = 0x04F40000,
-			.virt_start = 0x04F40000,
-			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
