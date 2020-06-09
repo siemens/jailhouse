@@ -127,7 +127,7 @@ if os.uname()[4] not in ('x86_64', 'i686'):
 
 
 ioapics = sysfs_parser.parse_madt()
-pci_devices, _, _ = sysfs_parser.parse_pcidevices()
+pci_devices = sysfs_parser.parse_pcidevices()
 
 (cpu_vendor, cpu_features, cpu_count) = parse_cpuinfo()
 

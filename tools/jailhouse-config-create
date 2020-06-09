@@ -253,7 +253,7 @@ cpu_count = count_cpus()
 mmconfig = MMConfig.parse()
 
 # Query devices
-(pci_devices, pci_caps, int_src_count) = sysfs_parser.parse_pcidevices()
+pci_devices = sysfs_parser.parse_pcidevices()
 (mem_regions, dmar_regions) = sysfs_parser.parse_iomem(pci_devices)
 (port_regions, pm_timer_base) = sysfs_parser.parse_ioports()
 ioapics = sysfs_parser.parse_madt()
@@ -266,7 +266,27 @@ else:
 mem_regions += extra_memregs
 
 IOAPIC_MAX_PINS = 120
-int_src_count += IOAPIC_MAX_PINS
+int_src_count = IOAPIC_MAX_PINS
+
+# Collect all PCI capabilities
+pci_caps = []
+for i,d in enumerate(pci_devices):
+    if d.caps:
+        duplicate = False
+        # look for duplicate capability patterns
+        for d2 in pci_devices[:i]:
+            if d2.caps == d.caps:
+                # reused existing capability list, but record all users
+                d2.caps[0].comments.append(str(d))
+                d.caps_start = d2.caps_start
+                duplicate = True
+                break
+        if not duplicate:
+            d.caps[0].comments.append(str(d))
+            d.caps_start = len(pci_caps)
+            pci_caps.extend(d.caps)
+    int_src_count += max(d.num_msi_vectors, d.num_msix_vectors)
+
 vtd_interrupt_limit = 2**math.ceil(math.log(int_src_count, 2))
 
 # Determine hypervisor memory

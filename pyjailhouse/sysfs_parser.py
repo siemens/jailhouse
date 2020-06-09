@@ -280,31 +280,14 @@ def parse_ioports():
 
 
 def parse_pcidevices():
-    int_src_cnt = 0
     devices = []
-    caps = []
     basedir = '/sys/bus/pci/devices'
     list = input_listdir(basedir, ['*/config'])
     for dir in list:
         d = PCIDevice.parse_pcidevice_sysfsdir(basedir, dir)
         if d is not None:
-            if d.caps:
-                duplicate = False
-                # look for duplicate capability patterns
-                for d2 in devices:
-                    if d2.caps == d.caps:
-                        # reused existing capability list, but record all users
-                        d2.caps[0].comments.append(str(d))
-                        d.caps_start = d2.caps_start
-                        duplicate = True
-                        break
-                if not duplicate:
-                    d.caps[0].comments.append(str(d))
-                    d.caps_start = len(caps)
-                    caps.extend(d.caps)
-            int_src_cnt += max(d.num_msi_vectors, d.num_msix_vectors)
             devices.append(d)
-    return (devices, caps, int_src_cnt)
+    return devices
 
 
 def parse_madt():
