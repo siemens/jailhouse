@@ -193,7 +193,7 @@ class CellConfig:
 class SystemConfig:
     _HEADER_FORMAT = '=6sH4x'
     # ...followed by MemRegion as hypervisor memory
-    _CONSOLE_AND_PLATFORM_FORMAT = '32x12x224x44x'
+    _CONSOLE_AND_PLATFORM_FORMAT = '32x16x224x44x'
 
     def __init__(self, data):
         self.data = data

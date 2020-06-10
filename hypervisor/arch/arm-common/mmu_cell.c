@@ -64,9 +64,7 @@ int arch_map_memory_region(struct cell *cell,
 		 */
 		err = paging_create_colored(&cell->arch.mm, phys_start,
 			mem->size, mem->virt_start, access_flags, paging_flags,
-			cell->arch.color_bitmask, (cell == &root_cell) &&
-			(mem->virt_start !=
-				system_config->platform_info.col_load_address));
+			cell->arch.color_bitmask, cell == &root_cell);
 	else
 		err = paging_create(&cell->arch.mm, phys_start, mem->size,
 			mem->virt_start, access_flags, paging_flags);

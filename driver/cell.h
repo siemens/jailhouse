@@ -32,13 +32,11 @@ struct cell {
 	cpumask_t cpus_assigned;
 	u32 num_memory_regions;
 	struct jailhouse_memory *memory_regions;
+	struct jailhouse_cache cache_coloring;
 #ifdef CONFIG_PCI
 	u32 num_pci_devices;
 	struct jailhouse_pci_device *pci_devices;
 #endif /* CONFIG_PCI */
-#ifdef CONFIG_COLORING
-	u64 col_load_address;
-#endif /* CONFIG_COLORING */
 };
 
 extern struct cell *root_cell;

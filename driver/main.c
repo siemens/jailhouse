@@ -95,6 +95,7 @@ struct console_state {
 DEFINE_MUTEX(jailhouse_lock);
 bool jailhouse_enabled;
 void *hypervisor_mem;
+unsigned int max_cache_colors;
 
 static struct device *jailhouse_dev;
 static unsigned long hv_core_and_percpu_size;
@@ -117,9 +118,6 @@ static typeof(__boot_cpu_mode) *__boot_cpu_mode_sym;
 #endif
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 static typeof(__hyp_stub_vectors) *__hyp_stub_vectors_sym;
-#endif
-#ifdef CONFIG_COLORING
-#define DEFAULT_JAILHOUSE_CELL_LOAD_VADDR	0x400000000
 #endif
 
 /* last_console contains three members:
@@ -565,22 +563,14 @@ static int jailhouse_cmd_enable(struct jailhouse_system __user *arg)
 			*lapic_timer_period_sym / (1000 / HZ);
 #endif
 
+	max_cache_colors = config->platform_info.max_cache_colors;
+	if (max_cache_colors == 0)
+		max_cache_colors = 1;
+
 	err = jailhouse_cell_prepare_root(&config->root_cell);
 	if (err)
 		goto error_unmap;
 
-#ifdef CONFIG_COLORING
-	/**
-	 * Be sure that col_load_address is set if coloring is enabled.
-	 */
-	if (!config->platform_info.col_load_address) {
-		pr_notice("No coloring load address defined, using default\n");
-		config->platform_info.col_load_address =
-			DEFAULT_JAILHOUSE_CELL_LOAD_VADDR;
-	}
-
-	root_cell->col_load_address = config->platform_info.col_load_address;
-#endif
 	error_code = 0;
 
 	preempt_disable();

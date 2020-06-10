@@ -44,6 +44,7 @@ struct {
 			.pci_mmconfig_end_bus = 0,
 			.pci_is_virtual = 1,
 			.pci_domain = 1,
+			.max_cache_colors = 32,
 			.arm = {
 				.gic_version = 3,
 				.gicd_base = 0x08000000,

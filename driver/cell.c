@@ -24,6 +24,7 @@
 #include "pci.h"
 #include "sysfs.h"
 
+#include <jailhouse/cache-coloring.h>
 #include <jailhouse/hypercall.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,7,0)
@@ -90,6 +91,17 @@ retry:
 
 	memcpy(cell->memory_regions, jailhouse_cell_mem_regions(cell_desc),
 	       sizeof(struct jailhouse_memory) * cell->num_memory_regions);
+
+	if (cell_desc->num_cache_regions == 1) {
+		memcpy(&cell->cache_coloring,
+		       jailhouse_cell_cache_regions(cell_desc),
+		       sizeof(struct jailhouse_cache));
+	} else if (cell_desc->num_cache_regions == 0) {
+		cell->cache_coloring.start = 0;
+		cell->cache_coloring.size = max_cache_colors;
+	} else {
+		return ERR_PTR(-EINVAL);
+	}
 
 	err = jailhouse_pci_cell_setup(cell, cell_desc);
 	if (err) {
@@ -307,8 +319,8 @@ static int load_image(struct cell *cell,
 {
 	struct jailhouse_preload_image image;
 	const struct jailhouse_memory *mem;
-	unsigned int regions, page_offs;
-	u64 image_offset, phys_start;
+	unsigned int regions, block_size;
+	u64 image_offset, colored_offs;
 	void *image_mem;
 	int err = 0;
 
@@ -323,8 +335,7 @@ static int load_image(struct cell *cell,
 		image_offset = image.target_address - mem->virt_start;
 		if (image.target_address >= mem->virt_start &&
 		    image_offset < mem->size) {
-			if (image.size > mem->size - image_offset ||
-			    (mem->flags & MEM_REQ_FLAGS) != MEM_REQ_FLAGS)
+			if ((mem->flags & MEM_REQ_FLAGS) != MEM_REQ_FLAGS)
 				return -EINVAL;
 			break;
 		}
@@ -333,40 +344,48 @@ static int load_image(struct cell *cell,
 	if (regions == 0)
 		return -EINVAL;
 
-#ifdef CONFIG_COLORING
-	if (mem->flags & JAILHOUSE_MEM_COLORED)
-		phys_start = (root_cell->col_load_address + image_offset)
-			& PAGE_MASK;
-	else
-#endif
-		phys_start = (mem->phys_start + image_offset) & PAGE_MASK;
-	page_offs = offset_in_page(image_offset);
-	image_mem = jailhouse_ioremap(phys_start, 0,
-				      PAGE_ALIGN(image.size + page_offs));
+	image_mem = jailhouse_ioremap(mem->phys_start, 0,
+				      PAGE_ALIGN(mem->size));
 	if (!image_mem) {
 		pr_err("jailhouse: Unable to map cell RAM at %08llx "
 		       "for image loading\n",
-		       (unsigned long long)(mem->phys_start + image_offset));
+		       (unsigned long long)(mem->phys_start));
 		return -EBUSY;
 	}
 
-	if (copy_from_user(image_mem + page_offs,
-			   (void __user *)(unsigned long)image.source_address,
-			   image.size))
-		err = -EFAULT;
-	/*
-	 * ARMv7 and ARMv8 require to clean D-cache and invalidate I-cache for
-	 * memory containing new instructions. On x86 this is a NOP.
-	 */
-	flush_icache_range((unsigned long)(image_mem + page_offs),
-			   (unsigned long)(image_mem + page_offs) + image.size);
+	while (image.size > 0) {
+		block_size = min(image.size, JAILHOUSE_MIN_COLORED_SIZE -
+			image_offset % JAILHOUSE_MIN_COLORED_SIZE);
+		colored_offs =
+			jailhouse_get_colored_offs(image_offset,
+						   &cell->cache_coloring,
+						   max_cache_colors);
+		if (copy_from_user(image_mem + colored_offs,
+				   (void __user *)(unsigned long)image.source_address,
+				   block_size))
+			err = -EFAULT;
+
+
+		/*
+		 * ARMv7 and ARMv8 require to clean D-cache and invalidate
+		 * I-cache for memory containing new instructions. On x86 this
+		 * is a NOP.
+		 */
+		flush_icache_range((unsigned long)(image_mem + colored_offs),
+				   (unsigned long)(image_mem + colored_offs) +
+				   block_size);
 #ifdef CONFIG_ARM
-	/*
-	 * ARMv7 requires to flush the written code and data out of D-cache to
-	 * allow the guest starting off with caches disabled.
-	 */
-	__cpuc_flush_dcache_area(image_mem + page_offs, image.size);
+		/*
+		 * ARMv7 requires to flush the written code and data out of
+		 * D-cache to allow the guest starting off with caches disabled.
+		 */
+		__cpuc_flush_dcache_area(image_mem + colored_offs, block_size);
 #endif
+
+		image_offset += block_size;
+		image.source_address += block_size;
+		image.size -= block_size;
+	}
 
 	vunmap(image_mem);
 

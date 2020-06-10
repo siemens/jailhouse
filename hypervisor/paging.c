@@ -18,6 +18,8 @@
 #include <jailhouse/control.h>
 #include <jailhouse/coloring.h>
 
+#include <jailhouse/cache-coloring.h>
+
 #define BITS_PER_PAGE		(PAGE_SIZE * 8)
 
 #define INVALID_PAGE_NR		(~0UL)
@@ -853,7 +855,8 @@ int paging_init(void)
 	}
 
 	/* Setup coloring */
-	if (coloring_paging_init(system_config->platform_info.llc_way_size)) {
+	if (coloring_paging_init(system_config->platform_info.max_cache_colors *
+				 JAILHOUSE_MIN_COLORED_SIZE)) {
 		printk("Error: Unable to init cache coloring data\n");
 		return -ENOMEM;
 	}

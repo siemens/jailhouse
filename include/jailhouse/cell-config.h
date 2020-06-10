@@ -319,19 +319,7 @@ struct jailhouse_system {
 		__u8 pci_mmconfig_end_bus;
 		__u8 pci_is_virtual;
 		__u16 pci_domain;
-		/**
-		 * Size (B) of each way of the last-level cache where coloring
-		 * takes place.
-		 * Must be set if get_llc_way_size() fails or does not support
-		 * the platform in use.
-		 */
-		__u64 llc_way_size;
-		/**
-		 * Start address used when loading binaries into colored memory
-		 * regions. This value should be set so that it does not overlap
-		 * with platform memory mappings.
-		 */
-		__u64 col_load_address;
+		__u32 max_cache_colors;
 		struct jailhouse_iommu iommu_units[JAILHOUSE_MAX_IOMMU_UNITS];
 		union {
 			struct {

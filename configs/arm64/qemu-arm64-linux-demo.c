@@ -20,6 +20,7 @@ struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
 	struct jailhouse_memory mem_regions[13];
+	struct jailhouse_cache cache_regions[1];
 	struct jailhouse_irqchip irqchips[1];
 	struct jailhouse_pci_device pci_devices[2];
 } __attribute__((packed)) config = {
@@ -32,6 +33,7 @@ struct {
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
+		.num_cache_regions = ARRAY_SIZE(config.cache_regions),
 		.num_irqchips = ARRAY_SIZE(config.irqchips),
 		.num_pci_devices = ARRAY_SIZE(config.pci_devices),
 
@@ -102,16 +104,23 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x70000000,
 			.virt_start = 0x70000000,
-			.size = 0x8000000,
+			.size = 0x6000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
-				JAILHOUSE_MEM_LOADABLE,
+				JAILHOUSE_MEM_LOADABLE | JAILHOUSE_MEM_COLORED,
 		},
 		/* communication region */ {
 			.virt_start = 0x80000000,
 			.size = 0x00001000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_COMM_REGION,
+		},
+	},
+
+	.cache_regions = {
+		{
+			.start = 2,
+			.size = 16,
 		},
 	},
 

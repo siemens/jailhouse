@@ -319,97 +319,6 @@ static int unmap_from_root_cell(const struct jailhouse_memory *mem)
 	return arch_unmap_memory_region(&root_cell, &tmp);
 }
 
-#ifdef CONFIG_COLORING
-static bool color_mem_exceed_mem(const struct jailhouse_memory *col_mem,
-	const struct jailhouse_memory *mem, unsigned long *color_bitmask)
-{
-	unsigned long col_mem_phys_end = get_end_addr(col_mem->phys_start,
-		col_mem->size, color_bitmask);
-
-	return address_in_region(col_mem->phys_start, mem) &&
-		(col_mem_phys_end > (mem->phys_start + mem->size));
-}
-
-static int color_root_cell_management(const struct jailhouse_memory *mem,
-			      struct cell *cell, enum management_task op)
-{
-	struct jailhouse_memory mem_to_map;
-	const struct jailhouse_memory *rootm;
-	int err = 0;
-	int counter;
-
-	/** Check if memory exceeds the one available from the root cell */
-	if (op == CELL_CREATE || op == CELL_DESTROY) {
-		for_each_mem_region(rootm, root_cell.config, counter)
-			if (color_mem_exceed_mem(mem, rootm,
-				cell->arch.color_bitmask))
-				printk("WARNING: colored memory exceed root cell size\n");
-	}
-
-	/** Setup common parameter of the memory to map */
-	mem_to_map.phys_start = mem->phys_start;
-	mem_to_map.size = mem->size;
-	mem_to_map.flags = mem->flags;
-
-	/** Color configuration must be equal between cell and root cell */
-	memcpy(root_cell.arch.color_bitmask, cell->arch.color_bitmask,
-		sizeof(u64)*COLOR_BITMASK_SIZE);
-
-	/**
-	 * Colored memory region must be handled carefully when managing
-	 * root-cell memory regions w.r.t cell management operations:
-	 * - CELL_CREATE: the memory has to be unmapped from the root cell using
-	 * the coloring logic so only the correct memory is removed from it.
-	 * - CELL_SET_LOADABLE: in order to load binaries into the colored
-	 * region we do not remap to the root cell the same region but we create
-	 * a convenient memory space that virtually starts from col_load_address
-	 * The latter is mapped using the same coloring configuration and size
-	 * of the cell's one. This allows us to expose a virtually contiguous
-	 * memory to the root cell that can be used without implementing
-	 * coloring logic in the Linux driver.
-	 * - CELL_START: since the loading operation is performed on a specific
-	 * memory region, when the cell has to be started we have to
-	 * remove from the root cell only the mapping starting at
-	 * col_load_address.
-	 * - CELL_DESTROY: when the cell is destroyed we need to remap to the
-	 * root-cell the memory region using the same coloring configuration of
-	 * the cell.
-	 */
-	switch (op) {
-	case CELL_CREATE:
-		mem_to_map.virt_start = mem_to_map.phys_start;
-		err = arch_unmap_memory_region(&root_cell, &mem_to_map);
-		break;
-	case CELL_SET_LOADABLE:
-		mem_to_map.virt_start =
-			system_config->platform_info.col_load_address;
-		err = arch_map_memory_region(&root_cell, &mem_to_map);
-		break;
-	case CELL_START:
-		mem_to_map.virt_start =
-			system_config->platform_info.col_load_address;
-		mem_to_map.flags &= ~JAILHOUSE_MEM_COLORED;
-		err = arch_unmap_memory_region(&root_cell, &mem_to_map);
-		break;
-	case CELL_DESTROY:
-		mem_to_map.virt_start = mem_to_map.phys_start;
-		err = arch_map_memory_region(&root_cell, &mem_to_map);
-		break;
-	default:
-		err = -ENOMEM;
-		break;
-	}
-
-	return err;
-}
-#else
-static int color_root_cell_management(const struct jailhouse_memory *mem,
-		struct cell *cell, enum management_task op)
-{
-	panic_printk("Coloring is not enabled but colored memory used.\n");
-	return -ENOMEM;
-}
-#endif
 static int remap_to_root_cell(const struct jailhouse_memory *mem,
 			      enum failure_mode mode)
 {
@@ -480,13 +389,8 @@ static void cell_destroy_internal(struct cell *cell)
 			arch_unmap_memory_region(cell, mem);
 
 		if (!(mem->flags & (JAILHOUSE_MEM_COMM_REGION |
-				    JAILHOUSE_MEM_ROOTSHARED))) {
-			if (mem->flags & JAILHOUSE_MEM_COLORED)
-				color_root_cell_management(mem, cell,
-					CELL_DESTROY);
-			else
-				remap_to_root_cell(mem, WARN_ON_ERROR);
-		}
+				    JAILHOUSE_MEM_ROOTSHARED)))
+			remap_to_root_cell(mem, WARN_ON_ERROR);
 	}
 
 	for_each_unit_reverse(unit)
@@ -622,11 +526,7 @@ static int cell_create(struct per_cpu *cpu_data, unsigned long config_address)
 		 */
 		if (!(mem->flags & (JAILHOUSE_MEM_COMM_REGION |
 				    JAILHOUSE_MEM_ROOTSHARED))) {
-			if (mem->flags & JAILHOUSE_MEM_COLORED)
-				err = color_root_cell_management(mem, cell,
-					CELL_CREATE);
-			else
-				err = unmap_from_root_cell(mem);
+			err = unmap_from_root_cell(mem);
 			if (err)
 				goto err_destroy_cell;
 		}
@@ -733,11 +633,7 @@ static int cell_start(struct per_cpu *cpu_data, unsigned long id)
 		/* unmap all loadable memory regions from the root cell */
 		for_each_mem_region(mem, cell->config, n)
 			if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
-				if (mem->flags & JAILHOUSE_MEM_COLORED)
-					err = color_root_cell_management(mem,
-						cell, CELL_START);
-				else
-					err = unmap_from_root_cell(mem);
+				err = unmap_from_root_cell(mem);
 				if (err)
 					goto out_resume;
 			}
@@ -815,14 +711,10 @@ static int cell_set_loadable(struct per_cpu *cpu_data, unsigned long id)
 	/* map all loadable memory regions into the root cell */
 	for_each_mem_region(mem, cell->config, n) {
 		if (mem->flags & JAILHOUSE_MEM_LOADABLE) {
-			if (mem->flags & JAILHOUSE_MEM_COLORED)
-				err = color_root_cell_management(mem, cell,
-					CELL_SET_LOADABLE);
-			else
-				err = remap_to_root_cell(mem, ABORT_ON_ERROR);
+			err = remap_to_root_cell(mem, ABORT_ON_ERROR);
+			if (err)
+				goto out_resume;
 		}
-		if (err)
-			goto out_resume;
 	}
 
 	config_commit(NULL);

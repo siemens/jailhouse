@@ -20,6 +20,7 @@
 extern struct mutex jailhouse_lock;
 extern bool jailhouse_enabled;
 extern void *hypervisor_mem;
+extern unsigned int max_cache_colors;
 
 void *jailhouse_ioremap(phys_addr_t phys, unsigned long virt,
 			unsigned long size);
