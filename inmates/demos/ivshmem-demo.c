@@ -36,7 +36,7 @@
 
 static int irq_counter[MAX_VECTORS];
 static struct ivshmem_dev_data dev;
-static unsigned int irq_base, vectors;
+static unsigned int irq_base, vectors, target;
 
 struct ivshm_regs {
 	u32 id;
@@ -132,6 +132,9 @@ static void init_device(struct ivshmem_dev_data *d)
 	max_peers = mmio_read32(&d->registers->max_peers);
 	printk("IVSHMEM: max. peers is %d\n", max_peers);
 
+	target = d->id < max_peers ? (d->id + 1) : 0;
+	target = cmdline_parse_int("target", target);
+
 	d->state_table_sz =
 		pci_read_config(d->bdf, vndr_cap + IVSHMEM_CFG_STATE_TAB_SZ, 4);
 	d->rw_section_sz =
@@ -173,7 +176,6 @@ static void init_device(struct ivshmem_dev_data *d)
 static void send_irq(struct ivshmem_dev_data *d)
 {
 	u32 int_no = d->msix_cap > 0 ? (d->id + 1) : 0;
-	u32 target = d->id < 2 ? (d->id + 1) : 0;
 
 	disable_irqs();
 	printk("\nIVSHMEM: sending IRQ %d to peer %d\n", int_no, target);
