@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/fcntl.h>
@@ -33,7 +34,6 @@ struct ivshm_regs {
 };
 
 static volatile uint32_t *state, *rw, *in, *out;
-static uint32_t id, int_count;
 
 static inline uint32_t mmio_read32(void *address)
 {
@@ -84,20 +84,32 @@ int main(int argc, char *argv[])
 {
 	char sysfs_path[64];
 	struct ivshm_regs *regs;
-	uint32_t int_no, target = 0;
+	uint32_t int_no, target = INT_MAX;
 	struct signalfd_siginfo siginfo;
 	struct pollfd fds[2];
 	sigset_t sigset;
-	char *path;
-	int has_msix;
+	char *path = "/dev/uio0";
+	int has_msix, i;
 	int ret, size, offset, pgsize;
+	uint32_t id, max_peers, int_count;
 
 	pgsize = getpagesize();
 
-	if (argc < 2)
-		path = strdup("/dev/uio0");
-	else
-		path = strdup(argv[1]);
+	for (i = 1; i < argc; i++) {
+		if (!strcmp("-t", argv[i]) || !strcmp("--target", argv[i])) {
+			i++;
+			target = atoi(argv[i]);
+			continue;
+		} else if (!strcmp("-d", argv[i]) || !strcmp("--device", argv[i])) {
+			i++;
+			path = argv[i];
+			continue;
+		} else {
+			printf("Invalid argument '%s'\n", argv[i]);
+			error(1, EINVAL, "Usage: ivshmem-demo [-d DEV] [-t TARGET]");
+		}
+	}
+
 	fds[0].fd = open(path, O_RDWR);
 	if (fds[0].fd < 0)
 		error(1, errno, "open(%s)", path);
@@ -116,6 +128,14 @@ int main(int argc, char *argv[])
 
 	id = mmio_read32(&regs->id);
 	printf("ID = %d\n", id);
+
+	max_peers = mmio_read32(&regs->max_peers);
+	printf("Maximum peers = %d\n", max_peers);
+
+	if (target == INT_MAX)
+		target = (id + 1) % max_peers;
+	if (target >= max_peers || target == id)
+		error(1, EINVAL, "invalid peer number");
 
 	offset += pgsize;
 	size = uio_read_mem_size(path, 1);
@@ -183,7 +203,6 @@ int main(int argc, char *argv[])
 				error(1, errno, "read(sigfd)");
 
 			int_no = has_msix ? (id + 1) : 0;
-			target = (id + 1) % 3;
 			printf("\nSending interrupt %d to peer %d\n",
 			       int_no, target);
 			mmio_write32(&regs->doorbell, int_no | (target << 16));
