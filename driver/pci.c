@@ -439,7 +439,8 @@ static bool create_vpci_of_overlay(struct jailhouse_system *config)
 		*prop_val++ = cpu_to_be32(base_addr >> 32);
 	*prop_val++ = cpu_to_be32(base_addr);
 	*prop_val++ = 0;
-	*prop_val = cpu_to_be32(count_ivshmem_devices(root_cell) * 0x2000);
+	*prop_val = cpu_to_be32(count_ivshmem_devices(root_cell) *
+				2 * PAGE_SIZE);
 
 	if (of_changeset_add_property(&overlay_changeset, vpci_node, prop) < 0)
 		goto out;
