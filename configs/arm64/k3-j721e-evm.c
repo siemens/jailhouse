@@ -152,20 +152,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* usbss0 */ {
-			.phys_start = 0x06000000,
-			.virt_start = 0x06000000,
-			.size = 0x00400000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* usbss1 */ {
-			.phys_start = 0x06400000,
-			.virt_start = 0x06400000,
-			.size = 0x00400000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
 		/* Most peripherals */ {
 			.phys_start = 0x01000000,
 			.virt_start = 0x01000000,
@@ -222,13 +208,6 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
-		/* MSMC SRAM */ {
-			.phys_start = 0x4E20000000,
-			.virt_start = 0x4E20000000,
-			.size = 0x00080000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_DMA,
-		},
 
 		/* MCU NAVSS */ {
 			.phys_start = 0x28380000,
@@ -275,7 +254,7 @@ struct {
 		/* MCU WKUP peripheral window */ {
 			.phys_start = 0x42040000,
 			.virt_start = 0x42040000,
-			.size = 0x03ac3000,
+			.size = 0x030c0000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
@@ -338,10 +317,10 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
-		/* RAM - reserved for ivshmem and baremetal apps */ {
-			.phys_start = 0x89fe00000,
-			.virt_start = 0x89fe00000,
-			.size = 0x200000,
+		/* RAM - reserved for baremetal apps */ {
+			.phys_start = 0x89ff40000,
+			.virt_start = 0x89ff40000,
+			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_LOADABLE,
 		},

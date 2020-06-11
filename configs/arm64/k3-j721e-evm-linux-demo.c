@@ -163,7 +163,7 @@ struct {
 				JAILHOUSE_MEM_IO,
 		},
 		/* linux-loader space */ {
-			.phys_start = 0x89ff00000,
+			.phys_start = 0x89ff40000,
 			.virt_start = 0x0,
 			.size = 0x10000,	/* 64KB */
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
