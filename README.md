@@ -23,10 +23,6 @@ Its management interface is based on Linux infrastructure. So you boot Linux
 first, then you enable Jailhouse and finally you split off parts of the
 system's resources and assign them to additional cells.
 
-**WARNING**: This is work in progress! Don't expect things to be complete in any
-dimension. Use at your own risk. And keep the reset button in reach.
-
-
 Community Resources
 -------------------
 
