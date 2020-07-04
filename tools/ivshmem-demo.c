@@ -37,12 +37,12 @@ static volatile uint32_t *state, *rw, *in, *out;
 
 static inline uint32_t mmio_read32(void *address)
 {
-        return *(volatile uint32_t *)address;
+	return *(volatile uint32_t *)address;
 }
 
 static inline void mmio_write32(void *address, uint32_t value)
 {
-        *(volatile uint32_t *)address = value;
+	*(volatile uint32_t *)address = value;
 }
 
 static size_t uio_read_mem_size(char *devpath, int idx)
