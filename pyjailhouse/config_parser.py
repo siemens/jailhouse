@@ -162,7 +162,7 @@ class CellConfig:
                     raise RuntimeError('Not a cell configuration')
                 if revision != _CONFIG_REVISION:
                     raise RuntimeError('Configuration file revision mismatch')
-            self.name = str(name.decode())
+            self.name = str(name.decode().strip('\0'))
 
             mem_region_offs = struct.calcsize(CellConfig._HEADER_FORMAT) + \
                 self.cpu_set_size
