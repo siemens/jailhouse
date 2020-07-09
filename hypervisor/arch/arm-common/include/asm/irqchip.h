@@ -89,7 +89,7 @@ void irqchip_cell_reset(struct cell *cell);
 
 void irqchip_config_commit(struct cell *cell_added_removed);
 
-int irqchip_send_sgi(struct sgi *sgi);
+int irqchip_send_sgi(unsigned int cpu_id, u16 sgi_id);
 void irqchip_handle_irq(void);
 
 bool irqchip_has_pending_irqs(void);

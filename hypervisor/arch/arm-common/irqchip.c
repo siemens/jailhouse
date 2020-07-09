@@ -226,7 +226,6 @@ void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id)
 	bool local_injection = (this_cpu_public() == cpu_public);
 	const u16 sender = this_cpu_id();
 	unsigned int new_tail;
-	struct sgi sgi;
 
 	if (local_injection && irqchip.inject_irq(irq_id, sender) != -EBUSY)
 		return;
@@ -258,17 +257,10 @@ void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id)
 	 * on the target CPU. In the other case, send SGI_INJECT to the target
 	 * CPU.
 	 */
-	if (local_injection) {
+	if (local_injection)
 		irqchip.enable_maint_irq(true);
-	} else {
-		sgi.targets = irqchip_get_cpu_target(cpu_public->cpu_id);
-		sgi.cluster_id =
-			irqchip_get_cluster_target(cpu_public->cpu_id);
-		sgi.routing_mode = 0;
-		sgi.id = SGI_INJECT;
-
-		irqchip_send_sgi(&sgi);
-	}
+	else
+		irqchip_send_sgi(cpu_public->cpu_id, SGI_INJECT);
 }
 
 void irqchip_inject_pending(void)
@@ -311,9 +303,15 @@ void irqchip_trigger_external_irq(u16 irq_id)
 		     1 << (irq_id % 32));
 }
 
-int irqchip_send_sgi(struct sgi *sgi)
+int irqchip_send_sgi(unsigned int cpu_id, u16 sgi_id)
 {
-	return irqchip.send_sgi(sgi);
+	struct sgi sgi;
+
+	sgi.targets = irqchip_get_cpu_target(cpu_id);
+	sgi.cluster_id = irqchip_get_cluster_target(cpu_id);
+	sgi.routing_mode = 0;
+	sgi.id = sgi_id;
+	return irqchip.send_sgi(&sgi);
 }
 
 int irqchip_cpu_init(struct per_cpu *cpu_data)

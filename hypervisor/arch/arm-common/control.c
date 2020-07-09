@@ -38,14 +38,7 @@ void arm_cpu_park(void)
 
 void arch_send_event(struct public_per_cpu *target_data)
 {
-	unsigned int cpu_id = target_data->cpu_id;
-	struct sgi sgi;
-
-	sgi.targets = irqchip_get_cpu_target(cpu_id);
-	sgi.cluster_id = irqchip_get_cluster_target(cpu_id);
-	sgi.routing_mode = 0;
-	sgi.id = SGI_EVENT;
-	irqchip_send_sgi(&sgi);
+	irqchip_send_sgi(target_data->cpu_id, SGI_EVENT);
 }
 
 void arch_reset_cpu(unsigned int cpu_id)
