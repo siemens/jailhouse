@@ -137,7 +137,6 @@ void arm_paging_vcpu_init(struct paging_structures *pg_structs)
 	vttbr |= (u64)(cell_table & TTBR_MASK);
 
 	arm_write_sysreg(VTTBR_EL2, vttbr);
-	arm_write_sysreg(VTCR_EL2, VTCR_CELL);
 
 	/* Ensure that the new VMID is present before flushing the caches */
 	isb();
