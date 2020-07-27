@@ -102,6 +102,24 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	u32 cell_gicc_ctlr, cell_gicc_pmr;
 	unsigned int n;
 
+	/*
+	 * Get the CPU interface ID for this cpu. It can be discovered by
+	 * reading the banked value of the PPI and IPI TARGET registers
+	 * Patch 2bb3135 in Linux explains why the probe may need to scans the
+	 * first 8 registers: some early implementation returned 0 for the first
+	 * ITARGETSR registers.
+	 * Since those didn't have virtualization extensions, we can safely
+	 * ignore that case.
+	 */
+	if (cpu_data->public.cpu_id >= ARRAY_SIZE(gicv2_target_cpu_map))
+		return trace_error(-EINVAL);
+
+	gicv2_target_cpu_map[cpu_data->public.cpu_id] =
+		mmio_read32(gicd_base + GICD_ITARGETSR);
+
+	if (gicv2_target_cpu_map[cpu_data->public.cpu_id] == 0)
+		return trace_error(-ENODEV);
+
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	mmio_write32(gicd_base + GICD_ISENABLER, 0x0000ffff | (1 << mnt_irq));
 
@@ -145,24 +163,6 @@ static int gicv2_cpu_init(struct per_cpu *cpu_data)
 	gicv2_clear_pending_irqs();
 
 	cpu_data->public.gicc_initialized = true;
-
-	/*
-	 * Get the CPU interface ID for this cpu. It can be discovered by
-	 * reading the banked value of the PPI and IPI TARGET registers
-	 * Patch 2bb3135 in Linux explains why the probe may need to scans the
-	 * first 8 registers: some early implementation returned 0 for the first
-	 * ITARGETSR registers.
-	 * Since those didn't have virtualization extensions, we can safely
-	 * ignore that case.
-	 */
-	if (cpu_data->public.cpu_id >= ARRAY_SIZE(gicv2_target_cpu_map))
-		return trace_error(-EINVAL);
-
-	gicv2_target_cpu_map[cpu_data->public.cpu_id] =
-		mmio_read32(gicd_base + GICD_ITARGETSR);
-
-	if (gicv2_target_cpu_map[cpu_data->public.cpu_id] == 0)
-		return trace_error(-ENODEV);
 
 	/*
 	 * Forward any pending physical SGIs to the virtual queue.
