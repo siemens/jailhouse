@@ -58,12 +58,12 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	/* switch to the permanent page tables */
 	enable_mmu_el2(paging_hvirt2phys(cpu_data->pg_structs.root_table));
 
-	/* Setup guest traps */
-	arm_write_sysreg(HCR_EL2, hcr);
-
 	err = arm_cpu_init(cpu_data);
 	if (err)
 		return err;
+
+	/* Setup guest traps */
+	arm_write_sysreg(HCR_EL2, hcr);
 
 	/* Conditionally switch to hardened vectors */
 	if (this_cpu_data()->smccc_feat_workaround_1 >= ARM_SMCCC_SUCCESS)
