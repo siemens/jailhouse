@@ -13,7 +13,7 @@
 /* for gcc < 5 */
 asm (".arch_extension sec\n");
 
-static inline int smc(unsigned long id)
+static inline long smc(unsigned long id)
 {
 	register unsigned long __id asm("r0") = id;
 

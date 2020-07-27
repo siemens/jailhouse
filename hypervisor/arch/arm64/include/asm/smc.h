@@ -10,7 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
-static inline int smc(unsigned long id)
+static inline long smc(unsigned long id)
 {
 	register unsigned long __id asm("r0") = id;
 
@@ -21,7 +21,7 @@ static inline int smc(unsigned long id)
 	return __id;
 }
 
-static inline int smc_arg1(unsigned long id, unsigned long par1)
+static inline long smc_arg1(unsigned long id, unsigned long par1)
 {
 	register unsigned long __id asm("r0") = id;
 	register unsigned long __par1 asm("r1") = par1;

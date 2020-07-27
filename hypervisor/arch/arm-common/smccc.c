@@ -20,7 +20,7 @@
 void smccc_discover(void)
 {
 	struct per_cpu *cpu_data = this_cpu_data();
-	int ret;
+	long ret;
 
 	cpu_data->smccc_feat_workaround_1 = ARM_SMCCC_NOT_SUPPORTED;
 	cpu_data->smccc_feat_workaround_2 = ARM_SMCCC_NOT_SUPPORTED;
