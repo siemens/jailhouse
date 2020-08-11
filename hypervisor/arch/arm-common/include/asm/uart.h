@@ -11,4 +11,5 @@
  */
 
 extern struct uart_chip uart_pl011_ops, uart_xuartps_ops, uart_mvebu_ops,
-			uart_hscif_ops, uart_scifa_ops, uart_imx_ops;
+			uart_hscif_ops, uart_scifa_ops, uart_imx_ops,
+			uart_imx_lpuart_ops;

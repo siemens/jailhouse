@@ -1,10 +1,8 @@
 /*
- * Jailhouse, a Linux-based partitioning hypervisor
- *
- * Copyright (c) OTH Regensburg, 2018
+ * Copyright 2018 NXP
  *
  * Authors:
- *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+ *  Peng Fan <peng.fan@nxp.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -39,23 +37,22 @@
 #include <inmate.h>
 #include <uart.h>
 
-DECLARE_UART(8250);
-DECLARE_UART(hscif);
-DECLARE_UART(imx);
-DECLARE_UART(imx_lpuart);
-DECLARE_UART(mvebu);
-DECLARE_UART(pl011);
-DECLARE_UART(scifa);
-DECLARE_UART(xuartps);
+#define UART_DATA		0x1c
+#define UART_STAT		0x14
+#define STAT_TDRE		(1 << 23)
 
-struct uart_chip *uart_array[] = {
-	&UART_OPS_NAME(8250),
-	&UART_OPS_NAME(hscif),
-	&UART_OPS_NAME(imx),
-	&UART_OPS_NAME(imx_lpuart),
-	&UART_OPS_NAME(mvebu),
-	&UART_OPS_NAME(pl011),
-	&UART_OPS_NAME(scifa),
-	&UART_OPS_NAME(xuartps),
-	NULL
-};
+static void uart_imx_lpuart_init(struct uart_chip *chip)
+{
+}
+
+static bool uart_imx_lpuart_is_busy(struct uart_chip *chip)
+{
+	return !(mmio_read32(chip->base + UART_STAT) & STAT_TDRE);
+}
+
+static void uart_imx_lpuart_write(struct uart_chip *chip, char c)
+{
+	mmio_write32(chip->base + UART_DATA, c);
+}
+
+DEFINE_UART(imx_lpuart, "IMX-LPUART", JAILHOUSE_CON_TYPE_IMX_LPUART);
