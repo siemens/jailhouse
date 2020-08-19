@@ -77,6 +77,8 @@
 
 #define MPIDR		SYSREG_32(0, c0, c0, 5)
 
+#define  MPIDR_CPUID_MASK	0x00ffffff
+
 #define MPIDR_LEVEL_BITS		8
 #define MPIDR_LEVEL_MASK		((1 << MPIDR_LEVEL_BITS) - 1)
 #define MPIDR_LEVEL_SHIFT(level)	(MPIDR_LEVEL_BITS * (level))

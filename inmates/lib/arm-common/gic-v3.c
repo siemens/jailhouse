@@ -76,6 +76,7 @@ static int gic_v3_init(void)
 	map_range(redist_addr, PAGE_SIZE, MAP_UNCACHED);
 
 	arm_read_sysreg(MPIDR, mpidr);
+	mpidr &= MPIDR_CPUID_MASK;
 	aff = (MPIDR_AFFINITY_LEVEL(mpidr, 3) << 24 |
 		MPIDR_AFFINITY_LEVEL(mpidr, 2) << 16 |
 		MPIDR_AFFINITY_LEVEL(mpidr, 1) << 8 |
@@ -87,7 +88,8 @@ static int gic_v3_init(void)
 		if (GICR_PIDR2_ARCH(pidr) != 3)
 			break;
 
-		typer = mmio_read64(redist_addr + GICR_TYPER);
+		typer = mmio_read32(redist_addr + GICR_TYPER);
+		typer |= (u64)mmio_read32(redist_addr + GICR_TYPER + 4) << 32;
 		if ((typer >> 32) == aff) {
 			gicr = redist_addr;
 			break;
