@@ -29,7 +29,7 @@ void arch_shutdown_self(struct per_cpu *cpu_data);
 
 unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 
-void arm_cpu_reset(unsigned long pc);
+void arm_cpu_reset(unsigned long pc, bool aarch32);
 void arm_cpu_park(void);
 
 #endif /* !__ASSEMBLY__ */

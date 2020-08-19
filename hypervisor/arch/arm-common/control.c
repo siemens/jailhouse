@@ -32,7 +32,9 @@ void arm_cpu_park(void)
 	enter_cpu_off(cpu_public);
 	spin_unlock(&cpu_public->control_lock);
 
-	arm_cpu_reset(0);
+	arm_cpu_reset(0,
+		      !!(this_cell()->config->flags & JAILHOUSE_CELL_AARCH32));
+
 	arm_paging_vcpu_init(&parking_pt);
 }
 
@@ -100,7 +102,9 @@ static void check_events(struct public_per_cpu *cpu_public)
 	if (cpu_public->wait_for_poweron)
 		arm_cpu_park();
 	else if (reset)
-		arm_cpu_reset(cpu_public->cpu_on_entry);
+		arm_cpu_reset(cpu_public->cpu_on_entry,
+			      !!(this_cell()->config->flags &
+			         JAILHOUSE_CELL_AARCH32));
 }
 
 void arch_handle_sgi(u32 irqn, unsigned int count_event)

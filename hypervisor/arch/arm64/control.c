@@ -18,11 +18,12 @@
 #include <asm/psci.h>
 #include <asm/traps.h>
 
-void arm_cpu_reset(unsigned long pc)
+void arm_cpu_reset(unsigned long pc, bool aarch32)
 {
+	u64 hcr_el2;
+
 	/* put the cpu in a reset state */
 	/* AARCH64_TODO: handle big endian support */
-	arm_write_sysreg(SPSR_EL2, RESET_PSR);
 	arm_write_sysreg(SCTLR_EL1, SCTLR_EL1_RES1);
 	arm_write_sysreg(CNTKCTL_EL1, 0);
 	arm_write_sysreg(PMCR_EL0, 0);
@@ -67,6 +68,15 @@ void arm_cpu_reset(unsigned long pc)
 	/* AARCH64_TODO: handle PMU registers */
 	/* AARCH64_TODO: handle debug registers */
 	/* AARCH64_TODO: handle system registers for AArch32 state */
+	arm_read_sysreg(HCR_EL2, hcr_el2);
+	if (aarch32) {
+		arm_write_sysreg(SPSR_EL2, RESET_PSR_AARCH32);
+		hcr_el2 &= ~HCR_RW_BIT;
+	} else {
+		arm_write_sysreg(SPSR_EL2, RESET_PSR_AARCH64);
+		hcr_el2 |= HCR_RW_BIT;
+	}
+	arm_write_sysreg(HCR_EL2, hcr_el2);
 
 	arm_write_sysreg(ELR_EL2, pc);
 

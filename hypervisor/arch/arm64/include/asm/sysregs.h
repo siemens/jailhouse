@@ -15,19 +15,23 @@
 
 #define PSR_MODE_MASK	0xf
 #define PSR_MODE_EL0t	0x0
+#define PSR_MODE_SVC	0x3
 #define PSR_MODE_EL1t	0x4
 #define PSR_MODE_EL1h	0x5
 #define PSR_MODE_EL2t	0x8
 #define PSR_MODE_EL2h	0x9
 
-#define PSR_F_BIT	(1 << 6)
-#define PSR_I_BIT	(1 << 7)
-#define PSR_A_BIT	(1 << 8)
-#define PSR_D_BIT	(1 << 9)
-#define PSR_IL_BIT	(1 << 20)
-#define PSR_SS_BIT	(1 << 21)
-#define RESET_PSR	(PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT \
-			| PSR_MODE_EL1h)
+#define PSR_32_BIT		(1 << 4)
+#define PSR_F_BIT		(1 << 6)
+#define PSR_I_BIT		(1 << 7)
+#define PSR_A_BIT		(1 << 8)
+#define PSR_D_BIT		(1 << 9)
+#define PSR_IL_BIT		(1 << 20)
+#define PSR_SS_BIT		(1 << 21)
+#define RESET_PSR_AARCH64	(PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT \
+				| PSR_MODE_EL1h)
+#define RESET_PSR_AARCH32	(PSR_A_BIT | PSR_I_BIT | PSR_F_BIT \
+				| PSR_32_BIT | PSR_MODE_SVC)
 
 #define MPIDR_CPUID_MASK	0xff00ffffffUL
 #define MPIDR_CLUSTERID_MASK	0xff00ffff00UL

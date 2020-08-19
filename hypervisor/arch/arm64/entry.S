@@ -401,8 +401,8 @@ hyp_vectors:
 	ventry	.
 	ventry	.
 
-	ventry	.
-	ventry	.
+	handle_vmexit arch_handle_trap
+	handle_vmexit irqchip_handle_irq
 	ventry	.
 	ventry	.
 
@@ -425,8 +425,8 @@ hyp_vectors_hardened:
 	ventry	.
 	ventry	.
 
-	ventry	.
-	ventry	.
+	handle_abort_fastpath
+	handle_vmexit irqchip_handle_irq
 	ventry	.
 	ventry	.
 

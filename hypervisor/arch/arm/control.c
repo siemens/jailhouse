@@ -20,7 +20,7 @@
 #include <asm/psci.h>
 #include <asm/sysregs.h>
 
-void arm_cpu_reset(unsigned long pc)
+void arm_cpu_reset(unsigned long pc, bool aarch32)
 {
 	u32 sctlr;
 
