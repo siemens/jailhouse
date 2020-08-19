@@ -351,6 +351,9 @@ static enum mmio_result gicv3_handle_redist_access(void *arg,
 		if (cpu_public->cpu_id == last_gicr)
 				mmio->value |= GICR_TYPER_Last;
 		return MMIO_HANDLED;
+	case GICR_TYPER + 4:
+		mmio_perform_access(cpu_public->gicr.base, mmio);
+		return MMIO_HANDLED;
 	case GICR_IIDR:
 	case 0xffd0 ... 0xfffc: /* ID registers */
 		/*
