@@ -378,6 +378,14 @@ el1_trap:
 	ldr	x4, [sp, #(2 * 16 + 1 * 8)]
 	add	sp, sp, #(16 * 16)
 	eret
+	/*
+	 * Mitigate Straight-line Speculation.
+	 * Guard against Speculating past an ERET instruction and
+	 * potentially perform speculative accesses to memory before
+	 * processing the exception return
+	 */
+	dsb nsh
+	isb
 .endm
 
 /*
@@ -522,4 +530,12 @@ __vmreturn:
 	ldr	    x0, [sp, #(1 * 8)]
 	add	sp, sp, #(16 * 16)
 	eret
+	/*
+	 * Mitigate Straight-line Speculation.
+	 * Guard against Speculating past an ERET instruction and
+	 * potentially perform speculative accesses to memory before
+	 * processing the exception return
+	 */
+	dsb nsh
+	isb
 	.popsection
