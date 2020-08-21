@@ -163,6 +163,10 @@
 /* exception level in SPSR_ELx */
 #define SPSR_EL(spsr)		(((spsr) & 0xc) >> 2)
 
+#define CPACR_EL1_FPEN_ALL	(3UL << 20)
+
+#define FPEXC_EL2_EN_BIT	(1UL << 30)
+
 #ifndef __ASSEMBLY__
 
 #include <jailhouse/string.h>

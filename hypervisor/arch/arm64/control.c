@@ -21,6 +21,7 @@
 void arm_cpu_reset(unsigned long pc, bool aarch32)
 {
 	u64 hcr_el2;
+	u64 fpexc32_el2;
 
 	/* put the cpu in a reset state */
 	/* AARCH64_TODO: handle big endian support */
@@ -43,7 +44,7 @@ void arm_cpu_reset(unsigned long pc, bool aarch32)
 	arm_write_sysreg(AFSR1_EL1, 0);
 	arm_write_sysreg(AMAIR_EL1, 0);
 	arm_write_sysreg(CONTEXTIDR_EL1, 0);
-	arm_write_sysreg(CPACR_EL1, 0);
+	arm_write_sysreg(CPACR_EL1, CPACR_EL1_FPEN_ALL);
 	arm_write_sysreg(CSSELR_EL1, 0);
 	arm_write_sysreg(ESR_EL1, 0);
 	arm_write_sysreg(FAR_EL1, 0);
@@ -56,6 +57,10 @@ void arm_cpu_reset(unsigned long pc, bool aarch32)
 	arm_write_sysreg(TTBR0_EL1, 0);
 	arm_write_sysreg(TTBR1_EL1, 0);
 	arm_write_sysreg(VBAR_EL1, 0);
+
+	arm_read_sysreg(FPEXC32_EL2, fpexc32_el2);
+	fpexc32_el2 |= FPEXC_EL2_EN_BIT;
+	arm_write_sysreg(FPEXC32_EL2, fpexc32_el2);
 
 	/* wipe timer registers */
 	arm_write_sysreg(CNTP_CTL_EL0, 0);
