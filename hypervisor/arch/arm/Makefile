@@ -13,3 +13,4 @@
 LINUXINCLUDE += -I$(src)/arch/arm-common/include
 
 KBUILD_CFLAGS += -marm -march=armv7ve
+KBUILD_AFLAGS += -march=armv7ve
