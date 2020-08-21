@@ -35,6 +35,10 @@ KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
 ifneq ($(wildcard $(INC_CONFIG_H)),)
 KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif
+ifeq ($(SRCARCH),arm)
+KBUILD_CFLAGS += -march=armv7ve
+KBUILD_AFLAGS += -march=armv7ve
+endif
 
 OBJCOPYFLAGS := -O binary
 # prior to 4.19
