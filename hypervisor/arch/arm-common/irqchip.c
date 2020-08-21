@@ -193,6 +193,7 @@ void irqchip_handle_irq(void)
 			arch_handle_sgi(irq_id, count_event);
 			handled = true;
 		} else {
+			isb();
 			handled = arch_handle_phys_irq(irq_id, count_event);
 		}
 		count_event = 0;
