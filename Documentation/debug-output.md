@@ -41,7 +41,7 @@ Possible register distances (MMIO only, PIO is implicitly 1-byte), to be or'ed:
 
 Possible framebuffer formats (EFIFB only);
 
-    - JAILHOUSE_CON_FB_1024x768    /* 1024x786 pixel, 32 bit each */
+    - JAILHOUSE_CON_FB_1024x768    /* 1024x768 pixel, 32 bit each */
     - JAILHOUSE_CON_FB_1920x1080   /* 1920x1080 pixel, 32 bit each */
 
 ### .address and .size
@@ -92,7 +92,7 @@ Example configuration for EFI framebuffer debug out on x86:
 
     .debug_console = {
         .address = 0x80000000, /* framebuffer base address */
-        .size = 0x300000, /* 1024x786x4 */
+        .size = 0x300000, /* 1024x768x4 */
         .type = JAILHOUSE_CON_TYPE_EFIFB,  /* choose the EFIFB driver */
         .flags = JAILHOUSE_CON_MMIO | \    /* access is MMIO */
                  JAILHOUSE_CON_FB_1024x768 /* format */
