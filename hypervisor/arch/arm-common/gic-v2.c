@@ -421,9 +421,8 @@ static enum mmio_result gicv2_handle_irq_target(struct mmio_access *mmio,
 	offset = irq % 4;
 	mmio->address &= ~0x3;
 	mmio->value <<= 8 * offset;
-	mmio->size = 4;
 
-	for (n = 0; n < 4; n++) {
+	for (n = offset; n < mmio->size + offset; n++) {
 		if (irqchip_irq_in_cell(cell, irq_base + n))
 			access_mask |= 0xff << (8 * n);
 		else
@@ -441,6 +440,8 @@ static enum mmio_result gicv2_handle_irq_target(struct mmio_access *mmio,
 		}
 	}
 
+	mmio->size = 4;
+
 	if (mmio->is_write) {
 		spin_lock(&dist_lock);
 		u32 itargetsr =
@@ -454,6 +455,7 @@ static enum mmio_result gicv2_handle_irq_target(struct mmio_access *mmio,
 	} else {
 		mmio_perform_access(gicd_base, mmio);
 		mmio->value &= access_mask;
+		mmio->value >>= 8 * offset;
 	}
 
 	return MMIO_HANDLED;
