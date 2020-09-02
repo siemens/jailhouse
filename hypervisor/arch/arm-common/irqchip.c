@@ -22,7 +22,7 @@
 #include <asm/control.h>
 #include <asm/gic.h>
 #include <asm/irqchip.h>
-#include <asm/sysregs.h>
+#include <asm/smccc.h>
 
 #define for_each_irqchip(chip, config, counter)				\
 	for ((chip) = jailhouse_cell_irqchips(config), (counter) = 0;	\
@@ -529,6 +529,9 @@ static unsigned int irqchip_mmio_count_regions(struct cell *cell)
 
 static int irqchip_init(void)
 {
+	if (sdei_available)
+		printk("Using SDEI-based management interrupt\n");
+
 	/* Setup the SPI bitmap */
 	return irqchip_cell_init(&root_cell);
 }

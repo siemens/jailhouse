@@ -10,10 +10,14 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <jailhouse/types.h>
+
 #define SMCCC_VERSION			0x80000000
 #define SMCCC_ARCH_FEATURES		0x80000001
 #define SMCCC_ARCH_WORKAROUND_1		0x80008000
 #define SMCCC_ARCH_WORKAROUND_2		0x80007fff
+
+#define SDEI_EVENT_SIGNAL		0xc400002f
 
 #define ARM_SMCCC_OWNER_MASK		BIT_MASK(29, 24)
 #define ARM_SMCCC_OWNER_SHIFT		24
@@ -38,6 +42,8 @@
 #ifndef __ASSEMBLY__
 
 struct trap_context;
+
+extern bool sdei_available;
 
 void smccc_discover(void);
 enum trap_return handle_smc(struct trap_context *ctx);

@@ -15,8 +15,10 @@
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <asm/control.h>
-#include <asm/psci.h>
 #include <asm/iommu.h>
+#include <asm/psci.h>
+#include <asm/smc.h>
+#include <asm/smccc.h>
 
 static void enter_cpu_off(struct public_per_cpu *cpu_public)
 {
@@ -40,7 +42,10 @@ void arm_cpu_park(void)
 
 void arch_send_event(struct public_per_cpu *target_data)
 {
-	irqchip_send_sgi(target_data->cpu_id, SGI_EVENT);
+	if (sdei_available)
+		smc_arg2(SDEI_EVENT_SIGNAL, 0, target_data->mpidr);
+	else
+		irqchip_send_sgi(target_data->cpu_id, SGI_EVENT);
 }
 
 void arch_reset_cpu(unsigned int cpu_id)
