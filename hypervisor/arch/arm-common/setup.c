@@ -39,12 +39,16 @@ int arm_init_early(void)
 
 int arm_cpu_init(struct per_cpu *cpu_data)
 {
+	int err;
+
 	cpu_data->public.mpidr = phys_processor_id();
 
 	arm_write_sysreg(VTCR_EL2, VTCR_CELL);
 	arm_paging_vcpu_init(&root_cell.arch.mm);
 
-	smccc_discover();
+	err = smccc_discover();
+	if (err)
+		return err;
 
 	return irqchip_cpu_init(cpu_data);
 }

@@ -17,6 +17,7 @@
 #define SMCCC_ARCH_WORKAROUND_1		0x80008000
 #define SMCCC_ARCH_WORKAROUND_2		0x80007fff
 
+#define SDEI_VERSION			0xc4000020
 #define SDEI_EVENT_REGISTER		0xc4000021
 #define SDEI_EVENT_ENABLE		0xc4000022
 #define SDEI_EVENT_COMPLETE		0xc4000025
@@ -24,6 +25,8 @@
 #define SDEI_PE_MASK			0xc400002b
 #define SDEI_PE_UNMASK			0xc400002c
 #define SDEI_EVENT_SIGNAL		0xc400002f
+
+#define ARM_SMCCC_VERSION_1_0		0x1000000000000L
 
 #define SDEI_EV_HANDLED			0
 
@@ -53,7 +56,7 @@ struct trap_context;
 
 extern bool sdei_available;
 
-void smccc_discover(void);
+int smccc_discover(void);
 enum trap_return handle_smc(struct trap_context *ctx);
 
 #endif /* !__ASSEMBLY__ */
