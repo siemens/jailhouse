@@ -73,6 +73,16 @@ static enum trap_return handle_iabt(struct trap_context *ctx)
 {
 	unsigned long hpfar, hdfar;
 
+	if (this_cpu_data()->sdei_event) {
+		this_cpu_data()->sdei_event = false;
+		arm_write_sysreg(VTCR_EL2, VTCR_CELL);
+		isb();
+
+		arch_handle_sgi(SGI_EVENT, 1);
+
+		return TRAP_HANDLED;
+	}
+
 	arm_read_sysreg(HPFAR_EL2, hpfar);
 	arm_read_sysreg(FAR_EL2, hdfar);
 

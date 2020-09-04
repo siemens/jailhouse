@@ -12,4 +12,5 @@
 
 #define ARCH_PERCPU_FIELDS						\
 	ARM_PERCPU_FIELDS						\
-	unsigned long id_aa64mmfr0;
+	unsigned long id_aa64mmfr0;					\
+	bool sdei_event;

@@ -19,6 +19,7 @@
 #include <asm/entry.h>
 #include <asm/irqchip.h>
 #include <asm/setup.h>
+#include <asm/smc.h>
 #include <asm/smccc.h>
 
 extern u8 __trampoline_start[];
@@ -62,6 +63,19 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 	if (err)
 		return err;
 
+	if (sdei_available) {
+		if (smc_arg5(SDEI_EVENT_REGISTER, 0,
+			     (unsigned long)sdei_handler, LOCAL_CPU_BASE,
+			     0, 0) != ARM_SMCCC_SUCCESS)
+			return trace_error(-EIO);
+
+		if (smc_arg1(SDEI_EVENT_ENABLE, 0) != ARM_SMCCC_SUCCESS)
+			return trace_error(-EIO);
+
+		if (smc(SDEI_PE_UNMASK) != ARM_SMCCC_SUCCESS)
+			return trace_error(-EIO);
+	}
+
 	/* Setup guest traps */
 	arm_write_sysreg(HCR_EL2, hcr);
 
@@ -98,6 +112,11 @@ void arch_shutdown_self(struct per_cpu *cpu_data)
 {
 	void (*shutdown_func)(struct per_cpu *) =
 		(void (*)(struct per_cpu *))paging_hvirt2phys(shutdown_el2);
+
+	if (sdei_available) {
+		smc(SDEI_PE_MASK);
+		smc_arg1(SDEI_EVENT_UNREGISTER, 0);
+	}
 
 	irqchip_cpu_shutdown(&cpu_data->public);
 

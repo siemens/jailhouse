@@ -29,6 +29,7 @@ void common(void)
 	OFFSET(SYSCONFIG_HYPERVISOR_PHYS, jailhouse_system,
 	       hypervisor_memory.phys_start);
 	OFFSET(PERCPU_ID_AA64MMFR0, per_cpu, id_aa64mmfr0);
+	OFFSET(PERCPU_SDEI_EVENT, per_cpu, sdei_event);
 	BLANK();
 
 	DEFINE(PERCPU_STACK_END,
