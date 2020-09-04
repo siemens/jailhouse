@@ -19,6 +19,7 @@
 #include <asm/gic.h>
 #include <asm/gic_v3.h>
 #include <asm/irqchip.h>
+#include <asm/smccc.h>
 #include <asm/sysregs.h>
 #include <asm/traps.h>
 
@@ -244,6 +245,9 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	if ((cpu_data->public.mpidr & MPIDR_AFF0_MASK) >= 16)
 		return trace_error(-EIO);
 
+	if (sdei_available)
+		return 0;
+
 	/* Ensure all IPIs and the maintenance PPI are enabled. */
 	gicr = redist_base + GICR_SGI_BASE;
 	mmio_write32(gicr + GICR_ISENABLER, 0x0000ffff | (1 << mnt_irq));
@@ -303,7 +307,7 @@ static int gicv3_cpu_shutdown(struct public_per_cpu *cpu_public)
 {
 	u32 ich_vmcr, icc_ctlr, cell_icc_igrpen1;
 
-	if (!cpu_public->gicr.base)
+	if (sdei_available || !cpu_public->gicr.base)
 		return -ENODEV;
 
 	arm_write_sysreg(ICH_HCR_EL2, 0);

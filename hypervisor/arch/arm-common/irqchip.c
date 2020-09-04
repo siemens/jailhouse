@@ -228,6 +228,11 @@ void irqchip_set_pending(struct public_per_cpu *cpu_public, u16 irq_id)
 	const u16 sender = this_cpu_id();
 	unsigned int new_tail;
 
+	if (sdei_available) {
+		irqchip_send_sgi(cpu_public->cpu_id, irq_id);
+		return;
+	}
+
 	if (local_injection && irqchip.inject_irq(irq_id, sender) != -EBUSY)
 		return;
 
