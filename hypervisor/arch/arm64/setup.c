@@ -74,6 +74,8 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 
 		if (smc(SDEI_PE_UNMASK) != ARM_SMCCC_SUCCESS)
 			return trace_error(-EIO);
+
+		hcr &= ~(HCR_IMO_BIT | HCR_FMO_BIT);
 	}
 
 	/* Setup guest traps */
