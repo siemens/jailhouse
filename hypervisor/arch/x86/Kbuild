@@ -12,11 +12,13 @@
 # the COPYING file in the top-level directory.
 #
 
+include $(ALWAYS_COMPAT_MK)
+
 -include $(GEN_CONFIG_MK)
 
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 
-always := lib-amd.a lib-intel.a
+always-y := lib-amd.a lib-intel.a
 
 common-objs-y := apic.o dbg-write.o entry.o setup.o control.o mmio.o iommu.o \
 		 paging.o pci.o i8042.o vcpu.o efifb.o ivshmem.o

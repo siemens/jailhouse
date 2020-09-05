@@ -11,6 +11,9 @@
 # the COPYING file in the top-level directory.
 #
 
+ALWAYS_COMPAT_MK := $(src)/scripts/always-compat.mk
+export ALWAYS_COMPAT_MK
+
 INC_CONFIG_H = $(src)/include/jailhouse/config.h
 export INC_CONFIG_H
 

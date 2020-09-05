@@ -38,7 +38,7 @@
 
 include $(INMATES_LIB)/Makefile.lib
 
-always := lib.a lib32.a
+always-y := lib.a lib32.a
 
 TARGETS := cpu-features.o excp.o header-common.o irq.o ioapic.o printk.o
 TARGETS += setup.o uart.o

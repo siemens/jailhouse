@@ -12,7 +12,7 @@
 
 include $(src)/../arm-common/Kbuild
 
-always := lib.a
+always-y := lib.a
 
 # units initialization order as defined by linking order:
 # irqchip (common-objs-y), <generic units>

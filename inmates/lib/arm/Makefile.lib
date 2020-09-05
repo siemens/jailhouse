@@ -38,6 +38,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+include $(ALWAYS_COMPAT_MK)
+
 -include $(GEN_CONFIG_MK)
 
 LINUXINCLUDE += -I$(INMATES_LIB)/include
@@ -45,7 +47,7 @@ LINUXINCLUDE += -I$(INMATES_LIB)/../arm-common/include
 
 define DECLARE_TARGETS =
  _TARGETS = $(1)
- always := $$(_TARGETS)
+ always-y := $$(_TARGETS)
  # $(NAME-y) NAME-linked.o NAME.bin
  targets += $$(foreach t,$$(_TARGETS:.bin=-y),$$($$t)) \
             $$(_TARGETS:.bin=-linked.o) $$(_TARGETS)

@@ -10,6 +10,8 @@
 # the COPYING file in the top-level directory.
 #
 
+include $(ALWAYS_COMPAT_MK)
+
 -include $(GEN_CONFIG_MK)
 
 # includes installation-related variables and definitions
@@ -33,14 +35,14 @@ KBUILD_CFLAGS += $(call cc-option, -fno-pie)
 KBUILD_CFLAGS += $(call cc-option, -no-pie)
 
 BINARIES := jailhouse ivshmem-demo
-always := $(BINARIES)
+always-y := $(BINARIES)
 
 HAS_PYTHON_MAKO := \
 	$(shell $(PYTHON) -c "from mako.template import Template" 2>/dev/null \
 	&& echo yes)
 
 ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
-always += jailhouse-config-collect
+always-y += jailhouse-config-collect
 HELPERS := jailhouse-config-collect
 
 else  # !HAS_PYTHON_MAKO
@@ -116,7 +118,7 @@ CFLAGS_jailhouse-gcov-extract.o	:= -I$(src)/../hypervisor/include \
 LDFLAGS_jailhouse-gcov-extract := -lgcov -fprofile-arcs
 
 targets += jailhouse-gcov-extract.o
-always += jailhouse-gcov-extract
+always-y += jailhouse-gcov-extract
 
 $(obj)/jailhouse-gcov-extract: $(obj)/jailhouse-gcov-extract.o
 	$(call if_changed,ld)
@@ -125,7 +127,7 @@ $(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse
 	$(call if_changed,gen_collect)
 
 targets += $(MAN8_PAGES)
-always +=  $(MAN8_PAGES)
+always-y +=  $(MAN8_PAGES)
 
 $(obj)/%.8: $(src)/%.8.in
 	$(call if_changed,gen_man)
