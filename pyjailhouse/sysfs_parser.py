@@ -205,6 +205,9 @@ def parse_iomem(pcidevices):
         if r.typestr.find('dmar') >= 0:
             dmar_regions.append(r)
             append_r = False
+        # filter out AMD IOMMU regions
+        if r.typestr.find('amd_iommu') >= 0:
+            append_r = False
         if append_r:
             ret.append(r)
 
