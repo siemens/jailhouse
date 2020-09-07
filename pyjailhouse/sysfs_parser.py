@@ -139,9 +139,9 @@ def parse_iomem_tree(tree):
         r = tree.region
         s = r.typestr
 
-        # System RAM on the first level will be added completely,
-        # if they don't contain the kernel itself, if they do,
-        # we split them
+        # System RAM on the first level will be added completely
+        # if it doesn't contain the kernel itself. If it does,
+        # we split it.
         if tree.level == 1 and s == 'System RAM':
             regions.extend(regions_split_by_kernel(tree))
             continue
