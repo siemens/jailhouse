@@ -207,6 +207,12 @@ def parse_iomem(pcidevices):
         # filter out AMD IOMMU regions
         if r.typestr.find('amd_iommu') >= 0:
             append_r = False
+        # merge adjacent RAM regions
+        if append_r and len(ret) > 0:
+            prev = ret[-1]
+            if prev.is_ram() and r.is_ram() and prev.stop + 1 == r.start:
+                prev.stop = r.stop
+                append_r = False
         if append_r:
             ret.append(r)
 
