@@ -910,7 +910,7 @@ class IORegion(object):
         return self.typestr
 
     def size(self):
-        return int(self.stop - self.start)
+        return int(self.stop - self.start + 1)
 
     def start_str(self):
         # This method is used in root-cell-config.c.tmpl
@@ -958,9 +958,6 @@ class PortRegion(IORegion):
     def __str__(self):
         return 'Port I/O: %04x-%04x : %s' % \
             (self.start, self.stop, super(PortRegion, self).__str__())
-
-    def size(self):
-        return super(PortRegion, self).size() + 1
 
 
 class IOAPIC:
