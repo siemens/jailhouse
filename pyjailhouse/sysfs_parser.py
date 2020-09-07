@@ -935,18 +935,19 @@ class MemRegion(IORegion):
         # round up to full PAGE_SIZE
         return int((super(MemRegion, self).size() + 0xfff) / 0x1000) * 0x1000
 
-    def flagstr(self, p=''):
-        if (
-                self.typestr == 'System RAM' or
+    def is_ram(self):
+        return (self.typestr == 'System RAM' or
                 self.typestr == 'Kernel' or
                 self.typestr == 'RAM buffer' or
                 self.typestr == 'ACPI DMAR RMRR' or
-                self.typestr == 'ACPI IVRS'
-        ):
-            s = 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |\n'
-            s += p + '\t\tJAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA'
-            return s
-        return 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE'
+                self.typestr == 'ACPI IVRS')
+
+    def flagstr(self, p=''):
+        if self.is_ram():
+            return 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |\n' + \
+                p + '\t\tJAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA'
+        else:
+            return 'JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE'
 
 
 class PortRegion(IORegion):
