@@ -33,6 +33,7 @@ def set_root_dir(dir):
     global root_dir
     root_dir = dir
 
+
 inputs = {
     'files': set(),
     'files_opt': set(),
@@ -150,18 +151,16 @@ def parse_iomem_tree(tree):
         if s.find('PCI MMCONFIG') >= 0 or s.find('APIC') >= 0:
             continue
 
-        # generally blacklisted, with a few exceptions
-        if s.lower() == 'reserved':
-            regions.extend(tree.find_regions_by_name('HPET'))
-            dmar_regions.extend(tree.find_regions_by_name('dmar'))
-            continue
-
         # if the tree continues recurse further down ...
         if tree.children:
             (temp_regions, temp_dmar_regions) = parse_iomem_tree(tree)
             regions.extend(temp_regions)
             dmar_regions.extend(temp_dmar_regions)
             continue
+        else:
+            # blacklisted if it has no children
+            if s.lower() == 'reserved':
+                continue
 
         # add all remaining leaves
         regions.append(r)
