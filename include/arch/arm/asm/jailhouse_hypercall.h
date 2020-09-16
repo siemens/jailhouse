@@ -43,6 +43,7 @@
 #define JAILHOUSE_CALL_NUM_RESULT	"r0"
 #define JAILHOUSE_CALL_ARG1		"r1"
 #define JAILHOUSE_CALL_ARG2		"r2"
+#define JAILHOUSE_CALL_CLOBBERED	"r3"
 
 /* CPU statistics, arm-specific part */
 #define JAILHOUSE_CPU_STAT_VMEXITS_CP15		JAILHOUSE_GENERIC_CPU_STATS + 5
@@ -56,9 +57,9 @@ static inline __u32 jailhouse_call(__u32 num)
 
 	asm volatile(
 		JAILHOUSE_CALL_INS
-		: "=r" (num_result)
-		: "r" (num_result)
-		: "memory");
+		: "+r" (num_result)
+		: : "memory", JAILHOUSE_CALL_ARG1, JAILHOUSE_CALL_ARG2,
+		    JAILHOUSE_CALL_CLOBBERED);
 	return num_result;
 }
 
@@ -69,9 +70,8 @@ static inline __u32 jailhouse_call_arg1(__u32 num, __u32 arg1)
 
 	asm volatile(
 		JAILHOUSE_CALL_INS
-		: "=r" (num_result)
-		: "r" (num_result), "r" (__arg1)
-		: "memory");
+		: "+r" (num_result), "+r" (__arg1)
+		: : "memory", JAILHOUSE_CALL_ARG2, JAILHOUSE_CALL_CLOBBERED);
 	return num_result;
 }
 
@@ -83,9 +83,8 @@ static inline __u32 jailhouse_call_arg2(__u32 num, __u32 arg1, __u32 arg2)
 
 	asm volatile(
 		JAILHOUSE_CALL_INS
-		: "=r" (num_result)
-		: "r" (num_result), "r" (__arg1), "r" (__arg2)
-		: "memory");
+		: "+r" (num_result), "+r" (__arg1), "+r" (__arg2)
+		: : "memory", JAILHOUSE_CALL_CLOBBERED);
 	return num_result;
 }
 
