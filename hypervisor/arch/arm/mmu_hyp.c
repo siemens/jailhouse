@@ -199,7 +199,7 @@ setup_mmu_el2(unsigned long phys_cpu_data, phys2virt_t phys2virt, u64 ttbr)
 		"bx	r0\n\t"
 		: : "r" (LOCAL_CPU_BASE - phys_cpu_data),
 		    "r" (phys2virt)
-		: "cc", "r0", "r1", "r2", "r3", "lr", "sp");
+		: "cc", "r0", "r1", "r2", "r3", "lr");
 }
 
 /*
