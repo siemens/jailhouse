@@ -288,17 +288,17 @@ asm(".arch_extension virt\n");
 
 #define arm_write_sysreg_32(op1, crn, crm, op2, val) \
 	asm volatile ("mcr	p15, "#op1", %0, "#crn", "#crm", "#op2"\n" \
-			: : "r"((u32)(val)))
+			: : "r" ((u32)(val)))
 #define arm_write_sysreg_64(op1, crm, val) \
 	asm volatile ("mcrr	p15, "#op1", %Q0, %R0, "#crm"\n" \
-			: : "r"((u64)(val)))
+			: : "r" ((u64)(val)))
 
 #define arm_read_sysreg_32(op1, crn, crm, op2, val) \
 	asm volatile ("mrc	p15, "#op1", %0, "#crn", "#crm", "#op2"\n" \
-			: "=r"((u32)(val)))
+			: "=r" ((u32)(val)))
 #define arm_read_sysreg_64(op1, crm, val) \
 	asm volatile ("mrrc	p15, "#op1", %Q0, %R0, "#crm"\n" \
-			: "=r"((u64)(val)))
+			: "=r" ((u64)(val)))
 
 #define arm_read_banked_reg(reg, val) \
 	asm volatile ("mrs %0, " #reg "\n" : "=r" (val))

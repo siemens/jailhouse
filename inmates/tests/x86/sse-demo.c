@@ -39,7 +39,7 @@ void inmate_main(void)
 
 		printk("Testing SSE...\n");
 		asm volatile("addps %1, %0\t\n"
-			     : "+x"(f_result) : "x"(f_addend));
+			     : "+x" (f_result) : "x" (f_addend));
 		/* Test raw result */
 		EXPECT_EQUAL(*(u32*)&f_result, 0x4426c000);
 	}
@@ -52,7 +52,7 @@ void inmate_main(void)
 		printk("Testing SSE2...\n");
 		d_result = d_b;
 		asm volatile("addsd %1, %0\t\n"
-			     : "+x"(d_result) : "m"(d_a));
+			     : "+x" (d_result) : "m" (d_a));
 		EXPECT_EQUAL(d_result, 667);
 	}
 
@@ -60,7 +60,7 @@ void inmate_main(void)
 		d_result = 0;
 		printk("Testing AVX...\n");
 		asm volatile("vaddsd %2, %1, %0\t\n"
-			     : "=x"(d_result) : "x"(d_a), "m"(d_b));
+			     : "=x" (d_result) : "x" (d_a), "m" (d_b));
 		EXPECT_EQUAL(d_result, 667);
 	}
 
@@ -72,7 +72,7 @@ void inmate_main(void)
 	if (x86_cpu_features.pclmulqdq && x86_cpu_features.avx) {
 		printk("Testing AVX PCLMULQDQ...\n");
 		asm volatile("vpclmulqdq %3, %2, %1, %0\t\n"
-			     : "=x"(x_result) : "x"(x_a), "x"(x_b), "i"(0));
+			     : "=x" (x_result) : "x" (x_a), "x" (x_b), "i" (0));
 
 		EXPECT_EQUAL(x_result[0], 0x5ff61cc8b1043fa2);
 		EXPECT_EQUAL(x_result[1], 0x00009602d147dc12);
@@ -81,7 +81,7 @@ void inmate_main(void)
 	if (x86_cpu_features.pclmulqdq) {
 		printk("Testing PCLMULQDQ...\n");
 		asm volatile("pclmulqdq %2, %1, %0\t\n"
-			     : "+x"(x_a) : "x"(x_b), "i"(0));
+			     : "+x" (x_a) : "x" (x_b), "i" (0));
 
 		EXPECT_EQUAL(x_a[0], 0x5ff61cc8b1043fa2);
 		EXPECT_EQUAL(x_a[1], 0x00009602d147dc12);
