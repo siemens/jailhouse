@@ -36,8 +36,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../arm-common/asm/jailhouse_hypercall.h"
-
 #define JAILHOUSE_CALL_INS		".arch_extension virt\n\t" \
 					"hvc #0x4a48"
 #define JAILHOUSE_CALL_NUM_RESULT	"r0"
@@ -50,62 +48,7 @@
 #define JAILHOUSE_NUM_CPU_STATS			JAILHOUSE_GENERIC_CPU_STATS + 6
 
 #ifndef __ASSEMBLY__
+typedef __u32 __jh_arg;
+#endif
 
-static inline __u32 jailhouse_call(__u32 num)
-{
-	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
-
-	asm volatile(
-		JAILHOUSE_CALL_INS
-		: "+r" (num_result)
-		: : "memory", JAILHOUSE_CALL_ARG1, JAILHOUSE_CALL_ARG2,
-		    JAILHOUSE_CALL_CLOBBERED);
-	return num_result;
-}
-
-static inline __u32 jailhouse_call_arg1(__u32 num, __u32 arg1)
-{
-	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
-	register __u32 __arg1 asm(JAILHOUSE_CALL_ARG1) = arg1;
-
-	asm volatile(
-		JAILHOUSE_CALL_INS
-		: "+r" (num_result), "+r" (__arg1)
-		: : "memory", JAILHOUSE_CALL_ARG2, JAILHOUSE_CALL_CLOBBERED);
-	return num_result;
-}
-
-static inline __u32 jailhouse_call_arg2(__u32 num, __u32 arg1, __u32 arg2)
-{
-	register __u32 num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
-	register __u32 __arg1 asm(JAILHOUSE_CALL_ARG1) = arg1;
-	register __u32 __arg2 asm(JAILHOUSE_CALL_ARG2) = arg2;
-
-	asm volatile(
-		JAILHOUSE_CALL_INS
-		: "+r" (num_result), "+r" (__arg1), "+r" (__arg2)
-		: : "memory", JAILHOUSE_CALL_CLOBBERED);
-	return num_result;
-}
-
-static inline void
-jailhouse_send_msg_to_cell(struct jailhouse_comm_region *comm_region,
-			   __u32 msg)
-{
-	comm_region->reply_from_cell = JAILHOUSE_MSG_NONE;
-	/* ensure reply was cleared before sending new message */
-	asm volatile("dmb ishst" : : : "memory");
-	comm_region->msg_to_cell = msg;
-}
-
-static inline void
-jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
-			       __u32 reply)
-{
-	comm_region->msg_to_cell = JAILHOUSE_MSG_NONE;
-	/* ensure message was cleared before sending reply */
-	asm volatile("dmb ishst" : : : "memory");
-	comm_region->reply_from_cell = reply;
-}
-
-#endif /* !__ASSEMBLY__ */
+#include "../arm-common/asm/jailhouse_hypercall.h"

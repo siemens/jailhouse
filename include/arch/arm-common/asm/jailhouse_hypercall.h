@@ -57,4 +57,62 @@ struct jailhouse_comm_region {
 	__u32 vpci_irq_base;
 } __attribute__((packed));
 
+static inline __jh_arg jailhouse_call(__jh_arg num)
+{
+	register __jh_arg num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
+
+	asm volatile(
+		JAILHOUSE_CALL_INS
+		: "+r" (num_result)
+		: : "memory", JAILHOUSE_CALL_ARG1, JAILHOUSE_CALL_ARG2,
+		    JAILHOUSE_CALL_CLOBBERED);
+	return num_result;
+}
+
+static inline __jh_arg jailhouse_call_arg1(__jh_arg num, __jh_arg arg1)
+{
+	register __jh_arg num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
+	register __jh_arg __arg1 asm(JAILHOUSE_CALL_ARG1) = arg1;
+
+	asm volatile(
+		JAILHOUSE_CALL_INS
+		: "+r" (num_result), "+r" (__arg1)
+		: : "memory", JAILHOUSE_CALL_ARG2, JAILHOUSE_CALL_CLOBBERED);
+	return num_result;
+}
+
+static inline __jh_arg jailhouse_call_arg2(__jh_arg num, __jh_arg arg1,
+					   __jh_arg arg2)
+{
+	register __jh_arg num_result asm(JAILHOUSE_CALL_NUM_RESULT) = num;
+	register __jh_arg __arg1 asm(JAILHOUSE_CALL_ARG1) = arg1;
+	register __jh_arg __arg2 asm(JAILHOUSE_CALL_ARG2) = arg2;
+
+	asm volatile(
+		JAILHOUSE_CALL_INS
+		: "+r" (num_result), "+r" (__arg1), "+r" (__arg2)
+		: : "memory", JAILHOUSE_CALL_CLOBBERED);
+	return num_result;
+}
+
+static inline void
+jailhouse_send_msg_to_cell(struct jailhouse_comm_region *comm_region,
+			   __jh_arg msg)
+{
+	comm_region->reply_from_cell = JAILHOUSE_MSG_NONE;
+	/* ensure reply was cleared before sending new message */
+	asm volatile("dmb ishst" : : : "memory");
+	comm_region->msg_to_cell = msg;
+}
+
+static inline void
+jailhouse_send_reply_from_cell(struct jailhouse_comm_region *comm_region,
+			       __jh_arg reply)
+{
+	comm_region->msg_to_cell = JAILHOUSE_MSG_NONE;
+	/* ensure message was cleared before sending reply */
+	asm volatile("dmb ishst" : : : "memory");
+	comm_region->reply_from_cell = reply;
+}
+
 #endif /* !__ASSEMBLY__ */
