@@ -260,6 +260,7 @@ struct jailhouse_pci_capability {
 #define JAILHOUSE_IOMMU_INTEL		2
 #define JAILHOUSE_IOMMU_SMMUV3		3
 #define JAILHOUSE_IOMMU_PVU		4
+#define JAILHOUSE_IOMMU_ARM_MMU500	5
 
 struct jailhouse_iommu {
 	__u32 type;
@@ -278,6 +279,10 @@ struct jailhouse_iommu {
 			__u64 tlb_base;
 			__u32 tlb_size;
 		} __attribute__((packed)) tipvu;
+
+		struct {
+			__u32 sid_mask;
+		} __attribute__((packed)) arm_mmu500;
 	};
 } __attribute__((packed));
 
