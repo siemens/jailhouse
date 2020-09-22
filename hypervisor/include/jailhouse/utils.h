@@ -35,5 +35,9 @@
 #define GET_FIELD(value, last, first) \
 	(((value) & BIT_MASK((last), (first))) >> (first))
 
+/* set the field value at [last:first] from an input of up to 64 bits*/
+#define SET_FIELD(value, last, first) \
+	((value) << (first) & BIT_MASK((last), (first)))
+
 #define MAX(a, b)		((a) >= (b) ? (a) : (b))
 #define MIN(a, b)		((a) <= (b) ? (a) : (b))
