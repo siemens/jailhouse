@@ -49,6 +49,13 @@
 #define X86_XCR0_SSE		(1 << 1)
 #define X86_XCR0_AVX		(1 << 2)
 
+#define PAGE_FLAG_PRESENT	0x01
+#define PAGE_FLAG_RW		0x02
+#define PAGE_FLAG_PS		0x80
+#define PAGE_FLAG_PCD		0x10
+
+#define PAGE_DEFAULT_FLAGS	(PAGE_FLAG_PRESENT | PAGE_FLAG_RW)
+
 #define MSR_EFER		0xc0000080
 #define EFER_LME		0x00000100
 

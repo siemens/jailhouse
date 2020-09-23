@@ -39,11 +39,6 @@
 #include <inmate.h>
 #include <asm/regs.h>
 
-#define PG_PRESENT	0x01
-#define PG_RW		0x02
-#define PG_PS		0x80
-#define PG_PCD		0x10
-
 void map_range(void *start, unsigned long size, enum map_type map_type)
 {
 	unsigned long pt_addr, *pt_entry, *pt;
@@ -59,25 +54,25 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 		pt = (unsigned long *)pt_addr;
 
 		pt_entry = &pt[(vaddr >> 39) & 0x1ff];
-		if (*pt_entry & PG_PRESENT) {
+		if (*pt_entry & PAGE_FLAG_PRESENT) {
 			pt = (unsigned long *)(*pt_entry & PAGE_MASK);
 		} else {
 			pt = alloc(PAGE_SIZE, PAGE_SIZE);
-			*pt_entry = (unsigned long)pt | PG_RW | PG_PRESENT;
+			*pt_entry = (unsigned long)pt | PAGE_DEFAULT_FLAGS;
 		}
 
 		pt_entry = &pt[(vaddr >> 30) & 0x1ff];
-		if (*pt_entry & PG_PRESENT) {
+		if (*pt_entry & PAGE_FLAG_PRESENT) {
 			pt = (unsigned long *)(*pt_entry & PAGE_MASK);
 		} else {
 			pt = alloc(PAGE_SIZE, PAGE_SIZE);
-			*pt_entry = (unsigned long)pt | PG_RW | PG_PRESENT;
+			*pt_entry = (unsigned long)pt | PAGE_DEFAULT_FLAGS;
 		}
 
 		pt_entry = &pt[(vaddr >> 21) & 0x1ff];
 		*pt_entry = (vaddr & HUGE_PAGE_MASK) |
-			(map_type == MAP_UNCACHED ? PG_PCD : 0) |
-			PG_PS | PG_RW | PG_PRESENT;
+			(map_type == MAP_UNCACHED ? PAGE_FLAG_PCD : 0) |
+			PAGE_FLAG_PS | PAGE_DEFAULT_FLAGS;
 #else
 #error not yet implemented
 #endif
