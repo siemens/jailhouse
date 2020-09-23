@@ -47,7 +47,7 @@ start32:
 	or $X86_CR4_PSE,%eax
 	mov %eax,%cr4
 
-	mov $loader_pdpt,%eax
+	mov $pd,%eax
 	mov %eax,%cr3
 
 	mov $(X86_CR0_PG | X86_CR0_WP | X86_CR0_PE),%eax
@@ -141,6 +141,7 @@ gdt_ptr:
 
 	.align(4096)
 	.global loader_pdpt
-loader_pdpt:
-	.long	0x00000083
+pd:
+	/* ID map 4M@0x0 */
+	.long	0x0 + (PAGE_FLAG_PS | PAGE_DEFAULT_FLAGS)
 	.align(4096)
