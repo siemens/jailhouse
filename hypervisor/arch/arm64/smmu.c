@@ -320,14 +320,15 @@ static void arm_smmu_write_sme(struct arm_smmu_device *smmu, int idx)
 }
 
 /* Wait for any pending TLB invalidations to complete */
-static int __arm_smmu_tlb_sync(struct arm_smmu_device *smmu,
-				void *sync, void *status)
+static int arm_smmu_tlb_sync_global(struct arm_smmu_device *smmu)
 {
+	void *base = ARM_SMMU_GR0(smmu);
 	unsigned int delay, i;
 
-	mmio_write32(sync, 0);
+	mmio_write32(base + ARM_SMMU_GR0_sTLBGSYNC, 0);
 	for (delay = 1; delay < TLB_LOOP_TIMEOUT; delay *= 2) {
-		if (!(mmio_read32(status) & sTLBGSTATUS_GSACTIVE))
+		if (!(mmio_read32(base + ARM_SMMU_GR0_sTLBGSTATUS) &
+		      sTLBGSTATUS_GSACTIVE))
 			return 0;
 		for (i = 0; i < 10 * 1000000; i++)
 			cpu_relax();
@@ -335,17 +336,6 @@ static int __arm_smmu_tlb_sync(struct arm_smmu_device *smmu,
 	printk("TLB sync timed out -- SMMU may be deadlocked\n");
 
 	return trace_error(-EINVAL);
-}
-
-static int arm_smmu_tlb_sync_global(struct arm_smmu_device *smmu)
-{
-	int ret;
-	void *base = ARM_SMMU_GR0(smmu);
-
-	ret = __arm_smmu_tlb_sync(smmu, base + ARM_SMMU_GR0_sTLBGSYNC,
-			    base + ARM_SMMU_GR0_sTLBGSTATUS);
-
-	return ret;
 }
 
 static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
