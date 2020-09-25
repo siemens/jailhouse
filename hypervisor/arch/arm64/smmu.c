@@ -349,9 +349,9 @@ static int arm_smmu_tlb_sync_global(struct arm_smmu_device *smmu)
 	return ret;
 }
 
-static void arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
-				       struct arm_smmu_cfg *cfg,
-				       struct cell *cell)
+static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
+				      struct arm_smmu_cfg *cfg,
+				      struct cell *cell)
 {
 	struct arm_smmu_cb *cb = &smmu->cbs[cfg->cbndx];
 	struct paging_structures *pg_structs;
@@ -400,10 +400,7 @@ static void arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
 		reg |= (ARM_LPAE_TCR_PS_52_BIT << ARM_LPAE_TCR_PS_SHIFT);
 		break;
 	default:
-		printk("Not supported\n");
-		break;
-		/* TODO */
-		//goto out_free_data;
+		return trace_error(-EIO);
 	}
 
 	reg |= (64ULL - smmu->ipa_size) << ARM_LPAE_TCR_T0SZ_SHIFT;
@@ -417,6 +414,8 @@ static void arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
 	vttbr |= (u64)cell->config->id << VTTBR_VMID_SHIFT;
 	vttbr |= (u64)(cell_table & TTBR_MASK);
 	cb->ttbr[0] = vttbr;
+
+	return 0;
 }
 
 static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
@@ -877,7 +876,10 @@ static int arm_smmu_cell_init(struct cell *cell)
 		cfg->irptndx = cfg->cbndx;
 		cfg->vmid = cfg->cbndx + 1;
 
-		arm_smmu_init_context_bank(&smmu_device[i], cfg, cell);
+		ret = arm_smmu_init_context_bank(&smmu_device[i], cfg, cell);
+		if (ret)
+			return ret;
+
 		arm_smmu_write_context_bank(&smmu_device[i], cfg->cbndx);
 
 		smr = smmu_device[i].smrs;
