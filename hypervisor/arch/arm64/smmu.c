@@ -34,8 +34,7 @@
 
 #define ARM_SMMU_FEAT_COHERENT_WALK	(1 << 0)
 #define ARM_SMMU_FEAT_STREAM_MATCH	(1 << 1)
-#define ARM_SMMU_FEAT_TRANS_S1		(1 << 2)
-#define ARM_SMMU_FEAT_TRANS_S2		(1 << 3)
+/* unused bits 2 and 3 */
 #define ARM_SMMU_FEAT_VMID16		(1 << 6)
 #define ARM_SMMU_FEAT_FMT_AARCH64_4K	(1 << 7)
 #define ARM_SMMU_FEAT_FMT_AARCH64_16K	(1 << 8)
@@ -602,16 +601,8 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	/* Only stage 2 translation is supported */
 	id &= ~(ID0_S1TS | ID0_NTS);
 
-	if (id & ID0_S2TS) {
-		smmu->features |= ARM_SMMU_FEAT_TRANS_S2;
-		printk("\tStage 2 translation\n");
-	}
-
-	if (!(smmu->features &
-		(ARM_SMMU_FEAT_TRANS_S1 | ARM_SMMU_FEAT_TRANS_S2))) {
-		printk("\tNo translation support!\n");
-		return -ENODEV;
-	}
+	if (!(id & ID0_S2TS))
+		return trace_error(-EIO);
 
 	/*
 	 * In order for DMA API calls to work properly, we must defer to what
@@ -742,14 +733,8 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	else
 		pgsize_bitmap |= smmu->pgsize_bitmap;
 	printk("\tsupported page sizes: 0x%08lx\n", smmu->pgsize_bitmap);
-
-	if (smmu->features & ARM_SMMU_FEAT_TRANS_S1)
-		printk("\tStage-1: %lu-bit VA -> %lu-bit IPA\n",
-		       smmu->va_size, smmu->ipa_size);
-
-	if (smmu->features & ARM_SMMU_FEAT_TRANS_S2)
-		printk("\tStage-2: %lu-bit IPA -> %lu-bit PA\n",
-		       smmu->ipa_size, smmu->pa_size);
+	printk("\tstage-2: %lu-bit IPA -> %lu-bit PA\n",
+	       smmu->ipa_size, smmu->pa_size);
 
 	return 0;
 }
