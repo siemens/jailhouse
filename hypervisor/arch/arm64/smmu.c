@@ -67,7 +67,6 @@
 #define ARM_LPAE_TCR_PS_52_BIT		0x6ULL
 
 #define TLB_LOOP_TIMEOUT		1000000
-#define TLB_SPIN_COUNT			10
 
 /* SMMU global address space */
 #define ARM_SMMU_GR0(smmu)		((smmu)->base)
@@ -325,16 +324,14 @@ static void arm_smmu_write_sme(struct arm_smmu_device *smmu, int idx)
 static int __arm_smmu_tlb_sync(struct arm_smmu_device *smmu,
 				void *sync, void *status)
 {
-	unsigned int spin_cnt, delay, i;
+	unsigned int delay, i;
 
 	mmio_write32(sync, 0);
 	for (delay = 1; delay < TLB_LOOP_TIMEOUT; delay *= 2) {
-		for (spin_cnt = TLB_SPIN_COUNT; spin_cnt > 0; spin_cnt--) {
-			if (!(mmio_read32(status) & sTLBGSTATUS_GSACTIVE))
-				return 0;
+		if (!(mmio_read32(status) & sTLBGSTATUS_GSACTIVE))
+			return 0;
+		for (i = 0; i < 10 * 1000000; i++)
 			cpu_relax();
-		}
-		for (i = 0; i < 10 * 1000000; i++);
 	}
 	printk("TLB sync timed out -- SMMU may be deadlocked\n");
 
