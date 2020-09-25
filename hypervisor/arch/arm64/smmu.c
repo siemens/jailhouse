@@ -887,10 +887,8 @@ static int arm_smmu_cell_init(struct cell *cell)
 		mmio_write32(ARM_SMMU_GR0(&smmu_device[i])
 			     + ARM_SMMU_GR0_TLBIVMID, cfg->vmid);
 		ret = arm_smmu_tlb_sync_global(&smmu_device[i]);
-		if (ret < 0) {
-			printk("TLB maintenance operations globally across the SMMU failed!\n");
+		if (ret < 0)
 			return ret;
-		}
 	}
 
 	return 0;
@@ -918,9 +916,7 @@ static void arm_smmu_cell_exit(struct cell *cell)
 
 		mmio_write32(ARM_SMMU_GR0(&smmu_device[i]) + ARM_SMMU_GR0_TLBIVMID,
 					  smmu_device[i].cbs[cbndx].cfg->vmid);
-		ret = arm_smmu_tlb_sync_global(&smmu_device[i]);
-		if (ret < 0)
-			printk("TLB maintenance operations globally across the SMMU failed!\n");
+		arm_smmu_tlb_sync_global(&smmu_device[i]);
 
 		for_each_smmu_sid(sid, cell->config, n) {
 			ret = arm_smmu_find_sme(*sid,
