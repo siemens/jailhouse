@@ -679,7 +679,8 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	size = 1 << (((id >> ID1_NUMPAGENDXB_SHIFT) & ID1_NUMPAGENDXB_MASK) + 1);
 	size <<= smmu->pgshift;
 	if (smmu->cb_base != gr0_base + size)
-		printk("SMMU address space size (0x%lx) differs from mapped region size (0x%tx)!\n",
+		printk("Warning: SMMU address space size (0x%lx) "
+		       "differs from mapped region size (0x%tx)!\n",
 		       size * 2, (smmu->cb_base - gr0_base) * 2);
 
 	smmu->num_s2_context_banks = (id >> ID1_NUMS2CB_SHIFT) & ID1_NUMS2CB_MASK;
