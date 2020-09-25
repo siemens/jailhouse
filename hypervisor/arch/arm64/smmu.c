@@ -863,10 +863,8 @@ static int arm_smmu_cell_init(struct cell *cell)
 		for_each_smmu_sid(sid, cell->config, n) {
 			ret = arm_smmu_find_sme(*sid,
 						smmu_device[i].arm_sid_mask, i);
-			if (ret < 0) {
-				printk("arm_smmu_find_sme error %d\n", ret);
-				continue;
-			}
+			if (ret < 0)
+				return trace_error(ret);
 			idx = ret;
 
 			s2cr[idx].type = type;
@@ -898,7 +896,7 @@ static void arm_smmu_cell_exit(struct cell *cell)
 {
 	const __u32 *sid;
 	unsigned int n;
-	int ret, idx, i;
+	int idx, i;
 	int cbndx = cell->config->id;
 	struct jailhouse_iommu *iommu;
 
@@ -919,11 +917,10 @@ static void arm_smmu_cell_exit(struct cell *cell)
 		arm_smmu_tlb_sync_global(&smmu_device[i]);
 
 		for_each_smmu_sid(sid, cell->config, n) {
-			ret = arm_smmu_find_sme(*sid,
+			idx = arm_smmu_find_sme(*sid,
 						smmu_device[i].arm_sid_mask, i);
-			if (ret < 0)
-				printk("arm_smmu_find_sme error %d\n", ret);
-			idx = ret;
+			if (idx < 0)
+				continue;
 
 			if (arm_smmu_free_sme(&smmu_device[i], idx))
 				arm_smmu_write_sme(&smmu_device[i], idx);
