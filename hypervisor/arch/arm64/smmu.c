@@ -582,9 +582,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	unsigned long size;
 	int i;
 
-	printk("probing hardware configuration...\n");
-	printk("ARM MMU500 with:\n");
-
 	/* ID0 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID0);
 
@@ -602,9 +599,9 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	 */
 	cttw_reg = !!(id & ID0_CTTW);
 	if (cttw_fw || cttw_reg)
-		printk("\t%scoherent translation table walks\n", cttw_fw ? "" : "non-");
+		printk(" %scoherent translation table walks\n", cttw_fw ? "" : "non-");
 	if (cttw_fw != cttw_reg)
-		printk("\t(IDR0.CTTW is overridden by FW configuration)\n");
+		printk(" (IDR0.CTTW is overridden by FW configuration)\n");
 
 	/* Max number of entries we have for stream matching/indexing */
 	if (id & ID0_EXIDS) {
@@ -630,7 +627,7 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 			return -ENOMEM;
 		memset(smmu->smrs, 0, PAGES(size * sizeof(*smmu->smrs)));
 
-		printk("\tstream matching with %lu SMR groups", size);
+		printk(" stream matching with %lu SMR groups\n", size);
 	}
 
 	smmu->s2crs = page_alloc(&mem_pool, PAGES(size * (sizeof(*smmu->s2crs)
@@ -671,7 +668,7 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		return -ENODEV;
 	}
 
-	printk("\t%u context banks (%u Stage 2 only)\n",
+	printk(" %u context banks (%u stage 2 only)\n",
 	       smmu->num_context_banks, smmu->num_s2_context_banks);
 
 	smmu->cbs = page_alloc(&mem_pool, PAGES(smmu->num_context_banks
@@ -722,9 +719,9 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		pgsize_bitmap = smmu->pgsize_bitmap;
 	else
 		pgsize_bitmap |= smmu->pgsize_bitmap;
-	printk("\tsupported page sizes: 0x%08lx\n", smmu->pgsize_bitmap);
-	printk("\tstage-2: %lu-bit IPA -> %lu-bit PA\n",
-	       smmu->ipa_size, smmu->pa_size);
+	printk(" supported page sizes: 0x%08lx\n"
+	       " stage-2: %lu-bit IPA -> %lu-bit PA\n",
+	       smmu->pgsize_bitmap, smmu->ipa_size, smmu->pa_size);
 
 	return 0;
 }
@@ -951,6 +948,8 @@ static int arm_smmu_init(void)
 								iommu->size);
 			if (!smmu_device[i].base)
 				return -ENOMEM;
+
+			printk("ARM MMU500 at 0x%llx with:\n", iommu->base);
 
 			smmu_device[i].cb_base = smmu_device[i].base +
 						 iommu->size / 2;
