@@ -101,16 +101,21 @@ long psci_dispatch(struct trap_context *ctx)
 
 	case PSCI_0_2_FN_CPU_SUSPEND:
 	case PSCI_0_2_FN64_CPU_SUSPEND:
+		/*
+		 * Note: We ignore the power_state parameter and always perform
+		 * a context-preserving suspend. This is legal according to
+		 * PSCI.
+		 */
 		if (!irqchip_has_pending_irqs()) {
 			asm volatile("wfi" : : : "memory");
 			irqchip_handle_irq();
 		}
-		return 0;
+		return PSCI_SUCCESS;
 
 	case PSCI_0_2_FN_CPU_OFF:
 	case PSCI_CPU_OFF_V0_1_UBOOT:
 		arm_cpu_park();
-		return 0;
+		return 0; /* never returned to the PSCI caller */
 
 	case PSCI_0_2_FN_CPU_ON:
 	case PSCI_0_2_FN64_CPU_ON:
