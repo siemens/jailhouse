@@ -264,20 +264,15 @@ static void gicv2_adjust_irq_target(struct cell *cell, u16 irq_id)
 	mmio_write32(itargetsr, targets);
 }
 
-static int gicv2_send_sgi(struct sgi *sgi)
+static void gicv2_send_sgi(struct sgi *sgi)
 {
 	u32 val;
-
-	if (!is_sgi(sgi->id))
-		return -EINVAL;
 
 	val = (sgi->routing_mode & 0x3) << 24
 		| (sgi->targets & 0xff) << 16
 		| (sgi->id & 0xf);
 
 	mmio_write32(gicd_base + GICD_SGIR, val);
-
-	return 0;
 }
 
 static int gicv2_inject_irq(u16 irq_id, u16 sender)

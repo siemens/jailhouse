@@ -304,7 +304,7 @@ void irqchip_trigger_external_irq(u16 irq_id)
 		     1 << (irq_id % 32));
 }
 
-int irqchip_send_sgi(unsigned int cpu_id, u16 sgi_id)
+void irqchip_send_sgi(unsigned int cpu_id, u16 sgi_id)
 {
 	struct sgi sgi;
 
@@ -312,7 +312,7 @@ int irqchip_send_sgi(unsigned int cpu_id, u16 sgi_id)
 	sgi.cluster_id = irqchip_get_cluster_target(cpu_id);
 	sgi.routing_mode = 0;
 	sgi.id = sgi_id;
-	return irqchip.send_sgi(&sgi);
+	irqchip.send_sgi(&sgi);
 }
 
 int irqchip_cpu_init(struct per_cpu *cpu_data)

@@ -414,13 +414,10 @@ static int gicv3_cell_init(struct cell *cell)
 	(MPIDR_AFFINITY_LEVEL((cluster_id), (level)) \
 	<< ICC_SGIR_AFF## level ##_SHIFT)
 
-static int gicv3_send_sgi(struct sgi *sgi)
+static void gicv3_send_sgi(struct sgi *sgi)
 {
 	u64 val;
 	u16 targets = sgi->targets;
-
-	if (!is_sgi(sgi->id))
-		return -EINVAL;
 
 	if (sgi->routing_mode == 2)
 		targets = 1 << phys_processor_id();
@@ -442,8 +439,6 @@ static int gicv3_send_sgi(struct sgi *sgi)
 
 	arm_write_sysreg(ICC_SGI1R_EL1, val);
 	isb();
-
-	return 0;
 }
 
 #define SGIR_TO_AFFINITY(sgir, level)	\
