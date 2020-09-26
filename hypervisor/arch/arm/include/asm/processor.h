@@ -14,8 +14,10 @@
 #define _JAILHOUSE_ASM_PROCESSOR_H
 
 #include <jailhouse/types.h>
-#include <jailhouse/utils.h>
 #include <asm/sysregs.h>
+
+/* also include from arm-common */
+#include_next <asm/processor.h>
 
 #define EXIT_REASON_UNDEF	0x1
 #define EXIT_REASON_HVC		0x2
@@ -27,6 +29,10 @@
 
 #define NUM_USR_REGS		14
 
+#define ARM_PARKING_CODE		\
+	0xe320f003, /* 1: wfi  */	\
+	0xeafffffd, /*    b 1b */
+
 #ifndef __ASSEMBLY__
 
 union registers {
@@ -36,29 +42,6 @@ union registers {
 		unsigned long usr[NUM_USR_REGS];
 	};
 };
-
-#define ARM_PARKING_CODE		\
-	0xe320f003, /* 1: wfi  */	\
-	0xeafffffd, /*    b 1b */
-
-#define dmb(domain)	asm volatile("dmb " #domain ::: "memory")
-#define dsb(domain)	asm volatile("dsb " #domain ::: "memory")
-#define isb()		asm volatile("isb")
-
-static inline void cpu_relax(void)
-{
-	asm volatile("" : : : "memory");
-}
-
-static inline void memory_barrier(void)
-{
-	dmb(ish);
-}
-
-static inline void memory_load_barrier(void)
-{
-	dmb(ish);
-}
 
 static inline bool is_el2(void)
 {
