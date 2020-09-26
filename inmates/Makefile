@@ -20,10 +20,6 @@ INCLUDES := -I$(INMATES_LIB) \
 	    -I$(src)/lib/include \
 	    -I$(src)/../include
 
-ifeq ($(subst arm64,arm,$(SRCARCH)),arm)
-INCLUDES += -I$(src)/../hypervisor/arch/arm-common/include
-endif
-
 LINUXINCLUDE  := $(INCLUDES)
 KBUILD_AFLAGS := -D__ASSEMBLY__ -fno-PIE
 KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
