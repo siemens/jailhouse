@@ -101,3 +101,8 @@ void arch_panic_park(void)
 	arm_write_banked_reg(ELR_hyp, 0);
 }
 #endif
+
+void arm_cpu_passthru_suspend(void)
+{
+	/* never called */
+}

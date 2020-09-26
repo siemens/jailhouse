@@ -106,7 +106,9 @@ long psci_dispatch(struct trap_context *ctx)
 		 * a context-preserving suspend. This is legal according to
 		 * PSCI.
 		 */
-		if (!irqchip_has_pending_irqs()) {
+		if (sdei_available) {
+			arm_cpu_passthru_suspend();
+		} else if (!irqchip_has_pending_irqs()) {
 			asm volatile("wfi" : : : "memory");
 			irqchip_handle_irq();
 		}

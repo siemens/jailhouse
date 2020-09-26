@@ -31,6 +31,7 @@ unsigned int arm_cpu_by_mpidr(struct cell *cell, unsigned long mpidr);
 
 void arm_cpu_reset(unsigned long pc, bool aarch32);
 void arm_cpu_park(void);
+void arm_cpu_passthru_suspend(void);
 
 #endif /* !__ASSEMBLY__ */
 

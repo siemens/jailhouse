@@ -99,3 +99,14 @@ void arch_panic_park(void)
 	arm_write_sysreg(ELR_EL2, 0);
 }
 #endif
+
+void arm_cpu_passthru_suspend(void)
+{
+	unsigned long hcr;
+
+	arm_read_sysreg(HCR_EL2, hcr);
+	arm_write_sysreg(HCR_EL2, hcr | HCR_IMO_BIT | HCR_FMO_BIT);
+	isb();
+	asm volatile("wfi" : : : "memory");
+	arm_write_sysreg(HCR_EL2, hcr);
+}
