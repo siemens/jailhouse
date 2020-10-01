@@ -191,7 +191,9 @@ class DebugConsole:
         self.address = 0
         self.pio = False
         self.dist1 = False
-        if console != 'none':
+        if console == 'none':
+            return
+        try:
             type = int(input_readline('/sys/class/tty/%s/io_type' % console,
                                       True))
             if type == 0:
@@ -211,6 +213,8 @@ class DebugConsole:
                         '/sys/class/tty/%s/iomem_base' % console, True), 16)
                     self.pio = False
                     self.dist1 = (shift == 0)
+        except ValueError:
+            pass
 
 
 if options.generate_collector:
