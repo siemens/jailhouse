@@ -849,14 +849,6 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 		 */
 		goto update_irte;
 
-	/*
-	 * If redirection hint is cleared, physical destination mode is used
-	 * effectively (destination mode bit is ignored, only a single CPU is
-	 * targeted). Fix up irq_msg so that apic_filter_irq_dest uses the
-	 * appropriate mode.
-	 */
-	irq_msg.dest_logical = irq_msg.dest_logical && irq_msg.redir_hint;
-
 	/* Validate delivery mode and destination(s). */
 	if (irq_msg.delivery_mode != APIC_MSG_DLVR_FIXED &&
 	    irq_msg.delivery_mode != APIC_MSG_DLVR_LOWPRI)
