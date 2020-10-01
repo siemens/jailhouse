@@ -116,20 +116,19 @@ def regions_split_by_kernel(tree):
     if kernel_stop > r.stop:
         kernel_stop = r.stop
 
-    before_kernel = None
-    after_kernel = None
+    result = []
 
     # before Kernel if any
     if r.start < kernel_start:
-        before_kernel = MemRegion(r.start, kernel_start - 1, s)
+        result.append(MemRegion(r.start, kernel_start - 1, s))
 
-    kernel_region = MemRegion(kernel_start, kernel_stop, "Kernel")
+    result.append(MemRegion(kernel_start, kernel_stop, "Kernel"))
 
     # after Kernel if any
     if r.stop > kernel_stop:
-        after_kernel = MemRegion(kernel_stop + 1, r.stop, s)
+        result.append(MemRegion(kernel_stop + 1, r.stop, s))
 
-    return [before_kernel, kernel_region, after_kernel]
+    return result
 
 
 def parse_iomem_tree(tree):
