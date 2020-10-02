@@ -285,9 +285,16 @@ struct arm_smmu_device {
 	unsigned long			pgsize_bitmap;
 	u32				num_global_irqs;
 	unsigned int			*irqs;
-} smmu_device[JAILHOUSE_MAX_IOMMU_UNITS];
+};
 
+static struct arm_smmu_device smmu_device[JAILHOUSE_MAX_IOMMU_UNITS];
+static unsigned int num_smmu_devices;
 static unsigned long pgsize_bitmap = -1;
+
+#define for_each_smmu(smmu, counter)				\
+	for ((smmu) = &smmu_device[0], (counter) = 0;		\
+	     (counter) < num_smmu_devices;			\
+	     (smmu)++, (counter)++)
 
 static void arm_smmu_write_smr(struct arm_smmu_device *smmu, int idx)
 {
@@ -811,33 +818,26 @@ static bool arm_smmu_free_sme(struct arm_smmu_device *smmu, int idx)
 
 static int arm_smmu_cell_init(struct cell *cell)
 {
-	struct jailhouse_iommu *iommu;
 	enum arm_smmu_s2cr_type type = S2CR_TYPE_TRANS;
+	struct arm_smmu_device *smmu;
 	struct arm_smmu_s2cr *s2cr;
 	struct arm_smmu_cfg *cfg;
 	struct arm_smmu_smr *smr;
+	unsigned int dev, n;
 	const __u32 *sid;
-	unsigned int n;
-	int ret, idx, i;
-
-	if (!iommu_count_units())
-		return 0;
+	int ret, idx;
 
 	/* If no sids, ignore */
 	if (!cell->config->num_stream_ids)
 		return 0;
 
-	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < iommu_count_units(); iommu++, i++) {
-		if (iommu->type != JAILHOUSE_IOMMU_ARM_MMU500)
-			continue;
+	for_each_smmu(smmu, dev) {
+		s2cr = smmu->s2crs;
+		cfg = &smmu->cfgs[cell->config->id];
 
-		s2cr = smmu_device[i].s2crs;
-		cfg = &smmu_device[i].cfgs[cell->config->id];
-
-		if (smmu_device[i].features & (ARM_SMMU_FEAT_FMT_AARCH64_64K |
-					       ARM_SMMU_FEAT_FMT_AARCH64_16K |
-					       ARM_SMMU_FEAT_FMT_AARCH64_4K))
+		if (smmu->features & (ARM_SMMU_FEAT_FMT_AARCH64_64K |
+				      ARM_SMMU_FEAT_FMT_AARCH64_16K |
+				      ARM_SMMU_FEAT_FMT_AARCH64_4K))
 			cfg->fmt = ARM_SMMU_CTX_FMT_AARCH64;
 
 		cfg->cbar = CBAR_TYPE_S2_TRANS;
@@ -847,16 +847,16 @@ static int arm_smmu_cell_init(struct cell *cell)
 		cfg->irptndx = cfg->cbndx;
 		cfg->vmid = cfg->cbndx + 1;
 
-		ret = arm_smmu_init_context_bank(&smmu_device[i], cfg, cell);
+		ret = arm_smmu_init_context_bank(smmu, cfg, cell);
 		if (ret)
 			return ret;
 
-		arm_smmu_write_context_bank(&smmu_device[i], cfg->cbndx);
+		arm_smmu_write_context_bank(smmu, cfg->cbndx);
 
-		smr = smmu_device[i].smrs;
+		smr = smmu->smrs;
 
 		for_each_smmu_sid(sid, cell->config, n) {
-			ret = arm_smmu_find_sme(*sid, &smmu_device[i]);
+			ret = arm_smmu_find_sme(*sid, smmu);
 			if (ret < 0)
 				return trace_error(ret);
 			idx = ret;
@@ -865,20 +865,20 @@ static int arm_smmu_cell_init(struct cell *cell)
 			s2cr[idx].privcfg = S2CR_PRIVCFG_DEFAULT;
 			s2cr[idx].cbndx = cfg->cbndx;
 
-			arm_smmu_write_s2cr(&smmu_device[i], idx);
+			arm_smmu_write_s2cr(smmu, idx);
 
 			smr[idx].id = *sid;
-			smr[idx].mask = smmu_device[i].arm_sid_mask;
+			smr[idx].mask = smmu->arm_sid_mask;
 			smr[idx].valid = true;
 
-			arm_smmu_write_smr(&smmu_device[i], idx);
+			arm_smmu_write_smr(smmu, idx);
 		}
 
 		printk("Found %d masters\n", n);
 
-		mmio_write32(ARM_SMMU_GR0(&smmu_device[i])
-			     + ARM_SMMU_GR0_TLBIVMID, cfg->vmid);
-		ret = arm_smmu_tlb_sync_global(&smmu_device[i]);
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID,
+			     cfg->vmid);
+		ret = arm_smmu_tlb_sync_global(smmu);
 		if (ret < 0)
 			return ret;
 	}
@@ -888,38 +888,31 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 static void arm_smmu_cell_exit(struct cell *cell)
 {
-	const __u32 *sid;
-	unsigned int n;
-	int idx, i;
 	int cbndx = cell->config->id;
-	struct jailhouse_iommu *iommu;
-
-	if (!iommu_count_units())
-		return;
+	struct arm_smmu_device *smmu;
+	unsigned int dev, n;
+	const __u32 *sid;
+	int idx;
 
 	/* If no sids, ignore */
 	if (!cell->config->num_stream_ids)
 		return;
 
-	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < JAILHOUSE_MAX_IOMMU_UNITS; iommu++, i++) {
-		if (iommu->type != JAILHOUSE_IOMMU_ARM_MMU500)
-			continue;
-
-		mmio_write32(ARM_SMMU_GR0(&smmu_device[i]) + ARM_SMMU_GR0_TLBIVMID,
-					  smmu_device[i].cbs[cbndx].cfg->vmid);
-		arm_smmu_tlb_sync_global(&smmu_device[i]);
+	for_each_smmu(smmu, dev) {
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID,
+					  smmu->cbs[cbndx].cfg->vmid);
+		arm_smmu_tlb_sync_global(smmu);
 
 		for_each_smmu_sid(sid, cell->config, n) {
-			idx = arm_smmu_find_sme(*sid, &smmu_device[i]);
+			idx = arm_smmu_find_sme(*sid, smmu);
 			if (idx < 0)
 				continue;
 
-			if (arm_smmu_free_sme(&smmu_device[i], idx))
-				arm_smmu_write_sme(&smmu_device[i], idx);
+			if (arm_smmu_free_sme(smmu, idx))
+				arm_smmu_write_sme(smmu, idx);
 
-			smmu_device[i].cbs[cbndx].cfg = NULL;
-			arm_smmu_write_context_bank(&smmu_device[i], cbndx);
+			smmu->cbs[cbndx].cfg = NULL;
+			arm_smmu_write_context_bank(smmu, cbndx);
 		}
 	}
 }
@@ -927,38 +920,40 @@ static void arm_smmu_cell_exit(struct cell *cell)
 static int arm_smmu_init(void)
 {
 	struct jailhouse_iommu *iommu;
-	int err, i, num = 0;
+	struct arm_smmu_device *smmu;
+	unsigned int n;
+	int err;
 
-	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < iommu_count_units(); iommu++, i++) {
+	for (n = 0; n < iommu_count_units(); n++) {
+		iommu = &system_config->platform_info.iommu_units[n];
 		if (iommu->type != JAILHOUSE_IOMMU_ARM_MMU500)
 			continue;
 
-		num++;
+		smmu = &smmu_device[num_smmu_devices];
+		smmu->arm_sid_mask = iommu->arm_mmu500.sid_mask;
 
-		smmu_device[i].arm_sid_mask = iommu->arm_mmu500.sid_mask;
-
-		smmu_device[i].base = paging_map_device(iommu->base,
-							iommu->size);
-		if (!smmu_device[i].base)
+		smmu->base = paging_map_device(iommu->base, iommu->size);
+		if (!smmu->base)
 			return -ENOMEM;
 
 		printk("ARM MMU500 at 0x%llx with:\n", iommu->base);
 
-		smmu_device[i].cb_base = smmu_device[i].base + iommu->size / 2;
+		smmu->cb_base = smmu->base + iommu->size / 2;
 
-		err = arm_smmu_device_cfg_probe(&smmu_device[i]);
+		err = arm_smmu_device_cfg_probe(smmu);
 		if (err)
 			return err;
 
-		err = arm_smmu_device_reset(&smmu_device[i]);
+		err = arm_smmu_device_reset(smmu);
 		if (err)
 			return err;
 
-		arm_smmu_test_smr_masks(&smmu_device[i]);
+		arm_smmu_test_smr_masks(smmu);
+
+		num_smmu_devices++;
 	}
 
-	if (!num)
+	if (num_smmu_devices == 0)
 		return 0;
 
 	return arm_smmu_cell_init(&root_cell);
