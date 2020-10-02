@@ -216,7 +216,7 @@ enum arm_smmu_s2cr_type {
 };
 
 #define s2cr_init_val (struct arm_smmu_s2cr){	\
-	.type = S2CR_TYPE_BYPASS,		\
+	.type = S2CR_TYPE_FAULT,		\
 }
 
 enum arm_smmu_s2cr_privcfg {
@@ -483,7 +483,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 
 	/*
 	 * Reset stream mapping groups: Initial values mark all SMRn as
-	 * invalid and all S2CRn as bypass unless overridden.
+	 * invalid and all S2CRn as fault until overridden.
 	 */
 	for (i = 0; i < smmu->num_mapping_groups; ++i)
 		arm_smmu_write_sme(smmu, i);
@@ -534,7 +534,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 
 	/* Enable client access, handling unmatched streams as appropriate */
 	reg &= ~sCR0_CLIENTPD;
-	reg &= ~sCR0_USFCFG;
+	reg |= sCR0_USFCFG;
 
 	/* Disable forced broadcasting */
 	reg &= ~sCR0_FB;
@@ -637,7 +637,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	smmu->cfgs = (struct arm_smmu_cfg *)(smmu->s2crs + size);
 
-	/* Configure to Bypass mode */
 	for (i = 0; i < size; i++)
 		smmu->s2crs[i] = s2cr_init_val;
 
