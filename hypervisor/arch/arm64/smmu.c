@@ -939,7 +939,6 @@ static int arm_smmu_init(void)
 
 		num++;
 
-		smmu_device[i].features &= ~ARM_SMMU_FEAT_COHERENT_WALK;
 		smmu_device[i].arm_sid_mask = iommu->arm_mmu500.sid_mask;
 
 		smmu_device[i].base = paging_map_device(iommu->base,
