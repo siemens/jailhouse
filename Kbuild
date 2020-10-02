@@ -56,8 +56,6 @@ $(GEN_PCI_DEFS_PY): $(src)/scripts/gen_pci_defs.sh
 
 subdir-y := hypervisor configs inmates tools
 
-subdir-ccflags-y := -Werror
-
 obj-m := driver/
 
 # Do not generate files by creating dependencies if we are cleaning up

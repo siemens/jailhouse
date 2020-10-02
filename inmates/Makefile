@@ -22,7 +22,7 @@ INCLUDES := -I$(INMATES_LIB) \
 
 LINUXINCLUDE  := $(INCLUDES)
 KBUILD_AFLAGS := -D__ASSEMBLY__ -fno-PIE
-KBUILD_CFLAGS := -g -Os -Wall -Wstrict-prototypes -Wtype-limits \
+KBUILD_CFLAGS := -g -Os -Werror -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
 		 -fno-common -fno-stack-protector -ffreestanding \
