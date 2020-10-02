@@ -890,6 +890,17 @@ static void arm_smmu_cell_exit(struct cell *cell)
 	}
 }
 
+static void arm_smmu_shutdown(void)
+{
+	struct arm_smmu_device *smmu;
+	unsigned int dev;
+
+	for_each_smmu(smmu, dev) {
+		mmio_write32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0,
+			     sCR0_CLIENTPD);
+	}
+}
+
 static int arm_smmu_init(void)
 {
 	struct jailhouse_iommu *iommu;
@@ -906,8 +917,10 @@ static int arm_smmu_init(void)
 		smmu->arm_sid_mask = iommu->arm_mmu500.sid_mask;
 
 		smmu->base = paging_map_device(iommu->base, iommu->size);
-		if (!smmu->base)
-			return -ENOMEM;
+		if (!smmu->base) {
+			err = -ENOMEM;
+			goto error;
+		}
 
 		printk("ARM MMU500 at 0x%llx with:\n", iommu->base);
 
@@ -915,11 +928,11 @@ static int arm_smmu_init(void)
 
 		err = arm_smmu_device_cfg_probe(smmu);
 		if (err)
-			return err;
+			goto error;
 
 		err = arm_smmu_device_reset(smmu);
 		if (err)
-			return err;
+			goto error;
 
 		arm_smmu_test_smr_masks(smmu);
 
@@ -929,9 +942,14 @@ static int arm_smmu_init(void)
 	if (num_smmu_devices == 0)
 		return 0;
 
-	return arm_smmu_cell_init(&root_cell);
+	err = arm_smmu_cell_init(&root_cell);
+	if (!err)
+		return 0;
+
+error:
+	arm_smmu_shutdown();
+	return err;
 }
 
 DEFINE_UNIT_MMIO_COUNT_REGIONS_STUB(arm_smmu);
-DEFINE_UNIT_SHUTDOWN_STUB(arm_smmu);
 DEFINE_UNIT(arm_smmu, "ARM SMMU");
