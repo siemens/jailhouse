@@ -799,18 +799,6 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 	return free_idx;
 }
 
-static bool arm_smmu_free_sme(struct arm_smmu_device *smmu, int idx)
-{
-	smmu->s2crs[idx] = s2cr_init_val;
-	if (smmu->smrs) {
-		smmu->smrs[idx].id = 0;
-		smmu->smrs[idx].mask = 0;
-		smmu->smrs[idx].valid = false;
-	}
-
-	return true;
-}
-
 #define for_each_smmu_sid(sid, config, counter)				\
 	for ((sid) = jailhouse_cell_stream_ids(config), (counter) = 0;	\
 	     (counter) < (config)->num_stream_ids;			\
@@ -908,8 +896,13 @@ static void arm_smmu_cell_exit(struct cell *cell)
 			if (idx < 0)
 				continue;
 
-			if (arm_smmu_free_sme(smmu, idx))
-				arm_smmu_write_sme(smmu, idx);
+			smmu->s2crs[idx] = s2cr_init_val;
+			if (smmu->smrs) {
+				smmu->smrs[idx].id = 0;
+				smmu->smrs[idx].mask = 0;
+				smmu->smrs[idx].valid = false;
+			}
+			arm_smmu_write_sme(smmu, idx);
 
 			smmu->cbs[cbndx].cfg = NULL;
 			arm_smmu_write_context_bank(smmu, cbndx);
