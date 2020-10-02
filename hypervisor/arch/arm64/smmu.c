@@ -2,6 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Copyright 2018-2020 NXP
+ * Copyright Siemens AG, 2020
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -799,11 +800,6 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 	return free_idx;
 }
 
-#define for_each_smmu_sid(sid, config, counter)				\
-	for ((sid) = jailhouse_cell_stream_ids(config), (counter) = 0;	\
-	     (counter) < (config)->num_stream_ids;			\
-	     (sid)++, (counter)++)
-
 static int arm_smmu_cell_init(struct cell *cell)
 {
 	enum arm_smmu_s2cr_type type = S2CR_TYPE_TRANS;
@@ -811,8 +807,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 	struct arm_smmu_s2cr *s2cr;
 	struct arm_smmu_cfg *cfg;
 	struct arm_smmu_smr *smr;
-	unsigned int dev, n;
-	const __u32 *sid;
+	unsigned int dev, n, sid;
 	int ret, idx;
 
 	/* If no sids, ignore */
@@ -843,8 +838,8 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 		smr = smmu->smrs;
 
-		for_each_smmu_sid(sid, cell->config, n) {
-			ret = arm_smmu_find_sme(*sid, smmu);
+		for_each_stream_id(sid, cell->config, n) {
+			ret = arm_smmu_find_sme(sid, smmu);
 			if (ret < 0)
 				return trace_error(ret);
 			idx = ret;
@@ -855,7 +850,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 			arm_smmu_write_s2cr(smmu, idx);
 
-			smr[idx].id = *sid;
+			smr[idx].id = sid;
 			smr[idx].mask = smmu->arm_sid_mask;
 			smr[idx].valid = true;
 
@@ -878,8 +873,7 @@ static void arm_smmu_cell_exit(struct cell *cell)
 {
 	int cbndx = cell->config->id;
 	struct arm_smmu_device *smmu;
-	unsigned int dev, n;
-	const __u32 *sid;
+	unsigned int dev, n, sid;
 	int idx;
 
 	/* If no sids, ignore */
@@ -891,8 +885,8 @@ static void arm_smmu_cell_exit(struct cell *cell)
 					  smmu->cbs[cbndx].cfg->vmid);
 		arm_smmu_tlb_sync_global(smmu);
 
-		for_each_smmu_sid(sid, cell->config, n) {
-			idx = arm_smmu_find_sme(*sid, smmu);
+		for_each_stream_id(sid, cell->config, n) {
+			idx = arm_smmu_find_sme(sid, smmu);
 			if (idx < 0)
 				continue;
 
