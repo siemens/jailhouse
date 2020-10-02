@@ -749,9 +749,8 @@ static void arm_smmu_test_smr_masks(struct arm_smmu_device *smmu)
 	smmu->smr_mask_mask = smr >> SMR_MASK_SHIFT;
 }
 
-static int arm_smmu_find_sme(u16 id, u16 mask, int n)
+static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 {
-	struct arm_smmu_device *smmu = &smmu_device[n];
 	struct arm_smmu_smr *smrs = smmu->smrs;
 	int i, free_idx = -EINVAL;
 
@@ -777,7 +776,7 @@ static int arm_smmu_find_sme(u16 id, u16 mask, int n)
 		 * expect simply identical entries for this case, but there's
 		 * no harm in accommodating the generalisation.
 		 */
-		if ((mask & smrs[i].mask) == mask &&
+		if ((smmu->arm_sid_mask & smrs[i].mask) == smmu->arm_sid_mask &&
 		    !((id ^ smrs[i].id) & ~smrs[i].mask)) {
 			return i;
 		}
@@ -786,7 +785,7 @@ static int arm_smmu_find_sme(u16 id, u16 mask, int n)
 		 * though, then there always exists at least one stream ID
 		 * which would cause a conflict, and we can't allow that risk.
 		 */
-		if (!((id ^ smrs[i].id) & ~(smrs[i].mask | mask)))
+		if (!((id ^ smrs[i].id) & ~(smrs[i].mask | smmu->arm_sid_mask)))
 			return -EINVAL;
 	}
 
@@ -857,8 +856,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 		smr = smmu_device[i].smrs;
 
 		for_each_smmu_sid(sid, cell->config, n) {
-			ret = arm_smmu_find_sme(*sid,
-						smmu_device[i].arm_sid_mask, i);
+			ret = arm_smmu_find_sme(*sid, &smmu_device[i]);
 			if (ret < 0)
 				return trace_error(ret);
 			idx = ret;
@@ -913,8 +911,7 @@ static void arm_smmu_cell_exit(struct cell *cell)
 		arm_smmu_tlb_sync_global(&smmu_device[i]);
 
 		for_each_smmu_sid(sid, cell->config, n) {
-			idx = arm_smmu_find_sme(*sid,
-						smmu_device[i].arm_sid_mask, i);
+			idx = arm_smmu_find_sme(*sid, &smmu_device[i]);
 			if (idx < 0)
 				continue;
 
