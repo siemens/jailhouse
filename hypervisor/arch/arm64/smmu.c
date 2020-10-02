@@ -610,10 +610,8 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		smmu->features |= ARM_SMMU_FEAT_STREAM_MATCH;
 
 		size = (id >> ID0_NUMSMRG_SHIFT) & ID0_NUMSMRG_MASK;
-		if (size == 0) {
-			printk("Stream matching is supported, but no SMRs present!\n");
-			return -ENODEV;
-		}
+		if (size == 0)
+			return trace_error(-ENODEV);
 
 		/* Zero-initialised to mark as invalid */
 		smmu->smrs = page_alloc(&mem_pool, PAGES(size * sizeof(*smmu->smrs)));
@@ -656,12 +654,10 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	smmu->num_s2_context_banks = (id >> ID1_NUMS2CB_SHIFT) & ID1_NUMS2CB_MASK;
 	smmu->num_context_banks = (id >> ID1_NUMCB_SHIFT) & ID1_NUMCB_MASK;
-	if (smmu->num_s2_context_banks > smmu->num_context_banks) {
-		printk("Impossible number of S2 context banks!\n");
-		return -ENODEV;
-	}
+	if (smmu->num_s2_context_banks > smmu->num_context_banks)
+		return trace_error(-ENODEV);
 
-	printk(" %u context banks (%u stage 2 only)\n",
+	printk(" %u context banks (%u stage-2 only)\n",
 	       smmu->num_context_banks, smmu->num_s2_context_banks);
 
 	smmu->cbs = page_alloc(&mem_pool, PAGES(smmu->num_context_banks
@@ -830,6 +826,9 @@ static int arm_smmu_cell_init(struct cell *cell)
 				return trace_error(ret);
 			idx = ret;
 
+			printk("Assigning StreamID 0x%x to cell \"%s\"\n",
+			       sid, cell->config->name);
+
 			s2cr[idx].type = type;
 			s2cr[idx].privcfg = S2CR_PRIVCFG_DEFAULT;
 			s2cr[idx].cbndx = cfg->cbndx;
@@ -842,8 +841,6 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 			arm_smmu_write_smr(smmu, idx);
 		}
-
-		printk("Found %d masters\n", n);
 
 		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID,
 			     cfg->vmid);
