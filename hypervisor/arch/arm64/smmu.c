@@ -937,32 +937,29 @@ static int arm_smmu_init(void)
 		if (iommu->type != JAILHOUSE_IOMMU_ARM_MMU500)
 			continue;
 
-		if (iommu->base) {
-			num++;
+		num++;
 
-			smmu_device[i].features &= ~ARM_SMMU_FEAT_COHERENT_WALK;
-			smmu_device[i].arm_sid_mask = iommu->arm_mmu500.sid_mask;
+		smmu_device[i].features &= ~ARM_SMMU_FEAT_COHERENT_WALK;
+		smmu_device[i].arm_sid_mask = iommu->arm_mmu500.sid_mask;
 
-			smmu_device[i].base = paging_map_device(iommu->base,
-								iommu->size);
-			if (!smmu_device[i].base)
-				return -ENOMEM;
+		smmu_device[i].base = paging_map_device(iommu->base,
+							iommu->size);
+		if (!smmu_device[i].base)
+			return -ENOMEM;
 
-			printk("ARM MMU500 at 0x%llx with:\n", iommu->base);
+		printk("ARM MMU500 at 0x%llx with:\n", iommu->base);
 
-			smmu_device[i].cb_base = smmu_device[i].base +
-						 iommu->size / 2;
+		smmu_device[i].cb_base = smmu_device[i].base + iommu->size / 2;
 
-			err = arm_smmu_device_cfg_probe(&smmu_device[i]);
-			if (err)
-				return err;
+		err = arm_smmu_device_cfg_probe(&smmu_device[i]);
+		if (err)
+			return err;
 
-			err = arm_smmu_device_reset(&smmu_device[i]);
-			if (err)
-				return err;
+		err = arm_smmu_device_reset(&smmu_device[i]);
+		if (err)
+			return err;
 
-			arm_smmu_test_smr_masks(&smmu_device[i]);
-		}
+		arm_smmu_test_smr_masks(&smmu_device[i]);
 	}
 
 	if (!num)
