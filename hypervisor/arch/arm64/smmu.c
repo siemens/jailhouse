@@ -11,16 +11,10 @@
  */
 
 #include <jailhouse/control.h>
-#include <jailhouse/ivshmem.h>
-#include <jailhouse/mmio.h>
-#include <jailhouse/paging.h>
-#include <jailhouse/pci.h>
 #include <jailhouse/printk.h>
-#include <jailhouse/string.h>
 #include <jailhouse/unit.h>
 #include <asm/iommu.h>
-#include <asm/spinlock.h>
-#include <asm/sysregs.h>
+
 #include <jailhouse/cell-config.h>
 
 #define SZ_4K				0x00001000
