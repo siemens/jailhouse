@@ -42,7 +42,6 @@
 #define ARM_SMMU_FEAT_FMT_AARCH64_64K	(1 << 9)
 #define ARM_SMMU_FEAT_FMT_AARCH32_L	(1 << 10)
 #define ARM_SMMU_FEAT_FMT_AARCH32_S	(1 << 11)
-#define ARM_SMMU_FEAT_EXIDS		(1 << 12)
 #define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
 
 #define ARM_64_LPAE_S2_TCR_RES1		(1 << 31)
@@ -88,7 +87,6 @@
 #define sCR0_CLIENTPD			(1 << 0)
 #define sCR0_GFRE			(1 << 1)
 #define sCR0_GFIE			(1 << 2)
-#define sCR0_EXIDENABLE			(1 << 3)
 #define sCR0_GCFGFRE			(1 << 4)
 #define sCR0_GCFGFIE			(1 << 5)
 #define sCR0_USFCFG			(1 << 10)
@@ -296,10 +294,9 @@ static unsigned long pgsize_bitmap = -1;
 static void arm_smmu_write_smr(struct arm_smmu_device *smmu, int idx)
 {
 	struct arm_smmu_smr *smr = smmu->smrs + idx;
-	u32 reg = smr->id << SMR_ID_SHIFT | smr->mask << SMR_MASK_SHIFT;
+	u32 reg = (smr->id << SMR_ID_SHIFT) | (smr->mask << SMR_MASK_SHIFT) |
+		(smr->valid ? SMR_VALID : 0);
 
-	if (!(smmu->features & ARM_SMMU_FEAT_EXIDS) && smr->valid)
-		reg |= SMR_VALID;
 	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_SMR(idx), reg);
 }
 
@@ -309,9 +306,6 @@ static void arm_smmu_write_s2cr(struct arm_smmu_device *smmu, int idx)
 	u32 reg = S2CR_TYPE(s2cr->type) | S2CR_CBNDX(s2cr->cbndx) |
 		  S2CR_PRIVCFG(s2cr->privcfg);
 
-	if (smmu->features & ARM_SMMU_FEAT_EXIDS && smmu->smrs &&
-	    smmu->smrs[idx].valid)
-		reg |= S2CR_EXIDVALID;
 	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_S2CR(idx), reg);
 }
 
@@ -537,9 +531,6 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	if (smmu->features & ARM_SMMU_FEAT_VMID16)
 		reg |= sCR0_VMID16EN;
 
-	if (smmu->features & ARM_SMMU_FEAT_EXIDS)
-		reg |= sCR0_EXIDENABLE;
-
 	/* Push the button */
 	ret = arm_smmu_tlb_sync_global(smmu);
 	mmio_write32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0, reg);
@@ -595,13 +586,7 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	if (cttw_fw != cttw_reg)
 		printk(" (IDR0.CTTW is overridden by FW configuration)\n");
 
-	/* Max number of entries we have for stream matching/indexing */
-	if (id & ID0_EXIDS) {
-		smmu->features |= ARM_SMMU_FEAT_EXIDS;
-		size = 1 << 16;
-	} else {
-		size = 1 << ((id >> ID0_NUMSIDB_SHIFT) & ID0_NUMSIDB_MASK);
-	}
+	size = 1 << ((id >> ID0_NUMSIDB_SHIFT) & ID0_NUMSIDB_MASK);
 	smmu->streamid_mask = size - 1;
 
 	if (id & ID0_SMS) {
