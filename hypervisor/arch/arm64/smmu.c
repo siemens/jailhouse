@@ -170,7 +170,6 @@
 #define CBAR_VMID_SHIFT			0
 #define CBAR_TYPE_SHIFT			16
 #define CBAR_TYPE_S2_TRANS		(0 << CBAR_TYPE_SHIFT)
-#define CBAR_IRPTNDX_SHIFT		24
 
 #define ARM_SMMU_GR1_CBA2R(n)		(0x800 + ((n) << 2))
 #define CBA2R_RW64_32BIT		(0 << 0)
@@ -246,7 +245,6 @@ enum arm_smmu_context_fmt {
 
 struct arm_smmu_cfg {
 	u8				cbndx;
-	u8				irptndx;
 	union {
 		u16			asid;
 		u16			vmid;
@@ -809,7 +807,6 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 		/* We use cell->config->id here, one cell use one context */
 		cfg->cbndx = cell->config->id;
-		cfg->irptndx = cfg->cbndx;
 		cfg->vmid = cfg->cbndx + 1;
 
 		ret = arm_smmu_init_context_bank(smmu, cfg, cell);
