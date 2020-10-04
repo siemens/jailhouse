@@ -185,14 +185,14 @@ static void arm_smmu_write_s2cr(struct arm_smmu_device *smmu, int idx,
 static int arm_smmu_tlb_sync_global(struct arm_smmu_device *smmu)
 {
 	void *base = ARM_SMMU_GR0(smmu);
-	unsigned int delay, i;
+	unsigned int loop, n;
 
 	mmio_write32(base + ARM_SMMU_GR0_sTLBGSYNC, 0);
-	for (delay = 1; delay < TLB_LOOP_TIMEOUT; delay *= 2) {
+	for (loop = 0; loop < TLB_LOOP_TIMEOUT; loop++) {
 		if (!(mmio_read32(base + ARM_SMMU_GR0_sTLBGSTATUS) &
 		      sTLBGSTATUS_GSACTIVE))
 			return 0;
-		for (i = 0; i < 10 * 1000000; i++)
+		for (n = 0; n < 1000; n++)
 			cpu_relax();
 	}
 	printk("TLB sync timed out -- SMMU may be deadlocked\n");
