@@ -177,7 +177,6 @@
 #define ARM_SMMU_CB_CONTEXTIDR		0x34
 #define ARM_SMMU_CB_FSR			0x58
 
-#define SCTLR_CFCFG			(1 << 7)
 #define SCTLR_CFIE			(1 << 6)
 #define SCTLR_CFRE			(1 << 5)
 #define SCTLR_AFE			(1 << 2)
@@ -457,10 +456,8 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	}
 
 	/* SCTLR */
-	reg = SCTLR_CFCFG | SCTLR_CFIE | SCTLR_CFRE | SCTLR_AFE | SCTLR_TRE |
-		SCTLR_M;
-
-	mmio_write32(cb_base + ARM_SMMU_CB_SCTLR, reg);
+	mmio_write32(cb_base + ARM_SMMU_CB_SCTLR,
+		     SCTLR_CFIE | SCTLR_CFRE | SCTLR_AFE | SCTLR_TRE | SCTLR_M);
 }
 
 static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
