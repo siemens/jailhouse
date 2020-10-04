@@ -596,10 +596,10 @@ static void arm_smmu_cell_exit(struct cell *cell)
 				arm_smmu_write_smr(smmu, idx);
 			}
 			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_FAULT, 0);
-
-			smmu->cbs[id].cfg = NULL;
-			arm_smmu_write_context_bank(smmu, id);
 		}
+
+		smmu->cbs[id].cfg = NULL;
+		arm_smmu_write_context_bank(smmu, id);
 
 		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, id);
 		arm_smmu_tlb_sync_global(smmu);
