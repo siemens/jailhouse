@@ -265,12 +265,6 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 
 	cb_base = ARM_SMMU_CB(smmu, idx);
 
-	/* Unassigned context banks only need disabling */
-	if (!cfg) {
-		mmio_write32(cb_base + ARM_SMMU_CB_SCTLR, 0);
-		return;
-	}
-
 	gr1_base = ARM_SMMU_GR1(smmu);
 
 	/* CBA2R */
@@ -296,6 +290,11 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	/* SCTLR */
 	mmio_write32(cb_base + ARM_SMMU_CB_SCTLR,
 		     SCTLR_CFIE | SCTLR_CFRE | SCTLR_AFE | SCTLR_TRE | SCTLR_M);
+}
+
+static void arm_smmu_disable_context_bank(struct arm_smmu_device *smmu, int idx)
+{
+	mmio_write32(ARM_SMMU_CB(smmu, idx) + ARM_SMMU_CB_SCTLR, 0);
 }
 
 static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
@@ -341,7 +340,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	for (idx = 0; idx < smmu->num_context_banks; ++idx) {
 		void *cb_base = ARM_SMMU_CB(smmu, idx);
 
-		arm_smmu_write_context_bank(smmu, idx);
+		arm_smmu_disable_context_bank(smmu, idx);
 		mmio_write32(cb_base + ARM_SMMU_CB_FSR, FSR_FAULT);
 		/*
 		 * Disable MMU-500's not-particularly-beneficial next-page
@@ -598,8 +597,7 @@ static void arm_smmu_cell_exit(struct cell *cell)
 			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_FAULT, 0);
 		}
 
-		smmu->cbs[id].cfg = NULL;
-		arm_smmu_write_context_bank(smmu, id);
+		arm_smmu_disable_context_bank(smmu, id);
 
 		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, id);
 		arm_smmu_tlb_sync_global(smmu);
