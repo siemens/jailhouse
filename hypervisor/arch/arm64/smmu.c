@@ -96,8 +96,6 @@
 #define sCR0_PTM			(1 << 12)
 #define sCR0_FB				(1 << 13)
 #define sCR0_VMID16EN			(1 << 31)
-#define sCR0_BSU_SHIFT			14
-#define sCR0_BSU_MASK			0x3
 
 /* Auxiliary Configuration Register */
 #define ARM_SMMU_GR0_sACR		0x10
@@ -532,23 +530,11 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	mmio_write32(gr0_base + ARM_SMMU_GR0_TLBIALLH, 0);
 	mmio_write32(gr0_base + ARM_SMMU_GR0_TLBIALLNSNH, 0);
 
-	reg = mmio_read32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0);
-
 	/* Enable fault reporting */
-	reg |= (sCR0_GFRE | sCR0_GFIE | sCR0_GCFGFRE | sCR0_GCFGFIE);
+	reg = sCR0_GFRE | sCR0_GFIE | sCR0_GCFGFRE | sCR0_GCFGFIE;
 
-	/* Disable TLB broadcasting. */
-	reg |= (sCR0_VMIDPNE | sCR0_PTM);
-
-	/* Enable client access, handling unmatched streams as appropriate */
-	reg &= ~sCR0_CLIENTPD;
-	reg |= sCR0_USFCFG;
-
-	/* Disable forced broadcasting */
-	reg &= ~sCR0_FB;
-
-	/* Don't upgrade barriers */
-	reg &= ~(sCR0_BSU_MASK << sCR0_BSU_SHIFT);
+	/* Private VMIDS, disable TLB broadcasting, fault unmatched streams */
+	reg |= sCR0_VMIDPNE | sCR0_PTM | sCR0_USFCFG;
 
 	if (smmu->features & ARM_SMMU_FEAT_VMID16)
 		reg |= sCR0_VMID16EN;
