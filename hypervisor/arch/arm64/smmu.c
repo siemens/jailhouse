@@ -261,7 +261,6 @@ struct arm_smmu_device {
 
 static struct arm_smmu_device smmu_device[JAILHOUSE_MAX_IOMMU_UNITS];
 static unsigned int num_smmu_devices;
-static unsigned long pgsize_bitmap = -1;
 
 #define for_each_smmu(smmu, counter)				\
 	for ((smmu) = &smmu_device[0], (counter) = 0;		\
@@ -652,10 +651,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	if (smmu->features & ARM_SMMU_FEAT_FMT_AARCH64_64K)
 		smmu->pgsize_bitmap |= SZ_64K | SZ_512M;
 
-	if (pgsize_bitmap == -1UL)
-		pgsize_bitmap = smmu->pgsize_bitmap;
-	else
-		pgsize_bitmap |= smmu->pgsize_bitmap;
 	printk(" supported page sizes: 0x%08lx\n"
 	       " stage-2: %lu-bit IPA -> %lu-bit PA\n",
 	       smmu->pgsize_bitmap, smmu->ipa_size, smmu->pa_size);
