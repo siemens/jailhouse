@@ -183,11 +183,4 @@
 
 #endif /* __ASSEMBLY__ */
 
-/* Context Bank Index */
-#define S2CR_CBNDX(s2cr)		SET_FIELD((s2cr), 7, 0)
-/*  Register type */
-#define S2CR_TYPE(s2cr)			SET_FIELD((s2cr), 17, 16)
-/* Privileged Attribute Configuration */
-#define S2CR_PRIVCFG(s2cr)		SET_FIELD((s2cr), 25, 24)
-
 #endif
