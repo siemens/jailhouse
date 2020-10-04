@@ -583,9 +583,6 @@ static void arm_smmu_cell_exit(struct cell *cell)
 		return;
 
 	for_each_smmu(smmu, dev) {
-		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, id);
-		arm_smmu_tlb_sync_global(smmu);
-
 		for_each_stream_id(sid, cell->config, n) {
 			idx = arm_smmu_find_sme(sid, smmu);
 			if (idx < 0)
@@ -603,6 +600,9 @@ static void arm_smmu_cell_exit(struct cell *cell)
 			smmu->cbs[id].cfg = NULL;
 			arm_smmu_write_context_bank(smmu, id);
 		}
+
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, id);
+		arm_smmu_tlb_sync_global(smmu);
 	}
 }
 
