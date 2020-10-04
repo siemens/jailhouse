@@ -17,22 +17,12 @@
 
 #include <jailhouse/cell-config.h>
 
-#define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
-
 #define TLB_LOOP_TIMEOUT		1000000
 
 /* SMMU global address space */
 #define ARM_SMMU_GR0(smmu)		((smmu)->base)
 #define ARM_SMMU_GR1(smmu)		((smmu)->base + (1 << (smmu)->pgshift))
-/*
- * SMMU global address space with conditional offset to access secure
- * aliases of non-secure registers (e.g. nsCR0: 0x400, nsGFSR: 0x448,
- * nsGFSYNR0: 0x450)
- */
-#define ARM_SMMU_GR0_NS(smmu)						\
-	((smmu)->base +							\
-		((smmu->options & ARM_SMMU_OPT_SECURE_CFG_ACCESS)	\
-			? 0x400 : 0))
+
 /* Translation context bank */
 #define ARM_SMMU_CB(smmu, n)	((smmu)->cb_base + ((n) << (smmu)->pgshift))
 
@@ -185,7 +175,6 @@ struct arm_smmu_device {
 	void	*cb_base;
 	u32	num_masters;
 	unsigned long			pgshift;
-	u32				options;
 	u32				num_context_banks;
 	u32				num_s2_context_banks;
 	struct arm_smmu_cb		*cbs;
@@ -319,8 +308,8 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	int ret;
 
 	/* Clear global FSR */
-	reg = mmio_read32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sGFSR);
-	mmio_write32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sGFSR, reg);
+	reg = mmio_read32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sGFSR);
+	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sGFSR, reg);
 
 	/*
 	 * Reset stream mapping groups: Initial values mark all SMRn as
@@ -377,7 +366,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 
 	/* Push the button */
 	ret = arm_smmu_tlb_sync_global(smmu);
-	mmio_write32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0, reg);
+	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sCR0, reg);
 
 	return ret;
 }
@@ -650,7 +639,7 @@ static void arm_smmu_shutdown(void)
 	unsigned int dev;
 
 	for_each_smmu(smmu, dev) {
-		mmio_write32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0,
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sCR0,
 			     sCR0_CLIENTPD);
 	}
 }
