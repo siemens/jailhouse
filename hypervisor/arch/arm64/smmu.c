@@ -454,6 +454,25 @@ static int arm_smmu_cell_init(struct cell *cell)
 	return 0;
 }
 
+static bool arm_smmu_return_sid_to_root_cell(struct arm_smmu_device *smmu,
+					     unsigned int sid, int idx)
+{
+	unsigned int root_sid, n;
+
+	for_each_stream_id(root_sid, root_cell.config, n) {
+		if (sid == root_sid) {
+			printk("Assigning StreamID 0x%x to cell \"%s\"\n",
+			       sid, root_cell.config->name);
+
+			/* We just need to update S2CR, SMR can stay as is. */
+			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS,
+					    root_cell.config->id);
+			return true;
+		}
+	}
+	return false;
+}
+
 static void arm_smmu_cell_exit(struct cell *cell)
 {
 	int id = cell->config->id;
@@ -468,7 +487,8 @@ static void arm_smmu_cell_exit(struct cell *cell)
 	for_each_smmu(smmu, dev) {
 		for_each_stream_id(sid, cell->config, n) {
 			idx = arm_smmu_find_sme(sid, smmu);
-			if (idx < 0)
+			if (idx < 0 ||
+			    arm_smmu_return_sid_to_root_cell(smmu, sid, idx))
 				continue;
 
 			if (smmu->smrs) {
