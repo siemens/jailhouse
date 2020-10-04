@@ -17,7 +17,6 @@
 
 #include <jailhouse/cell-config.h>
 
-#define ARM_SMMU_FEAT_COHERENT_WALK	(1 << 0)
 #define ARM_SMMU_FEAT_STREAM_MATCH	(1 << 1)
 /* unused bits 2 and 3 */
 #define ARM_SMMU_FEAT_VMID16		(1 << 6)
@@ -426,7 +425,6 @@ static int arm_smmu_id_size_to_bits(int size)
 
 static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 {
-	bool cttw_reg, cttw_fw = smmu->features & ARM_SMMU_FEAT_COHERENT_WALK;
 	void *gr0_base = ARM_SMMU_GR0(smmu);
 	unsigned long size;
 	u32 id;
@@ -439,18 +437,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	if (!(id & ID0_S2TS))
 		return trace_error(-EIO);
-
-	/*
-	 * In order for DMA API calls to work properly, we must defer to what
-	 * the FW says about coherency, regardless of what the hardware claims.
-	 * Fortunately, this also opens up a workaround for systems where the
-	 * ID register value has ended up configured incorrectly.
-	 */
-	cttw_reg = !!(id & ID0_CTTW);
-	if (cttw_fw || cttw_reg)
-		printk(" %scoherent translation table walks\n", cttw_fw ? "" : "non-");
-	if (cttw_fw != cttw_reg)
-		printk(" (IDR0.CTTW is overridden by FW configuration)\n");
 
 	size = 1 << ((id >> ID0_NUMSIDB_SHIFT) & ID0_NUMSIDB_MASK);
 	smmu->streamid_mask = size - 1;
