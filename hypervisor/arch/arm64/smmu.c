@@ -179,9 +179,7 @@ struct arm_smmu_device {
 	u32				num_s2_context_banks;
 	struct arm_smmu_cb		*cbs;
 	u32				num_mapping_groups;
-	u16				streamid_mask;
 	u16				arm_sid_mask;
-	u16				smr_mask_mask;
 	struct arm_smmu_smr		*smrs;
 	struct arm_smmu_cfg		*cfgs;
 	unsigned long			ipa_size;
@@ -406,7 +404,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		return trace_error(-EIO);
 
 	size = 1 << ((id >> ID0_NUMSIDB_SHIFT) & ID0_NUMSIDB_MASK);
-	smmu->streamid_mask = size - 1;
 
 	if (id & ID0_SMS) {
 		size = (id >> ID0_NUMSMRG_SHIFT) & ID0_NUMSMRG_MASK;
@@ -469,30 +466,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	       smmu->ipa_size, smmu->pa_size);
 
 	return 0;
-}
-
-static void arm_smmu_test_smr_masks(struct arm_smmu_device *smmu)
-{
-	void *gr0_base = ARM_SMMU_GR0(smmu);
-	u32 smr;
-
-	if (!smmu->smrs)
-		return;
-
-	/*
-	 * SMR.ID bits may not be preserved if the corresponding MASK
-	 * bits are set, so check each one separately. We can reject
-	 * masters later if they try to claim IDs outside these masks.
-	 */
-	smr = smmu->streamid_mask << SMR_ID_SHIFT;
-	mmio_write32(gr0_base + ARM_SMMU_GR0_SMR(0), smr);
-	smr = mmio_read32(gr0_base + ARM_SMMU_GR0_SMR(0));
-	smmu->streamid_mask = smr >> SMR_ID_SHIFT;
-
-	smr = smmu->streamid_mask << SMR_MASK_SHIFT;
-	mmio_write32(gr0_base + ARM_SMMU_GR0_SMR(0), smr);
-	smr = mmio_read32(gr0_base + ARM_SMMU_GR0_SMR(0));
-	smmu->smr_mask_mask = smr >> SMR_MASK_SHIFT;
 }
 
 static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
@@ -676,8 +649,6 @@ static int arm_smmu_init(void)
 		err = arm_smmu_device_reset(smmu);
 		if (err)
 			goto error;
-
-		arm_smmu_test_smr_masks(smmu);
 
 		num_smmu_devices++;
 	}
