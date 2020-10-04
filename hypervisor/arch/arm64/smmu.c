@@ -286,7 +286,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 {
 	void *gr0_base = ARM_SMMU_GR0(smmu);
 	unsigned int idx;
-	u32 reg, major;
+	u32 reg;
 	int ret;
 
 	/* Clear global FSR */
@@ -306,14 +306,11 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 
 	/*
 	 * Before clearing ARM_MMU500_ACTLR_CPRE, need to
-	 * clear CACHE_LOCK bit of ACR first. And, CACHE_LOCK
-	 * bit is only present in MMU-500r2 onwards.
+	 * clear CACHE_LOCK bit of ACR first.
 	 */
-	reg = mmio_read32(gr0_base + ARM_SMMU_GR0_ID7);
-	major = ID7_MAJOR(reg);
 	reg = mmio_read32(gr0_base + ARM_SMMU_GR0_sACR);
-	if (major >= 2)
-		reg &= ~ARM_MMU500_ACR_CACHE_LOCK;
+	reg &= ~ARM_MMU500_ACR_CACHE_LOCK;
+
 	/*
 	 * Allow unmatched Stream IDs to allocate bypass
 	 * TLB entries for reduced latency.
@@ -358,6 +355,10 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	void *gr0_base = ARM_SMMU_GR0(smmu);
 	unsigned long size;
 	u32 id;
+
+	/* We only support version 2 */
+	if (ID7_MAJOR(mmio_read32(gr0_base + ARM_SMMU_GR0_ID7)) != 2)
+		return trace_error(-EIO);
 
 	/* ID0 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID0);
