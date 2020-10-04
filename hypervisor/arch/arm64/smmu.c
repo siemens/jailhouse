@@ -466,6 +466,7 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 
 static int arm_smmu_cell_init(struct cell *cell)
 {
+	unsigned int vmid = cell->config->id;
 	struct arm_smmu_device *smmu;
 	struct arm_smmu_cfg *cfg;
 	struct arm_smmu_smr *smr;
@@ -477,7 +478,10 @@ static int arm_smmu_cell_init(struct cell *cell)
 		return 0;
 
 	for_each_smmu(smmu, dev) {
-		cfg = &smmu->cfgs[cell->config->id];
+		if (vmid >= smmu->num_context_banks)
+			return trace_error(-ERANGE);
+
+		cfg = &smmu->cfgs[vmid];
 
 		cfg->cbar = CBAR_TYPE_S2_TRANS;
 
@@ -485,7 +489,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 		 * We use the cell ID here, one cell use one context, and its
 		 * index is also the VMID.
 		 */
-		cfg->id = cell->config->id;
+		cfg->id = vmid;
 
 		ret = arm_smmu_init_context_bank(smmu, cfg, cell);
 		if (ret)
@@ -504,8 +508,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 			printk("Assigning StreamID 0x%x to cell \"%s\"\n",
 			       sid, cell->config->name);
 
-			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS,
-					    cfg->id);
+			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS, vmid);
 
 			smr[idx].id = sid;
 			smr[idx].mask = smmu->arm_sid_mask;
@@ -514,8 +517,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 			arm_smmu_write_smr(smmu, idx);
 		}
 
-		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID,
-			     cfg->id);
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, vmid);
 		ret = arm_smmu_tlb_sync_global(smmu);
 		if (ret < 0)
 			return ret;
