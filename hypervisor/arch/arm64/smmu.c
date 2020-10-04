@@ -251,7 +251,6 @@ struct arm_smmu_device {
 	u16				smr_mask_mask;
 	struct arm_smmu_smr		*smrs;
 	struct arm_smmu_cfg		*cfgs;
-	unsigned long			va_size;
 	unsigned long			ipa_size;
 	unsigned long			pa_size;
 	unsigned long			pgsize_bitmap;
@@ -631,8 +630,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	 * TODO: DMA?
 	 */
 
-	size = (id >> ID2_UBS_SHIFT) & ID2_UBS_MASK;
-	smmu->va_size = arm_smmu_id_size_to_bits(size);
 	if (id & ID2_PTFS_4K)
 		smmu->features |= ARM_SMMU_FEAT_FMT_AARCH64_4K;
 	if (id & ID2_PTFS_16K)
