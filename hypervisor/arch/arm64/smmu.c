@@ -65,8 +65,7 @@
 #define ID2_IAS(id)			GET_FIELD(id, 3, 0)
 
 #define ARM_SMMU_GR0_ID7		0x3c
-#define ID7_MAJOR_SHIFT			4
-#define ID7_MAJOR_MASK			0xf
+#define ID7_MAJOR(id)			GET_FIELD(id, 7, 4)
 
 /* Global Fault Status Register */
 #define ARM_SMMU_GR0_sGFSR		0x48
@@ -311,7 +310,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	 * bit is only present in MMU-500r2 onwards.
 	 */
 	reg = mmio_read32(gr0_base + ARM_SMMU_GR0_ID7);
-	major = (reg >> ID7_MAJOR_SHIFT) & ID7_MAJOR_MASK;
+	major = ID7_MAJOR(reg);
 	reg = mmio_read32(gr0_base + ARM_SMMU_GR0_sACR);
 	if (major >= 2)
 		reg &= ~ARM_MMU500_ACR_CACHE_LOCK;
