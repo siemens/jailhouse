@@ -54,16 +54,13 @@
 #define ID0_NUMSMRG(id)			GET_FIELD(id, 7, 0)
 
 #define ARM_SMMU_GR0_ID1		0x24
+#define ID1_PAGESIZE			(1 << 31)
+#define ID1_NUMPAGENDXB(id)		GET_FIELD(id, 30, 28)
+#define ID1_NUMS2CB(id)			GET_FIELD(id, 23, 16)
+#define ID1_NUMCB(id)			GET_FIELD(id, 7, 0)
+
 #define ARM_SMMU_GR0_ID2		0x28
 #define ARM_SMMU_GR0_ID7		0x3c
-
-#define ID1_PAGESIZE			(1 << 31)
-#define ID1_NUMPAGENDXB_SHIFT		28
-#define ID1_NUMPAGENDXB_MASK		7
-#define ID1_NUMS2CB_SHIFT		16
-#define ID1_NUMS2CB_MASK		0xff
-#define ID1_NUMCB_SHIFT			0
-#define ID1_NUMCB_MASK			0xff
 
 #define ID2_IAS_SHIFT			0
 #define ID2_IAS_MASK			0xf
@@ -420,15 +417,15 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	smmu->pgshift = (id & ID1_PAGESIZE) ? 16 : 12;
 
 	/* Check for size mismatch of SMMU address space from mapped region */
-	size = 1 << (((id >> ID1_NUMPAGENDXB_SHIFT) & ID1_NUMPAGENDXB_MASK) + 1);
+	size = 1 << (ID1_NUMPAGENDXB(id) + 1);
 	size <<= smmu->pgshift;
 	if (smmu->cb_base != gr0_base + size)
 		printk("Warning: SMMU address space size (0x%lx) "
 		       "differs from mapped region size (0x%tx)!\n",
 		       size * 2, (smmu->cb_base - gr0_base) * 2);
 
-	smmu->num_s2_context_banks = (id >> ID1_NUMS2CB_SHIFT) & ID1_NUMS2CB_MASK;
-	smmu->num_context_banks = (id >> ID1_NUMCB_SHIFT) & ID1_NUMCB_MASK;
+	smmu->num_s2_context_banks = ID1_NUMS2CB(id);
+	smmu->num_context_banks = ID1_NUMCB(id);
 	if (smmu->num_s2_context_banks > smmu->num_context_banks)
 		return trace_error(-ENODEV);
 
