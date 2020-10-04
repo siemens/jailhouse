@@ -47,21 +47,15 @@
 
 /* Identification registers */
 #define ARM_SMMU_GR0_ID0		0x20
+#define ID0_S2TS			(1 << 29)
+#define ID0_SMS				(1 << 27)
+#define ID0_CTTW			(1 << 14)
+#define ID0_NUMSIDB(id)			GET_FIELD(id, 12, 9)
+#define ID0_NUMSMRG(id)			GET_FIELD(id, 7, 0)
+
 #define ARM_SMMU_GR0_ID1		0x24
 #define ARM_SMMU_GR0_ID2		0x28
 #define ARM_SMMU_GR0_ID7		0x3c
-#define ID0_S1TS			(1 << 30)
-#define ID0_S2TS			(1 << 29)
-#define ID0_NTS				(1 << 28)
-#define ID0_SMS				(1 << 27)
-#define ID0_PTFS_NO_AARCH32		(1 << 25)
-#define ID0_PTFS_NO_AARCH32S		(1 << 24)
-#define ID0_CTTW			(1 << 14)
-#define ID0_NUMSIDB_SHIFT		9
-#define ID0_NUMSIDB_MASK		0xf
-#define ID0_EXIDS			(1 << 8)
-#define ID0_NUMSMRG_SHIFT		0
-#define ID0_NUMSMRG_MASK		0xff
 
 #define ID1_PAGESIZE			(1 << 31)
 #define ID1_NUMPAGENDXB_SHIFT		28
@@ -396,16 +390,13 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	/* ID0 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID0);
 
-	/* Only stage 2 translation is supported */
-	id &= ~(ID0_S1TS | ID0_NTS);
-
 	if (!(id & ID0_S2TS))
 		return trace_error(-EIO);
 
-	size = 1 << ((id >> ID0_NUMSIDB_SHIFT) & ID0_NUMSIDB_MASK);
+	size = 1 << ID0_NUMSIDB(id);
 
 	if (id & ID0_SMS) {
-		size = (id >> ID0_NUMSMRG_SHIFT) & ID0_NUMSMRG_MASK;
+		size = ID0_NUMSMRG(id);
 		if (size == 0)
 			return trace_error(-ENODEV);
 
