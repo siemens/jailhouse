@@ -177,7 +177,7 @@ struct paging_structures;
 
 typedef u64 *pt_entry_t;
 
-extern unsigned int cpu_parange;
+extern unsigned int cpu_parange, cpu_parange_encoded;
 
 unsigned int get_cpu_parange(void);
 
@@ -193,23 +193,11 @@ unsigned int get_cpu_parange(void);
 	   ret; })
 
 /* Just match the host's PARange */
-#define TCR_PS_CELL					\
-	({ unsigned int ret = 0;			\
-	   switch (cpu_parange) {			\
-		case 32: ret = PARANGE_32B; break;	\
-		case 36: ret = PARANGE_36B; break;	\
-		case 40: ret = PARANGE_40B; break;	\
-		case 42: ret = PARANGE_42B; break;	\
-		case 44: ret = PARANGE_44B; break;	\
-		case 48: ret = PARANGE_48B; break;	\
-	   }						\
-	   ret; })
-
 #define VTCR_CELL		(T0SZ_CELL | (SL0_CELL << TCR_SL0_SHIFT)\
 				| (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)	\
 				| (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)	\
 				| (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)\
-				| (TCR_PS_CELL << TCR_PS_SHIFT)		\
+				| (cpu_parange_encoded << TCR_PS_SHIFT)	\
 				| VTCR_RES1)
 
 int arm_paging_cell_init(struct cell *cell);

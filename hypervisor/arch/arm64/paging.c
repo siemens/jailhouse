@@ -14,6 +14,8 @@
 #include <jailhouse/percpu.h>
 #include <asm/paging.h>
 
+unsigned int cpu_parange_encoded;
+
 /**
  * Return the physical address bits.
  *
@@ -24,9 +26,10 @@
  */
 unsigned int get_cpu_parange(void)
 {
-	/* Largest supported value (for 4K paging) */
-	unsigned int parange = PARANGE_48B;
 	unsigned int cpu;
+
+	/* Largest supported value (for 4K paging) */
+	cpu_parange_encoded = PARANGE_48B;
 
 	/*
 	 * early_init calls paging_init, which will indirectly call
@@ -36,10 +39,10 @@ unsigned int get_cpu_parange(void)
 	 */
 	for (cpu = 0; cpu < system_config->root_cell.cpu_set_size * 8; cpu++)
 		if (cpu_id_valid(cpu) &&
-		    (per_cpu(cpu)->id_aa64mmfr0 & 0xf) < parange)
-			parange = per_cpu(cpu)->id_aa64mmfr0 & 0xf;
+		    (per_cpu(cpu)->id_aa64mmfr0 & 0xf) < cpu_parange_encoded)
+			cpu_parange_encoded = per_cpu(cpu)->id_aa64mmfr0 & 0xf;
 
-	switch (parange) {
+	switch (cpu_parange_encoded) {
 	case PARANGE_32B:
 		return 32;
 	case PARANGE_36B:
