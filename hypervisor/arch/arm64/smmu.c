@@ -229,7 +229,6 @@ static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
 	cell_table = paging_hvirt2phys(pg_structs->root_table);
 	u64 vttbr = 0;
 
-	vttbr |= (u64)cell->config->id << VTTBR_VMID_SHIFT;
 	vttbr |= (u64)(cell_table & TTBR_MASK);
 	cb->ttbr = vttbr;
 
