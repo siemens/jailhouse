@@ -145,27 +145,14 @@ struct arm_smmu_smr {
 	bool				valid;
 };
 
-struct arm_smmu_cfg {
-	unsigned int			id;
-	u32				cbar;
-};
-struct arm_smmu_cb {
-	u64				ttbr;
-	u32				tcr[2];
-	u32				mair[2];
-	struct arm_smmu_cfg		*cfg;
-};
-
 struct arm_smmu_device {
 	void				*base;
 	void				*cb_base;
 	unsigned long			pgshift;
 	u32				num_context_banks;
-	struct arm_smmu_cb		*cbs;
 	u32				num_mapping_groups;
 	u16				arm_sid_mask;
 	struct arm_smmu_smr		*smrs;
-	struct arm_smmu_cfg		*cfgs;
 };
 
 static struct arm_smmu_device smmu_device[JAILHOUSE_MAX_IOMMU_UNITS];
@@ -213,58 +200,28 @@ static int arm_smmu_tlb_sync_global(struct arm_smmu_device *smmu)
 	return trace_error(-EINVAL);
 }
 
-static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
-				      struct arm_smmu_cfg *cfg,
-				      struct cell *cell)
+static void arm_smmu_setup_context_bank(struct arm_smmu_device *smmu,
+					struct cell *cell, unsigned int vmid)
 {
-	struct arm_smmu_cb *cb = &smmu->cbs[cfg->id];
-	struct paging_structures *pg_structs;
-	unsigned long cell_table;
-
-	cb->cfg = cfg;
-
-	cb->tcr[0] = VTCR_CELL & ~TCR_RES0;
-
-	pg_structs = &cell->arch.mm;
-	cell_table = paging_hvirt2phys(pg_structs->root_table);
-	u64 vttbr = 0;
-
-	vttbr |= (u64)(cell_table & TTBR_MASK);
-	cb->ttbr = vttbr;
-
-	return 0;
-}
-
-static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
-{
-	void *cb_base, *gr1_base;
-	struct arm_smmu_cb *cb = &smmu->cbs[idx];
-	struct arm_smmu_cfg *cfg = cb->cfg;
-	u32 reg;
-
-	cb_base = ARM_SMMU_CB(smmu, idx);
-
-	gr1_base = ARM_SMMU_GR1(smmu);
+	/*
+	 * We use the cell ID here, one cell use one context.
+	 */
+	void *cb_base = ARM_SMMU_CB(smmu, vmid);
+	void *gr1_base = ARM_SMMU_GR1(smmu);
 
 	/* CBA2R */
-	reg = CBA2R_RW64_64BIT;
-
-	mmio_write32(gr1_base + ARM_SMMU_GR1_CBA2R(idx), reg);
+	mmio_write32(gr1_base + ARM_SMMU_GR1_CBA2R(vmid), CBA2R_RW64_64BIT);
 
 	/* CBAR */
-	reg = cfg->cbar;
-	reg |= cfg->id << CBAR_VMID_SHIFT;
-	mmio_write32(gr1_base + ARM_SMMU_GR1_CBAR(idx), reg);
+	mmio_write32(gr1_base + ARM_SMMU_GR1_CBAR(vmid),
+		     CBAR_TYPE_S2_TRANS | (vmid << CBAR_VMID_SHIFT));
 
-	/*
-	 * TCR
-	 * We must write this before the TTBRs, since it determines the
-	 * access behaviour of some fields (in particular, ASID[15:8]).
-	 */
-	mmio_write32(cb_base + ARM_SMMU_CB_TCR, cb->tcr[0]);
+	/* TCR */
+	mmio_write32(cb_base + ARM_SMMU_CB_TCR, VTCR_CELL & ~TCR_RES0);
 
-	/* TTBRs */
-	mmio_write64(cb_base + ARM_SMMU_CB_TTBR0, cb->ttbr);
+	/* TTBR0 */
+	mmio_write64(cb_base + ARM_SMMU_CB_TTBR0,
+		     paging_hvirt2phys(cell->arch.mm.root_table) & TTBR_MASK);
 
 	/* SCTLR */
 	mmio_write32(cb_base + ARM_SMMU_CB_SCTLR,
@@ -376,10 +333,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		printk(" stream matching with %lu SMR groups\n", size);
 	}
 
-	smmu->cfgs = page_alloc(&mem_pool, PAGES(size * sizeof(*smmu->cfgs)));
-	if (!smmu->cfgs)
-		return -ENOMEM;
-
 	smmu->num_mapping_groups = size;
 
 	/* ID1 */
@@ -401,11 +354,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	printk(" %u context banks (%u stage-2 only)\n",
 	       smmu->num_context_banks, num_s2_context_banks);
-
-	smmu->cbs = page_alloc(&mem_pool, PAGES(smmu->num_context_banks
-			       * sizeof(*smmu->cbs)));
-	if (!smmu->cbs)
-		return -ENOMEM;
 
 	/* ID2 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID2);
@@ -466,7 +414,6 @@ static int arm_smmu_cell_init(struct cell *cell)
 {
 	unsigned int vmid = cell->config->id;
 	struct arm_smmu_device *smmu;
-	struct arm_smmu_cfg *cfg;
 	struct arm_smmu_smr *smr;
 	unsigned int dev, n, sid;
 	int ret, idx;
@@ -476,24 +423,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 		return 0;
 
 	for_each_smmu(smmu, dev) {
-		if (vmid >= smmu->num_context_banks)
-			return trace_error(-ERANGE);
-
-		cfg = &smmu->cfgs[vmid];
-
-		cfg->cbar = CBAR_TYPE_S2_TRANS;
-
-		/*
-		 * We use the cell ID here, one cell use one context, and its
-		 * index is also the VMID.
-		 */
-		cfg->id = vmid;
-
-		ret = arm_smmu_init_context_bank(smmu, cfg, cell);
-		if (ret)
-			return ret;
-
-		arm_smmu_write_context_bank(smmu, cfg->id);
+		arm_smmu_setup_context_bank(smmu, cell, vmid);
 
 		smr = smmu->smrs;
 
