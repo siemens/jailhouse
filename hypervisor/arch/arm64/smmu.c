@@ -60,14 +60,11 @@
 #define ID1_NUMCB(id)			GET_FIELD(id, 7, 0)
 
 #define ARM_SMMU_GR0_ID2		0x28
-#define ARM_SMMU_GR0_ID7		0x3c
-
-#define ID2_IAS_SHIFT			0
-#define ID2_IAS_MASK			0xf
-#define ID2_OAS_SHIFT			4
-#define ID2_OAS_MASK			0xf
 #define ID2_PTFS_4K			(1 << 12)
+#define ID2_OAS(id)			GET_FIELD(id, 7, 4)
+#define ID2_IAS(id)			GET_FIELD(id, 3, 0)
 
+#define ARM_SMMU_GR0_ID7		0x3c
 #define ID7_MAJOR_SHIFT			4
 #define ID7_MAJOR_MASK			0xf
 
@@ -439,11 +436,11 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	/* ID2 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID2);
-	size = arm_smmu_id_size_to_bits((id >> ID2_IAS_SHIFT) & ID2_IAS_MASK);
+	size = arm_smmu_id_size_to_bits(ID2_IAS(id));
 	smmu->ipa_size = MIN(size, get_cpu_parange());
 
 	/* The output mask is also applied for bypass */
-	size = arm_smmu_id_size_to_bits((id >> ID2_OAS_SHIFT) & ID2_OAS_MASK);
+	size = arm_smmu_id_size_to_bits(ID2_OAS(id));
 	smmu->pa_size = size;
 
 	if (!(id & ID2_PTFS_4K))
