@@ -198,16 +198,6 @@
 #define FSR_FAULT			(FSR_MULTI | FSR_SS | FSR_UUT | \
 					 FSR_EF | FSR_PF | FSR_TF | FSR_IGN)
 
-enum arm_smmu_s2cr_type {
-	S2CR_TYPE_TRANS,
-	S2CR_TYPE_BYPASS,
-	S2CR_TYPE_FAULT,
-};
-
-#define s2cr_init_val (struct arm_smmu_s2cr){	\
-	.type = S2CR_TYPE_FAULT,		\
-}
-
 /* Context Bank Index */
 #define S2CR_CBNDX(s2cr)		SET_FIELD((s2cr), 7, 0)
 /*  Register type */
@@ -215,18 +205,10 @@ enum arm_smmu_s2cr_type {
 /* Privileged Attribute Configuration */
 #define S2CR_PRIVCFG(s2cr)		SET_FIELD((s2cr), 25, 24)
 
-enum arm_smmu_s2cr_privcfg {
-	S2CR_PRIVCFG_DEFAULT,
-	S2CR_PRIVCFG_DIPAN,
-	S2CR_PRIVCFG_UNPRIV,
-	S2CR_PRIVCFG_PRIV,
-};
+#define S2CR_TYPE_TRANS			0
+#define S2CR_TYPE_FAULT			2
 
-struct arm_smmu_s2cr {
-	enum arm_smmu_s2cr_type		type;
-	enum arm_smmu_s2cr_privcfg	privcfg;
-	u8				cbndx;
-};
+#define S2CR_PRIVCFG_DEFAULT		0
 
 struct arm_smmu_smr {
 	u16				mask;
@@ -272,7 +254,6 @@ struct arm_smmu_device {
 	u16				arm_sid_mask;
 	u16				smr_mask_mask;
 	struct arm_smmu_smr		*smrs;
-	struct arm_smmu_s2cr		*s2crs;
 	struct arm_smmu_cfg		*cfgs;
 	unsigned long			va_size;
 	unsigned long			ipa_size;
@@ -300,21 +281,13 @@ static void arm_smmu_write_smr(struct arm_smmu_device *smmu, int idx)
 	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_SMR(idx), reg);
 }
 
-static void arm_smmu_write_s2cr(struct arm_smmu_device *smmu, int idx)
+static void arm_smmu_write_s2cr(struct arm_smmu_device *smmu, int idx,
+				unsigned int type, unsigned int cbndx)
 {
-	struct arm_smmu_s2cr *s2cr = smmu->s2crs + idx;
-	u32 reg = S2CR_TYPE(s2cr->type) | S2CR_CBNDX(s2cr->cbndx) |
-		  S2CR_PRIVCFG(s2cr->privcfg);
+	u32 reg = S2CR_TYPE(type) | S2CR_CBNDX(cbndx) |
+		  S2CR_PRIVCFG(S2CR_PRIVCFG_DEFAULT);
 
 	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_S2CR(idx), reg);
-}
-
-static void arm_smmu_write_sme(struct arm_smmu_device *smmu, int idx)
-{
-	if (smmu->smrs)
-		arm_smmu_write_smr(smmu, idx);
-
-	arm_smmu_write_s2cr(smmu, idx);
 }
 
 /* Wait for any pending TLB invalidations to complete */
@@ -470,8 +443,9 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 {
 	void *gr0_base = ARM_SMMU_GR0(smmu);
-	int i, ret;
+	unsigned int idx;
 	u32 reg, major;
+	int ret;
 
 	/* Clear global FSR */
 	reg = mmio_read32(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sGFSR);
@@ -481,8 +455,12 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	 * Reset stream mapping groups: Initial values mark all SMRn as
 	 * invalid and all S2CRn as fault until overridden.
 	 */
-	for (i = 0; i < smmu->num_mapping_groups; ++i)
-		arm_smmu_write_sme(smmu, i);
+	for (idx = 0; idx < smmu->num_mapping_groups; ++idx) {
+		if (smmu->smrs)
+			arm_smmu_write_smr(smmu, idx);
+
+		arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_FAULT, 0);
+	}
 
 	/*
 	 * Before clearing ARM_MMU500_ACTLR_CPRE, need to
@@ -502,10 +480,10 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	mmio_write32(gr0_base + ARM_SMMU_GR0_sACR, reg);
 
 	/* Make sure all context banks are disabled and clear CB_FSR */
-	for (i = 0; i < smmu->num_context_banks; ++i) {
-		void *cb_base = ARM_SMMU_CB(smmu, i);
+	for (idx = 0; idx < smmu->num_context_banks; ++idx) {
+		void *cb_base = ARM_SMMU_CB(smmu, idx);
 
-		arm_smmu_write_context_bank(smmu, i);
+		arm_smmu_write_context_bank(smmu, idx);
 		mmio_write32(cb_base + ARM_SMMU_CB_FSR, FSR_FAULT);
 		/*
 		 * Disable MMU-500's not-particularly-beneficial next-page
@@ -557,11 +535,10 @@ static int arm_smmu_id_size_to_bits(int size)
 
 static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 {
-	void *gr0_base = ARM_SMMU_GR0(smmu);
-	u32 id;
 	bool cttw_reg, cttw_fw = smmu->features & ARM_SMMU_FEAT_COHERENT_WALK;
+	void *gr0_base = ARM_SMMU_GR0(smmu);
 	unsigned long size;
-	int i;
+	u32 id;
 
 	/* ID0 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID0);
@@ -603,15 +580,9 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		printk(" stream matching with %lu SMR groups\n", size);
 	}
 
-	smmu->s2crs = page_alloc(&mem_pool, PAGES(size * (sizeof(*smmu->s2crs)
-				 + sizeof(*smmu->cfgs))));
-	if (!smmu->s2crs)
+	smmu->cfgs = page_alloc(&mem_pool, PAGES(size * sizeof(*smmu->cfgs)));
+	if (!smmu->cfgs)
 		return -ENOMEM;
-
-	smmu->cfgs = (struct arm_smmu_cfg *)(smmu->s2crs + size);
-
-	for (i = 0; i < size; i++)
-		smmu->s2crs[i] = s2cr_init_val;
 
 	smmu->num_mapping_groups = size;
 
@@ -765,9 +736,7 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 
 static int arm_smmu_cell_init(struct cell *cell)
 {
-	enum arm_smmu_s2cr_type type = S2CR_TYPE_TRANS;
 	struct arm_smmu_device *smmu;
-	struct arm_smmu_s2cr *s2cr;
 	struct arm_smmu_cfg *cfg;
 	struct arm_smmu_smr *smr;
 	unsigned int dev, n, sid;
@@ -778,7 +747,6 @@ static int arm_smmu_cell_init(struct cell *cell)
 		return 0;
 
 	for_each_smmu(smmu, dev) {
-		s2cr = smmu->s2crs;
 		cfg = &smmu->cfgs[cell->config->id];
 
 		if (smmu->features & (ARM_SMMU_FEAT_FMT_AARCH64_64K |
@@ -809,11 +777,8 @@ static int arm_smmu_cell_init(struct cell *cell)
 			printk("Assigning StreamID 0x%x to cell \"%s\"\n",
 			       sid, cell->config->name);
 
-			s2cr[idx].type = type;
-			s2cr[idx].privcfg = S2CR_PRIVCFG_DEFAULT;
-			s2cr[idx].cbndx = cfg->cbndx;
-
-			arm_smmu_write_s2cr(smmu, idx);
+			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS,
+					    cfg->cbndx);
 
 			smr[idx].id = sid;
 			smr[idx].mask = smmu->arm_sid_mask;
@@ -853,13 +818,14 @@ static void arm_smmu_cell_exit(struct cell *cell)
 			if (idx < 0)
 				continue;
 
-			smmu->s2crs[idx] = s2cr_init_val;
 			if (smmu->smrs) {
 				smmu->smrs[idx].id = 0;
 				smmu->smrs[idx].mask = 0;
 				smmu->smrs[idx].valid = false;
+
+				arm_smmu_write_smr(smmu, idx);
 			}
-			arm_smmu_write_sme(smmu, idx);
+			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_FAULT, 0);
 
 			smmu->cbs[cbndx].cfg = NULL;
 			arm_smmu_write_context_bank(smmu, cbndx);
