@@ -170,8 +170,6 @@ struct arm_smmu_device {
 	u16				arm_sid_mask;
 	struct arm_smmu_smr		*smrs;
 	struct arm_smmu_cfg		*cfgs;
-	unsigned long			ipa_size;
-	unsigned long			pa_size;
 	u32				num_global_irqs;
 	unsigned int			*irqs;
 };
@@ -356,25 +354,6 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	return ret;
 }
 
-static int arm_smmu_id_size_to_bits(int size)
-{
-	switch (size) {
-	case 0:
-		return 32;
-	case 1:
-		return 36;
-	case 2:
-		return 40;
-	case 3:
-		return 42;
-	case 4:
-		return 44;
-	case 5:
-	default:
-		return 48;
-	}
-}
-
 static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 {
 	void *gr0_base = ARM_SMMU_GR0(smmu);
@@ -436,18 +415,12 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	/* ID2 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID2);
-	size = arm_smmu_id_size_to_bits(ID2_IAS(id));
-	smmu->ipa_size = MIN(size, get_cpu_parange());
-
-	/* The output mask is also applied for bypass */
-	size = arm_smmu_id_size_to_bits(ID2_OAS(id));
-	smmu->pa_size = size;
-
+	if (ID2_IAS(id) < cpu_parange_encoded)
+		return trace_error(-EIO);
+	if (ID2_OAS(id) < cpu_parange_encoded)
+		return trace_error(-EIO);
 	if (!(id & ID2_PTFS_4K))
 		return trace_error(-EIO);
-
-	printk(" stage-2: %lu-bit IPA -> %lu-bit PA\n",
-	       smmu->ipa_size, smmu->pa_size);
 
 	return 0;
 }
