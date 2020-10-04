@@ -158,19 +158,15 @@ struct arm_smmu_cb {
 };
 
 struct arm_smmu_device {
-	void	*base;
-	void	*cb_base;
-	u32	num_masters;
+	void				*base;
+	void				*cb_base;
 	unsigned long			pgshift;
 	u32				num_context_banks;
-	u32				num_s2_context_banks;
 	struct arm_smmu_cb		*cbs;
 	u32				num_mapping_groups;
 	u16				arm_sid_mask;
 	struct arm_smmu_smr		*smrs;
 	struct arm_smmu_cfg		*cfgs;
-	u32				num_global_irqs;
-	unsigned int			*irqs;
 };
 
 static struct arm_smmu_device smmu_device[JAILHOUSE_MAX_IOMMU_UNITS];
@@ -353,8 +349,8 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 {
 	void *gr0_base = ARM_SMMU_GR0(smmu);
+	u32 id, num_s2_context_banks;
 	unsigned long size;
-	u32 id;
 
 	/* We only support version 2 */
 	if (ID7_MAJOR(mmio_read32(gr0_base + ARM_SMMU_GR0_ID7)) != 2)
@@ -400,13 +396,13 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 		       "differs from mapped region size (0x%tx)!\n",
 		       size * 2, (smmu->cb_base - gr0_base) * 2);
 
-	smmu->num_s2_context_banks = ID1_NUMS2CB(id);
+	num_s2_context_banks = ID1_NUMS2CB(id);
 	smmu->num_context_banks = ID1_NUMCB(id);
-	if (smmu->num_s2_context_banks > smmu->num_context_banks)
+	if (num_s2_context_banks > smmu->num_context_banks)
 		return trace_error(-ENODEV);
 
 	printk(" %u context banks (%u stage-2 only)\n",
-	       smmu->num_context_banks, smmu->num_s2_context_banks);
+	       smmu->num_context_banks, num_s2_context_banks);
 
 	smmu->cbs = page_alloc(&mem_pool, PAGES(smmu->num_context_banks
 			       * sizeof(*smmu->cbs)));
