@@ -224,11 +224,7 @@ enum arm_smmu_context_fmt {
 };
 
 struct arm_smmu_cfg {
-	u8				cbndx;
-	union {
-		u16			asid;
-		u16			vmid;
-	};
+	unsigned int			id;
 	u32				cbar;
 	enum arm_smmu_context_fmt	fmt;
 };
@@ -313,7 +309,7 @@ static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
 				      struct arm_smmu_cfg *cfg,
 				      struct cell *cell)
 {
-	struct arm_smmu_cb *cb = &smmu->cbs[cfg->cbndx];
+	struct arm_smmu_cb *cb = &smmu->cbs[cfg->id];
 	struct paging_structures *pg_structs;
 	unsigned long cell_table;
 	u32 reg;
@@ -402,7 +398,7 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 		reg = CBA2R_RW64_32BIT;
 	/* 16-bit VMIDs live in CBA2R */
 	if (smmu->features & ARM_SMMU_FEAT_VMID16)
-		reg |= cfg->vmid << CBA2R_VMID_SHIFT;
+		reg |= cfg->id << CBA2R_VMID_SHIFT;
 
 	mmio_write32(gr1_base + ARM_SMMU_GR1_CBA2R(idx), reg);
 
@@ -415,7 +411,7 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	 */
 	if (!(smmu->features & ARM_SMMU_FEAT_VMID16)) {
 		/* 8-bit VMIDs live in CBAR */
-		reg |= cfg->vmid << CBAR_VMID_SHIFT;
+		reg |= cfg->id << CBAR_VMID_SHIFT;
 	}
 	mmio_write32(gr1_base + ARM_SMMU_GR1_CBAR(idx), reg);
 
@@ -428,7 +424,7 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 
 	/* TTBRs */
 	if (cfg->fmt == ARM_SMMU_CTX_FMT_AARCH32_S) {
-		mmio_write32(cb_base + ARM_SMMU_CB_CONTEXTIDR, cfg->asid);
+		mmio_write32(cb_base + ARM_SMMU_CB_CONTEXTIDR, cfg->id);
 		mmio_write32(cb_base + ARM_SMMU_CB_TTBR0, cb->ttbr[0]);
 		mmio_write32(cb_base + ARM_SMMU_CB_TTBR1, cb->ttbr[1]);
 	} else {
@@ -756,15 +752,17 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 		cfg->cbar = CBAR_TYPE_S2_TRANS;
 
-		/* We use cell->config->id here, one cell use one context */
-		cfg->cbndx = cell->config->id;
-		cfg->vmid = cfg->cbndx + 1;
+		/*
+		 * We use the cell ID here, one cell use one context, and its
+		 * index is also the VMID.
+		 */
+		cfg->id = cell->config->id;
 
 		ret = arm_smmu_init_context_bank(smmu, cfg, cell);
 		if (ret)
 			return ret;
 
-		arm_smmu_write_context_bank(smmu, cfg->cbndx);
+		arm_smmu_write_context_bank(smmu, cfg->id);
 
 		smr = smmu->smrs;
 
@@ -778,7 +776,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 			       sid, cell->config->name);
 
 			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS,
-					    cfg->cbndx);
+					    cfg->id);
 
 			smr[idx].id = sid;
 			smr[idx].mask = smmu->arm_sid_mask;
@@ -788,7 +786,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 		}
 
 		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID,
-			     cfg->vmid);
+			     cfg->id);
 		ret = arm_smmu_tlb_sync_global(smmu);
 		if (ret < 0)
 			return ret;
@@ -799,7 +797,7 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 static void arm_smmu_cell_exit(struct cell *cell)
 {
-	int cbndx = cell->config->id;
+	int id = cell->config->id;
 	struct arm_smmu_device *smmu;
 	unsigned int dev, n, sid;
 	int idx;
@@ -809,8 +807,7 @@ static void arm_smmu_cell_exit(struct cell *cell)
 		return;
 
 	for_each_smmu(smmu, dev) {
-		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID,
-					  smmu->cbs[cbndx].cfg->vmid);
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, id);
 		arm_smmu_tlb_sync_global(smmu);
 
 		for_each_stream_id(sid, cell->config, n) {
@@ -827,8 +824,8 @@ static void arm_smmu_cell_exit(struct cell *cell)
 			}
 			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_FAULT, 0);
 
-			smmu->cbs[cbndx].cfg = NULL;
-			arm_smmu_write_context_bank(smmu, cbndx);
+			smmu->cbs[id].cfg = NULL;
+			arm_smmu_write_context_bank(smmu, id);
 		}
 	}
 }
