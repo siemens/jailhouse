@@ -26,6 +26,7 @@ unsigned int cpu_parange_encoded;
  */
 unsigned int get_cpu_parange(void)
 {
+	static const unsigned int pa_bits[] = { 32, 36, 40, 42, 44, 48 };
 	unsigned int cpu;
 
 	/* Largest supported value (for 4K paging) */
@@ -42,19 +43,6 @@ unsigned int get_cpu_parange(void)
 		    (per_cpu(cpu)->id_aa64mmfr0 & 0xf) < cpu_parange_encoded)
 			cpu_parange_encoded = per_cpu(cpu)->id_aa64mmfr0 & 0xf;
 
-	switch (cpu_parange_encoded) {
-	case PARANGE_32B:
-		return 32;
-	case PARANGE_36B:
-		return 36;
-	case PARANGE_40B:
-		return 40;
-	case PARANGE_42B:
-		return 42;
-	case PARANGE_44B:
-		return 44;
-	case PARANGE_48B:
-	default:
-		return 48;
-	}
+	return cpu_parange_encoded < ARRAY_SIZE(pa_bits) ?
+		pa_bits[cpu_parange_encoded] : 0;
 }

@@ -101,11 +101,6 @@
 #define SL0_L0			2
 #define SL0_L1			1
 #define SL0_L2			0
-#define PARANGE_32B		0x0
-#define PARANGE_36B		0x1
-#define PARANGE_40B		0x2
-#define PARANGE_42B		0x3
-#define PARANGE_44B		0x4
 #define PARANGE_48B		0x5
 #define TCR_RGN_NON_CACHEABLE	0x0
 #define TCR_RGN_WB_WA		0x1
