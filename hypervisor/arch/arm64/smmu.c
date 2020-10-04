@@ -17,7 +17,6 @@
 
 #include <jailhouse/cell-config.h>
 
-#define ARM_SMMU_FEAT_VMID16		(1 << 6)
 #define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
 
 #define TLB_LOOP_TIMEOUT		1000000
@@ -48,7 +47,6 @@
 #define sCR0_VMIDPNE			(1 << 11)
 #define sCR0_PTM			(1 << 12)
 #define sCR0_FB				(1 << 13)
-#define sCR0_VMID16EN			(1 << 31)
 
 /* Auxiliary Configuration Register */
 #define ARM_SMMU_GR0_sACR		0x10
@@ -88,7 +86,6 @@
 #define ID2_OAS_SHIFT			4
 #define ID2_OAS_MASK			0xf
 #define ID2_PTFS_4K			(1 << 12)
-#define ID2_VMID16			(1 << 15)
 
 #define ID7_MAJOR_SHIFT			4
 #define ID7_MAJOR_MASK			0xf
@@ -122,7 +119,6 @@
 
 #define ARM_SMMU_GR1_CBA2R(n)		(0x800 + ((n) << 2))
 #define CBA2R_RW64_64BIT		(1 << 0)
-#define CBA2R_VMID_SHIFT		16
 
 /* Stage 1 translation context bank address space */
 #define ARM_SMMU_CB_SCTLR		0x0
@@ -189,7 +185,6 @@ struct arm_smmu_device {
 	void	*cb_base;
 	u32	num_masters;
 	unsigned long			pgshift;
-	u32				features;
 	u32				options;
 	u32				num_context_banks;
 	u32				num_s2_context_banks;
@@ -294,23 +289,11 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	/* CBA2R */
 	reg = CBA2R_RW64_64BIT;
 
-	/* 16-bit VMIDs live in CBA2R */
-	if (smmu->features & ARM_SMMU_FEAT_VMID16)
-		reg |= cfg->id << CBA2R_VMID_SHIFT;
-
 	mmio_write32(gr1_base + ARM_SMMU_GR1_CBA2R(idx), reg);
 
 	/* CBAR */
 	reg = cfg->cbar;
-
-	/*
-	 * Use the weakest shareability/memory types, so they are
-	 * overridden by the ttbcr/pte.
-	 */
-	if (!(smmu->features & ARM_SMMU_FEAT_VMID16)) {
-		/* 8-bit VMIDs live in CBAR */
-		reg |= cfg->id << CBAR_VMID_SHIFT;
-	}
+	reg |= cfg->id << CBAR_VMID_SHIFT;
 	mmio_write32(gr1_base + ARM_SMMU_GR1_CBAR(idx), reg);
 
 	/*
@@ -391,9 +374,6 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 
 	/* Private VMIDS, disable TLB broadcasting, fault unmatched streams */
 	reg |= sCR0_VMIDPNE | sCR0_PTM | sCR0_USFCFG;
-
-	if (smmu->features & ARM_SMMU_FEAT_VMID16)
-		reg |= sCR0_VMID16EN;
 
 	/* Push the button */
 	ret = arm_smmu_tlb_sync_global(smmu);
@@ -492,9 +472,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	/* The output mask is also applied for bypass */
 	size = arm_smmu_id_size_to_bits((id >> ID2_OAS_SHIFT) & ID2_OAS_MASK);
 	smmu->pa_size = size;
-
-	if (id & ID2_VMID16)
-		smmu->features |= ARM_SMMU_FEAT_VMID16;
 
 	if (!(id & ID2_PTFS_4K))
 		return trace_error(-EIO);
