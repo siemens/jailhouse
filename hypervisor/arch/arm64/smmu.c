@@ -101,8 +101,7 @@
 #define ARM_SMMU_CB_SCTLR		0x0
 #define ARM_SMMU_CB_ACTLR		0x4
 #define ARM_SMMU_CB_TTBR0		0x20
-#define ARM_SMMU_CB_TTBCR		0x30
-#define ARM_SMMU_CB_CONTEXTIDR		0x34
+#define ARM_SMMU_CB_TCR			0x30
 #define ARM_SMMU_CB_FSR			0x58
 
 #define SCTLR_CFIE			(1 << 6)
@@ -259,11 +258,11 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	mmio_write32(gr1_base + ARM_SMMU_GR1_CBAR(idx), reg);
 
 	/*
-	 * TTBCR
+	 * TCR
 	 * We must write this before the TTBRs, since it determines the
 	 * access behaviour of some fields (in particular, ASID[15:8]).
 	 */
-	mmio_write32(cb_base + ARM_SMMU_CB_TTBCR, cb->tcr[0]);
+	mmio_write32(cb_base + ARM_SMMU_CB_TCR, cb->tcr[0]);
 
 	/* TTBRs */
 	mmio_write64(cb_base + ARM_SMMU_CB_TTBR0, cb->ttbr);
