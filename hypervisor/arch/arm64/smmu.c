@@ -17,8 +17,6 @@
 
 #include <jailhouse/cell-config.h>
 
-#define ARM_SMMU_FEAT_STREAM_MATCH	(1 << 1)
-/* unused bits 2 and 3 */
 #define ARM_SMMU_FEAT_VMID16		(1 << 6)
 #define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
 
@@ -442,8 +440,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	smmu->streamid_mask = size - 1;
 
 	if (id & ID0_SMS) {
-		smmu->features |= ARM_SMMU_FEAT_STREAM_MATCH;
-
 		size = (id >> ID0_NUMSMRG_SHIFT) & ID0_NUMSMRG_MASK;
 		if (size == 0)
 			return trace_error(-ENODEV);
