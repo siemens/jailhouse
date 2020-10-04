@@ -17,25 +17,10 @@
 
 #include <jailhouse/cell-config.h>
 
-#define SZ_4K				0x00001000
-#define SZ_16K				0x00004000
-#define SZ_64K				0x00010000
-#define SZ_1M				0x00100000
-#define SZ_2M				0x00200000
-#define SZ_16M				0x01000000
-#define SZ_32M				0x02000000
-#define SZ_512M				0x20000000
-#define SZ_1G				0x40000000
-
 #define ARM_SMMU_FEAT_COHERENT_WALK	(1 << 0)
 #define ARM_SMMU_FEAT_STREAM_MATCH	(1 << 1)
 /* unused bits 2 and 3 */
 #define ARM_SMMU_FEAT_VMID16		(1 << 6)
-#define ARM_SMMU_FEAT_FMT_AARCH64_4K	(1 << 7)
-#define ARM_SMMU_FEAT_FMT_AARCH64_16K	(1 << 8)
-#define ARM_SMMU_FEAT_FMT_AARCH64_64K	(1 << 9)
-#define ARM_SMMU_FEAT_FMT_AARCH32_L	(1 << 10)
-#define ARM_SMMU_FEAT_FMT_AARCH32_S	(1 << 11)
 #define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
 
 #define ARM_64_LPAE_S2_TCR_RES1		(1 << 31)
@@ -126,11 +111,7 @@
 #define ID2_IAS_MASK			0xf
 #define ID2_OAS_SHIFT			4
 #define ID2_OAS_MASK			0xf
-#define ID2_UBS_SHIFT			8
-#define ID2_UBS_MASK			0xf
 #define ID2_PTFS_4K			(1 << 12)
-#define ID2_PTFS_16K			(1 << 13)
-#define ID2_PTFS_64K			(1 << 14)
 #define ID2_VMID16			(1 << 15)
 
 #define ID7_MAJOR_SHIFT			4
@@ -164,7 +145,6 @@
 #define CBAR_TYPE_S2_TRANS		(0 << CBAR_TYPE_SHIFT)
 
 #define ARM_SMMU_GR1_CBA2R(n)		(0x800 + ((n) << 2))
-#define CBA2R_RW64_32BIT		(0 << 0)
 #define CBA2R_RW64_64BIT		(1 << 0)
 #define CBA2R_VMID_SHIFT		16
 
@@ -172,7 +152,6 @@
 #define ARM_SMMU_CB_SCTLR		0x0
 #define ARM_SMMU_CB_ACTLR		0x4
 #define ARM_SMMU_CB_TTBR0		0x20
-#define ARM_SMMU_CB_TTBR1		0x28
 #define ARM_SMMU_CB_TTBCR		0x30
 #define ARM_SMMU_CB_CONTEXTIDR		0x34
 #define ARM_SMMU_CB_FSR			0x58
@@ -216,20 +195,12 @@ struct arm_smmu_smr {
 	bool				valid;
 };
 
-enum arm_smmu_context_fmt {
-	ARM_SMMU_CTX_FMT_NONE,
-	ARM_SMMU_CTX_FMT_AARCH64,
-	ARM_SMMU_CTX_FMT_AARCH32_L,
-	ARM_SMMU_CTX_FMT_AARCH32_S,
-};
-
 struct arm_smmu_cfg {
 	unsigned int			id;
 	u32				cbar;
-	enum arm_smmu_context_fmt	fmt;
 };
 struct arm_smmu_cb {
-	u64				ttbr[2];
+	u64				ttbr;
 	u32				tcr[2];
 	u32				mair[2];
 	struct arm_smmu_cfg		*cfg;
@@ -253,7 +224,6 @@ struct arm_smmu_device {
 	struct arm_smmu_cfg		*cfgs;
 	unsigned long			ipa_size;
 	unsigned long			pa_size;
-	unsigned long			pgsize_bitmap;
 	u32				num_global_irqs;
 	unsigned int			*irqs;
 };
@@ -321,15 +291,7 @@ static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
 	     (ARM_LPAE_TCR_RGN_WBWA << ARM_LPAE_TCR_ORGN0_SHIFT);
 
 	reg |= (ARM_LPAE_TCR_SL0_LVL_1 << ARM_LPAE_TCR_SL0_SHIFT);
-
-	switch (PAGE_SIZE) {
-	case SZ_4K:
-		reg |= ARM_LPAE_TCR_TG0_4K;
-		break;
-	case SZ_64K:
-		reg |= ARM_LPAE_TCR_TG0_64K;
-		break;
-	}
+	reg |= ARM_LPAE_TCR_TG0_4K;
 
 	switch (smmu->pa_size) {
 	case 32:
@@ -367,7 +329,7 @@ static int arm_smmu_init_context_bank(struct arm_smmu_device *smmu,
 
 	vttbr |= (u64)cell->config->id << VTTBR_VMID_SHIFT;
 	vttbr |= (u64)(cell_table & TTBR_MASK);
-	cb->ttbr[0] = vttbr;
+	cb->ttbr = vttbr;
 
 	return 0;
 }
@@ -390,10 +352,8 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	gr1_base = ARM_SMMU_GR1(smmu);
 
 	/* CBA2R */
-	if (cfg->fmt == ARM_SMMU_CTX_FMT_AARCH64)
-		reg = CBA2R_RW64_64BIT;
-	else
-		reg = CBA2R_RW64_32BIT;
+	reg = CBA2R_RW64_64BIT;
+
 	/* 16-bit VMIDs live in CBA2R */
 	if (smmu->features & ARM_SMMU_FEAT_VMID16)
 		reg |= cfg->id << CBA2R_VMID_SHIFT;
@@ -421,13 +381,7 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 	mmio_write32(cb_base + ARM_SMMU_CB_TTBCR, cb->tcr[0]);
 
 	/* TTBRs */
-	if (cfg->fmt == ARM_SMMU_CTX_FMT_AARCH32_S) {
-		mmio_write32(cb_base + ARM_SMMU_CB_CONTEXTIDR, cfg->id);
-		mmio_write32(cb_base + ARM_SMMU_CB_TTBR0, cb->ttbr[0]);
-		mmio_write32(cb_base + ARM_SMMU_CB_TTBR1, cb->ttbr[1]);
-	} else {
-		mmio_write64(cb_base + ARM_SMMU_CB_TTBR0, cb->ttbr[0]);
-	}
+	mmio_write64(cb_base + ARM_SMMU_CB_TTBR0, cb->ttbr);
 
 	/* SCTLR */
 	mmio_write32(cb_base + ARM_SMMU_CB_SCTLR,
@@ -580,12 +534,6 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 
 	smmu->num_mapping_groups = size;
 
-	if (!(id & ID0_PTFS_NO_AARCH32)) {
-		smmu->features |= ARM_SMMU_FEAT_FMT_AARCH32_L;
-		if (!(id & ID0_PTFS_NO_AARCH32S))
-			smmu->features |= ARM_SMMU_FEAT_FMT_AARCH32_S;
-	}
-
 	/* ID1 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID1);
 	smmu->pgshift = (id & ID1_PAGESIZE) ? 16 : 12;
@@ -623,34 +571,11 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	if (id & ID2_VMID16)
 		smmu->features |= ARM_SMMU_FEAT_VMID16;
 
-	/*
-	 * What the page table walker can address actually depends on which
-	 * descriptor format is in use, but since a) we don't know that yet,
-	 * and b) it can vary per context bank, this will have to do...
-	 * TODO: DMA?
-	 */
+	if (!(id & ID2_PTFS_4K))
+		return trace_error(-EIO);
 
-	if (id & ID2_PTFS_4K)
-		smmu->features |= ARM_SMMU_FEAT_FMT_AARCH64_4K;
-	if (id & ID2_PTFS_16K)
-		smmu->features |= ARM_SMMU_FEAT_FMT_AARCH64_16K;
-	if (id & ID2_PTFS_64K)
-		smmu->features |= ARM_SMMU_FEAT_FMT_AARCH64_64K;
-
-	/* Now we've corralled the various formats, what'll it do? */
-	if (smmu->features & ARM_SMMU_FEAT_FMT_AARCH32_S)
-		smmu->pgsize_bitmap |= SZ_4K | SZ_64K | SZ_1M | SZ_16M;
-	if (smmu->features &
-	    (ARM_SMMU_FEAT_FMT_AARCH32_L | ARM_SMMU_FEAT_FMT_AARCH64_4K))
-		smmu->pgsize_bitmap |= SZ_4K | SZ_2M | SZ_1G;
-	if (smmu->features & ARM_SMMU_FEAT_FMT_AARCH64_16K)
-		smmu->pgsize_bitmap |= SZ_16K | SZ_32M;
-	if (smmu->features & ARM_SMMU_FEAT_FMT_AARCH64_64K)
-		smmu->pgsize_bitmap |= SZ_64K | SZ_512M;
-
-	printk(" supported page sizes: 0x%08lx\n"
-	       " stage-2: %lu-bit IPA -> %lu-bit PA\n",
-	       smmu->pgsize_bitmap, smmu->ipa_size, smmu->pa_size);
+	printk(" stage-2: %lu-bit IPA -> %lu-bit PA\n",
+	       smmu->ipa_size, smmu->pa_size);
 
 	return 0;
 }
@@ -736,11 +661,6 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 	for_each_smmu(smmu, dev) {
 		cfg = &smmu->cfgs[cell->config->id];
-
-		if (smmu->features & (ARM_SMMU_FEAT_FMT_AARCH64_64K |
-				      ARM_SMMU_FEAT_FMT_AARCH64_16K |
-				      ARM_SMMU_FEAT_FMT_AARCH64_4K))
-			cfg->fmt = ARM_SMMU_CTX_FMT_AARCH64;
 
 		cfg->cbar = CBAR_TYPE_S2_TRANS;
 
