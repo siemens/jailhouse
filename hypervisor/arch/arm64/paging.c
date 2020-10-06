@@ -24,8 +24,8 @@
  */
 unsigned int get_cpu_parange(void)
 {
-	/* Larger than any possible value */
-	unsigned int parange = 0x10;
+	/* Largest supported value (for 4K paging) */
+	unsigned int parange = PARANGE_48B;
 	unsigned int cpu;
 
 	/*
@@ -51,8 +51,7 @@ unsigned int get_cpu_parange(void)
 	case PARANGE_44B:
 		return 44;
 	case PARANGE_48B:
-		return 48;
 	default:
-		return 0;
+		return 48;
 	}
 }
