@@ -50,7 +50,7 @@ else  # !HAS_PYTHON_MAKO
 HELPERS :=
 $(info WARNING: Could not create the helper script to generate \
 	   configurations on remote machines \
-	   ("jailhouse-conf-collect"). You need Python and the \
+	   ("jailhouse-config-collect"). You need Python and the \
 	   Mako library for it.)
 endif # !HAS_PYTHON_MAKO
 
