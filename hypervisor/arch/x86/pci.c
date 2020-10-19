@@ -201,8 +201,8 @@ int x86_pci_config_handler(u16 port, bool dir_in, unsigned int size)
 	return result;
 
 invalid_access:
-	panic_printk("FATAL: Invalid PCI config %s, port: %x, size %d, "
-		     "address port: %x\n", dir_in ? "read" : "write", port,
+	panic_printk("FATAL: Invalid PCI config %s, port: 0x%x, size: %d, "
+		     "address port: 0x%x\n", dir_in ? "read" : "write", port,
 		     size, cell->arch.pci_addr_port_val);
 	return -1;
 
