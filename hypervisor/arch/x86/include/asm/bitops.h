@@ -51,7 +51,7 @@ static inline int atomic_test_and_set_bit(int nr, volatile unsigned long *addr)
 {
 	int oldbit;
 
-	asm volatile("lock bts %2,%1\n\t"
+	asm volatile("lock btsq %2,%1\n\t"
 		     "sbb %0,%0" : "=r" (oldbit), BITOP_ADDR(addr)
 		     : "Ir" (nr) : "memory");
 
