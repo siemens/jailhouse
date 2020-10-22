@@ -1,3 +1,6 @@
+#ifndef _JAILHOUSE_STRING_H
+#define _JAILHOUSE_STRING_H
+
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
@@ -22,3 +25,5 @@ int strcmp(const char *s1, const char *s2);
 
 #define __stringify_1(x...)	#x
 #define __stringify(x...)	__stringify_1(x)
+
+#endif
