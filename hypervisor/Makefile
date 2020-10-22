@@ -30,6 +30,7 @@ KBUILD_CFLAGS := -g -Os -Werror -Wall -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
 		 -Wnested-externs -Wno-error=nested-externs \
 		 -Wshadow -Wno-error=shadow \
+		 -Wredundant-decls -Wno-error=redundant-decls \
 		 -fno-strict-aliasing -fno-pic -fno-common \
 		 -fno-stack-protector -fno-builtin-ffsl \
 		 -D__LINUX_COMPILER_TYPES_H
