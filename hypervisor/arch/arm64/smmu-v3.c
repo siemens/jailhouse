@@ -360,7 +360,9 @@ struct arm_smmu_device {
 	struct arm_smmu_evtq		evtq;
 	unsigned int			sid_bits;
 	struct arm_smmu_strtab_cfg	strtab_cfg;
-} smmu[JAILHOUSE_MAX_IOMMU_UNITS];
+};
+
+static struct arm_smmu_device smmu_devices[JAILHOUSE_MAX_IOMMU_UNITS];
 
 /* Low-level queue manipulation functions */
 static bool queue_full(struct arm_smmu_queue *q)
@@ -1040,6 +1042,7 @@ static void arm_smmu_uninit_ste(struct arm_smmu_device *smmu, u32 sid, u32 vmid)
 
 static int arm_smmuv3_cell_init(struct cell *cell)
 {
+	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
 	int ret, i, j, sid;
@@ -1048,20 +1051,20 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 		return 0;
 
 	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < iommu_count_units(); iommu++, i++) {
+	for (i = 0; i < iommu_count_units(); iommu++, smmu++, i++) {
 		if (iommu->type != JAILHOUSE_IOMMU_SMMUV3)
 			continue;
 
 		for_each_stream_id(sid, cell->config, j) {
-			ret = arm_smmu_init_ste(&smmu[i], sid, cell->config->id);
+			ret = arm_smmu_init_ste(smmu, sid, cell->config->id);
 			if (ret)
 				return ret;
 		}
 
 		cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;
 		cmd.tlbi.vmid	= cell->config->id;
-		arm_smmu_cmdq_issue_cmd(&smmu[i], &cmd);
-		arm_smmu_cmdq_issue_sync(&smmu[i]);
+		arm_smmu_cmdq_issue_cmd(smmu, &cmd);
+		arm_smmu_cmdq_issue_sync(smmu);
 	}
 
 	return 0;
@@ -1069,6 +1072,7 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 
 static void arm_smmuv3_cell_exit(struct cell *cell)
 {
+	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
 	int i, j, sid;
@@ -1076,46 +1080,47 @@ static void arm_smmuv3_cell_exit(struct cell *cell)
 	if (!iommu_count_units())
 		return;
 
-	for (i = 0; i < JAILHOUSE_MAX_IOMMU_UNITS; i++) {
-		iommu = &system_config->platform_info.iommu_units[i];
+	iommu = &system_config->platform_info.iommu_units[0];
+	for (i = 0; i < JAILHOUSE_MAX_IOMMU_UNITS; iommu++, smmu++, i++) {
 		if (iommu->type != JAILHOUSE_IOMMU_SMMUV3)
 			continue;
 
 		for_each_stream_id(sid, cell->config, j) {
-			arm_smmu_uninit_ste(&smmu[i], sid, cell->config->id);
+			arm_smmu_uninit_ste(smmu, sid, cell->config->id);
 		}
 
 		cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;
 		cmd.tlbi.vmid	= cell->config->id;
-		arm_smmu_cmdq_issue_cmd(&smmu[i], &cmd);
-		arm_smmu_cmdq_issue_sync(&smmu[i]);
+		arm_smmu_cmdq_issue_cmd(smmu, &cmd);
+		arm_smmu_cmdq_issue_sync(smmu);
 	}
 }
 
 static int arm_smmuv3_init(void)
 {
+	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	int ret, i;
 
 	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < iommu_count_units(); iommu++, i++) {
+	for (i = 0; i < iommu_count_units(); iommu++, smmu++, i++) {
 		if (iommu->type != JAILHOUSE_IOMMU_SMMUV3)
 			continue;
 
-		smmu[i].base = paging_map_device(iommu->base, iommu->size);
+		smmu->base = paging_map_device(iommu->base, iommu->size);
 
 		/* ToDo: irq allocation*/
 
-		ret = arm_smmu_device_init_features(&smmu[i]);
+		ret = arm_smmu_device_init_features(smmu);
 		if (ret)
 			return ret;
 
-		ret = arm_smmu_init_structures(&smmu[i]);
+		ret = arm_smmu_init_structures(smmu);
 		if (ret)
 			return ret;
 
 		/* Reset the device */
-		ret = arm_smmu_device_reset(&smmu[i]);
+		ret = arm_smmu_device_reset(smmu);
 		if (ret)
 			return ret;
 	}
