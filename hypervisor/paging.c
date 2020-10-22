@@ -21,8 +21,6 @@
 
 #define PAGE_SCRUB_ON_FREE	0x1
 
-extern u8 __page_pool[];
-
 /**
  * Offset between virtual and physical hypervisor addresses.
  *

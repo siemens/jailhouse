@@ -53,6 +53,9 @@
  * @{
  */
 
+/** Global page pool */
+extern u8 __page_pool[];
+
 /** Page pool state. */
 struct page_pool {
 	/** Base address of the pool. */

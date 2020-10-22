@@ -22,7 +22,7 @@
 #include <generated/version.h>
 #include <asm/spinlock.h>
 
-extern u8 __text_start[], __page_pool[];
+extern u8 __text_start[];
 
 static const __attribute__((aligned(PAGE_SIZE))) u8 empty_page[PAGE_SIZE];
 

@@ -19,6 +19,7 @@
  * The per-CPU subsystem provides a CPU-local state structure and accessors.
  */
 
+#include <jailhouse/paging.h>
 #include <jailhouse/cell.h>
 #include <asm/percpu.h>
 
@@ -132,8 +133,6 @@ static inline struct cell *this_cell(void)
  */
 static inline struct per_cpu *per_cpu(unsigned int cpu)
 {
-	extern u8 __page_pool[];
-
 	return (struct per_cpu *)(__page_pool + cpu * sizeof(struct per_cpu));
 }
 
