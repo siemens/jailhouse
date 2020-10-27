@@ -106,10 +106,7 @@ endef
 
 targets += jailhouse.o ivshmem-demo.o
 
-$(obj)/jailhouse: $(obj)/jailhouse.o
-	$(call if_changed,ld)
-
-$(obj)/ivshmem-demo: $(obj)/ivshmem-demo.o
+$(obj)/%: $(obj)/%.o
 	$(call if_changed,ld)
 
 CFLAGS_jailhouse-gcov-extract.o	:= -I$(src)/../hypervisor/include \
@@ -119,9 +116,6 @@ LDFLAGS_jailhouse-gcov-extract := -lgcov -fprofile-arcs
 
 targets += jailhouse-gcov-extract.o
 always-y += jailhouse-gcov-extract
-
-$(obj)/jailhouse-gcov-extract: $(obj)/jailhouse-gcov-extract.o
-	$(call if_changed,ld)
 
 $(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse-config-collect.tmpl
 	$(call if_changed,gen_collect)
