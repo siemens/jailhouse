@@ -209,7 +209,7 @@ void mmio_region_unregister(struct cell *cell, unsigned long start)
 		cell->mmio_generation++;
 		memory_barrier();
 
-		for (/* empty */; index < cell->num_mmio_regions; index++)
+		for (/* empty */; (u32)index < cell->num_mmio_regions; index++)
 			copy_region(cell, index + 1, index);
 
 		cell->num_mmio_regions--;
