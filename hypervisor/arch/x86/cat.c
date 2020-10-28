@@ -141,13 +141,14 @@ static int cat_cell_init(struct cell *cell)
 
 	cell->arch.cos = CAT_ROOT_COS;
 
+	/* NOTE: the EBUSY check below relies on this */
 	if (cos_max < 0)
 		return 0;
 
 	if (cell->config->num_cache_regions > 0) {
 		if (cell != &root_cell) {
 			cell->arch.cos = get_free_cos();
-			if (cell->arch.cos > cos_max)
+			if (cell->arch.cos > (u32)cos_max)
 				return trace_error(-EBUSY);
 		}
 
