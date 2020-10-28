@@ -24,7 +24,8 @@
 
 #define for_each_configured_pci_device(dev, cell)			\
 	for ((dev) = (cell)->pci_devices;				\
-	     (dev) - (cell)->pci_devices < (cell)->config->num_pci_devices; \
+	     (u32)((dev) - (cell)->pci_devices) <			\
+				(cell)->config->num_pci_devices;	\
 	     (dev)++)
 
 #define for_each_pci_cap(cap, dev, counter)				\
