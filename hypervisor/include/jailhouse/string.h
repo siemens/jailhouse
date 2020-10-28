@@ -12,9 +12,10 @@
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
  */
+#include <jailhouse/types.h>
 
-void *memcpy(void *d, const void *s, unsigned long n);
-void *memset(void *s, int c, unsigned long n);
+void *memcpy(void *d, const void *s, size_t n);
+void *memset(void *s, int c, size_t n);
 
 int strcmp(const char *s1, const char *s2);
 

@@ -55,6 +55,12 @@ typedef u32 __u32;
 typedef s64 __s64;
 typedef u64 __u64;
 
+#if BITS_PER_LONG == 64
+typedef unsigned long size_t;
+#else
+typedef unsigned int size_t;
+#endif
+
 #endif /* !__ASSEMBLY__ */
 
 #endif /* !_JAILHOUSE_JAILHOUSE_TYPES_H */
