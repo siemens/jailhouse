@@ -405,9 +405,9 @@ static void queue_inc_prod(struct arm_smmu_queue *q)
 
 static void queue_write(u64 *dst, u64 *src, u32 n_dwords)
 {
-	u32 i;
+	u32 n;
 
-	for (i = 0; i < n_dwords; ++i)
+	for (n = 0; n < n_dwords; ++n)
 		*dst++ = *src++;
 	dsb(ishst);
 }
@@ -612,9 +612,9 @@ static void arm_smmu_write_strtab_ent(struct arm_smmu_device *smmu, u32 sid,
 
 static void arm_smmu_init_bypass_stes(u64 *strtab, unsigned int nent)
 {
-	unsigned int i;
+	unsigned int n;
 
-	for (i = 0; i < nent; ++i) {
+	for (n = 0; n < nent; ++n) {
 		arm_smmu_write_strtab_ent(NULL, -1, NULL, strtab, true,
 					  (u32)this_cell()->config->id);
 		strtab += STRTAB_STE_DWORDS;
@@ -651,15 +651,15 @@ static int arm_smmu_init_l1_strtab(struct arm_smmu_device *smmu)
 	struct arm_smmu_strtab_cfg *cfg = &smmu->strtab_cfg;
 	u32 size = sizeof(*cfg->l1_desc) * cfg->num_l1_ents;
 	void *strtab = smmu->strtab_cfg.strtab;
-	unsigned int i;
+	unsigned int n;
 
 	cfg->l1_desc = page_alloc(&mem_pool, PAGES(size));
 	if (!cfg->l1_desc)
 		return -ENOMEM;
 
-	for (i = 0; i < cfg->num_l1_ents; ++i) {
-		memset(&cfg->l1_desc[i], 0, sizeof(*cfg->l1_desc));
-		arm_smmu_write_strtab_l1_desc(strtab, &cfg->l1_desc[i]);
+	for (n = 0; n < cfg->num_l1_ents; ++n) {
+		memset(&cfg->l1_desc[n], 0, sizeof(*cfg->l1_desc));
+		arm_smmu_write_strtab_l1_desc(strtab, &cfg->l1_desc[n]);
 		strtab += STRTAB_L1_DESC_SIZE;
 	}
 
@@ -795,10 +795,10 @@ static int arm_smmu_init_structures(struct arm_smmu_device *smmu)
 static int arm_smmu_write_reg_sync(struct arm_smmu_device *smmu, u32 val,
 				   unsigned int reg_off, unsigned int ack_off)
 {
-	u32 i, timeout = ARM_SMMU_SYNC_TIMEOUT;
+	u32 n, timeout = ARM_SMMU_SYNC_TIMEOUT;
 
 	mmio_write32(smmu->base + reg_off, val);
-	for (i = 0; i < timeout; i++) {
+	for (n = 0; n < timeout; n++) {
 		if (mmio_read32(smmu->base + ack_off) == val)
 			return 0;
 	}
@@ -1046,17 +1046,17 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
 	int ret, sid;
-	unsigned int i, j;
+	unsigned int n, s;
 
 	if (!iommu_count_units())
 		return 0;
 
 	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < iommu_count_units(); iommu++, smmu++, i++) {
+	for (n = 0; n < iommu_count_units(); iommu++, smmu++, n++) {
 		if (iommu->type != JAILHOUSE_IOMMU_SMMUV3)
 			continue;
 
-		for_each_stream_id(sid, cell->config, j) {
+		for_each_stream_id(sid, cell->config, s) {
 			ret = arm_smmu_init_ste(smmu, sid, cell->config->id);
 			if (ret)
 				return ret;
@@ -1077,17 +1077,17 @@ static void arm_smmuv3_cell_exit(struct cell *cell)
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
 	int sid;
-	unsigned int i, j;
+	unsigned int n, s;
 
 	if (!iommu_count_units())
 		return;
 
 	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < JAILHOUSE_MAX_IOMMU_UNITS; iommu++, smmu++, i++) {
+	for (n = 0; n < JAILHOUSE_MAX_IOMMU_UNITS; iommu++, smmu++, n++) {
 		if (iommu->type != JAILHOUSE_IOMMU_SMMUV3)
 			continue;
 
-		for_each_stream_id(sid, cell->config, j) {
+		for_each_stream_id(sid, cell->config, s) {
 			arm_smmu_uninit_ste(smmu, sid, cell->config->id);
 		}
 
@@ -1103,10 +1103,10 @@ static int arm_smmuv3_init(void)
 	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	int ret;
-	unsigned int i;
+	unsigned int n;
 
 	iommu = &system_config->platform_info.iommu_units[0];
-	for (i = 0; i < iommu_count_units(); iommu++, smmu++, i++) {
+	for (n = 0; n < iommu_count_units(); iommu++, smmu++, n++) {
 		if (iommu->type != JAILHOUSE_IOMMU_SMMUV3)
 			continue;
 
