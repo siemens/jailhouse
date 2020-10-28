@@ -405,7 +405,7 @@ static void queue_inc_prod(struct arm_smmu_queue *q)
 
 static void queue_write(u64 *dst, u64 *src, u32 n_dwords)
 {
-	int i;
+	u32 i;
 
 	for (i = 0; i < n_dwords; ++i)
 		*dst++ = *src++;
@@ -1045,7 +1045,8 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
-	int ret, i, j, sid;
+	int ret, sid;
+	unsigned int i, j;
 
 	if (!iommu_count_units())
 		return 0;
@@ -1075,7 +1076,8 @@ static void arm_smmuv3_cell_exit(struct cell *cell)
 	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
-	int i, j, sid;
+	int sid;
+	unsigned int i, j;
 
 	if (!iommu_count_units())
 		return;
@@ -1100,7 +1102,8 @@ static int arm_smmuv3_init(void)
 {
 	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
-	int ret, i;
+	int ret;
+	unsigned int i;
 
 	iommu = &system_config->platform_info.iommu_units[0];
 	for (i = 0; i < iommu_count_units(); iommu++, smmu++, i++) {
