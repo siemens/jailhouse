@@ -286,7 +286,7 @@ static int pvu_entrylist_create(u64 ipa, u64 pa, u64 map_size, u64 flags,
 
 			if (is_aligned(vaddr, page_size) &&
 			    is_aligned(paddr, page_size) &&
-			    size >= page_size) {
+			    (u64)size >= page_size) {
 
 				entlist[count].virt_addr = vaddr;
 				entlist[count].phys_addr = paddr;
