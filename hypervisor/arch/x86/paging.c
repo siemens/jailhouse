@@ -41,7 +41,7 @@ static void x86_64_clear_entry(pt_entry_t pte)
 static bool x86_64_page_table_empty(page_table_t page_table)
 {
 	pt_entry_t pte;
-	int n;
+	unsigned int n;
 
 	for (n = 0, pte = page_table; n < PAGE_SIZE / sizeof(u64); n++, pte++)
 		if (x86_64_entry_valid(pte, PAGE_FLAG_PRESENT))

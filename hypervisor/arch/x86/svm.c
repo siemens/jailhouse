@@ -698,7 +698,7 @@ static bool svm_parse_mov_to_cr(struct vmcb *vmcb, unsigned long pc,
 	struct parse_context ctx = {};
 	/* No prefixes are supported yet */
 	u8 opcodes[] = {0x0f, 0x22}, modrm;
-	int n;
+	unsigned int n;
 
 	vcpu_get_guest_paging_structs(&pg_structs);
 
