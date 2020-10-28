@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <asm/processor.h>
 #include <asm/asm-defines.h>
 
 /* Entry point for Linux loader module on JAILHOUSE_ENABLE */
@@ -73,7 +74,7 @@ arch_entry:
 
 .macro no_error_entry vector
 	.balign 16
-	pushq $-1
+	pushq $(EXCEPTION_NO_ERROR)
 	common_exception_entry \vector
 .endm
 

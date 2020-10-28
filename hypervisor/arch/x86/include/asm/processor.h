@@ -164,6 +164,8 @@
 #define PF_VECTOR					14
 #define AC_VECTOR					17
 
+#define EXCEPTION_NO_ERROR				0xffffffffffffffff
+
 #define DESC_TSS_BUSY					(1UL << (9 + 32))
 #define DESC_PRESENT					(1UL << (15 + 32))
 #define DESC_CODE_DATA					(1UL << (12 + 32))

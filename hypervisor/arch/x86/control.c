@@ -238,7 +238,7 @@ x86_exception_handler(struct exception_frame *frame)
 {
 	panic_printk("FATAL: Jailhouse triggered exception #%lld\n",
 		     frame->vector);
-	if (frame->error != -1)
+	if (frame->error != EXCEPTION_NO_ERROR)
 		panic_printk("Error code: %llx\n", frame->error);
 	panic_printk("Physical CPU ID: %lu\n", phys_processor_id());
 	panic_printk("RIP: 0x%016llx RSP: 0x%016llx FLAGS: %llx\n", frame->rip,
