@@ -27,14 +27,9 @@ LINUXINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
 		-I$(src)/../include
 KBUILD_AFLAGS := -D__ASSEMBLY__ -fno-PIE
 KBUILD_CFLAGS := -g -Os -Werror -Wall -Wextra -Wno-unused-parameter \
-		 -Wno-error=sign-compare \
-		 -Wno-error=old-style-declaration \
-		 -Wno-error=builtin-declaration-mismatch \
 		 -Wstrict-prototypes -Wtype-limits \
 		 -Wmissing-declarations -Wmissing-prototypes \
-		 -Wnested-externs -Wno-error=nested-externs \
-		 -Wshadow -Wno-error=shadow \
-		 -Wredundant-decls -Wno-error=redundant-decls \
+		 -Wnested-externs -Wshadow -Wredundant-decls \
 		 -Wundef -Wdeprecated \
 		 -fno-strict-aliasing -fno-pic -fno-common \
 		 -fno-stack-protector -fno-builtin-ffsl \
