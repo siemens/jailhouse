@@ -47,7 +47,7 @@ static inline unsigned int hvc(unsigned int r0, unsigned int r1)
 	return __r0;
 }
 
-static int set_id_map(int i, unsigned long address, unsigned long size)
+static int set_id_map(unsigned int i, unsigned long address, unsigned long size)
 {
 	if (i >= ARRAY_SIZE(id_maps))
 		return -ENOMEM;
@@ -368,7 +368,7 @@ void __attribute__((noreturn)) arch_shutdown_mmu(struct per_cpu *cpu_data)
 	__builtin_unreachable();
 }
 
-void arm_dcaches_flush(void *addr, long size, enum dcache_flush flush)
+void arm_dcaches_flush(void *addr, unsigned long size, enum dcache_flush flush)
 {
 	while (size > 0) {
 		/* clean / invalidate by MVA to PoC */
