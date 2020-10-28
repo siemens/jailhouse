@@ -23,14 +23,14 @@ static unsigned int gic_num_lr;
 static void *gicc_base;
 static void *gich_base;
 
-static u32 gicv2_read_lr(unsigned int i)
+static u32 gicv2_read_lr(unsigned int n)
 {
-	return mmio_read32(gich_base + GICH_LR_BASE + i * 4);
+	return mmio_read32(gich_base + GICH_LR_BASE + n * 4);
 }
 
-static void gicv2_write_lr(unsigned int i, u32 value)
+static void gicv2_write_lr(unsigned int n, u32 value)
 {
-	mmio_write32(gich_base + GICH_LR_BASE + i * 4, value);
+	mmio_write32(gich_base + GICH_LR_BASE + n * 4, value);
 }
 
 /* Check that the targeted interface belongs to the cell */
@@ -277,23 +277,23 @@ static void gicv2_send_sgi(struct sgi *sgi)
 
 static int gicv2_inject_irq(u16 irq_id, u16 sender)
 {
-	int i;
+	unsigned int n;
 	int first_free = -1;
 	u32 lr;
 	unsigned long elsr[2];
 
 	elsr[0] = mmio_read32(gich_base + GICH_ELSR0);
 	elsr[1] = mmio_read32(gich_base + GICH_ELSR1);
-	for (i = 0; i < gic_num_lr; i++) {
-		if (test_bit(i, elsr)) {
+	for (n = 0; n < gic_num_lr; n++) {
+		if (test_bit(n, elsr)) {
 			/* Entry is available */
 			if (first_free == -1)
-				first_free = i;
+				first_free = n;
 			continue;
 		}
 
 		/* Check that there is no overlapping */
-		lr = gicv2_read_lr(i);
+		lr = gicv2_read_lr(n);
 		if ((lr & GICH_LR_VIRT_ID_MASK) == irq_id)
 			return -EEXIST;
 	}

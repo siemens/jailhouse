@@ -529,17 +529,17 @@ static void gicv3_eoi_irq(u32 irq_id, bool deactivate)
 
 static int gicv3_inject_irq(u16 irq_id, u16 sender)
 {
-	int i;
+	unsigned int n;
 	int free_lr = -1;
 	u32 elsr;
 	u64 lr;
 
 	arm_read_sysreg(ICH_ELSR_EL2, elsr);
-	for (i = 0; i < gic_num_lr; i++) {
-		if ((elsr >> i) & 1) {
+	for (n = 0; n < gic_num_lr; n++) {
+		if ((elsr >> n) & 1) {
 			/* Entry is invalid, candidate for injection */
 			if (free_lr == -1)
-				free_lr = i;
+				free_lr = n;
 			continue;
 		}
 
@@ -547,7 +547,7 @@ static int gicv3_inject_irq(u16 irq_id, u16 sender)
 		 * Entry is in use, check that it doesn't match the one we want
 		 * to inject.
 		 */
-		lr = gicv3_read_lr(i);
+		lr = gicv3_read_lr(n);
 
 		/*
 		 * A strict phys->virt id mapping is used for SPIs, so this test
