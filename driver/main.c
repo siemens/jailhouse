@@ -86,7 +86,7 @@ MODULE_FIRMWARE(JAILHOUSE_FW_NAME);
 #endif
 MODULE_VERSION(JAILHOUSE_VERSION);
 
-extern unsigned int __hyp_stub_vectors[];
+extern char __hyp_stub_vectors[];
 
 struct console_state {
 	unsigned int head;
