@@ -363,21 +363,22 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 {
 	struct arm_smmu_smr *smrs = smmu->smrs;
-	int i, free_idx = -EINVAL;
+	int free_idx = -EINVAL;
+	unsigned int n;
 
 	/* Stream indexing is blissfully easy */
 	if (!smrs)
 		return id;
 
 	/* Validating SMRs is... less so */
-	for (i = 0; i < smmu->num_mapping_groups; ++i) {
-		if (!smrs[i].valid) {
+	for (n = 0; n < smmu->num_mapping_groups; ++n) {
+		if (!smrs[n].valid) {
 			/*
 			 * Note the first free entry we come across, which
 			 * we'll claim in the end if nothing else matches.
 			 */
 			if (free_idx < 0)
-				free_idx = i;
+				free_idx = n;
 			continue;
 		}
 		/*
@@ -387,16 +388,16 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 		 * expect simply identical entries for this case, but there's
 		 * no harm in accommodating the generalisation.
 		 */
-		if ((smmu->arm_sid_mask & smrs[i].mask) == smmu->arm_sid_mask &&
-		    !((id ^ smrs[i].id) & ~smrs[i].mask)) {
-			return i;
+		if ((smmu->arm_sid_mask & smrs[n].mask) == smmu->arm_sid_mask &&
+		    !((id ^ smrs[n].id) & ~smrs[n].mask)) {
+			return n;
 		}
 		/*
 		 * If the new entry has any other overlap with an existing one,
 		 * though, then there always exists at least one stream ID
 		 * which would cause a conflict, and we can't allow that risk.
 		 */
-		if (!((id ^ smrs[i].id) & ~(smrs[i].mask | smmu->arm_sid_mask)))
+		if (!((id ^ smrs[n].id) & ~(smrs[n].mask | smmu->arm_sid_mask)))
 			return -EINVAL;
 	}
 
