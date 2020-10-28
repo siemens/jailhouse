@@ -133,11 +133,12 @@ static char *hex2str(unsigned long long value, char *buf,
 	return buf;
 }
 
-static char *align(char *p1, char *p0, unsigned long width, char fill)
+static char *align(char *p1, char *p0, unsigned int width, char fill)
 {
 	unsigned int n;
 
-	if (p1 - p0 >= width)
+	/* Note: p1 > p0 here */
+	if ((unsigned int)(p1 - p0) >= width)
 		return p1;
 
 	for (n = 1; p1 - n >= p0; n++)
