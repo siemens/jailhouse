@@ -194,7 +194,7 @@ void vcpu_handle_hypercall(void)
 
 	guest_regs->rax = hypercall(code, guest_regs->rdi & arg_mask,
 				    guest_regs->rsi & arg_mask);
-	if (guest_regs->rax == -ENOSYS)
+	if ((int)guest_regs->rax == -ENOSYS)
 		printk("CPU %d: Unknown hypercall %ld, RIP: 0x%016llx\n",
 		       cpu_id, code,
 		       vcpu_vendor_get_rip() - X86_INST_LEN_HYPERCALL);
