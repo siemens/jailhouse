@@ -18,6 +18,8 @@
 #define SHUTDOWN_NONE			0
 #define SHUTDOWN_STARTED		1
 
+#define INVALID_CPU_ID			~(0U)
+
 extern volatile unsigned long panic_in_progress;
 extern unsigned long panic_cpu;
 
@@ -34,7 +36,7 @@ extern unsigned long panic_cpu;
 extern struct jailhouse_system *system_config;
 
 unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
-		      int exception);
+		      unsigned int exception);
 
 /**
  * Get the first CPU in a given set.
@@ -42,7 +44,7 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
  *
  * @return First CPU in set, or max_cpu_id + 1 if the set is empty.
  */
-#define first_cpu(set)		next_cpu(-1, (set), -1)
+#define first_cpu(set)		next_cpu(INVALID_CPU_ID, (set), INVALID_CPU_ID)
 
 /**
  * Loop-generating macro for iterating over all CPUs in a set.

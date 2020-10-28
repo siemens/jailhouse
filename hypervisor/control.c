@@ -48,7 +48,8 @@ unsigned long panic_cpu = -1;
  * @note For internal use only. Use for_each_cpu() or for_each_cpu_except()
  * instead.
  */
-unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set, int exception)
+unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
+		      unsigned int exception)
 {
 	do
 		cpu++;

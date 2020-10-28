@@ -27,7 +27,7 @@ static long psci_emulate_cpu_on(struct trap_context *ctx)
 	long result;
 
 	cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1] & mask);
-	if (cpu == -1)
+	if (cpu == INVALID_CPU_ID)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
 
@@ -63,7 +63,7 @@ static long psci_emulate_affinity_info(struct trap_context *ctx)
 {
 	unsigned int cpu = arm_cpu_by_mpidr(this_cell(), ctx->regs[1]);
 
-	if (cpu == -1)
+	if (cpu == INVALID_CPU_ID)
 		/* Virtual id not in set */
 		return PSCI_DENIED;
 
