@@ -42,7 +42,7 @@
 
 #define IS_PSCI_UBOOT(hvc)		(((hvc) >> 8) == 0x95c1ba)
 
-#define PSCI_INVALID_ADDRESS		(-1L)
+#define PSCI_INVALID_ADDRESS		~(0UL)
 
 #define PSCI_VERSION_MAJOR(ver)		(u16)((ver) >> 16)
 #define PSCI_VERSION(major, minor)	(((major) << 16) | (minor))
