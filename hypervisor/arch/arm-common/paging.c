@@ -137,7 +137,7 @@ static unsigned long arm_get_l3_phys(pt_entry_t pte, unsigned long virt)
 		.clear_entry = arm_clear_entry,		\
 		.page_table_empty = arm_page_table_empty,
 
-const static struct paging arm_paging[] = {
+static const struct paging arm_paging[] = {
 #if MAX_PAGE_TABLE_LEVELS > 3
 	{
 		ARM_PAGING_COMMON
@@ -183,7 +183,7 @@ const static struct paging arm_paging[] = {
 	}
 };
 
-const static struct paging arm_s2_paging_alt[] = {
+static const struct paging arm_s2_paging_alt[] = {
 	{
 		ARM_PAGING_COMMON
 		.get_entry = arm_get_l1_alt_entry,
