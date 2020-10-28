@@ -595,7 +595,7 @@ static void vtd_update_irte(unsigned int index, union vtd_irte content)
 
 static int vtd_find_int_remap_region(u16 device_id)
 {
-	int n;
+	unsigned int n;
 
 	/* VTD_INTERRUPT_LIMIT() is < 2^16, see vtd_init */
 	for (n = 0; n < VTD_INTERRUPT_LIMIT(); n++)
@@ -608,7 +608,8 @@ static int vtd_find_int_remap_region(u16 device_id)
 
 static int vtd_reserve_int_remap_region(u16 device_id, unsigned int length)
 {
-	int n, start = -E2BIG;
+	int start = -E2BIG;
+	unsigned int n;
 
 	if (length == 0 || vtd_find_int_remap_region(device_id) >= 0)
 		return 0;
@@ -833,8 +834,8 @@ int iommu_map_interrupt(struct cell *cell, u16 device_id, unsigned int vector,
 	if (base_index < 0)
 		return base_index;
 
-	if (vector >= VTD_INTERRUPT_LIMIT() ||
-	    base_index >= VTD_INTERRUPT_LIMIT() - vector)
+	if ((vector >= VTD_INTERRUPT_LIMIT()) ||
+	    ((u32)base_index >= VTD_INTERRUPT_LIMIT() - vector))
 		return -ERANGE;
 
 	irte = int_remap_table[base_index + vector];
@@ -888,7 +889,7 @@ void iommu_config_commit(struct cell *cell_added_removed)
 {
 	void *inv_queue = unit_inv_queue;
 	void *reg_base = dmar_reg_base;
-	int n;
+	unsigned int n;
 
 	if (cell_added_removed)
 		vtd_init_fault_nmi();
