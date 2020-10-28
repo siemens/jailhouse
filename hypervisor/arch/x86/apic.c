@@ -315,7 +315,7 @@ void apic_clear(void)
 {
 	unsigned int maxlvt = (apic_ops.read(APIC_REG_LVR) >> 16) & 0xff;
 	unsigned int xlc = (apic_ext_features() >> 16) & 0xff;
-	int n;
+	unsigned int n;
 
 	/* Enable the APIC - the cell may have turned it off */
 	apic_ops.write(APIC_REG_SVR, APIC_SVR_ENABLE_APIC | 0xff);
@@ -336,8 +336,8 @@ void apic_clear(void)
 
 	/* Clear ISR. This is done in reverse direction as EOI
 	 * clears highest-priority interrupt ISR bit. */
-	for (n = APIC_NUM_INT_REGS-1; n >= 0; n--)
-		while (apic_ops.read(APIC_REG_ISR0 + n) != 0)
+	for (n = APIC_NUM_INT_REGS; n > 0; n--)
+		while (apic_ops.read(APIC_REG_ISR0 + n - 1) != 0)
 			apic_ops.write(APIC_REG_EOI, APIC_EOI_ACK);
 
 	/* Consume pending interrupts to clear IRR.
