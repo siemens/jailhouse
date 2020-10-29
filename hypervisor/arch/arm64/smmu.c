@@ -311,6 +311,10 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	if (ID7_MAJOR(mmio_read32(gr0_base + ARM_SMMU_GR0_ID7)) != 2)
 		return trace_error(-EIO);
 
+	/* Make sure the SMMU is not in use */
+	if (!(mmio_read32(gr0_base + ARM_SMMU_GR0_sCR0) & sCR0_CLIENTPD))
+		return trace_error(-EBUSY);
+
 	/* ID0 */
 	id = mmio_read32(gr0_base + ARM_SMMU_GR0_ID0);
 
