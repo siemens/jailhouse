@@ -35,6 +35,13 @@ KBUILD_CFLAGS += $(call cc-option, -fno-pie)
 KBUILD_CFLAGS += $(call cc-option, -no-pie)
 
 BINARIES := jailhouse demos/ivshmem-demo
+targets += jailhouse.o demos/ivshmem-demo.o
+
+ifeq ($(ARCH),x86)
+BINARIES += demos/cache-timings
+targets += demos/cache-timings.o
+endif # $(ARCH),x86
+
 always-y := $(BINARIES)
 
 HAS_PYTHON_MAKO := \
@@ -103,8 +110,6 @@ quiet_cmd_gen_man = GEN     $@
 define cmd_gen_man
 	sed 's/$${VERSION}/$(shell cat $(src)/../VERSION)/g' $< > $@
 endef
-
-targets += jailhouse.o demos/ivshmem-demo.o
 
 $(obj)/%: $(obj)/%.o
 	$(call if_changed,ld)
