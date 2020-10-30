@@ -14,6 +14,7 @@
 #include <jailhouse/printk.h>
 #include <jailhouse/unit.h>
 #include <asm/iommu.h>
+#include <asm/smmu.h>
 
 #include <jailhouse/cell-config.h>
 
@@ -238,7 +239,6 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	void *gr0_base = ARM_SMMU_GR0(smmu);
 	unsigned int idx;
 	u32 reg;
-	int ret;
 
 	/* Clear global FSR */
 	reg = mmio_read32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sGFSR);
@@ -287,18 +287,7 @@ static int arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	/* Invalidate the TLB, just in case */
 	mmio_write32(gr0_base + ARM_SMMU_GR0_TLBIALLH, 0);
 	mmio_write32(gr0_base + ARM_SMMU_GR0_TLBIALLNSNH, 0);
-
-	/* Enable fault reporting */
-	reg = sCR0_GFRE | sCR0_GFIE | sCR0_GCFGFRE | sCR0_GCFGFIE;
-
-	/* Private VMIDS, disable TLB broadcasting, fault unmatched streams */
-	reg |= sCR0_VMIDPNE | sCR0_PTM | sCR0_USFCFG;
-
-	/* Push the button */
-	ret = arm_smmu_tlb_sync_global(smmu);
-	mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sCR0, reg);
-
-	return ret;
+	return arm_smmu_tlb_sync_global(smmu);
 }
 
 static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
@@ -509,6 +498,26 @@ static void arm_smmu_cell_exit(struct cell *cell)
 
 		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_TLBIVMID, id);
 		arm_smmu_tlb_sync_global(smmu);
+	}
+}
+
+void arm_smmu_config_commit(struct cell *cell)
+{
+	struct arm_smmu_device *smmu;
+	unsigned int dev;
+
+	if (cell != &root_cell)
+		return;
+
+	for_each_smmu(smmu, dev) {
+		/*
+		 * Enable fault reporting,
+		 * private VMIDS, disable TLB broadcasting,
+		 * fault unmatched streams
+		 */
+		mmio_write32(ARM_SMMU_GR0(smmu) + ARM_SMMU_GR0_sCR0,
+			sCR0_GFRE | sCR0_GFIE | sCR0_GCFGFRE | sCR0_GCFGFIE |
+			sCR0_VMIDPNE | sCR0_PTM | sCR0_USFCFG);
 	}
 }
 

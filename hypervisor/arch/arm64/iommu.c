@@ -12,6 +12,7 @@
 
 #include <jailhouse/control.h>
 #include <asm/iommu.h>
+#include <asm/smmu.h>
 #include <asm/ti-pvu.h>
 
 unsigned int iommu_count_units(void)
@@ -38,5 +39,6 @@ int iommu_unmap_memory_region(struct cell *cell,
 
 void iommu_config_commit(struct cell *cell)
 {
+	arm_smmu_config_commit(cell);
 	pvu_iommu_config_commit(cell);
 }
