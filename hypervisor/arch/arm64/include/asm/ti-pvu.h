@@ -117,6 +117,7 @@ struct pvu_dev {
 	u16		max_virtid;
 
 	u16		tlb_data[PVU_NUM_TLBS];
+	u16		free_tlb_count;
 };
 
 int pvu_iommu_map_memory(struct cell *cell,
@@ -125,6 +126,6 @@ int pvu_iommu_map_memory(struct cell *cell,
 int pvu_iommu_unmap_memory(struct cell *cell,
 		const struct jailhouse_memory *mem);
 
-int pvu_iommu_config_commit(struct cell *cell);
+void pvu_iommu_config_commit(struct cell *cell);
 
 #endif /* _IOMMMU_PVU_H_ */

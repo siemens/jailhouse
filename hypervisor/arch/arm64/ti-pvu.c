@@ -15,7 +15,7 @@
  * There are limitations on the number of available contexts, page sizes,
  * number of pages that can be mapped, etc.
  *
- * PVU is desgined to be programmed with all the memory mapping at once.
+ * PVU is designed to be programmed with all the memory mapping at once.
  * Therefore, it defers the actual register programming till config_commit.
  * Also, it does not support unmapping of the pages at runtime.
  *
@@ -110,9 +110,17 @@ static u32 pvu_tlb_alloc(struct pvu_dev *dev, u16 virtid)
 	for (i = dev->max_virtid + 1; i < dev->num_tlbs; i++) {
 		if (dev->tlb_data[i] == 0) {
 			dev->tlb_data[i] = virtid << dev->num_entries;
+			dev->free_tlb_count--;
 			return i;
 		}
 	}
+
+	/*
+	 * We should never reach here, tlb_allocation should not fail.
+	 * pvu_iommu_map_memory ensures that there are enough free TLBs
+	 */
+
+	BUG();
 	return 0;
 }
 
@@ -138,10 +146,13 @@ static void pvu_tlb_flush(struct pvu_dev *dev, u16 tlbnum)
 
 	mmio_write32(&tlb->chain, 0x0);
 
-	if (i < dev->max_virtid)
+	if (i < dev->max_virtid) {
 		dev->tlb_data[tlbnum] = 0x0 | i << dev->num_entries;
-	else
+	} else {
+		/* This was a chained TLB */
 		dev->tlb_data[tlbnum] = 0x0;
+		dev->free_tlb_count++;
+	}
 
 }
 
@@ -159,8 +170,8 @@ static void pvu_entry_enable(struct pvu_dev *dev, u16 tlbnum, u8 index)
 	dev->tlb_data[tlbnum] |= (1 << index);
 }
 
-static int pvu_entry_write(struct pvu_dev *dev, u16 tlbnum, u8 index,
-			   struct pvu_tlb_entry *ent)
+static void pvu_entry_write(struct pvu_dev *dev, u16 tlbnum, u8 index,
+			    struct pvu_tlb_entry *ent)
 {
 	struct pvu_hw_tlb_entry *entry;
 	struct pvu_hw_tlb *tlb;
@@ -174,19 +185,6 @@ static int pvu_entry_write(struct pvu_dev *dev, u16 tlbnum, u8 index,
 			break;
 	}
 
-	if (pgsz >= ARRAY_SIZE(pvu_page_size_bytes)) {
-		printk("ERROR: PVU: %s: Unsupported page size %llx\n",
-			__func__, ent->size);
-		return -EINVAL;
-	}
-
-	if (!is_aligned(ent->virt_addr, ent->size) ||
-	    !is_aligned(ent->phys_addr, ent->size)) {
-		printk("ERROR: PVU: %s: Address %llx => %llx is not aligned with size %llx\n",
-			__func__, ent->virt_addr, ent->phys_addr, ent->size);
-		return -EINVAL;
-	}
-
 	mmio_write32(&entry->reg0, ent->virt_addr & 0xffffffff);
 	mmio_write32_field(&entry->reg1, 0xffff, (ent->virt_addr >> 32));
 	mmio_write32(&entry->reg2, 0x0);
@@ -198,9 +196,8 @@ static int pvu_entry_write(struct pvu_dev *dev, u16 tlbnum, u8 index,
 	mmio_write32_field(&entry->reg2, PVU_TLB_ENTRY_PGSIZE_MASK, pgsz);
 	mmio_write32_field(&entry->reg2, PVU_TLB_ENTRY_FLAG_MASK, ent->flags);
 
-	/* Do we need "DSB NSH" here to make sure all writes are finised? */
+	/* Do we need "DSB NSH" here to make sure all writes are finished? */
 	pvu_entry_enable(dev, tlbnum, index);
-	return 0;
 }
 
 static u32 pvu_init_device(struct pvu_dev *dev, u16 max_virtid)
@@ -221,6 +218,8 @@ static u32 pvu_init_device(struct pvu_dev *dev, u16 max_virtid)
 	}
 
 	dev->max_virtid = max_virtid;
+	dev->free_tlb_count = dev->num_tlbs - (max_virtid + 1);
+
 	mmio_write32(&cfg->virtid_map1, 0);
 	mmio_write32_field(&cfg->virtid_map2, PVU_MAX_VIRTID_MASK, max_virtid);
 
@@ -328,17 +327,17 @@ static void pvu_entrylist_sort(struct pvu_tlb_entry *entlist, u32 num_entries)
 	}
 }
 
-static int pvu_iommu_program_entries(struct cell *cell, u8 virtid)
+static void pvu_iommu_program_entries(struct cell *cell, u8 virtid)
 {
 	unsigned int inst, i, tlbnum, idx, ent_count;
 	struct pvu_tlb_entry *ent, *cell_entries;
 	struct pvu_dev *dev;
-	int ret, tlb_next;
+	int tlb_next;
 
 	cell_entries = cell->arch.iommu_pvu.entries;
 	ent_count = cell->arch.iommu_pvu.ent_count;
 	if (ent_count == 0 || cell_entries == NULL)
-		return 0;
+		return;
 
 	/* Program same memory mapping for all of the instances */
 	for (inst = 0; inst < pvu_count; inst++) {
@@ -356,20 +355,15 @@ static int pvu_iommu_program_entries(struct cell *cell, u8 virtid)
 			if (idx == 0 && i >= dev->num_entries) {
 				/* Find next available TLB and chain to it */
 				tlb_next = pvu_tlb_alloc(dev, virtid);
-				if (tlb_next < 0)
-					return -ENOMEM;
 				pvu_tlb_chain(dev, tlbnum, tlb_next);
 				pvu_tlb_enable(dev, tlbnum);
 				tlbnum = tlb_next;
 			}
 
-			ret = pvu_entry_write(dev, tlbnum, idx, ent);
-			if (ret)
-				return ret;
+			pvu_entry_write(dev, tlbnum, idx, ent);
 		}
 		pvu_tlb_enable(dev, tlbnum);
 	}
-	return 0;
 }
 
 /*
@@ -380,8 +374,9 @@ int pvu_iommu_map_memory(struct cell *cell,
 			 const struct jailhouse_memory *mem)
 {
 	struct pvu_tlb_entry *ent;
+	struct pvu_dev *dev;
 	unsigned int size;
-	u32 flags = 0;
+	u32 tlb_count, flags = 0;
 	int ret;
 
 	if (pvu_count == 0 || (mem->flags & JAILHOUSE_MEM_DMA) == 0)
@@ -407,6 +402,19 @@ int pvu_iommu_map_memory(struct cell *cell,
 				   flags, ent, size);
 	if (ret < 0)
 		return ret;
+
+	/*
+	 * Check if there are enough TLBs left for *chaining* to ensure that
+	 * pvu_tlb_alloc called from config_commit never fails
+	 */
+	dev = &pvu_units[0];
+	tlb_count = (cell->arch.iommu_pvu.ent_count + ret - 1) /
+				dev->num_entries;
+
+	if (tlb_count > dev->free_tlb_count) {
+		printk("ERROR: PVU: Mapping this memory needs more TLBs than that are available\n");
+		return -EINVAL;
+	}
 
 	cell->arch.iommu_pvu.ent_count += ret;
 	return 0;
@@ -434,13 +442,12 @@ int pvu_iommu_unmap_memory(struct cell *cell,
 	return 0;
 }
 
-int pvu_iommu_config_commit(struct cell *cell)
+void pvu_iommu_config_commit(struct cell *cell)
 {
 	unsigned int i, virtid;
-	int ret = 0;
 
 	if (pvu_count == 0 || !cell)
-		return 0;
+		return;
 
 	/*
 	 * Chaining the TLB entries adds extra latency to translate those
@@ -455,13 +462,10 @@ int pvu_iommu_config_commit(struct cell *cell)
 		if (virtid > MAX_VIRTID)
 			continue;
 
-		ret = pvu_iommu_program_entries(cell, virtid);
-		if (ret)
-			return ret;
+		pvu_iommu_program_entries(cell, virtid);
 	}
 
 	cell->arch.iommu_pvu.ent_count = 0;
-	return ret;
 }
 
 static int pvu_iommu_cell_init(struct cell *cell)
