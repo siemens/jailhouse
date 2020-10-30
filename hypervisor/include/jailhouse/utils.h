@@ -21,6 +21,8 @@
 #define ARRAY_SIZE(array)	(sizeof(array) / sizeof((array)[0]))
 #endif
 
+#define BUG()			*(int *)0 = 0xdead
+
 /* sizeof() for a structure/union field */
 #define FIELD_SIZEOF(type, fld)	(sizeof(((type *)0)->fld))
 
