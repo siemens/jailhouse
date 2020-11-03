@@ -88,9 +88,9 @@ static void dump_regs(struct trap_context *ctx)
 
 	arm_read_sysreg(ELR_EL2, pc);
 	panic_printk(" pc: %016llx   lr: %016lx spsr: %08llx     EL%lld\n"
-		     " sp: %016llx  esr: %02llx %01llx %07llx\n",
+		     " sp: %016llx  elr: %016llx  esr: %02llx %01llx %07llx\n",
 		     pc, ctx->regs[30], ctx->spsr, SPSR_EL(ctx->spsr),
-		     ctx->sp, ESR_EC(ctx->esr), ESR_IL(ctx->esr),
+		     ctx->sp, ctx->elr, ESR_EC(ctx->esr), ESR_IL(ctx->esr),
 		     ESR_ISS(ctx->esr));
 	for (i = 0; i < NUM_USR_REGS - 1; i++)
 		panic_printk("%sx%d: %016lx%s", i < 10 ? " " : "", i,
@@ -147,6 +147,7 @@ static void fill_trap_context(struct trap_context *ctx, union registers *regs)
 		ctx->sp = 0; break;	/* should never happen */
 	}
 	arm_read_sysreg(ESR_EL2, ctx->esr);
+	arm_read_sysreg(ELR_EL2, ctx->elr);
 	ctx->regs = regs->usr;
 }
 
