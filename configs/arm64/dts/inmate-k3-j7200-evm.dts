@@ -11,8 +11,8 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/pinctrl/k3.h>
-#include <dt-bindings/soc/ti,sci_pm_domain.h>
+
+#define TI_SCI_PD_EXCLUSIVE	1
 
 / {
 	model = "Texas Instruments J7200 Inmate Model";
