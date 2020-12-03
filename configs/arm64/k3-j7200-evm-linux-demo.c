@@ -233,6 +233,6 @@ struct {
 
 	.stream_ids = {
 		/* Non PCIe peripherals */
-		0x0003
+		{0x0003},
 	},
 };

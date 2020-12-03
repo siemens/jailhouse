@@ -17,7 +17,7 @@ include $(ALWAYS_COMPAT_MK)
 LINUXINCLUDE := -I$(src)/../hypervisor/arch/$(SRCARCH)/include \
 		-I$(src)/../hypervisor/include \
 		-I$(src)/../include
-KBUILD_CFLAGS := -Werror -Wextra -D__LINUX_COMPILER_TYPES_H
+KBUILD_CFLAGS := -Werror -Wall -Wextra -D__LINUX_COMPILER_TYPES_H
 
 ifneq ($(wildcard $(obj)/../include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(obj)/../include/jailhouse/config.h
