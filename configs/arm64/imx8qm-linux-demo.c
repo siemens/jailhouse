@@ -19,7 +19,7 @@ struct {
 	struct jailhouse_memory mem_regions[18];
 	struct jailhouse_irqchip irqchips[4];
 	struct jailhouse_pci_device pci_devices[2];
-	__u32 stream_ids[1];
+	union jailhouse_stream_id stream_ids[1];
 } __attribute__((packed)) config = {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
@@ -194,6 +194,9 @@ struct {
 	},
 
 	.stream_ids = {
-		0x10,
+		{
+			.mmu500.id = 0x10,
+			.mmu500.mask_out = 0x7f8,
+		},
 	},
 };

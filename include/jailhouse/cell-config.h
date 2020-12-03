@@ -279,11 +279,19 @@ struct jailhouse_iommu {
 			__u64 tlb_base;
 			__u32 tlb_size;
 		} __attribute__((packed)) tipvu;
-
-		struct {
-			__u32 sid_mask;
-		} __attribute__((packed)) arm_mmu500;
 	};
+} __attribute__((packed));
+
+union jailhouse_stream_id {
+	__u32 id;
+	struct {
+		/* Note: both mask_out and id are only 15 bits wide. */
+		__u16 id;
+		/* Mask out irrelevant bits in id:
+		 * if mask_out[i] == 1, then id[i] is ignored.
+		 */
+		__u16 mask_out;
+	} __attribute__((packed)) mmu500;
 } __attribute__((packed));
 
 struct jailhouse_pio {
@@ -424,10 +432,11 @@ jailhouse_cell_pci_caps(const struct jailhouse_cell_desc *cell)
 		 cell->num_pci_devices * sizeof(struct jailhouse_pci_device));
 }
 
-static inline const __u32 *
+static inline const union jailhouse_stream_id *
 jailhouse_cell_stream_ids(const struct jailhouse_cell_desc *cell)
 {
-	return (const __u32 *)((void *)jailhouse_cell_pci_caps(cell) +
+	return (const union jailhouse_stream_id *)
+		((void *)jailhouse_cell_pci_caps(cell) +
 		cell->num_pci_caps * sizeof(struct jailhouse_pci_capability));
 }
 

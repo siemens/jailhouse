@@ -84,6 +84,10 @@
 #define SMR_VALID			(1 << 31)
 #define SMR_MASK_SHIFT			16
 #define SMR_ID_SHIFT			0
+/* Ignore upper bit in ID and MASK */
+#define SMR_GET_ID(smr)			((smr) & BIT_MASK(14, 0))
+/* Mask is already specified from bit 0 in the configuration */
+#define SMR_GET_MASK(smr)		((smr) & BIT_MASK(14, 0))
 
 /* Stream-to-Context Register */
 #define ARM_SMMU_GR0_S2CR(n)		(0xc00 + ((n) << 2))
@@ -152,7 +156,6 @@ struct arm_smmu_device {
 	unsigned long			pgshift;
 	u32				num_context_banks;
 	u32				num_mapping_groups;
-	u16				arm_sid_mask;
 	struct arm_smmu_smr		*smrs;
 };
 
@@ -360,7 +363,7 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	return 0;
 }
 
-static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
+static int arm_smmu_find_sme(u16 id, u16 mask, struct arm_smmu_device *smmu)
 {
 	struct arm_smmu_smr *smrs = smmu->smrs;
 	int free_idx = -EINVAL;
@@ -388,7 +391,7 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 		 * expect simply identical entries for this case, but there's
 		 * no harm in accommodating the generalisation.
 		 */
-		if ((smmu->arm_sid_mask & smrs[n].mask) == smmu->arm_sid_mask &&
+		if ((mask & smrs[n].mask) == mask &&
 		    !((id ^ smrs[n].id) & ~smrs[n].mask)) {
 			return n;
 		}
@@ -397,7 +400,7 @@ static int arm_smmu_find_sme(u16 id, struct arm_smmu_device *smmu)
 		 * though, then there always exists at least one stream ID
 		 * which would cause a conflict, and we can't allow that risk.
 		 */
-		if (!((id ^ smrs[n].id) & ~(smrs[n].mask | smmu->arm_sid_mask)))
+		if (!((id ^ smrs[n].id) & ~(smrs[n].mask | mask)))
 			return -EINVAL;
 	}
 
@@ -409,7 +412,9 @@ static int arm_smmu_cell_init(struct cell *cell)
 	unsigned int vmid = cell->config->id;
 	struct arm_smmu_device *smmu;
 	struct arm_smmu_smr *smr;
-	unsigned int dev, n, sid;
+	union jailhouse_stream_id fsid;
+	unsigned int dev, n;
+	u16 sid, smask;
 	int ret, idx;
 
 	/* If no sids, ignore */
@@ -421,19 +426,22 @@ static int arm_smmu_cell_init(struct cell *cell)
 
 		smr = smmu->smrs;
 
-		for_each_stream_id(sid, cell->config, n) {
-			ret = arm_smmu_find_sme(sid, smmu);
+		for_each_stream_id(fsid, cell->config, n) {
+			sid = SMR_GET_ID(fsid.mmu500.id);
+			smask = SMR_GET_MASK(fsid.mmu500.mask_out);
+
+			ret = arm_smmu_find_sme(sid, smask, smmu);
 			if (ret < 0)
 				return trace_error(ret);
 			idx = ret;
 
-			printk("Assigning StreamID 0x%x to cell \"%s\"\n",
-			       sid, cell->config->name);
+			printk("Assigning SID 0x%x, Mask 0x%x to cell \"%s\"\n",
+			       sid, smask, cell->config->name);
 
 			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS, vmid);
 
 			smr[idx].id = sid;
-			smr[idx].mask = smmu->arm_sid_mask;
+			smr[idx].mask = smask;
 			smr[idx].valid = true;
 
 			arm_smmu_write_smr(smmu, idx);
@@ -449,14 +457,18 @@ static int arm_smmu_cell_init(struct cell *cell)
 }
 
 static bool arm_smmu_return_sid_to_root_cell(struct arm_smmu_device *smmu,
-					     unsigned int sid, int idx)
+					     union jailhouse_stream_id fsid,
+					     int idx)
 {
-	unsigned int root_sid, n;
+	unsigned int n;
+	union jailhouse_stream_id rsid;
 
-	for_each_stream_id(root_sid, root_cell.config, n) {
-		if (sid == root_sid) {
-			printk("Assigning StreamID 0x%x to cell \"%s\"\n",
-			       sid, root_cell.config->name);
+	for_each_stream_id(rsid, root_cell.config, n) {
+		if (fsid.id == rsid.id) {
+			printk("Assigning SID 0x%llx Mask: 0x%llx to cell \"%s\"\n",
+			       SMR_GET_ID(fsid.mmu500.id),
+			       SMR_GET_MASK(fsid.mmu500.mask_out),
+			       root_cell.config->name);
 
 			/* We just need to update S2CR, SMR can stay as is. */
 			arm_smmu_write_s2cr(smmu, idx, S2CR_TYPE_TRANS,
@@ -471,7 +483,9 @@ static void arm_smmu_cell_exit(struct cell *cell)
 {
 	int id = cell->config->id;
 	struct arm_smmu_device *smmu;
-	unsigned int dev, n, sid;
+	union jailhouse_stream_id fsid;
+	unsigned int dev, n;
+	u16 sid, smask;
 	int idx;
 
 	/* If no sids, ignore */
@@ -479,10 +493,16 @@ static void arm_smmu_cell_exit(struct cell *cell)
 		return;
 
 	for_each_smmu(smmu, dev) {
-		for_each_stream_id(sid, cell->config, n) {
-			idx = arm_smmu_find_sme(sid, smmu);
-			if (idx < 0 ||
-			    arm_smmu_return_sid_to_root_cell(smmu, sid, idx))
+		for_each_stream_id(fsid, cell->config, n) {
+			sid = SMR_GET_ID(fsid.mmu500.id);
+			smask = SMR_GET_MASK(fsid.mmu500.mask_out);
+
+			idx = arm_smmu_find_sme(sid, smask, smmu);
+			if (idx < 0)
+				continue;
+
+			/* return full stream ids */
+			if (arm_smmu_return_sid_to_root_cell(smmu, fsid, idx))
 				continue;
 
 			if (smmu->smrs) {
@@ -546,8 +566,6 @@ static int arm_smmu_init(void)
 			continue;
 
 		smmu = &smmu_device[num_smmu_devices];
-		smmu->arm_sid_mask = iommu->arm_mmu500.sid_mask;
-
 		smmu->base = paging_map_device(iommu->base, iommu->size);
 		if (!smmu->base) {
 			err = -ENOMEM;

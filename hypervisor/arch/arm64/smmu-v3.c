@@ -1045,8 +1045,9 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
-	int ret, sid;
+	union jailhouse_stream_id sid;
 	unsigned int n, s;
+	int ret;
 
 	if (!iommu_count_units())
 		return 0;
@@ -1057,7 +1058,7 @@ static int arm_smmuv3_cell_init(struct cell *cell)
 			continue;
 
 		for_each_stream_id(sid, cell->config, s) {
-			ret = arm_smmu_init_ste(smmu, sid, cell->config->id);
+			ret = arm_smmu_init_ste(smmu, sid.id, cell->config->id);
 			if (ret)
 				return ret;
 		}
@@ -1076,7 +1077,7 @@ static void arm_smmuv3_cell_exit(struct cell *cell)
 	struct arm_smmu_device *smmu = &smmu_devices[0];
 	struct jailhouse_iommu *iommu;
 	struct arm_smmu_cmdq_ent cmd;
-	int sid;
+	union jailhouse_stream_id sid;
 	unsigned int n, s;
 
 	if (!iommu_count_units())
@@ -1088,7 +1089,7 @@ static void arm_smmuv3_cell_exit(struct cell *cell)
 			continue;
 
 		for_each_stream_id(sid, cell->config, s) {
-			arm_smmu_uninit_ste(smmu, sid, cell->config->id);
+			arm_smmu_uninit_ste(smmu, sid.id, cell->config->id);
 		}
 
 		cmd.opcode	= CMDQ_OP_TLBI_S12_VMALL;

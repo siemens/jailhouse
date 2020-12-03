@@ -444,7 +444,8 @@ int pvu_iommu_unmap_memory(struct cell *cell,
 
 void pvu_iommu_config_commit(struct cell *cell)
 {
-	unsigned int i, virtid;
+	union jailhouse_stream_id virtid;
+	unsigned int i;
 
 	if (pvu_count == 0 || !cell)
 		return;
@@ -459,10 +460,10 @@ void pvu_iommu_config_commit(struct cell *cell)
 			   cell->arch.iommu_pvu.ent_count);
 
 	for_each_stream_id(virtid, cell->config, i) {
-		if (virtid > MAX_VIRTID)
+		if (virtid.id > MAX_VIRTID)
 			continue;
 
-		pvu_iommu_program_entries(cell, virtid);
+		pvu_iommu_program_entries(cell, virtid.id);
 	}
 
 	cell->arch.iommu_pvu.ent_count = 0;
@@ -470,7 +471,8 @@ void pvu_iommu_config_commit(struct cell *cell)
 
 static int pvu_iommu_cell_init(struct cell *cell)
 {
-	unsigned int i, virtid;
+	union jailhouse_stream_id virtid;
+	unsigned int i;
 	struct pvu_dev *dev;
 
 	if (pvu_count == 0)
@@ -484,10 +486,10 @@ static int pvu_iommu_cell_init(struct cell *cell)
 	dev = &pvu_units[0];
 	for_each_stream_id(virtid, cell->config, i) {
 
-		if (virtid > MAX_VIRTID)
+		if (virtid.id > MAX_VIRTID)
 			continue;
 
-		if (pvu_tlb_is_enabled(dev, virtid))
+		if (pvu_tlb_is_enabled(dev, virtid.id))
 			return -EINVAL;
 	}
 	return 0;
@@ -515,17 +517,18 @@ static int pvu_iommu_flush_context(u16 virtid)
 
 static void pvu_iommu_cell_exit(struct cell *cell)
 {
-	unsigned int i, virtid;
+	union jailhouse_stream_id virtid;
+	unsigned int i;
 
 	if (pvu_count == 0)
 		return;
 
 	for_each_stream_id(virtid, cell->config, i) {
 
-		if (virtid > MAX_VIRTID)
+		if (virtid.id > MAX_VIRTID)
 			continue;
 
-		pvu_iommu_flush_context(virtid);
+		pvu_iommu_flush_context(virtid.id);
 	}
 
 	cell->arch.iommu_pvu.ent_count = 0;
