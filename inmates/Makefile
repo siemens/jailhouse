@@ -36,7 +36,7 @@ KBUILD_CFLAGS += -march=armv7ve
 KBUILD_AFLAGS += -march=armv7ve
 endif
 
-OBJCOPYFLAGS := -O binary
+OBJCOPYFLAGS := -O binary --remove-section=.note.gnu.property
 # prior to 4.19
 LDFLAGS += --gc-sections -T
 # since 4.19

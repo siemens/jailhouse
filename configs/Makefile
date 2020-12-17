@@ -23,7 +23,7 @@ ifneq ($(wildcard $(obj)/../include/jailhouse/config.h),)
 KBUILD_CFLAGS += -include $(obj)/../include/jailhouse/config.h
 endif
 
-OBJCOPYFLAGS := -O binary
+OBJCOPYFLAGS := -O binary --remove-section=.note.gnu.property
 
 CONFIGS = $(shell cd $(src); ls $(SRCARCH)/*.c)
 
