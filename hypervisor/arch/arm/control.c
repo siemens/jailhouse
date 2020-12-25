@@ -84,7 +84,7 @@ void arm_cpu_reset(unsigned long pc, bool aarch32)
 	arm_write_sysreg(TPIDRURO, 0);
 	arm_write_sysreg(TPIDRPRW, 0);
 
-	arm_write_banked_reg(SPSR_hyp, RESET_PSR);
+	arm_write_banked_reg(SPSR_fsxc, RESET_PSR);
 	arm_write_banked_reg(ELR_hyp, pc);
 
 	/* transfer the context that may have been passed to PSCI_CPU_ON */

@@ -38,7 +38,7 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	arm_read_sysreg(TTBCR, ttbcr);
 
 	arm_read_banked_reg(ELR_hyp, pc);
-	arm_read_banked_reg(SPSR_hyp, cpsr);
+	arm_read_banked_reg(SPSR, cpsr);
 
 	/* Set cpsr */
 	is_thumb = cpsr & PSR_T_BIT;
@@ -50,7 +50,7 @@ static void arch_inject_dabt(struct trap_context *ctx, unsigned long addr)
 	if (sctlr & SCTLR_EE_BIT)
 		cpsr |= PSR_E_BIT;
 
-	arm_write_banked_reg(SPSR_hyp, cpsr);
+	arm_write_banked_reg(SPSR_fsxc, cpsr);
 
 	lr_offset = (is_thumb ? 4 : 0);
 	arm_write_banked_reg(LR_abt, pc + lr_offset);

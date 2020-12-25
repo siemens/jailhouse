@@ -55,7 +55,7 @@ static bool arch_failed_condition(struct trap_context *ctx)
 	u32 iss = HSR_ISS(ctx->hsr);
 	u32 cpsr, flags, cond;
 
-	arm_read_banked_reg(SPSR_hyp, cpsr);
+	arm_read_banked_reg(SPSR, cpsr);
 	flags = cpsr >> 28;
 
 	/*
@@ -99,7 +99,7 @@ static void arch_advance_itstate(struct trap_context *ctx)
 	unsigned long itbits, cond;
 	u32 cpsr;
 
-	arm_read_banked_reg(SPSR_hyp, cpsr);
+	arm_read_banked_reg(SPSR, cpsr);
 	if (!(cpsr & PSR_IT_MASK(0xff)))
 		return;
 
@@ -116,7 +116,7 @@ static void arch_advance_itstate(struct trap_context *ctx)
 	cpsr &= ~PSR_IT_MASK(0xff);
 	cpsr |= PSR_IT_MASK(itbits);
 
-	arm_write_banked_reg(SPSR_hyp, cpsr);
+	arm_write_banked_reg(SPSR_fsxc, cpsr);
 }
 
 void arch_skip_instruction(struct trap_context *ctx)
@@ -151,7 +151,7 @@ void access_cell_reg(struct trap_context *ctx, u8 reg, unsigned long *val,
 {
 	u32 mode;
 
-	arm_read_banked_reg(SPSR_hyp, mode);
+	arm_read_banked_reg(SPSR, mode);
 	mode &= PSR_MODE_MASK;
 
 	switch (reg) {
@@ -234,7 +234,7 @@ static void dump_guest_regs(struct trap_context *ctx)
 	u32 pc, cpsr;
 
 	arm_read_banked_reg(ELR_hyp, pc);
-	arm_read_banked_reg(SPSR_hyp, cpsr);
+	arm_read_banked_reg(SPSR, cpsr);
 	panic_printk("pc=0x%08x cpsr=0x%08x hsr=0x%08x\n", pc, cpsr, ctx->hsr);
 	for (reg = 0; reg < 15; reg++) {
 		access_cell_reg(ctx, reg, &reg_val, true);

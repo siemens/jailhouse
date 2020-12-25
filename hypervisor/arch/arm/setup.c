@@ -79,7 +79,7 @@ cpu_prepare_return_el1(struct per_cpu *cpu_data, int return_code)
 	asm volatile (
 		"msr	sp_svc, %0\n\t"
 		"msr	elr_hyp, %1\n\t"
-		"msr	spsr_hyp, %2\n\t"
+		"msr	spsr_fsxc, %2\n\t"
 		:
 		: "r" (cpu_data->linux_sp +
 		       (NUM_ENTRY_REGS * sizeof(unsigned long))),
