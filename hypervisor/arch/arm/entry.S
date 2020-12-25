@@ -55,8 +55,6 @@ arch_entry:
 	/*
 	 * entry only returns here when there is an error before setting up EL2
 	 */
-	ldr	r3, [r4], #-4
-	msr	spsr, r3
 	ldr	lr, [r4], #-4
 	ldr	sp, [r4]
 
