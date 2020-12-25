@@ -12,5 +12,5 @@
 
 LINUXINCLUDE += -I$(src)/arch/arm-common/include
 
-KBUILD_CFLAGS += -marm -march=armv7ve
-KBUILD_AFLAGS += -march=armv7ve
+KBUILD_CFLAGS += -marm -march=armv7ve -msoft-float
+KBUILD_AFLAGS += -march=armv7ve -msoft-float
