@@ -32,8 +32,8 @@ ifneq ($(wildcard $(INC_CONFIG_H)),)
 KBUILD_CFLAGS += -include $(INC_CONFIG_H)
 endif
 ifeq ($(SRCARCH),arm)
-KBUILD_CFLAGS += -march=armv7ve
-KBUILD_AFLAGS += -march=armv7ve
+KBUILD_CFLAGS += -march=armv7ve -msoft-float
+KBUILD_AFLAGS += -march=armv7ve -msoft-float
 endif
 
 OBJCOPYFLAGS := -O binary --remove-section=.note.gnu.property
