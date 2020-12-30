@@ -44,8 +44,10 @@ void smccc_discover(void)
 		return;
 
 	ret = smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_1);
-
 	this_cpu_data()->smccc_has_workaround_1 = ret >= ARM_SMCCC_SUCCESS;
+
+	ret = smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_2);
+	this_cpu_data()->smccc_has_workaround_2 = ret >= ARM_SMCCC_SUCCESS;
 }
 
 static inline long handle_arch_features(u32 id)
@@ -76,6 +78,11 @@ static enum trap_return handle_arch(struct trap_context *ctx)
 	case SMCCC_ARCH_FEATURES:
 		*ret = handle_arch_features(ctx->regs[1]);
 		break;
+
+	case SMCCC_ARCH_WORKAROUND_2:
+		if (!this_cpu_data()->smccc_has_workaround_2)
+			return ARM_SMCCC_NOT_SUPPORTED;
+		return smc_arg1(SMCCC_ARCH_WORKAROUND_2, ctx->regs[1]);
 
 	default:
 		panic_printk("Unhandled SMC arch trap %lx\n", *ret);
