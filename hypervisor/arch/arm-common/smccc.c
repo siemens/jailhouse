@@ -19,7 +19,11 @@
 
 void smccc_discover(void)
 {
+	struct per_cpu *cpu_data = this_cpu_data();
 	int ret;
+
+	cpu_data->smccc_feat_workaround_1 = ARM_SMCCC_NOT_SUPPORTED;
+	cpu_data->smccc_feat_workaround_2 = ARM_SMCCC_NOT_SUPPORTED;
 
 	ret = smc(PSCI_0_2_FN_VERSION);
 
@@ -43,11 +47,11 @@ void smccc_discover(void)
 	if (ret != ARM_SMCCC_SUCCESS)
 		return;
 
-	ret = smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_1);
-	this_cpu_data()->smccc_has_workaround_1 = ret >= ARM_SMCCC_SUCCESS;
+	cpu_data->smccc_feat_workaround_1 =
+		smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_1);
 
-	ret = smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_2);
-	this_cpu_data()->smccc_has_workaround_2 = ret >= ARM_SMCCC_SUCCESS;
+	cpu_data->smccc_feat_workaround_2 =
+		smc_arg1(SMCCC_ARCH_FEATURES, SMCCC_ARCH_WORKAROUND_2);
 }
 
 static inline long handle_arch_features(u32 id)
@@ -57,8 +61,9 @@ static inline long handle_arch_features(u32 id)
 		return ARM_SMCCC_SUCCESS;
 
 	case SMCCC_ARCH_WORKAROUND_1:
-		return this_cpu_data()->smccc_has_workaround_1 ?
-			ARM_SMCCC_SUCCESS : ARM_SMCCC_NOT_SUPPORTED;
+		return this_cpu_data()->smccc_feat_workaround_1;
+	case SMCCC_ARCH_WORKAROUND_2:
+		return this_cpu_data()->smccc_feat_workaround_2;
 
 	default:
 		return ARM_SMCCC_NOT_SUPPORTED;
@@ -80,7 +85,7 @@ static enum trap_return handle_arch(struct trap_context *ctx)
 		break;
 
 	case SMCCC_ARCH_WORKAROUND_2:
-		if (!this_cpu_data()->smccc_has_workaround_2)
+		if (this_cpu_data()->smccc_feat_workaround_2 < 0)
 			return ARM_SMCCC_NOT_SUPPORTED;
 		return smc_arg1(SMCCC_ARCH_WORKAROUND_2, ctx->regs[1]);
 

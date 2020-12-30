@@ -66,7 +66,7 @@ int arch_cpu_init(struct per_cpu *cpu_data)
 		return err;
 
 	/* Conditionally switch to hardened vectors */
-	if (this_cpu_data()->smccc_has_workaround_1)
+	if (this_cpu_data()->smccc_feat_workaround_1 >= ARM_SMCCC_SUCCESS)
 		arm_write_sysreg(vbar_el2, &hyp_vectors_hardened);
 
 	return 0;
