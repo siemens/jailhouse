@@ -33,9 +33,9 @@ void smccc_discover(void)
 	if (ret != ARM_SMCCC_SUCCESS)
 		return;
 
-	/* We need to have SMCCC v1.1 */
+	/* We need to have at least SMCCC v1.1 */
 	ret = smc(SMCCC_VERSION);
-	if (ret != ARM_SMCCC_VERSION_1_1)
+	if (ret < ARM_SMCCC_VERSION_1_1)
 		return;
 
 	/* check if SMCCC_ARCH_FEATURES is actually available */
