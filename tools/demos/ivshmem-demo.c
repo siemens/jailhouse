@@ -45,7 +45,7 @@ static inline void mmio_write32(void *address, uint32_t value)
 	*(volatile uint32_t *)address = value;
 }
 
-static size_t uio_read_mem_size(char *devpath, int idx)
+static size_t uio_read_mem_size(char *uio_devname, int idx)
 {
 	char sysfs_path[64];
 	char output[20] = "";
@@ -54,7 +54,7 @@ static size_t uio_read_mem_size(char *devpath, int idx)
 
 	snprintf(sysfs_path, sizeof(sysfs_path),
 		 "/sys/class/uio/%s/maps/map%d/size",
-		 basename(devpath), idx);
+		 uio_devname, idx);
 	fd = open(sysfs_path, O_RDONLY);
 	if (fd < 0)
 		error(1, errno, "open(sysfs)");
@@ -88,7 +88,8 @@ int main(int argc, char *argv[])
 	struct signalfd_siginfo siginfo;
 	struct pollfd fds[2];
 	sigset_t sigset;
-	char *path = "/dev/uio0";
+	char *path = strdup("/dev/uio0");
+	char *uio_devname;
 	int has_msix, i;
 	int ret, size, offset, pgsize;
 	uint32_t id, max_peers, int_count;
@@ -115,12 +116,13 @@ int main(int argc, char *argv[])
 		error(1, errno, "open(%s)", path);
 	fds[0].events = POLLIN;
 
+	uio_devname = basename(path);
 	snprintf(sysfs_path, sizeof(sysfs_path),
-		 "/sys/class/uio/%s/device/msi_irqs", basename(path));
+		 "/sys/class/uio/%s/device/msi_irqs", uio_devname);
 	has_msix = access(sysfs_path, R_OK) == 0;
 
 	offset = 0;
-	size = uio_read_mem_size(path, 0);
+	size = uio_read_mem_size(uio_devname, 0);
 	regs = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
 		    fds[0].fd, offset);
 	if (regs == MAP_FAILED)
@@ -138,26 +140,26 @@ int main(int argc, char *argv[])
 		error(1, EINVAL, "invalid peer number");
 
 	offset += pgsize;
-	size = uio_read_mem_size(path, 1);
+	size = uio_read_mem_size(uio_devname, 1);
 	state = mmap(NULL, size, PROT_READ, MAP_SHARED, fds[0].fd, offset);
 	if (state == MAP_FAILED)
 		error(1, errno, "mmap(state)");
 
 	offset += pgsize;
-	size = uio_read_mem_size(path, 2);
+	size = uio_read_mem_size(uio_devname, 2);
 	rw = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
 		  fds[0].fd, offset);
 	if (rw == MAP_FAILED)
 		error(1, errno, "mmap(rw)");
 
 	offset += pgsize;
-	size = uio_read_mem_size(path, 3);
+	size = uio_read_mem_size(uio_devname, 3);
 	in = mmap(NULL, size, PROT_READ, MAP_SHARED, fds[0].fd, offset);
 	if (in == MAP_FAILED)
 		error(1, errno, "mmap(in)");
 
 	offset += pgsize;
-	size = uio_read_mem_size(path, 4);
+	size = uio_read_mem_size(uio_devname, 4);
 	out = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
 		   fds[0].fd, offset);
 	if (out == MAP_FAILED)
