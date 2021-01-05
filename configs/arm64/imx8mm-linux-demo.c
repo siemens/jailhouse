@@ -47,34 +47,36 @@ struct {
 			.phys_start = 0xbba00000,
 			.virt_start = 0xbba00000,
 			.size = 0x1000,
-			.flags = JAILHOUSE_MEM_READ ,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		{
 			.phys_start = 0xbba01000,
 			.virt_start = 0xbba01000,
 			.size = 0x9000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE ,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_ROOTSHARED,
 		},
 		{
 			.phys_start = 0xbba0a000,
 			.virt_start = 0xbba0a000,
 			.size = 0x2000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE ,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		{
 			.phys_start = 0xbba0c000,
 			.virt_start = 0xbba0c000,
 			.size = 0x2000,
-			.flags = JAILHOUSE_MEM_READ,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		{
 			.phys_start = 0xbba0e000,
 			.virt_start = 0xbba0e000,
 			.size = 0x2000,
-			.flags = JAILHOUSE_MEM_READ,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* IVSHMEM shared memory regions for 00:01.0 (networking) */
-		JAILHOUSE_SHMEM_NET_REGIONS(0xbbb00000, 0),
+		JAILHOUSE_SHMEM_NET_REGIONS(0xbbb00000, 1),
 		/* UART2 earlycon */ {
 			.phys_start = 0x30890000,
 			.virt_start = 0x30890000,
@@ -143,7 +145,7 @@ struct {
 	.pci_devices = {
 		{ /* IVSHMEM 00:00.0 (demo) */
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
-			.domain = 1,
+			.domain = 0,
 			.bdf = 0 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
 			.shmem_regions_start = 0,
