@@ -257,7 +257,7 @@ static void enter_hypervisor(void *info)
 
 #if defined(CONFIG_X86) && LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 	/* on Intel, VMXE is now on - update the shadow */
-	if (boot_cpu_has(X86_FEATURE_VMX)) {
+	if (boot_cpu_has(X86_FEATURE_VMX) && !err) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
 		cr4_set_bits_irqsoff(X86_CR4_VMXE);
 #else
@@ -666,7 +666,7 @@ static void leave_hypervisor(void *info)
 
 #if defined(CONFIG_X86) && LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 	/* on Intel, VMXE is now off - update the shadow */
-	if (boot_cpu_has(X86_FEATURE_VMX)) {
+	if (boot_cpu_has(X86_FEATURE_VMX) && !err) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
 		cr4_clear_bits_irqsoff(X86_CR4_VMXE);
 #else
