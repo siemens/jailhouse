@@ -91,6 +91,7 @@ found=False
 for cell in cells:
     for mem in cell.memory_regions:
         if mem.phys_overlaps(sysconfig.hypervisor_memory):
+            idx = cell.memory_regions.index(mem)
             print("\n\nIn cell '%s', region %d" % (cell.name, idx))
             print(str(mem))
             print("overlaps with hypervisor memory region")
