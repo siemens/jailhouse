@@ -190,29 +190,108 @@ class CellConfig:
                                ('root ' if root_cell else ''))
 
 
+class JAILHOUSE_IOMMU(ExtendedEnum, int):
+    _ids = {
+        'UNUSED':     0,
+        'AMD':        1,
+        'INTEL':      2,
+        'SMMUV3':     3,
+        'TIPVU':      4,
+        'ARM_MMU500': 5,
+    }
+
+
+class IOMMU:
+    _IOMMU_HEADER_FORMAT = '=IQI'
+    _IOMMU_AMD_FORMAT = '=HBBI2x'
+    _IOMMU_TIPVU_FORMAT = '=QI'
+    _IOMMU_OTHER_FORMAT = '12x'
+    SIZE = struct.calcsize(_IOMMU_HEADER_FORMAT + _IOMMU_OTHER_FORMAT)
+
+    def __init__(self, iommu_struct):
+        (self.type,
+         self.base,
+         self.size) = \
+            struct.unpack_from(self._IOMMU_HEADER_FORMAT, iommu_struct)
+
+        offs = struct.calcsize(self._IOMMU_HEADER_FORMAT)
+        if self.type == JAILHOUSE_IOMMU.AMD:
+            (self.amd_bdf,
+             self.amd_base_cap,
+             self.amd_msi_cap,
+             self.amd_features) = \
+                struct.unpack_from(self._IOMMU_AMD_FORMAT, iommu_struct[offs:])
+        elif self.type == JAILHOUSE_IOMMU.TIPVU:
+            (self.tipvu_tlb_base,
+             self.tipvu_tlb_size) = \
+                struct.unpack_from(self._IOMMU_TIPVU_FORMAT,
+                                   iommu_struct[offs:])
+        elif not self.type in (JAILHOUSE_IOMMU.UNUSED,
+                               JAILHOUSE_IOMMU.INTEL,
+                               JAILHOUSE_IOMMU.SMMUV3,
+                               JAILHOUSE_IOMMU.ARM_MMU500):
+            raise RuntimeError('Unknown IOMMU type: %d' % self.type)
+
+
 class SystemConfig:
     _HEADER_FORMAT = '=6sH4x'
     # ...followed by MemRegion as hypervisor memory
-    _CONSOLE_AND_PLATFORM_FORMAT = '32x12x224x44x'
+    _CONSOLE_FORMAT = '32x'
+    _PCI_FORMAT = '=QBBH'
+    _NUM_IOMMUS = 8
+    _ARCH_ARM_FORMAT = '=BB2xQQQQQ'
+    _ARCH_X86_FORMAT = '=HBxIII28x'
 
-    def __init__(self, data):
+    def __init__(self, data, arch):
         self.data = data
 
         try:
             (signature,
              revision) = \
-                struct.unpack_from(SystemConfig._HEADER_FORMAT, self.data)
+                struct.unpack_from(self._HEADER_FORMAT, self.data)
 
             if signature != b'JHSYST':
                 raise RuntimeError('Not a root cell configuration')
             if revision != _CONFIG_REVISION:
                 raise RuntimeError('Configuration file revision mismatch')
 
-            offs = struct.calcsize(SystemConfig._HEADER_FORMAT)
+            offs = struct.calcsize(self._HEADER_FORMAT)
             self.hypervisor_memory = MemRegion(self.data[offs:])
 
             offs += struct.calcsize(MemRegion._REGION_FORMAT)
-            offs += struct.calcsize(SystemConfig._CONSOLE_AND_PLATFORM_FORMAT)
+            offs += struct.calcsize(self._CONSOLE_FORMAT)
+            (self.pci_mmconfig_base,
+             self.pci_mmconfig_end_bus,
+             self.pci_is_virtual,
+             self.pci_domain) = \
+                 struct.unpack_from(self._PCI_FORMAT, self.data[offs:])
+
+            offs += struct.calcsize(self._PCI_FORMAT)
+            self.iommus = []
+            for n in range(self._NUM_IOMMUS):
+                iommu = IOMMU(self.data[offs:])
+                if iommu.type != JAILHOUSE_IOMMU.UNUSED:
+                    self.iommus.append(iommu)
+                offs += IOMMU.SIZE
+
+            if arch in ('arm', 'arm64'):
+                (self.arm_maintenance_irq,
+                 self.arm_gic_version,
+                 self.arm_gicd_base,
+                 self.arm_gicc_base,
+                 self.arm_gich_base,
+                 self.arm_gicv_base,
+                 self.arm_gicr_base) = \
+                     struct.unpack_from(self._ARCH_ARM_FORMAT, self.data[offs:])
+            elif arch == 'x86':
+                (self.x86_pm_timer_address,
+                 self.x86_apic_mode,
+                 self.x86_vtd_interrupt_limit,
+                 self.x86_tsc_khz,
+                 self.x86_apic_khz) = \
+                     struct.unpack_from(self._ARCH_X86_FORMAT, self.data[offs:])
+
+            offs += struct.calcsize(self._ARCH_ARM_FORMAT)
         except struct.error:
             raise RuntimeError('Not a root cell configuration')
 
