@@ -24,10 +24,22 @@ import sys
 sys.path[0] = os.path.dirname(os.path.abspath(__file__)) + "/.."
 import pyjailhouse.config_parser as config_parser
 
+
+class ResourceRegion(config_parser.MemRegion):
+    def __init__(self, phys_start, size, name=None):
+        self.phys_start = phys_start
+        self.virt_start = phys_start
+        self.size = size
+        self.flags = 0
+        self.name = name
+
+
 # pretend to be part of the jailhouse tool
 sys.argv[0] = sys.argv[0].replace('-', ' ')
 
 parser = argparse.ArgumentParser(description='Check system and cell configurations.')
+parser.add_argument('-a', '--arch', metavar='ARCH',
+                    help='target architecture')
 parser.add_argument('syscfg', metavar='SYSCONFIG',
                     type=argparse.FileType('rb'),
                     help='system configuration file')
@@ -41,10 +53,25 @@ except IOError as e:
     print(e.strerror, file=sys.stderr)
     exit(1)
 
+arch = args.arch
+if not arch:
+    arch_str = os.uname()[4]
+    if arch_str in ('i686', 'x86_64'):
+        arch = 'x86'
+    elif arch_str == 'armv7l':
+        arch = 'arm'
+    elif arch_str == 'aarch64':
+        arch = 'arm64'
+    else:
+        arch = None
+if not arch in ('x86', 'arm', 'arm64'):
+    print('Unsupported architecture', file=sys.stderr)
+    exit(1)
+
 print("Reading configuration set:")
 
 try:
-    sysconfig = config_parser.SystemConfig(args.syscfg.read(), None)
+    sysconfig = config_parser.SystemConfig(args.syscfg.read(), arch)
     root_cell = sysconfig.root_cell
 except RuntimeError as e:
     print(str(e) + ": " + args.syscfg.name, file=sys.stderr)
@@ -98,6 +125,81 @@ for cell in cells:
             print(str(sysconfig.hypervisor_memory), end='')
             found=True
             ret=1
+print("\n" if found else " None")
+
+if sysconfig.pci_mmconfig_base > 0:
+    print("Missing PCI MMCONFIG interceptions:", end='')
+    mmcfg_size = (sysconfig.pci_mmconfig_end_bus + 1) * 256 * 4096
+    pci_mmcfg = ResourceRegion(sysconfig.pci_mmconfig_base, mmcfg_size)
+
+    for cell in cells:
+        for mem in cell.memory_regions:
+            idx = cell.memory_regions.index(mem)
+            if mem.phys_overlaps(pci_mmcfg):
+                print("\n\nIn cell '%s', region %d" %(cell.name, idx))
+                print(str(mem))
+                print("overlaps with MMCONFIG")
+                print(str(pci_mmcfg), end='')
+                found=True
+                ret=1
+    print("\n" if found else " None")
+
+iommu_resources = []
+for iommu in sysconfig.iommus:
+    iommu_resources.append(ResourceRegion(iommu.base, iommu.size, "IOMMU"))
+if len(iommu_resources) > 0:
+    print("Missing IOMMU interceptions:", end='')
+    found=False
+    for cell in cells:
+        for mem in cell.memory_regions:
+            idx = cell.memory_regions.index(mem)
+            for iommu in iommu_resources:
+                if mem.phys_overlaps(iommu):
+                    print("\n\nIn cell '%s', region %d" %(cell.name, idx))
+                    print(str(mem))
+                    print("overlaps with IOMMU")
+                    print(str(iommu), end='')
+                    found=True
+                    ret=1
+    print("\n" if found else " None")
+
+print("Missing resource interceptions for architecture %s:" % arch, end='')
+found=False
+if arch in ('arm', 'arm64'):
+    arch_resources = []
+    if sysconfig.arm_gic_version == 2:
+        arch_resources.append(ResourceRegion(sysconfig.arm_gicd_base, 0x1000,
+                                             "GICD"))
+        arch_resources.append(ResourceRegion(sysconfig.arm_gicc_base, 0x2000,
+                                             "GICC"))
+        arch_resources.append(ResourceRegion(sysconfig.arm_gich_base, 0x2000,
+                                             "GICH"))
+        arch_resources.append(ResourceRegion(sysconfig.arm_gicv_base, 0x2000,
+                                             "GICV"))
+    elif sysconfig.arm_gic_version == 3:
+        arch_resources.append(ResourceRegion(sysconfig.arm_gicd_base, 0x10000,
+                                             "GICD"))
+        arch_resources.append(ResourceRegion(sysconfig.arm_gicr_base, 0x20000,
+                                             "GICR"))
+    else:
+        raise RuntimeError("Unknown GIC version: %d" %
+                           sysconfig.arm_gic_version)
+elif arch == 'x86':
+    arch_resources = [ResourceRegion(0xfee00000, 0x1000, "xAPIC")]
+    for irqchip in root_cell.irqchips:
+        arch_resources.append(ResourceRegion(irqchip.address, 0x1000,
+                                             "IOAPIC"))
+for cell in cells:
+    for mem in cell.memory_regions:
+        idx = cell.memory_regions.index(mem)
+        for arch_resource in arch_resources:
+            if mem.phys_overlaps(arch_resource):
+                print("\n\nIn cell '%s', region %d" % (cell.name, idx))
+                print(str(mem))
+                print("overlaps with %s" % arch_resource.name)
+                print(str(arch_resource), end='')
+                found=True
+                ret=1
 print("\n" if found else " None")
 
 exit(ret)
