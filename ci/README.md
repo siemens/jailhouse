@@ -2,7 +2,7 @@ Jailhouse Continuous Integration Build Environment
 ==================================================
 
 This collects tools and generates the Linux kernel binaries required to build
-Jailhouse in continuous integration environments. Currently, travis-ci.org is
+Jailhouse in continuous integration environments. Currently, travis-ci.com is
 the target environment.
 
 How to use
