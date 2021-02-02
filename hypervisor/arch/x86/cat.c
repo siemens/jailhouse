@@ -20,9 +20,9 @@
 
 #define CAT_ROOT_COS	0
 
-static unsigned int cbm_max, freed_mask;
+static unsigned int cbm_max;
 static int cos_max = -1;
-static u64 orig_root_mask;
+static u64 orig_root_mask, freed_mask;
 
 void cat_update(void)
 {
