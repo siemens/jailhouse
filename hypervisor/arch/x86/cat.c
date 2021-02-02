@@ -156,7 +156,8 @@ static int cat_cell_init(struct cell *cell)
 
 		if (cell->config->num_cache_regions != 1 ||
 		    cache->type != JAILHOUSE_CACHE_L3 ||
-		    cache->size == 0 || (cache->start + cache->size) > cbm_max)
+		    cache->size == 0 ||
+		    (cache->start + cache->size - 1) > cbm_max)
 			return trace_error(-EINVAL);
 
 		cell->arch.cat_mask =
