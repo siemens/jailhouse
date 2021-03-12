@@ -48,6 +48,13 @@
 		};
 	};
 
+	pmu {
+		compatible = "arm,cortex-a53-pmu";
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-parent = <&gic>;
+		interrupt-affinity = <&A53_2>, <&A53_3>;
+	};
+
 	osc_25m: clock-osc-25m {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
