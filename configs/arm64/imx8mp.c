@@ -42,7 +42,7 @@ struct {
 			.pci_mmconfig_base = 0xfd700000,
 			.pci_mmconfig_end_bus = 0,
 			.pci_is_virtual = 1,
-			.pci_domain = 1,
+			.pci_domain = 2,
 
 			.arm = {
 				.gic_version = 3,
@@ -199,7 +199,7 @@ struct {
 	.pci_devices = {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
-			.domain = 1,
+			.domain = 2,
 			.bdf = 2 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
 			.shmem_regions_start = 0,
@@ -210,7 +210,7 @@ struct {
 		},
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
-			.domain = 1,
+			.domain = 2,
 			.bdf = 3 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
 			.shmem_regions_start = 4,
@@ -221,7 +221,7 @@ struct {
 		},
 		{ /* IVSHMEM 0000:00:00.0 (demo) */
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
-			.domain = 1,
+			.domain = 2,
 			.bdf = 0 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
 			.shmem_regions_start = 8,
@@ -231,7 +231,7 @@ struct {
 		},
 		{ /* IVSHMEM 0000:00:01.0 (networking) */
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
-			.domain = 1,
+			.domain = 2,
 			.bdf = 1 << 3,
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_INTX,
 			.shmem_regions_start = 13,
