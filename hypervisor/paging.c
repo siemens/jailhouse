@@ -399,8 +399,21 @@ int paging_destroy(const struct paging_structures *pg_structs,
 					paging->page_size : PAGE_SIZE;
 				page_start = virt & ~(page_size-1);
 
+				/*
+				 * It's possible that virt + size overflows to
+				 * exactly 0 (e.g. a 512MB region starting at
+				 * 0xe0000000 with 32-bit addresses) during
+				 * normal execution. Any overflow beyond that is
+				 * a programming error.
+				 *
+				 * To handle this case, subtract 1 from the size
+				 * when comparing both sides. Note that size and
+				 * page_size are always > 0, so there's no risk
+				 * of underflow.
+				 */
 				if (virt <= page_start &&
-				    virt + size >= page_start + page_size)
+				    virt + (size - 1) >=
+				    page_start + (page_size - 1))
 					break;
 
 				err = split_hugepage(pg_structs->hv_paging,
