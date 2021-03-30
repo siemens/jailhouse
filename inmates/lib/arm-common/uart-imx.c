@@ -39,6 +39,8 @@
 
 #define UTS			0xb4
 #define UTXD			0x40
+#define UCR1			0x80
+#define UCR1_UARTEN		(1<<0)
 #define UTS_TXEMPTY		(1 << 6)
 
 static void uart_imx_init(struct uart_chip *chip)
@@ -53,6 +55,8 @@ static bool uart_imx_is_busy(struct uart_chip *chip)
 
 static void uart_imx_write(struct uart_chip *chip, char c)
 {
+	if (!(mmio_read32(chip->base + UCR1) & UCR1_UARTEN))
+		return;
 	mmio_write32(chip->base + UTXD, c);
 }
 
