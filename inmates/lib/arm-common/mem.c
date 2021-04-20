@@ -56,8 +56,7 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 	while (size) {
 		pgd_index = PGD_INDEX(vaddr);
 		if (!(page_directory[pgd_index] & LONG_DESC_TABLE)) {
-			pmd = alloc(PAGE_SIZE, PAGE_SIZE);
-			memset(pmd, 0, PAGE_SIZE);
+			pmd = zalloc(PAGE_SIZE, PAGE_SIZE);
 			/* ensure the page table walker will see the zeroes */
 			synchronization_barrier();
 

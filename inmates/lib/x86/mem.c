@@ -57,7 +57,7 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 		if (*pt_entry & PAGE_FLAG_PRESENT) {
 			pt = (unsigned long *)(*pt_entry & PAGE_MASK);
 		} else {
-			pt = alloc(PAGE_SIZE, PAGE_SIZE);
+			pt = zalloc(PAGE_SIZE, PAGE_SIZE);
 			*pt_entry = (unsigned long)pt | PAGE_DEFAULT_FLAGS;
 		}
 
@@ -65,7 +65,7 @@ void map_range(void *start, unsigned long size, enum map_type map_type)
 		if (*pt_entry & PAGE_FLAG_PRESENT) {
 			pt = (unsigned long *)(*pt_entry & PAGE_MASK);
 		} else {
-			pt = alloc(PAGE_SIZE, PAGE_SIZE);
+			pt = zalloc(PAGE_SIZE, PAGE_SIZE);
 			*pt_entry = (unsigned long)pt | PAGE_DEFAULT_FLAGS;
 		}
 

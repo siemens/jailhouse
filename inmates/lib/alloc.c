@@ -5,6 +5,7 @@
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Bram Hooimeijer <bram.hooimeijer@prodrive-technologies.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -46,4 +47,12 @@ void *alloc(unsigned long size, unsigned long align)
 
 	heap_pos = base + size;
 	return (void *)base;
+}
+
+void *zalloc(unsigned long size, unsigned long align)
+{
+	void *base = alloc(size, align);
+	memset(base, 0, size);
+
+	return base;
 }
