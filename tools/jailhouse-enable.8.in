@@ -43,7 +43,7 @@ Once the jailhouse\&.ko driver is active in the kernel, Jailhouse has to be enab
 <sysconfig.cell> is a Jailhouse binary configuration file that describe all present hardware or the necessary hardware for the root cell to be operational\&. This binary configuration file is obtained by compiling a config file in C language format. On x86, the following command can be used to generate a C language configuration file that represent all known hardware:
 .sp
 .RS
-\fIjailhouse cell create\fR <sysconfig.c>
+\fIjailhouse config create\fR <sysconfig.c>
 .sp
 From this file, the system administrator can remove all hardware that should be dedicated to future cells. Simplest way to compile this file into a <sysconfig.cell> is to copy it in <path to configs/x86/ directory> and launch a build\&.
 .RE
