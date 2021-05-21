@@ -178,7 +178,8 @@ def parse_iomem(pcidevices):
     for r in regions:
         # Filter PCI buses in order to avoid mapping empty ones that might
         # require interception when becoming non-empty.
-        if r.typestr.startswith('PCI Bus'):
+        # Exception: VGA region
+        if r.typestr.startswith('PCI Bus') and r.start != 0xa0000:
             continue
 
         append_r = True
