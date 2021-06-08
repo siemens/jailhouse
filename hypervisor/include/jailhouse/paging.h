@@ -64,7 +64,7 @@ struct page_pool {
 	unsigned long pages;
 	/** Number of currently used pages. */
 	unsigned long used_pages;
-	/** Bitmap of used pages. */
+	/** Base address for bitmap of used pages. */
 	unsigned long *used_bitmap;
 	/** Set @c PAGE_SCRUB_ON_FREE to zero-out pages on release. */
 	unsigned long flags;
