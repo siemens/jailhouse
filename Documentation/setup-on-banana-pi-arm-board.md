@@ -228,7 +228,7 @@ $ sudo checkinstall make install
 * Building Jailhouse (mainly for FreeRTOR as a cell)
 ```bash
 #On Compiling Machine,
-$ sudo apt-get update && sudo apt-get install -y python-mako device-tree-compiler
+$ sudo apt-get update && sudo apt-get install -y python3-mako device-tree-compiler
 $ cd ~
 $ git clone https://github.com/siemens/freertos-cell
 $ cp -av ~/freertos-cell/jailhouse-configs/bananapi.c ~/jailhouse/configs/arm/bananapi.c

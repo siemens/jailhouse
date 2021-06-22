@@ -34,7 +34,7 @@ Contribution Checklist
     - seemingly unaffected architectures still build (use Travis CI e.g.)
     - static code analyzer finds no new defects (register a github fork with
       Travis CI and Coverity for free scanning) [*recommended*]
-    - python code shall be tested with python 2 and 3 [**required**]
+    - python code shall be tested with python 3 [**required**]
     - the world is still spinning
 
 - add signed-off to all patches [**required**]
