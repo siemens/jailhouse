@@ -42,8 +42,8 @@ INSTALL_PROGRAM ?= $(INSTALL)
 INSTALL_DATA    ?= $(INSTALL) -m 644
 INSTALL_DIR     ?= $(INSTALL) -d -m 755
 
-PYTHON ?= python
-PIP := $(PYTHON) -m pip
+PYTHON3 ?= python3
+PIP := $(PYTHON3) -m pip
 
 ifeq ($(strip $(shell $(PIP) > /dev/null 2> /dev/null && echo "y")), y)
 PYTHON_PIP_USABLE := yes

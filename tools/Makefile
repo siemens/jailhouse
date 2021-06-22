@@ -45,7 +45,7 @@ endif # $(ARCH),x86
 always-y := $(BINARIES)
 
 HAS_PYTHON_MAKO := \
-	$(shell $(PYTHON) -c "from mako.template import Template" 2>/dev/null \
+	$(shell $(PYTHON3) -c "from mako.template import Template" 2>/dev/null \
 	&& echo yes)
 
 ifeq ($(strip $(HAS_PYTHON_MAKO)), yes)
