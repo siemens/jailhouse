@@ -10,7 +10,6 @@
 # This work is licensed under the terms of the GNU GPL, version 2.  See
 # the COPYING file in the top-level directory.
 
-from __future__ import print_function
 import mmap
 import os
 import struct
@@ -20,10 +19,6 @@ import sys
 sys.path[0] = os.path.dirname(os.path.abspath(__file__)) + "/.."
 import pyjailhouse.sysfs_parser as sysfs_parser
 
-# just a dummy to make python2 happy
-if sys.version_info[0] < 3:
-    class PermissionError(OSError):
-        pass
 
 check_passed = True
 ran_all = True

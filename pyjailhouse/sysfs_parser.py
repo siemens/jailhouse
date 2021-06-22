@@ -919,14 +919,11 @@ class IORegion(object):
 
     def start_str(self):
         # This method is used in root-cell-config.c.tmpl
-
-        # Python 2 appends a 'L' to hexadecimal format of large integers,
-        # therefore .strip('L') is necessary.
-        return hex(self.start).strip('L')
+        return hex(self.start)
 
     def size_str(self):
         # Comments from start_str() apply here as well.
-        return hex(self.size()).strip('L')
+        return hex(self.size())
 
 
 class MemRegion(IORegion):

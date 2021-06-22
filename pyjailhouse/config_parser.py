@@ -14,7 +14,6 @@
 # information about the system. For more advanced scenarios you will have
 # to change the generated C-code.
 
-from __future__ import print_function
 import struct
 
 from .extendedenum import ExtendedEnum
