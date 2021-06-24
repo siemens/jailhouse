@@ -514,8 +514,10 @@ void irqchip_config_commit(struct cell *cell_added_removed)
 		return;
 
 	for (n = 32; n < sizeof(cell_added_removed->arch.irq_bitmap) * 8; n++) {
-		if (irqchip_irq_in_cell(cell_added_removed, n))
+		if (irqchip_irq_in_cell(cell_added_removed, n) &&
+			(cell_added_removed != &root_cell))
 			irqchip.adjust_irq_target(cell_added_removed, n);
+
 		if (irqchip_irq_in_cell(&root_cell, n))
 			irqchip.adjust_irq_target(&root_cell, n);
 	}
