@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013
+ * Copyright (c) Siemens AG, 2013-2022
  * Copyright (c) Valentine Sinitsyn, 2014
  *
  * Authors:
@@ -33,7 +33,7 @@ bool using_x2apic;
 /**
  * Mapping from a physical APIC ID to the logical CPU ID as used by Jailhouse.
  */
-static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = CPU_ID_INVALID };
+static u8 apic_to_cpu_id[] = { [0 ... APIC_MAX_PHYS_ID] = APIC_INVALID_CPU };
 
 /* Initialized for x2APIC, adjusted for xAPIC during init */
 static u32 apic_reserved_bits[] = {
@@ -151,9 +151,9 @@ int apic_cpu_init(struct per_cpu *cpu_data)
 
 	printk("(APIC ID %d) ", apic_id);
 
-	if (apic_id > APIC_MAX_PHYS_ID || cpu_id == CPU_ID_INVALID)
+	if (apic_id > APIC_MAX_PHYS_ID || cpu_id == APIC_INVALID_CPU)
 		return trace_error(-ERANGE);
-	if (apic_to_cpu_id[apic_id] != CPU_ID_INVALID)
+	if (apic_to_cpu_id[apic_id] != APIC_INVALID_CPU)
 		return trace_error(-EBUSY);
 	/* only flat mode with LDR corresponding to logical ID supported */
 	if (!using_x2apic) {
@@ -386,7 +386,7 @@ static void apic_send_ipi(unsigned int target_cpu_id, u32 orig_icr_hi,
 
 static void apic_send_logical_dest_ipi(u32 lo_val, u32 hi_val)
 {
-	unsigned int target_cpu_id = CPU_ID_INVALID;
+	unsigned int target_cpu_id = APIC_INVALID_CPU;
 	unsigned long dest = hi_val;
 	unsigned int logical_id;
 	unsigned int cluster_id;
@@ -469,7 +469,7 @@ static bool apic_handle_icr_write(u32 lo_val, u32 hi_val)
 		lo_val &= ~APIC_ICR_DEST_LOGICAL;
 		apic_send_logical_dest_ipi(lo_val, hi_val);
 	} else {
-		target_cpu_id = CPU_ID_INVALID;
+		target_cpu_id = APIC_INVALID_CPU;
 		if (hi_val <= APIC_MAX_PHYS_ID)
 			target_cpu_id = apic_to_cpu_id[hi_val];
 		apic_send_ipi(target_cpu_id, hi_val, lo_val);
