@@ -54,7 +54,7 @@ unsigned int next_cpu(unsigned int cpu, struct cpu_set *cpu_set,
  *
  * @see for_each_cpu_except
  */
-#define for_each_cpu(cpu, set)	for_each_cpu_except(cpu, set, -1)
+#define for_each_cpu(cpu, set)	for_each_cpu_except(cpu, set, INVALID_CPU_ID)
 
 /**
  * Loop-generating macro for iterating over all CPUs in a set, except the
