@@ -460,8 +460,16 @@ enable_mmu_el2:
 	ldr	x1, =(T0SZ(48) | (TCR_RGN_WB_WA << TCR_IRGN0_SHIFT)	\
 			       | (TCR_RGN_WB_WA << TCR_ORGN0_SHIFT)	\
 			       | (TCR_INNER_SHAREABLE << TCR_SH0_SHIFT)	\
-			       | (PARANGE_48B << TCR_PS_SHIFT)		\
 			       | TCR_EL2_RES1)
+
+	/*
+	 * set TCR.(I)PS to the highest supported ID_AA64MMFR0_EL1.PARange value
+	 */
+	mrs     x9, id_aa64mmfr0_el1
+	/* Narrow PARange to fit the PS field in TCR_ELx */
+	ubfx    x9, x9, #ID_AA64MMFR0_PARANGE_SHIFT, #3
+	bfi     x1, x9, #TCR_PS_SHIFT, #3
+
 	msr	tcr_el2, x1
 
 	msr	ttbr0_el2, x0

@@ -144,6 +144,9 @@
 				| S1_PTE_FLAG_NORMAL | PTE_INNER_SHAREABLE\
 				| S1_PTE_ACCESS_EL0)
 
+/* Memory Model Feature Register 0 */
+#define ID_AA64MMFR0_PARANGE_SHIFT	0
+
 /* Macros used by the core, only for the EL2 stage-1 mappings */
 #define PAGE_FLAG_FRAMEBUFFER	S1_PTE_FLAG_DEVICE
 #define PAGE_FLAG_DEVICE	S1_PTE_FLAG_DEVICE
