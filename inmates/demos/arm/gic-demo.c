@@ -56,6 +56,12 @@ static void handle_IRQ(unsigned int irqn)
 
 void inmate_main(void)
 {
+	led_reg = (void *)(unsigned long)cmdline_parse_int("led-reg", 0);
+	if (led_reg) {
+		map_range(led_reg, 4, MAP_UNCACHED);
+		led_pin = cmdline_parse_int("led-pin", 0);
+	}
+
 	printk("Initializing the GIC...\n");
 	irq_init(handle_IRQ);
 	irq_enable(TIMER_IRQ);
@@ -64,9 +70,6 @@ void inmate_main(void)
 	ticks_per_beat = timer_get_frequency() / BEATS_PER_SEC;
 	expected_ticks = timer_get_ticks() + ticks_per_beat;
 	timer_start(ticks_per_beat);
-
-	led_reg = (void *)(unsigned long)cmdline_parse_int("led-reg", 0);
-	led_pin = cmdline_parse_int("led-pin", 0);
 
 	halt();
 }
