@@ -47,12 +47,12 @@ jobs:
           key: kernel-build
           path: |
             ci/linux
-            ci/linux-4.13
+            ci/linux-5.10
       - name: Install kernel build environment
         if: ${{ github.event.inputs.clear-cache == 'true' || steps.cache-kernel.outputs.cache-hit != 'true' }}
         run: |
           cd ci
-          rm -rf linux linux-4.13
+          rm -rf linux linux-5.10
           wget http://www.kiszka.org/downloads/jailhouse-ci/kernel-build.tar.xz
           tar xJf kernel-build.tar.xz
       - name: Build
