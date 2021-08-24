@@ -1,0 +1,81 @@
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2014-2021
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      clear-cache:
+        description: Clear cache
+        required: false
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get install --no-install-recommends \
+              python3-mako gcc-arm-linux-gnueabihf libc6-dev-armhf-cross \
+              gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+      - name: Install Coverity
+        if: ${{ github.ref == 'refs/heads/coverity_scan' }}
+        run: |
+          wget https://scan.coverity.com/download/cxx/linux64 \
+              --post-data "token=$COVERITY_TOKEN&project=siemens%2Fjailhouse" \
+              -O coverity_tool.tar.gz
+          tar -xf coverity_tool.tar.gz
+          ln -s cov-analysis-linux64-* cov-analysis-linux64
+      - name: Cache kernel build environment
+        uses: actions/cache@v2
+        id: cache-kernel
+        with:
+          key: kernel-build
+          path: |
+            ci/linux
+            ci/linux-4.13
+      - name: Install kernel build environment
+        if: ${{ github.event.inputs.clear-cache == 'true' || steps.cache-kernel.outputs.cache-hit != 'true' }}
+        run: |
+          cd ci
+          rm -rf linux linux-4.13
+          wget http://www.kiszka.org/downloads/jailhouse-ci/kernel-build.tar.xz
+          tar xJf kernel-build.tar.xz
+      - name: Build
+        if: ${{ github.ref != 'refs/heads/coverity_scan' }}
+        run: |
+          ci/build-all-configs.sh
+      - name: Build for Coverity
+        if: ${{ github.ref == 'refs/heads/coverity_scan' }}
+        run: |
+          export PATH=$PWD/cov-analysis-linux64/bin:$PATH
+          cov-configure --comptype gcc --compiler arm-linux-gnueabihf-gcc --template
+          cov-configure --comptype gcc --compiler aarch64-linux-gnu-gcc --template
+          ci/build-all-configs.sh --cov cov-int
+      - name: Submit Coverity results
+        if: ${{ github.ref == 'refs/heads/coverity_scan' }}
+        run: |
+          tar caf jailhouse-scan.tar.bz2 cov-int
+          curl --form token=$COVERITY_TOKEN \
+            --form email=$COVERITY_EMAIL \
+            --form file=@jailhouse-scan.tar.bz2 \
+            --form version="${{ github.sha }}" \
+            --form description="Jailhouse Coverity Scan" \
+            https://scan.coverity.com/builds?project=siemens%2Fjailhouse
+    env:
+      COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
+      COVERITY_EMAIL: ${{ secrets.COVERITY_EMAIL }}

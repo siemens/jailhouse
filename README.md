@@ -61,11 +61,11 @@ Mailing list:
 
 Continuous integration:
 
-  - https://travis-ci.com/siemens/jailhouse
+  - https://github.com/siemens/jailhouse/actions
 
   - Status:
-    - ![](https://travis-ci.com/siemens/jailhouse.svg?branch=master) on master
-    - ![](https://travis-ci.com/siemens/jailhouse.svg?branch=next) on next
+    - ![](https://github.com/siemens/jailhouse/actions/workflows/main.yaml/badge.svg?branch=master) on master
+    - ![](https://github.com/siemens/jailhouse/actions/workflows/main.yaml/badge.svg?branch=next) on next
 
 Static code analysis:
 
