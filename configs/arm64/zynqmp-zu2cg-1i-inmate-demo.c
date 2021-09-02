@@ -1,13 +1,15 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for demo inmate on Xilinx ZynqMP ZCU102 eval board:
+ * Configuration for demo inmate on Xilinx ZynqMP ZU2CG-1I:
  * 1 CPU, 64K RAM, 1 serial port
  *
  * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Linutronix GmbH, 2021
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Martin Kaistra <martin.kaistra@linutronix.de>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -25,7 +27,7 @@ struct {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
 		.name = "inmate-demo",
-		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
+		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG | JAILHOUSE_CELL_VIRTUAL_CONSOLE_ACTIVE,
 
 		.cpu_set_size = sizeof(config.cpus),
 		.num_memory_regions = ARRAY_SIZE(config.mem_regions),
@@ -41,7 +43,7 @@ struct {
 	},
 
 	.cpus = {
-		0x8,
+		0x2,
 	},
 
 	.mem_regions = {
@@ -53,7 +55,7 @@ struct {
 				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_ROOTSHARED,
 		},
 		/* RAM */ {
-			.phys_start = 0x800600000,
+			.phys_start = 0x040600000,
 			.virt_start = 0,
 			.size = 0x00010000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
