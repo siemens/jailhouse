@@ -1,12 +1,14 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Configuration for Xilinx ZynqMP ZCU102 eval board
+ * Configuration for Xilinx ZynqMP ZU2CG-1I
  *
  * Copyright (c) Siemens AG, 2016
+ * Copyright (c) Linutronix GmbH, 2021
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
+ *  Martin Kaistra <martin.kaistra@linutronix.de>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -30,7 +32,7 @@ struct {
 		.revision = JAILHOUSE_CONFIG_REVISION,
 		.flags = JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE,
 		.hypervisor_memory = {
-			.phys_start = 0x800000000,
+			.phys_start = 0x040000000,
 			.size =       0x000400000,
 		},
 		.debug_console = {
@@ -62,7 +64,7 @@ struct {
 			},
 		},
 		.root_cell = {
-			.name = "ZynqMP-ZCU102",
+			.name = "root cell",
 
 			.cpu_set_size = sizeof(config.cpus),
 			.num_memory_regions = ARRAY_SIZE(config.mem_regions),
@@ -75,14 +77,14 @@ struct {
 	},
 
 	.cpus = {
-		0xf,
+		0x3,
 	},
 
 	.mem_regions = {
 		/* IVSHMEM shared memory region for 0001:00:00.0 */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x800400000, 0),
+		JAILHOUSE_SHMEM_NET_REGIONS(0x040400000, 0),
 		/* IVSHMEM shared memory region for 0001:00:01.0 */
-		JAILHOUSE_SHMEM_NET_REGIONS(0x800500000, 0),
+		JAILHOUSE_SHMEM_NET_REGIONS(0x040500000, 0),
 		/* MMIO (permissive) */ {
 			.phys_start = 0xfd000000,
 			.virt_start = 0xfd000000,
@@ -93,23 +95,16 @@ struct {
 		/* RAM */ {
 			.phys_start = 0x0,
 			.virt_start = 0x0,
-			.size = 0x80000000,
+			.size = 0x40000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
 		/* RAM */ {
-			.phys_start = 0x800600000,
-			.virt_start = 0x800600000,
-			.size = 0x7fa00000,
+			.phys_start = 0x040600000,
+			.virt_start = 0x040600000,
+			.size = 0x3fa00000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
-		},
-		/* PCI host bridge */ {
-			.phys_start = 0x8000000000,
-			.virt_start = 0x8000000000,
-			.size = 0x1000000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
 		},
 	},
 
