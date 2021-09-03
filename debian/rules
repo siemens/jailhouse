@@ -1,0 +1,41 @@
+#!/usr/bin/make -f
+
+PWD:=$(shell pwd)
+REL:=5.10-elbe
+
+DEB_DIR:=$(PWD)/debian
+TMP_DIR:=$(DEB_DIR)/tmp
+
+KERNEL_HDR_PATH:=/lib/modules/$(REL)/build
+
+
+ARCH:=arm64
+SRCARCH:=$(ARCH)
+
+MAKE_OPTS= ARCH=$(ARCH) CROSS_COMPILE=aarch64-linux-gnu- KDIR=$(KERNEL_HDR_PATH) DESTDIR=$(TMP_DIR) prefix=/usr KERNELRELEASE=$(REL)
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	MAKE_OPTS += -j$(NUMJOBS)
+endif
+
+#export DH_VERBOSE=1
+
+override_dh_auto_clean:
+	rm -f debian/files
+	rm -rf debian/tmp
+	$(MAKE) $(MAKE_OPTS) clean
+
+override_dh_auto_configure:
+	mkdir -p debian/tmp
+
+override_dh_auto_build:
+	$(MAKE) $(MAKE_OPTS)
+
+override_dh_auto_install:
+	$(MAKE) $(MAKE_OPTS) install
+
+override_dh_usrlocal:
+
+%:
+	dh $@

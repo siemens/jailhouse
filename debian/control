@@ -1,0 +1,13 @@
+Source: jailhouse
+Section: misc
+Priority: optional
+Standards-Version: 3.9.6
+Build-Depends: linux-headers-5.10-elbe, git, debhelper,
+               dh-python, python3-pip, python3-setuptools,
+               python3-mako, python3-wheel
+Maintainer: Martin Kaistra <martin.kaistra@linutronix.de>
+
+Package: jailhouse
+Architecture: any
+Depends: ${shlibs:Depends}, ${python3:Depends}, linux-image-5.10-elbe, python3-mako
+Description: Jailhouse partitioning hypervisor

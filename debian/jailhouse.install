@@ -1,0 +1,7 @@
+configs{,/*}/*.cell etc/jailhouse
+inmates/demos/*/*.bin usr/libexec/jailhouse/demos
+./lib/modules/*/extra/*
+./lib/firmware/
+./usr/libexec/*
+./usr/sbin/*
+./usr/local/lib/python3.7/*

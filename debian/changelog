@@ -1,0 +1,5 @@
+jailhouse (0.12-1) stable; urgency=medium
+
+  * Initial release.
+
+ -- Martin Kaistra <martin.kaistra@linutronix.de>  Fri, 03 Sep 2021 13:48:00 +0200
