@@ -80,7 +80,7 @@ ASM_DEFINES_H := arch/$(SRCARCH)/include/generated/asm/asm-defines.h
 
 targets := $(ASM_DEFINES_H) arch/$(SRCARCH)/asm-defines.s
 
-$(obj)/arch/$(SRCARCH)/asm-defines.s: $(src)/arch/$(SRCARCH)/asm-defines.c
+$(obj)/arch/$(SRCARCH)/asm-defines.s: $(src)/arch/$(SRCARCH)/asm-defines.c FORCE
 	$(call if_changed_dep,cc_s_c)
 
 $(obj)/$(ASM_DEFINES_H): $(obj)/arch/$(SRCARCH)/asm-defines.s
@@ -110,13 +110,13 @@ HYPERVISOR$(1)_OBJS = $$(addprefix $$(obj)/,$$(hypervisor$(1)-y))
 LDFLAGS_hypervisor$(1).o := --whole-archive -T
 
 targets += hypervisor$(1).o
-$$(obj)/hypervisor$(1).o: $$(src)/hypervisor.lds $$(HYPERVISOR$(1)_OBJS)
+$$(obj)/hypervisor$(1).o: $$(src)/hypervisor.lds $$(HYPERVISOR$(1)_OBJS) FORCE
 	$$(call if_changed,ld)
 
 OBJCOPYFLAGS_jailhouse$(1).bin := -O binary -R .eh_frame
 
 targets += jailhouse$(1).bin
-$$(obj)/jailhouse$(1).bin: $$(obj)/hypervisor$(1).o
+$$(obj)/jailhouse$(1).bin: $$(obj)/hypervisor$(1).o FORCE
 	$$(call if_changed,objcopy)
 endef
 

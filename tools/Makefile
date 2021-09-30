@@ -111,7 +111,7 @@ define cmd_gen_man
 	sed 's/$${VERSION}/$(shell cat $(src)/../VERSION)/g' $< > $@
 endef
 
-$(obj)/%: $(obj)/%.o
+$(obj)/%: $(obj)/%.o FORCE
 	$(call if_changed,ld)
 
 CFLAGS_jailhouse-gcov-extract.o	:= -I$(src)/../hypervisor/include \
@@ -122,13 +122,13 @@ LDFLAGS_jailhouse-gcov-extract := -lgcov -fprofile-arcs
 targets += jailhouse-gcov-extract.o
 always-y += jailhouse-gcov-extract
 
-$(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse-config-collect.tmpl
+$(obj)/jailhouse-config-collect: $(src)/jailhouse-config-create $(src)/jailhouse-config-collect.tmpl FORCE
 	$(call if_changed,gen_collect)
 
 targets += $(MAN8_PAGES)
 always-y +=  $(MAN8_PAGES)
 
-$(obj)/%.8: $(src)/%.8.in
+$(obj)/%.8: $(src)/%.8.in FORCE
 	$(call if_changed,gen_man)
 
 install-bin: $(BINARIES) $(DESTDIR)$(sbindir)

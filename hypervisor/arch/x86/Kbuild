@@ -40,10 +40,10 @@ intel-objs := vmx.o vtd.o vmx-vmexit.o $(common-objs-y) cat.o
 targets += $(amd-objs) $(intel-objs)
 
 quiet_cmd_link_archive = AR      $@
-cmd_link_archive = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) $@ $^
+cmd_link_archive = rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) $@ $(filter-out FORCE,$^)
 
-$(obj)/lib-amd.a: $(addprefix $(obj)/,$(amd-objs))
+$(obj)/lib-amd.a: $(addprefix $(obj)/,$(amd-objs)) FORCE
 	$(call if_changed,link_archive)
 
-$(obj)/lib-intel.a: $(addprefix $(obj)/,$(intel-objs))
+$(obj)/lib-intel.a: $(addprefix $(obj)/,$(intel-objs)) FORCE
 	$(call if_changed,link_archive)

@@ -57,10 +57,10 @@ endef
 # obj/NAME-linked.o: ... obj/$(NAME-y) lib/lib[32].a
 .SECONDEXPANSION:
 $(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y)) \
-		   $(INMATES_LIB)/$$(if $$($$*_32),lib32.a,lib.a)
+		   $(INMATES_LIB)/$$(if $$($$*_32),lib32.a,lib.a) FORCE
 	$(call if_changed,ld)
 
-$(obj)/%.bin: $(obj)/%-linked.o
+$(obj)/%.bin: $(obj)/%-linked.o FORCE
 	$(call if_changed,objcopy)
 
 # 32-bit (i386) support

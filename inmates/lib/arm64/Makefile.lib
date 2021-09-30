@@ -58,8 +58,8 @@ endef
 
 .SECONDEXPANSION:
 $(obj)/%-linked.o: $(INMATES_LIB)/inmate.lds $$(addprefix $$(obj)/,$$($$*-y)) \
-		   $(INMATES_LIB)/lib.a
+		   $(INMATES_LIB)/lib.a FORCE
 	$(call if_changed,ld)
 
-$(obj)/%.bin: $(obj)/%-linked.o
+$(obj)/%.bin: $(obj)/%-linked.o FORCE
 	$(call if_changed,objcopy)
