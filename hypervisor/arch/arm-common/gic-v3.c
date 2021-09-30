@@ -200,7 +200,7 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 	unsigned long redist_addr = system_config->platform_info.arm.gicr_base;
 	unsigned long redist_size = GIC_V3_REDIST_SIZE;
 	void *redist_base = gicr_base;
-	unsigned long gicr_ispendr;
+	unsigned long gicr_ispendr, gicr_isacter;
 	unsigned int n;
 	void *gicr;
 	u64 typer, mpidr;
@@ -290,6 +290,10 @@ static int gicv3_cpu_init(struct per_cpu *cpu_data)
 
 	/* After this, the cells access the virtual interface of the GIC. */
 	arm_write_sysreg(ICH_HCR_EL2, ICH_HCR_EN);
+
+	/* Deactivate all active SGIs */
+	gicr_isacter = mmio_read32(gicr + GICR_ISACTIVER);
+	mmio_write32(gicr + GICR_ICACTIVER, gicr_isacter & 0xffff);
 
 	/* Forward any pending physical SGIs to the virtual queue. */
 	gicr_ispendr = mmio_read32(gicr + GICR_ISPENDR);
