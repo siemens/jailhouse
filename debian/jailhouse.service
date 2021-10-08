@@ -1,0 +1,11 @@
+[Unit]
+Description=Jailhouse
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+ExecStart=/usr/bin/jailhouse-wrapper
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

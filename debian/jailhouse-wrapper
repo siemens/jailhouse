@@ -1,0 +1,12 @@
+#!/bin/sh
+
+jailhouse enable /etc/jailhouse/zynqmp-zu2cg-1i.cell
+jailhouse cell create /etc/jailhouse/zynqmp-zu2cg-1i-inmate-demo.cell
+
+# load and start uart demo
+jailhouse cell load inmate-demo /usr/libexec/jailhouse/demos/uart-demo.bin -s "con-type=JAILHOUSE" -a 0x1000
+jailhouse cell start inmate-demo
+
+# because this demo creates a lot of noise on the serial console, stop it again after 2 seconds
+sleep 2
+jailhouse cell shutdown inmate-demo

@@ -5,3 +5,4 @@ inmates/demos/*/*.bin usr/libexec/jailhouse/demos
 ./usr/libexec/*
 ./usr/sbin/*
 ./usr/local/lib/python3.7/*
+debian/jailhouse-wrapper usr/bin
