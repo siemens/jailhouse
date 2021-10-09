@@ -34,8 +34,7 @@ struct {
 			.address = 0x30860000,
 			.size = 0x1000,
 			.type = JAILHOUSE_CON_TYPE_IMX,
-			.flags = JAILHOUSE_CON_TYPE_IMX |
-				 JAILHOUSE_CON_ACCESS_MMIO |
+			.flags = JAILHOUSE_CON_ACCESS_MMIO |
 				 JAILHOUSE_CON_REGDIST_4,
 		},
 		.platform_info = {
