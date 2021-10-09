@@ -1,5 +1,5 @@
 /*
- * i.MX8MM Target
+ * i.MX8MP Target
  *
  * Copyright 2020 NXP
  *
