@@ -5,7 +5,7 @@ System Configuration
 --------------------
 
 Jailhouse supports various debug output drivers.  The debug output of the
-hypervisor is selected in the system configuration inside the debug_output
+hypervisor is selected in the system configuration inside the debug_console
 structure.  The 'type' member selects the output driver and the 'flags' member
 specifies additional options.
 
@@ -28,6 +28,8 @@ Possible debug outputs for arm and arm64:
     - JAILHOUSE_CON_TYPE_MVEBU     /* Marvell UART */
     - JAILHOUSE_CON_TYPE_HSCIF     /* Renesas HSCIF UART */
     - JAILHOUSE_CON_TYPE_SCIFA     /* Renesas SCIFA UART */
+    - JAILHOUSE_CON_TYPE_IMX       /* NXP i.MX UART */
+    - JAILHOUSE_CON_TYPE_IMX_LPUART/* NXP i.MX LPUART */
 
 Possible access modes, to be or'ed:
 
