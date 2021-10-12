@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Device Tree for inmate cell on NXP LS2088ARDB platform
+ *
+ * Copyright 2021 NXP
+ *
+ * Anda-Alexandra Dorneanu <anda-alexandra.dorneanu@nxp.com>
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	compatible = "fsl,ls2080a";
+	model = "LS2088A RDB Board";
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial0 = &duart1;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a57";
+			reg = <0x1>;
+			clocks = <&clockgen 1 0>;
+			cpu-idle-states = <&CPU_PW20>;
+			next-level-cache = <&cluster0_l2>;
+			#cooling-cells = <2>;
+			enable-method = "psci";
+		};
+
+		cluster0_l2: l2-cache0 {
+			compatible = "cache";
+		};
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	idle-states {
+		entry-method = "psci";
+
+		 CPU_PW20: cpu-pw20 {
+			compatible = "arm,idle-state";
+			idle-state-name = "PW20";
+			arm,psci-suspend-param = <0x0>;
+			entry-latency-us = <2000>;
+			exit-latency-us = <2000>;
+			min-residency-us = <6000>;
+		};
+
+	};
+
+	sysclk: sysclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+		clock-output-names = "sysclk";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <1 13 4>,
+			     <1 14 4>,
+			     <1 11 4>,
+			     <1 10 4>;
+	};
+
+	gic: interrupt-controller@6000000 {
+		compatible = "arm,gic-v3";
+		#interrupt-cells = <3>;
+		interrupt-controller;
+		reg = <0x0 0x06000000 0 0x10000>, /* GIC Dist */
+			<0x0 0x06100000 0 0x100000>, /* GICR(RD_base+SGI_base)*/
+			<0x0 0x0c0c0000 0 0x2000>, /* GICC */
+			<0x0 0x0c0d0000 0 0x1000>, /* GICH */
+			<0x0 0x0c0e0000 0 0x20000>; /* GICV */
+		interrupts = <1 9 0x4>;
+	};
+
+	soc: soc {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ddr1: memory-controller@1080000 {
+			compatible = "fsl,qoriq-memory-controller";
+			reg = <0x0 0x1080000 0x0 0x1000>;
+			interrupts = <0 17 0x4>;
+			little-endian;
+		};
+
+		clockgen: clocking@1300000 {
+			compatible = "fsl,ls2080a-clockgen";
+			reg = <0x0 0x1300000 0x0 0xa0000>;
+			#clock-cells = <2>;
+			clocks = <&sysclk>;
+		};
+
+		duart1: serial@21c0500 {
+			compatible = "fsl,ns16550", "ns16550a";
+			reg = <0x00 0x21c0500 0x0 0x100>;
+			clocks = <&clockgen 4 3>;
+			status = "okay";
+		};
+	};
+
+	pci@13000000 {
+		compatible = "pci-host-ecam-generic";
+		device_type = "pci";
+		bus-range = <0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0 0 7>;
+		interrupt-map = <0 0 0 1 &gic GIC_SPI 53 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 2 &gic GIC_SPI 54 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 3 &gic GIC_SPI 55 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 4 &gic GIC_SPI 56 IRQ_TYPE_EDGE_RISING>;
+		reg = <0x0 0x13000000 0x0 0x100000>;
+		ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x10000>;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+};
