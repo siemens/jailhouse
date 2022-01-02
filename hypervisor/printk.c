@@ -1,7 +1,7 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) Siemens AG, 2013-2019
+ * Copyright (c) Siemens AG, 2013-2022
  *
  * Authors:
  *  Jan Kiszka <jan.kiszka@siemens.com>
@@ -10,10 +10,10 @@
  * the COPYING file in the top-level directory.
  */
 
-#include <stdarg.h>
 #include <jailhouse/control.h>
 #include <jailhouse/printk.h>
 #include <jailhouse/processor.h>
+#include <jailhouse/stdarg.h>
 #include <jailhouse/string.h>
 #include <asm/spinlock.h>
 
