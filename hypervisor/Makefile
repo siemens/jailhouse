@@ -50,7 +50,13 @@ endif
 ccflags-$(CONFIG_JAILHOUSE_GCOV) += -fprofile-arcs -ftest-coverage
 clean-files += *.gcda arch/*/.*.gcda
 
-clean-dirs := arch/$(SRCARCH)/include/generated
+CLEAN_DIRS := arch/$(SRCARCH)/include/generated
+
+ifeq ($(shell test $(VERSION) -ge 5 && test $(PATCHLEVEL) -ge 4 && echo 1),1)
+clean-files += $(CLEAN_DIRS)
+else
+clean-dirs += $(CLEAN_DIRS)
+endif
 
 define sed-y
 	"/^=>/{s:=>#\(.*\):/* \1 */:; \

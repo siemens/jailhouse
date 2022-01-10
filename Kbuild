@@ -71,5 +71,11 @@ endif
 
 clean-files := pyjailhouse/*.pyc pyjailhouse/pci_defs.py
 
-clean-dirs := Documentation/generated hypervisor/include/generated \
+CLEAN_DIRS := Documentation/generated hypervisor/include/generated \
 	      pyjailhouse/__pycache__
+
+ifeq ($(shell test $(VERSION) -ge 5 && test $(PATCHLEVEL) -ge 4 && echo 1),1)
+clean-files += $(CLEAN_DIRS)
+else
+clean-dirs += $(CLEAN_DIRS)
+endif
