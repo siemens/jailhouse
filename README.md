@@ -365,7 +365,7 @@ Similarly like x86, Jailhouse can be tried out in a completely emulated ARM64
 Start the QEMU machine like this:
 
     qemu-system-aarch64 -cpu cortex-a57 -smp 16 -m 1G \
-        -machine virt,gic-version=3,virtualization=on -nographic \
+        -machine virt,gic-version=3,virtualization=on,its=off -nographic \
         -netdev user,id=net -device virtio-net-device,netdev=net \
         -drive file=LinuxInstallation.img,format=raw|qcow2|...,id=disk,if=none \
         -device virtio-blk-device,drive=disk \
