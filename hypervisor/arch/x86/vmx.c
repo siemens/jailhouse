@@ -237,13 +237,16 @@ static int vmx_check_features(void)
 	    !(vmx_proc_ctrl2 & SECONDARY_EXEC_UNRESTRICTED_GUEST))
 		return trace_error(-EIO);
 
-	/* require RDTSCP, INVPCID, XSAVES if present in CPUID */
+	/* require RDTSCP, INVPCID, XSAVES, TPAUSE/UMONITOR/UMWAIT if present
+	 * in CPUID */
 	if (cpuid_edx(0x80000001, 0) & X86_FEATURE_RDTSCP)
 		secondary_exec_addon |= SECONDARY_EXEC_RDTSCP;
 	if (cpuid_ebx(0x07, 0) & X86_FEATURE_INVPCID)
 		secondary_exec_addon |= SECONDARY_EXEC_INVPCID;
 	if (cpuid_eax(0x0d, 1) & X86_FEATURE_XSAVES)
 		secondary_exec_addon |= SECONDARY_EXEC_XSAVES;
+	if (cpuid_ecx(0x07, 0) & X86_FEATURE_WAITPKG)
+		secondary_exec_addon |= SECONDARY_EXEC_USR_WAIT_PAUSE;
 	if ((vmx_proc_ctrl2 & secondary_exec_addon) != secondary_exec_addon)
 		return trace_error(-EIO);
 

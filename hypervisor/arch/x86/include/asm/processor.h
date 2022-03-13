@@ -32,6 +32,9 @@
 #define X86_FEATURE_INVPCID				(1 << 10)
 #define X86_FEATURE_CAT					(1 << 15)
 
+/* leaf 0x07, subleaf 0, ECX */
+#define X86_FEATURE_WAITPKG				(1 << 5)
+
 /* leaf 0x0d, subleaf 1, EAX */
 #define X86_FEATURE_XSAVES				(1 << 3)
 
