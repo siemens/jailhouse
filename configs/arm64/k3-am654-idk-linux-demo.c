@@ -23,7 +23,7 @@
 struct {
 	struct jailhouse_cell_desc cell;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[17];
+	struct jailhouse_memory mem_regions[19];
 	struct jailhouse_irqchip irqchips[3];
 	struct jailhouse_pci_device pci_devices[2];
 } __attribute__((packed)) config = {
@@ -112,6 +112,22 @@ struct {
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
+#ifdef CONFIG_AM654_INMATE_CELL_EMMC
+		/* sdhci0 */ {
+			.phys_start = 0x4f80000,
+			.virt_start = 0x4f80000,
+			.size = 0x1000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* sdhci0 */ {
+			.phys_start = 0x4f90000,
+			.virt_start = 0x4f90000,
+			.size = 0x1000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+#endif
 		/* main sproxy target_data host_id=A53_3 */ {
 			.phys_start = 0x3240f000,
 			.virt_start = 0x3240f000,
@@ -153,6 +169,10 @@ struct {
 			.address = 0x01800000,
 			.pin_base = 160,
 			.pin_bitmap = {
+#ifdef CONFIG_AM654_INMATE_CELL_EMMC
+			/* sdhc */
+			1 << (168 - 160) |
+#endif
 			/* vpci */
 			1 << (189 - 160) |
 			1 << (190 - 160),
