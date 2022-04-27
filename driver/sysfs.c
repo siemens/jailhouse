@@ -59,6 +59,14 @@ static const struct sysfs_ops cell_sysfs_ops = {
 };
 #define kobj_sysfs_ops cell_sysfs_ops
 #endif /* < 3.14 */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,2,0)
+#define COMPAT_ATTRIBUTE_GROUPS(x)	/* not used */
+#define DEFAULT_GROUPS(x)		.default_attrs = x##_attrs
+#else
+#define COMPAT_ATTRIBUTE_GROUPS(x)	ATTRIBUTE_GROUPS(x)
+#define DEFAULT_GROUPS(x)		.default_groups = x##_groups
+#endif /* < 5.2 */
 /* End of compatibility section - remove as version become obsolete */
 
 static struct kobject *cells_dir;
@@ -180,10 +188,11 @@ static struct attribute *cell_stats_attrs[] = {
 #endif
 	NULL
 };
+COMPAT_ATTRIBUTE_GROUPS(cell_stats);
 
 static struct kobj_type cell_stats_type = {
 	.sysfs_ops = &kobj_sysfs_ops,
-	.default_attrs = cell_stats_attrs,
+	DEFAULT_GROUPS(cell_stats),
 };
 
 static struct attribute *cpu_stats_attrs[] = {
@@ -212,10 +221,11 @@ static struct attribute *cpu_stats_attrs[] = {
 #endif
 	NULL
 };
+COMPAT_ATTRIBUTE_GROUPS(cpu_stats);
 
 static struct kobj_type cell_cpu_type = {
 	.sysfs_ops = &kobj_sysfs_ops,
-	.default_attrs = cpu_stats_attrs,
+	DEFAULT_GROUPS(cpu_stats),
 };
 
 static int print_cpumask(char *buf, size_t size, cpumask_t *mask, bool as_list)
@@ -342,11 +352,12 @@ static struct attribute *cell_attrs[] = {
 	&cell_cpus_failed_list_attr.attr,
 	NULL,
 };
+COMPAT_ATTRIBUTE_GROUPS(cell);
 
 static struct kobj_type cell_type = {
 	.release = jailhouse_cell_kobj_release,
 	.sysfs_ops = &kobj_sysfs_ops,
-	.default_attrs = cell_attrs,
+	DEFAULT_GROUPS(cell),
 };
 
 static struct cell_cpu *find_cell_cpu(struct cell *cell, unsigned int cpu)
