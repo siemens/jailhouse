@@ -1,0 +1,28 @@
+/dts-v1/;
+
+#include "inmate-k3-am625-sk.dts"
+
+/ {
+	sdhci0: mmc@fa10000 {
+		compatible = "ti,am62-sdhci";
+		reg = <0x0 0xfa10000 0x0 0x260>, <0x0 0xfa18000 0x0 0x134>;
+		power-domains = <&k3_pds 57 1>;
+		clocks = <&k3_clks 57 5>, <&k3_clks 57 6>;
+		clock-names = "clk_ahb", "clk_xin";
+		interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>;
+		mmc-ddr-1_8v;
+		mmc-hs200-1_8v;
+		ti,otap-del-sel-legacy = <0x0>;
+		ti,otap-del-sel-mmc-hs = <0x0>;
+		ti,otap-del-sel-ddr52 = <0x9>;
+		ti,otap-del-sel-hs200 = <0x6>;
+	};
+};
+
+&sdhci0 {
+	/* eMMC */
+	non-removable;
+	ti,driver-strength-ohm = <50>;
+	bus-width = <8>;
+	disable-wp;
+};

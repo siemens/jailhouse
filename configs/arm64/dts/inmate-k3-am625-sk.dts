@@ -1,0 +1,163 @@
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Texas Instruments AM625 Inmate Model";
+	compatible = "ti,am625-evm", "ti,am625";
+	interrupt-parent = <&gic500>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial1 = &main_uart1;
+	};
+
+	chosen {
+		stdout-path = "serial1:115200n8";
+	};
+
+	memory@e0000000 {
+		device_type = "memory";
+		reg = <0x0 0xe0000000 0x0 0x1fff0000>;
+	};
+
+	hypervisor {
+		compatible = "jailhouse,cell";
+	};
+
+	psci: psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a53";
+			reg = <0x001>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a53";
+			reg = <0x002>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a53";
+			reg = <0x003>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+	};
+
+	pmu: pmu {
+		compatible = "arm,armv8-pmuv3";
+		/* Recommendation from GIC500 TRM Table A.3 */
+		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	a53_timer0: timer-cl0-cpu0 {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>, /* cntpsirq */
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>, /* cntpnsirq */
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>, /* cntvirq */
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>; /* cnthpirq */
+	};
+
+	cbass_main: interconnect@f0000 {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		gic500: interrupt-controller@1800000 {
+			compatible = "arm,gic-v3";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+			reg = <0x00 0x01800000 0x00 0x10000>,	/* GICD */
+			      <0x00 0x01880000 0x00 0xC0000>;	/* GICR */
+			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		main_uart1: serial@2810000 {
+			compatible = "ti,am64-uart", "ti,am654-uart";
+			reg = <0x00 0x02810000 0x00 0x100>;
+			interrupts = <GIC_SPI 179 IRQ_TYPE_LEVEL_HIGH>;
+			power-domains = <&k3_pds 152 1>;
+			current-speed = <115200>;
+			clock-frequency = <48000000>;
+		};
+
+		pci@76000000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			bus-range = <0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map =
+			<0 0 0 1 &gic500 GIC_SPI 157 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 2 &gic500 GIC_SPI 158 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 3 &gic500 GIC_SPI 159 IRQ_TYPE_EDGE_RISING>,
+			<0 0 0 4 &gic500 GIC_SPI 160 IRQ_TYPE_EDGE_RISING>;
+			reg = <0x0 0x76000000 0x0 0x100000>;
+			ranges =
+			<0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x20000>;
+		};
+
+		dmss: bus@48000000 {
+			compatible = "simple-mfd";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			dma-ranges;
+			ranges = <0x00 0x48000000 0x00 0x48000000 0x00 0x06400000>;
+
+			ti,sci-dev-id = <25>;
+
+			secure_proxy_main: mailbox@4d000000 {
+				compatible = "ti,am654-secure-proxy";
+				#mbox-cells = <1>;
+				reg-names = "target_data", "rt", "scfg";
+				reg = <0x00 0x4d000000 0x00 0x80000>,
+				      <0x00 0x4a600000 0x00 0x80000>,
+				      <0x00 0x4a400000 0x00 0x80000>;
+				interrupt-names = "rx_014";
+				interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+			};
+		};
+
+		dmsc: system-controller@44043000 {
+			compatible = "ti,k2g-sci";
+			ti,host-id = <13>;
+			mbox-names = "rx", "tx";
+			mboxes = <&secure_proxy_main 14>,
+				 <&secure_proxy_main 15>;
+			reg-names = "debug_messages";
+			reg = <0x00 0x44043000 0x00 0xfe0>;
+
+			k3_pds: power-controller {
+				compatible = "ti,sci-pm-domain";
+				#power-domain-cells = <2>;
+			};
+
+			k3_clks: clock-controller {
+				compatible = "ti,k2g-sci-clk";
+				#clock-cells = <2>;
+			};
+
+			k3_reset: reset-controller {
+				compatible = "ti,sci-reset";
+				#reset-cells = <2>;
+			};
+		};
+	};
+};
