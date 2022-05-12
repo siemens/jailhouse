@@ -46,13 +46,15 @@ $(GEN_VERSION_H): $(src)/Makefile FORCE
 
 quiet_cmd_gen_pci_defs = GEN     $@
 define cmd_gen_pci_defs
-	$< $(src)/include/jailhouse/pci_defs.h > $@
+	$(filter-out FORCE,$^) > $@
 endef
 
 GEN_PCI_DEFS_PY := $(obj)/pyjailhouse/pci_defs.py
 
-$(GEN_PCI_DEFS_PY): $(src)/scripts/gen_pci_defs.sh FORCE
+$(GEN_PCI_DEFS_PY): $(src)/scripts/gen_pci_defs.sh $(src)/include/jailhouse/pci_defs.h FORCE
 	$(call if_changed,gen_pci_defs)
+
+targets += pyjailhouse/pci_defs.py
 
 subdir-y := hypervisor configs inmates tools
 
