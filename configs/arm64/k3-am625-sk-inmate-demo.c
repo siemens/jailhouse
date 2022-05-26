@@ -2,7 +2,7 @@
  * Jailhouse, a Linux-based partitioning hypervisor
  *
  * Configuration for demo inmate on K3 based platforms.
- * 1CPU, 64K RAM, 1 serial port(MCU UART 0).
+ * 1CPU, 64K RAM, 1 serial port(MAIN UART 1).
  *
  * Copyright (c) 2019, 2022 Texas Instruments Incorporated - http://www.ti.com/
  *
@@ -48,7 +48,7 @@ struct {
 	},
 
 	.mem_regions = {
-		/* MCU UART0 */ {
+		/* MAIN UART1 */ {
 			.phys_start = 0x02810000,
 			.virt_start = 0x02810000,
 			.size = 0x10000,

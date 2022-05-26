@@ -105,7 +105,7 @@ struct {
 				JAILHOUSE_MEM_EXECUTE | JAILHOUSE_MEM_DMA |
 				JAILHOUSE_MEM_LOADABLE,
 		},
-		/* MCU UART0 */ {
+		/* MAIN UART1 */ {
 			.phys_start = 0x02810000,
 			.virt_start = 0x02810000,
 			.size = 0x10000,
