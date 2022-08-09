@@ -32,7 +32,7 @@ KBUILD_CFLAGS := -g -Os -Werror -Wall -Wextra -Wno-unused-parameter \
 		 -Wnested-externs -Wshadow -Wredundant-decls \
 		 -Wundef -Wdeprecated \
 		 -fno-strict-aliasing -fno-pic -fno-common \
-		 -fno-stack-protector -fno-builtin-ffsl \
+		 -fno-stack-protector -fno-builtin-ffsl -ffreestanding \
 		 -D__LINUX_COMPILER_TYPES_H
 
 include $(src)/arch/$(SRCARCH)/Makefile
