@@ -1,10 +1,10 @@
 /*
  * Jailhouse, a Linux-based partitioning hypervisor
  *
- * Copyright (c) OTH Regensburg, 2018
+ * Copyright (C) 2022 Renesas Electronics Corp.
  *
  * Authors:
- *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+ *  Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -39,25 +39,27 @@
 #include <inmate.h>
 #include <uart.h>
 
-DECLARE_UART(8250);
-DECLARE_UART(hscif);
-DECLARE_UART(imx);
-DECLARE_UART(imx_lpuart);
-DECLARE_UART(mvebu);
-DECLARE_UART(pl011);
-DECLARE_UART(scif);
-DECLARE_UART(scifa);
-DECLARE_UART(xuartps);
+#define SCIF_SCFTDR		0x0c	/* Transmit FIFO data register */
+#define SCIF_SCFSR		0x10	/* Serial status register */
+#define SCIF_SCFSR_TDFE		0x20
+#define SCIF_SCFSR_TEND		0x40
 
-struct uart_chip *uart_array[] = {
-	&UART_OPS_NAME(8250),
-	&UART_OPS_NAME(hscif),
-	&UART_OPS_NAME(imx),
-	&UART_OPS_NAME(imx_lpuart),
-	&UART_OPS_NAME(mvebu),
-	&UART_OPS_NAME(pl011),
-	&UART_OPS_NAME(scif),
-	&UART_OPS_NAME(scifa),
-	&UART_OPS_NAME(xuartps),
-	NULL
-};
+static void uart_scif_init(struct uart_chip *chip)
+{
+}
+
+static bool uart_scif_is_busy(struct uart_chip *chip)
+{
+	return (!((SCIF_SCFSR_TDFE | SCIF_SCFSR_TEND) &
+		mmio_read16(chip->base + SCIF_SCFSR)));
+}
+
+static void uart_scif_write(struct uart_chip *chip, char c)
+{
+	mmio_write8(chip->base + SCIF_SCFTDR, c);
+	mmio_write16(chip->base + SCIF_SCFSR,
+		     mmio_read16(chip->base + SCIF_SCFSR) &
+		     ~(SCIF_SCFSR_TDFE | SCIF_SCFSR_TEND));
+}
+
+DEFINE_UART(scif, "SCIF", JAILHOUSE_CON_TYPE_SCIF);

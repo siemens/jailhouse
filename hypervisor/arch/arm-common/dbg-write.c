@@ -34,6 +34,8 @@ void arch_dbg_write_init(void)
 		uart = &uart_mvebu_ops;
 	else if (con_type == JAILHOUSE_CON_TYPE_HSCIF)
 		uart = &uart_hscif_ops;
+	else if (con_type == JAILHOUSE_CON_TYPE_SCIF)
+		uart = &uart_scif_ops;
 	else if (con_type == JAILHOUSE_CON_TYPE_SCIFA)
 		uart = &uart_scifa_ops;
 	else if (con_type == JAILHOUSE_CON_TYPE_IMX)
