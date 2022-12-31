@@ -395,6 +395,7 @@ def parse_dmar(pcidevices, ioapics, dmar_regions):
                     assert not (flags & 1)
                     for d in pcidevices:
                         if d.bus == bus and d.dev == dev and d.fn == fn:
+                            d.iommu = len(units) - 1
                             (secondbus, subordinate) = \
                                 PCIPCIBridge.get_2nd_busses(d)
                             for d2 in pcidevices:
