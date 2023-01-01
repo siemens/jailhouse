@@ -144,31 +144,31 @@ struct {
 				JAILHOUSE_MEM_LOADABLE,
 		},
 #ifdef CONFIG_QEMU_E1000E_ASSIGNMENT
-		/* MemRegion: feb40000-feb7ffff : 0000:00:02.0 */
+		/* MemRegion: fea00000-fea3ffff : 0000:00:02.0 */
 		{
-			.phys_start = 0xfeb40000,
-			.virt_start = 0xfeb40000,
+			.phys_start = 0xfea00000,
+			.virt_start = 0xfea00000,
 			.size = 0x40000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: feb80000-feb9ffff : e1000e */
+		/* MemRegion: fea40000-fea5ffff : e1000e */
 		{
-			.phys_start = 0xfeb80000,
-			.virt_start = 0xfeb80000,
+			.phys_start = 0xfea40000,
+			.virt_start = 0xfea40000,
 			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: feba0000-febbffff : e1000e */
+		/* MemRegion: fea60000-fea7ffff : e1000e */
 		{
-			.phys_start = 0xfeba0000,
-			.virt_start = 0xfeba0000,
+			.phys_start = 0xfea60000,
+			.virt_start = 0xfea60000,
 			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
-		/* MemRegion: febd1000-febd3fff : e1000e */
+		/* MemRegion: fea91000-fea93fff : e1000e */
 		{
-			.phys_start = 0xfebd1000,
-			.virt_start = 0xfebd1000,
+			.phys_start = 0xfea91000,
+			.virt_start = 0xfea91000,
 			.size = 0x3000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE,
 		},
@@ -203,7 +203,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0,
-			.bdf = 0x0c << 3,
+			.bdf = 0x100 | (0x0c << 3),
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 2,
 			.shmem_regions_start = 0,
@@ -215,7 +215,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0,
-			.bdf = 0x0d << 3,
+			.bdf = 0x100 | (0x0d << 3),
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 3,
 			.shmem_regions_start = 4,
@@ -227,7 +227,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0,
-			.bdf = 0x0e << 3,
+			.bdf = 0x100 | (0x0e << 3),
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 16,
 			.shmem_regions_start = 8,
@@ -238,7 +238,7 @@ struct {
 		{
 			.type = JAILHOUSE_PCI_TYPE_IVSHMEM,
 			.domain = 0x0,
-			.bdf = 0x0f << 3,
+			.bdf = 0x100 | (0x0f << 3),
 			.bar_mask = JAILHOUSE_IVSHMEM_BAR_MASK_MSIX,
 			.num_msix_vectors = 2,
 			.shmem_regions_start = 13,
@@ -261,7 +261,7 @@ struct {
 			.msi_64bits = 1,
 			.num_msix_vectors = 5,
 			.msix_region_size = 0x1000,
-			.msix_address = 0xfebd0000,
+			.msix_address = 0xfea90000,
 		},
 #endif
 	},
