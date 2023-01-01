@@ -805,8 +805,7 @@ iommu_get_remapped_root_int(unsigned int iommu, u16 device_id,
 	root_irte = *(union vtd_irte *)(irte_page +
 					(irte_addr & PAGE_OFFS_MASK));
 
-	irq_msg.valid =
-		(root_irte.field.p && root_irte.field.sid == device_id);
+	irq_msg.valid = root_irte.field.p;
 	irq_msg.vector = root_irte.field.vector;
 	irq_msg.delivery_mode = root_irte.field.delivery_mode;
 	irq_msg.dest_logical = root_irte.field.dest_logical;
