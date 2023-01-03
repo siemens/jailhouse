@@ -1173,7 +1173,6 @@ void vcpu_handle_exit(struct per_cpu *cpu_data)
 			return;
 		break;
 	case EXIT_REASON_MSR_READ:
-		stats[JAILHOUSE_CPU_STAT_VMEXITS_MSR_OTHER]++;
 		if (vcpu_handle_msr_read())
 			return;
 		break;
