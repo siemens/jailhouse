@@ -26,6 +26,7 @@ struct {
 	.cell = {
 		.signature = JAILHOUSE_CELL_DESC_SIGNATURE,
 		.revision = JAILHOUSE_CONFIG_REVISION,
+		.architecture = JAILHOUSE_ARM,
 		.name = "emtrion-emconrzg1m-linux-demo",
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 

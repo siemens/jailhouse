@@ -47,10 +47,19 @@
 #endif
 
 /*
+ * Supported architectures of Jailhouse. Used in the header of system and cell
+ * configurations, as well as in python tooling for automatic architecture
+ * detection.
+ */
+#define JAILHOUSE_X86		0
+#define JAILHOUSE_ARM		1
+#define JAILHOUSE_ARM64		2
+
+/*
  * Incremented on any layout or semantic change of system or cell config.
  * Also update formats and HEADER_REVISION in pyjailhouse/config_parser.py.
  */
-#define JAILHOUSE_CONFIG_REVISION	13
+#define JAILHOUSE_CONFIG_REVISION	14
 
 #define JAILHOUSE_CELL_NAME_MAXLEN	31
 
@@ -73,7 +82,7 @@
 #define CELL_FLAGS_VIRTUAL_CONSOLE_PERMITTED(flags) \
 	!!((flags) & JAILHOUSE_CELL_VIRTUAL_CONSOLE_PERMITTED)
 
-#define JAILHOUSE_CELL_DESC_SIGNATURE	"JHCELL"
+#define JAILHOUSE_CELL_DESC_SIGNATURE	"JHCLL"
 
 /**
  * The jailhouse cell configuration.
@@ -82,7 +91,8 @@
  * structure.
  */
 struct jailhouse_cell_desc {
-	char signature[6];
+	char signature[5];
+	__u8 architecture;
 	__u16 revision;
 
 	char name[JAILHOUSE_CELL_NAME_MAXLEN+1];
@@ -305,7 +315,7 @@ struct jailhouse_pio {
 		.length = __length,	\
 	}
 
-#define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYST"
+#define JAILHOUSE_SYSTEM_SIGNATURE	"JHSYS"
 
 /*
  * The flag JAILHOUSE_SYS_VIRTUAL_DEBUG_CONSOLE allows the root cell to read
@@ -320,8 +330,10 @@ struct jailhouse_pio {
  * General descriptor of the system.
  */
 struct jailhouse_system {
-	char signature[6];
+	char signature[5];
+	__u8 architecture;
 	__u16 revision;
+
 	__u32 flags;
 
 	/** Jailhouse's location in memory */

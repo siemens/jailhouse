@@ -23,8 +23,10 @@ struct {
 		.revision = JAILHOUSE_CONFIG_REVISION,
 		.name = "gic-demo",
 #ifdef USE_AARCH32
+		.architecture = JAILHOUSE_ARM,
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG | JAILHOUSE_CELL_AARCH32,
 #else
+		.architecture = JAILHOUSE_ARM64,
 		.flags = JAILHOUSE_CELL_PASSIVE_COMMREG,
 #endif
 		.cpu_set_size = sizeof(config.cpus),

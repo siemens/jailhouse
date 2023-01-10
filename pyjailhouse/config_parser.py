@@ -19,7 +19,7 @@ import struct
 from .extendedenum import ExtendedEnum
 
 # Keep the whole file in sync with include/jailhouse/cell-config.h.
-_CONFIG_REVISION = 13
+_CONFIG_REVISION = 14
 
 
 def flag_str(enum_class, value, separator=' | '):
@@ -135,13 +135,14 @@ class PIORegion:
 
 
 class CellConfig:
-    _HEADER_FORMAT = '=6sH32s4xIIIIIIIIIIQ8x32x'
+    _HEADER_FORMAT = '=5sBH32s4xIIIIIIIIIIQ8x32x'
 
     def __init__(self, data, root_cell=False):
         self.data = data
 
         try:
             (signature,
+             self.arch,
              revision,
              name,
              self.flags,
@@ -157,7 +158,7 @@ class CellConfig:
              self.cpu_reset_address) = \
                 struct.unpack_from(CellConfig._HEADER_FORMAT, self.data)
             if not root_cell:
-                if signature != b'JHCELL':
+                if signature != b'JHCLL':
                     raise RuntimeError('Not a cell configuration')
                 if revision != _CONFIG_REVISION:
                     raise RuntimeError('Configuration file revision mismatch')
@@ -233,7 +234,7 @@ class IOMMU:
 
 
 class SystemConfig:
-    _HEADER_FORMAT = '=6sH4x'
+    _HEADER_FORMAT = '=5sBH4x'
     # ...followed by MemRegion as hypervisor memory
     _CONSOLE_FORMAT = '32x'
     _PCI_FORMAT = '=QBBH'
@@ -245,11 +246,10 @@ class SystemConfig:
         self.data = data
 
         try:
-            (signature,
-             revision) = \
+            (signature, self.arch, revision) = \
                 struct.unpack_from(self._HEADER_FORMAT, self.data)
 
-            if signature != b'JHSYST':
+            if signature != b'JHSYS':
                 raise RuntimeError('Not a root cell configuration')
             if revision != _CONFIG_REVISION:
                 raise RuntimeError('Configuration file revision mismatch')
