@@ -37,8 +37,6 @@ class ResourceRegion(config_parser.MemRegion):
 sys.argv[0] = sys.argv[0].replace('-', ' ')
 
 parser = argparse.ArgumentParser(description='Check system and cell configurations.')
-parser.add_argument('-a', '--arch', metavar='ARCH',
-                    help='target architecture')
 parser.add_argument('syscfg', metavar='SYSCONFIG',
                     type=argparse.FileType('rb'),
                     help='system configuration file')
@@ -52,36 +50,23 @@ except IOError as e:
     print(e.strerror, file=sys.stderr)
     exit(1)
 
-arch = args.arch
-if not arch:
-    arch_str = os.uname()[4]
-    if arch_str in ('i686', 'x86_64'):
-        arch = 'x86'
-    elif arch_str == 'armv7l':
-        arch = 'arm'
-    elif arch_str == 'aarch64':
-        arch = 'arm64'
-    else:
-        arch = None
-if not arch in ('x86', 'arm', 'arm64'):
-    print('Unsupported architecture', file=sys.stderr)
-    exit(1)
-
 print("Reading configuration set:")
-
 try:
-    sysconfig = config_parser.SystemConfig(args.syscfg.read(), arch)
+    sysconfig = config_parser.SystemConfig(args.syscfg.read())
     root_cell = sysconfig.root_cell
 except RuntimeError as e:
     print(str(e) + ": " + args.syscfg.name, file=sys.stderr)
     exit(1)
 cells = [root_cell]
+print("  Architecture:  %s" % sysconfig.arch)
 print("  Root cell:     %s (%s)" % (root_cell.name, args.syscfg.name))
 
 non_root_cells = []
 for cfg in args.cellcfgs:
     try:
         cell = config_parser.CellConfig(cfg.read())
+        if cell.arch != sysconfig.arch:
+            raise RuntimeError('Cell architecture mismatch: %s' % cell.arch)
     except RuntimeError as e:
         print(str(e) + ": " + cfg.name, file=sys.stderr)
         exit(1)
@@ -162,9 +147,10 @@ if len(iommu_resources) > 0:
                     ret=1
     print("\n" if found else " None")
 
-print("Missing resource interceptions for architecture %s:" % arch, end='')
+print("Missing resource interceptions for architecture %s:" % sysconfig.arch,
+      end='')
 found=False
-if arch in ('arm', 'arm64'):
+if sysconfig.arch in ('arm', 'arm64'):
     arch_resources = []
     if sysconfig.arm_gic_version == 2:
         arch_resources.append(ResourceRegion(sysconfig.arm_gicd_base, 0x1000,
@@ -183,7 +169,7 @@ if arch in ('arm', 'arm64'):
     else:
         raise RuntimeError("Unknown GIC version: %d" %
                            sysconfig.arm_gic_version)
-elif arch == 'x86':
+elif sysconfig.arch == 'x86':
     arch_resources = [ResourceRegion(0xfee00000, 0x1000, "xAPIC")]
     for irqchip in root_cell.irqchips:
         arch_resources.append(ResourceRegion(irqchip.address, 0x1000,
