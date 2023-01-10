@@ -17,6 +17,14 @@
 
 #include "cell.h"
 
+#ifdef CONFIG_X86
+#define JAILHOUSE_ARCHITECTURE	JAILHOUSE_X86
+#elif defined(CONFIG_ARM)
+#define JAILHOUSE_ARCHITECTURE	JAILHOUSE_ARM
+#elif defined(CONFIG_ARM64)
+#define JAILHOUSE_ARCHITECTURE	JAILHOUSE_ARM64
+#endif
+
 extern struct mutex jailhouse_lock;
 extern bool jailhouse_enabled;
 extern void *hypervisor_mem;
