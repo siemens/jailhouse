@@ -1,0 +1,244 @@
+/*
+ * Jailhouse, a Linux-based partitioning hypervisor
+ *
+ * Device tree for Linux inmate test on HopeRun HiHope RZ/G2M
+ * platform based on R8A774A1/R8A774A3, corresponds to
+ * configs/arm64/renesas-r8a774a1-linux-demo.c
+ *
+ * Copyright (c) 2023, Renesas Electronics Corporation
+ *
+ * Authors:
+ *  Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/dts-v1/;
+
+/ {
+	model = "Jailhouse cell on HopeRun HiHope RZ/G2M platform based on r8a774a1";
+	compatible = "hoperun,hihope-rzg2m", "renesas,r8a774a1";
+
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		serial0 = &scif1;
+	};
+
+	chosen {
+		bootargs = "ignore_loglevel";
+		stdout-path = "serial0:115200n8";
+	};
+
+	hypervisor {
+		compatible = "jailhouse,cell";
+		interrupt-parent = <&gic>;
+	};
+
+	memory@8f400000 {
+		device_type = "memory";
+		reg = <0x0 0x8f400000 0x0 0x19c00000>;
+	};
+
+	extal_clk: extal {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <16666666>;
+	};
+
+	extalr_clk: extalr {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+	};
+
+	scif_clk: scif {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <14745600>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		a53_0: cpu@100 {
+			compatible = "arm,cortex-a53";
+			reg = <0x100>;
+			device_type = "cpu";
+			next-level-cache = <&L2_CA53>;
+			enable-method = "psci";
+			#cooling-cells = <2>;
+			dynamic-power-coefficient = <277>;
+			capacity-dmips-mhz = <560>;
+		};
+
+		a53_1: cpu@101 {
+			compatible = "arm,cortex-a53";
+			reg = <0x101>;
+			device_type = "cpu";
+			next-level-cache = <&L2_CA53>;
+			enable-method = "psci";
+			capacity-dmips-mhz = <560>;
+		};
+
+		a53_2: cpu@102 {
+			compatible = "arm,cortex-a53";
+			reg = <0x102>;
+			device_type = "cpu";
+			next-level-cache = <&L2_CA53>;
+			enable-method = "psci";
+			capacity-dmips-mhz = <560>;
+		};
+
+		a53_3: cpu@103 {
+			compatible = "arm,cortex-a53";
+			reg = <0x103>;
+			device_type = "cpu";
+			next-level-cache = <&L2_CA53>;
+			enable-method = "psci";
+			capacity-dmips-mhz = <560>;
+		};
+
+		L2_CA53: cache-controller-1 {
+			compatible = "cache";
+			cache-unified;
+			cache-level = <2>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-1.0", "arm,psci-0.2";
+		method = "smc";
+	};
+
+	clocks {
+		scif1_clk: scif1_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <1>;
+			clock-frequency  = <66666664>;
+			clock-output-names = "scif1_clk";
+		};
+
+		s3d1_clk: s3d1_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <1>;
+			clock-frequency  = <266666656>;
+			clock-output-names = "s3d1_clk";
+		};
+
+		sdif3_clk: sdif3_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <1>;
+			clock-frequency  = <199999992>;
+			clock-output-names = "sdif3_clk";
+		};
+
+		intacp_clk: intacp_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <1>;
+			clock-frequency  = <266666656>;
+			clock-output-names = "intacp_clk";
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&gic>;
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		gpio6: gpio@e6055400 {
+			compatible = "renesas,gpio-r8a774a1",
+				     "renesas,rcar-gen3-gpio";
+			reg = <0 0xe6055400 0 0x50>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			gpio-ranges = <&pfc 0 192 32>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+
+		pfc: pinctrl@e6060000 {
+			compatible = "renesas,pfc-r8a774a1";
+			reg = <0 0xe6060000 0 0x50c>;
+
+			scif1_pins: scif1 {
+				groups = "scif1_data_a";
+				function = "scif1";
+			};
+		};
+
+		scif1: serial@e6e68000 {
+			compatible = "renesas,scif-r8a774a1",
+				      "renesas,rcar-gen3-scif", "renesas,scif";
+			reg = <0 0xe6e68000 0 0x40>;
+			interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&scif1_clk 0>,
+				 <&s3d1_clk 0 >,
+				 <&scif_clk 0>;
+			clock-names = "fck", "brg_int", "scif_clk";
+			pinctrl-0 = <&scif1_pins>;
+			pinctrl-names = "default";
+		};
+
+		gic: interrupt-controller@f1010000 {
+			compatible = "arm,gic-400";
+			#interrupt-cells = <3>;
+			#address-cells = <0>;
+			interrupt-controller;
+			reg = <0x0 0xf1010000 0 0x1000>,
+			      <0x0 0xf102f000 0 0x20000>,
+			      <0x0 0xf1040000 0 0x20000>,
+			      <0x0 0xf106f000 0 0x20000>;
+			interrupts = <GIC_PPI 9
+					(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+			clocks = <&intacp_clk 0>;
+			clock-names = "clk";
+		};
+
+		prr: chipid@fff00044 {
+			compatible = "renesas,prr";
+			reg = <0 0xfff00044 0 4>;
+		};
+
+		pci@ff900000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			bus-range = <0 0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &gic GIC_SPI 24 IRQ_TYPE_EDGE_RISING>,
+					<0 0 0 2 &gic GIC_SPI 25 IRQ_TYPE_EDGE_RISING>,
+					<0 0 0 3 &gic GIC_SPI 26 IRQ_TYPE_EDGE_RISING>,
+					<0 0 0 4 &gic GIC_SPI 27 IRQ_TYPE_EDGE_RISING>;
+			reg = <0x0 0xff900000 0x0 0x100000>;
+			ranges = <0x02000000 0x00 0x10000000 0x0 0x10000000 0x00 0x100000>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts-extended = <&gic GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				      <&gic GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				      <&gic GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				      <&gic GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1 {
+			gpios = <&gpio6 12 0>;
+			default-state = "on";
+		};
+	};
+};
