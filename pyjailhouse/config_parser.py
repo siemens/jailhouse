@@ -180,8 +180,16 @@ class CellConfig:
             self.name = str(name.decode().strip('\0'))
             self.arch = convert_arch(self.arch)
 
-            mem_region_offs = struct.calcsize(CellConfig._HEADER_FORMAT) + \
-                self.cpu_set_size
+            cpu_set_offs = struct.calcsize(CellConfig._HEADER_FORMAT)
+            mask_array = struct.unpack_from('%dB' % self.cpu_set_size,
+                                            self.data[cpu_set_offs:])
+            self.cpus = set()
+            for n in range(self.cpu_set_size):
+                for bit in range(8):
+                    if mask_array[n] & (1 << bit) != 0:
+                        self.cpus.add(n * 8 + bit)
+
+            mem_region_offs = cpu_set_offs + self.cpu_set_size
             self.memory_regions = []
             for n in range(self.num_memory_regions):
                 self.memory_regions.append(
