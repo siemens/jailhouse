@@ -76,7 +76,7 @@
 		};
 	};
 
-	gic: interrupt-controller@01c81000 {
+	gic: interrupt-controller@1c81000 {
 		compatible = "arm,cortex-a7-gic", "arm,cortex-a15-gic";
 		reg = <0x01c81000 0x1000>,
 		      <0x01c82000 0x1000>;
@@ -84,7 +84,7 @@
 		#interrupt-cells = <3>;
 	};
 
-	uart: serial@01c28000 {
+	uart: serial@1c28000 {
 		compatible = "snps,dw-apb-uart";
 		reg = <0x01c28000 0x400>;
 		interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>;
