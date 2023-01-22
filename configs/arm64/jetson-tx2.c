@@ -24,7 +24,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[61];
+	struct jailhouse_memory mem_regions[60];
 	struct jailhouse_irqchip irqchips[3];
 } __attribute__((packed)) config = {
 	.header = {
@@ -154,20 +154,13 @@ struct {
                         .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
                                 JAILHOUSE_MEM_EXECUTE,
                 },
-		/* TOP_TKE */ {
+		/* TIMER */ {
 			.phys_start = 0x03010000,
 			.virt_start = 0x03010000,
 			.size = 0xe0000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
-		/* TIMER */ {
-                        .phys_start = 0x03020000,
-                        .virt_start = 0x03020000,
-                        .size = 0xa0000,
-                        .flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-                                JAILHOUSE_MEM_EXECUTE,
-                },
 		/* UARTA */ {
 			.phys_start = 0x03100000,
 			.virt_start = 0x03100000,
