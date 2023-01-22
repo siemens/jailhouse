@@ -187,4 +187,30 @@ for cell in cells:
                 ret=1
 print("\n" if found else " None")
 
+if len(cells) > 1:
+    print("Root cell CPU starvation:", end='')
+    remaining_root_core=root_cell.cpus
+    for cell in cells[1:]:
+        remaining_root_core -= cell.cpus
+    if len(remaining_root_core) == 0:
+        print("\n\n"
+              "No root cell CPUs left when all non-root cells are started\n")
+        ret=1
+    else:
+        print(" None")
+
+if len(cells) > 2:
+    print("Overlapping cores between non-root cells:", end='')
+    found=False
+    for cell in cells[1:len(cells)-1]:
+        for other_cell in cells[cells.index(cell)+1:]:
+            overlap=cell.cpus & other_cell.cpus
+            if overlap:
+                print("\n\nCells '%s' and '%s' share CPUs:" %
+                      (cell.name, other_cell.name))
+                print(str(overlap).strip('{}'), end='')
+                found=True
+                ret=1
+    print("\n" if found else " None")
+
 exit(ret)
