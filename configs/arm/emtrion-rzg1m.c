@@ -19,7 +19,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[27];
+	struct jailhouse_memory mem_regions[26];
 	struct jailhouse_irqchip irqchips[3];
 	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
@@ -78,42 +78,42 @@ struct {
 			.virt_start = 0xe61f0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* CPG */ {
 			.phys_start = 0xe6150000,
 			.virt_start = 0xe6150000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* APMU */ {
 			.phys_start = 0xe6151000,
 			.virt_start = 0xe6151000,
 			.size = 0xf000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* IRQC */ {
 			.phys_start = 0xe61c0000,
 			.virt_start = 0xe61c0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* CMT0 */ {
 			.phys_start = 0xffca0000,
 			.virt_start = 0xffca0000,
 			.size = 0x2000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* CMT1 */ {
 			.phys_start = 0xe6130000,
 			.virt_start = 0xe6130000,
 			.size = 0x2000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* TMU0 */ {
 			.phys_start = 0xe61e0000,
@@ -147,13 +147,6 @@ struct {
 			.phys_start = 0xee080000,
 			.virt_start = 0xee080000,
 			.size = 0x00020000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO,
-		},
-		/* VSPDU */ {
-			.phys_start = 0xfe930000,
-			.virt_start = 0xfe930000,
-			.size = 0x00008000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},

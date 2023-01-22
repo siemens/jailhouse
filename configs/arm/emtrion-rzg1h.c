@@ -19,7 +19,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[40];
+	struct jailhouse_memory mem_regions[38];
 	struct jailhouse_irqchip irqchips[3];
 	struct jailhouse_pci_device pci_devices[1];
 } __attribute__((packed)) config = {
@@ -78,98 +78,84 @@ struct {
 			.virt_start = 0xe6700000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* SYS-DMAC */ {
 			.phys_start = 0xe6720000,
 			.virt_start = 0xe6720000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* SDHI1 */ {
 			.phys_start = 0xee120000,
 			.virt_start = 0xee120000,
 			.size = 0x20000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* PWM */ {
 			.phys_start = 0xe6e30000,
 			.virt_start = 0xe6e30000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* R-GP2D */ {
 			.phys_start = 0xe6ec0000,
 			.virt_start = 0xe6ec0000,
 			.size = 0x10000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* Thermal Sensor */ {
 			.phys_start = 0xe61f0000,
 			.virt_start = 0xe61f0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* CPG */ {
 			.phys_start = 0xe6150000,
 			.virt_start = 0xe6150000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
-		/* APMU Cortex-A7 */ {
+		/* APMU */ {
 			.phys_start = 0xe6151000,
 			.virt_start = 0xe6151000,
 			.size = 0xf000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
-		},
-		/* APMU Cortex-A15 */ {
-			.phys_start = 0xe6152000,
-			.virt_start = 0xe6152000,
-			.size = 0xf000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
-		},
-		/* APMU Cortex-A7 and Cortex-A15 */ {
-			.phys_start = 0xe6154000,
-			.virt_start = 0xe6154000,
-			.size = 0xf000,
-			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* RES */ {
 			.phys_start = 0xe6160000,
 			.virt_start = 0xe6160000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* IRQC */ {
 			.phys_start = 0xe61c0000,
 			.virt_start = 0xe61c0000,
 			.size = 0x1000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* CMT0 */ {
 			.phys_start = 0xffca0000,
 			.virt_start = 0xffca0000,
 			.size = 0x2000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* CMT1 */ {
 			.phys_start = 0xe6130000,
 			.virt_start = 0xe6130000,
 			.size = 0x2000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
-				JAILHOUSE_MEM_IO | JAILHOUSE_MEM_IO_32,
+				JAILHOUSE_MEM_IO,
 		},
 		/* TMU0 */ {
 			.phys_start = 0xe61e0000,
