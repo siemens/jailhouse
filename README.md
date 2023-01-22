@@ -134,6 +134,8 @@ Hardware requirements (preliminary)
 
     - NXP MCIMX8M-EVK
 
+    - Renesas RZ/G2M (HopeRun HiHope RZ/G2M platform)
+
 
 Software requirements
 ---------------------
