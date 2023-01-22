@@ -20,7 +20,7 @@
 struct {
 	struct jailhouse_system header;
 	__u64 cpus[1];
-	struct jailhouse_memory mem_regions[12];
+	struct jailhouse_memory mem_regions[13];
 	struct jailhouse_irqchip irqchips[1];
 	struct jailhouse_pci_device pci_devices[2];
 	union jailhouse_stream_id stream_ids[3];
@@ -84,10 +84,17 @@ struct {
 		JAILHOUSE_SHMEM_NET_REGIONS(0x800400000, 0),
 		/* IVSHMEM shared memory region for 0001:00:01.0 */
 		JAILHOUSE_SHMEM_NET_REGIONS(0x800500000, 0),
-		/* MMIO (permissive) */ {
+		/* MMIO low (permissive) */ {
 			.phys_start = 0xfd000000,
 			.virt_start = 0xfd000000,
-			.size =	      0x03000000,
+			.size =	      0x00800000,
+			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
+				JAILHOUSE_MEM_IO,
+		},
+		/* MMIO high (permissive) */ {
+			.phys_start = 0xfd820000,
+			.virt_start = 0xfd820000,
+			.size =	      0x027e0000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_IO,
 		},
