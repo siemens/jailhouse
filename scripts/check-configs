@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# Jailhouse, a Linux-based partitioning hypervisor
+#
+# Copyright (c) Siemens AG, 2023
+#
+# Authors:
+#  Jan Kiszka <jan.kiszka@siemens.com>
+#
+# This work is licensed under the terms of the GNU GPL, version 2.  See
+# the COPYING file in the top-level directory.
+#
+
+topdir=$(readlink -f $(dirname $0)/..)
+
+JAILHOUSE_CONFIG_CHECK=${topdir}/tools/jailhouse-config-check
+
+ONLY_TWO_CELLS=" \
+	bananapi.cell \
+	emtrion-rzg1e.cell \
+	emtrion-rzg1m.cell \
+	espressobin.cell \
+	imx8dxl.cell \
+	jetson-tx2.cell \
+	k3-j7200-evm.cell \
+	k3-j721e-evm.cell \
+	ls1028a-rdb.cell \
+	"
+
+only_two_cells()
+{
+	for match in $ONLY_TWO_CELLS; do
+		if [ "$1" == "${match}" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+run_check()
+{
+	[ -f ${topdir}/configs/${arch}/$2 ] || return
+	if [ -n "$3" ]; then
+		echo -n "Checking $1 $2 $3... "
+		output=$(${JAILHOUSE_CONFIG_CHECK} \
+			${topdir}/configs/${arch}/$1 \
+			${topdir}/configs/${arch}/$2 \
+			${topdir}/configs/${arch}/$3)
+	else
+		echo -n "Checking $1 $2... "
+		output=$(${JAILHOUSE_CONFIG_CHECK} \
+			${topdir}/configs/${arch}/$1 \
+			${topdir}/configs/${arch}/$2)
+	fi
+	if [ $? -eq 0 ]; then
+		echo "ok"
+	else
+		echo "FAILED"
+		if [ -z "${quiet}" ]; then
+			echo "-->>>---"
+			echo "$output"
+			echo "--<<<---"
+			echo
+		fi
+	fi
+}
+
+[ "$1" == "-q" ] && quiet=1
+
+# x86 is special
+arch=x86
+echo "--- x86 ---"
+run_check qemu-x86.cell apic-demo.cell tiny-demo.cell
+run_check qemu-x86.cell ivshmem-demo.cell linux-x86-demo.cell
+
+for arch in arm arm64; do
+	echo "--- ${arch} ---"
+	for root_cell in $(cd ${topdir}/configs/${arch}; grep -l JHSYS *.cell); do
+		if only_two_cells ${root_cell}; then
+			run_check ${root_cell} \
+				${root_cell/.cell/-inmate-demo.cell}
+			run_check ${root_cell} \
+				${root_cell/.cell/-linux-demo.cell}
+		else
+			run_check ${root_cell} \
+				${root_cell/.cell/-inmate-demo.cell} \
+				${root_cell/.cell/-linux-demo.cell}
+		fi
+	done
+done
