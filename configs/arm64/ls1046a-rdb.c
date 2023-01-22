@@ -101,7 +101,7 @@ struct {
 		/* RAM - 1GB at DRAM1 region - root cell */ {
 			.phys_start = 0x80000000,
 			.virt_start = 0x80000000,
-			.size = 0x40000000,
+			.size = 0x3f000000,
 			.flags = JAILHOUSE_MEM_READ | JAILHOUSE_MEM_WRITE |
 				JAILHOUSE_MEM_EXECUTE,
 		},
