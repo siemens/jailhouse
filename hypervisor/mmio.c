@@ -18,6 +18,23 @@
 #include <jailhouse/unit.h>
 #include <jailhouse/percpu.h>
 
+#define JAILHOUSE_MAX_SUBPAGE_DEVICES 32
+
+struct subpage_device {
+
+	u32 id;
+	bool used_flag;
+	void *mapping_base;
+	u64 phys_start;
+};
+
+/* Considering that there maybe fewer subpage devices,it is currently
+implemented with an array, and a linked list can be considered in the future */
+static struct subpage_device subpage_devices[JAILHOUSE_MAX_SUBPAGE_DEVICES];
+#define for_each_subpage(subpage, counter)                                     \
+	for((subpage) = &subpage_devices[0], (counter) = 0;                        \
+	    (counter) < JAILHOUSE_MAX_SUBPAGE_DEVICES; (subpage)++, (counter)++)
+
 /**
  * Perform MMIO-specific initialization for a new cell.
  * @param cell		Cell to be initialized.
@@ -308,11 +325,9 @@ static enum mmio_result mmio_handle_subpage(void *arg, struct mmio_access *mmio)
 {
 	const struct jailhouse_memory *mem = arg;
 	u64 perm = mmio->is_write ? JAILHOUSE_MEM_WRITE : JAILHOUSE_MEM_READ;
-	unsigned long page_phys =
-		((unsigned long)mem->phys_start + mmio->address) & PAGE_MASK;
-	unsigned long virt_base;
-	int err;
-
+	void *virt_base = NULL;
+	struct subpage_device *subpage;
+	u32 dev;
 	/* check read/write access permissions */
 	if (!(mem->flags & perm))
 		goto invalid_access;
@@ -326,11 +341,14 @@ static enum mmio_result mmio_handle_subpage(void *arg, struct mmio_access *mmio)
 	    !(mem->flags & JAILHOUSE_MEM_IO_UNALIGNED))
 		goto invalid_access;
 
-	err = paging_create(&this_cpu_data()->pg_structs, page_phys, PAGE_SIZE,
-			    TEMPORARY_MAPPING_BASE,
-			    PAGE_DEFAULT_FLAGS | PAGE_FLAG_DEVICE,
-			    PAGING_NON_COHERENT | PAGING_NO_HUGE);
-	if (err)
+	for_each_subpage(subpage, dev)
+	{
+		if(subpage->phys_start == mem->phys_start) {
+			virt_base = subpage->mapping_base;
+			break;
+		}
+	}
+	if (dev == JAILHOUSE_MAX_SUBPAGE_DEVICES)
 		goto invalid_access;
 
 	/*
@@ -342,9 +360,9 @@ static enum mmio_result mmio_handle_subpage(void *arg, struct mmio_access *mmio)
 	 *
 	 * Reason: mmio_perform_access does addr = base + mmio->address.
 	 */
-	virt_base = TEMPORARY_MAPPING_BASE + (mem->phys_start & PAGE_OFFS_MASK)
-		- (mmio->address & PAGE_MASK);
-	mmio_perform_access((void *)virt_base, mmio);
+	virt_base = (void *)((u64)virt_base + (mem->phys_start & PAGE_OFFS_MASK) -
+	                     (mmio->address & PAGE_MASK));
+	mmio_perform_access(virt_base, mmio);
 	return MMIO_HANDLED;
 
 invalid_access:
@@ -357,13 +375,54 @@ invalid_access:
 
 int mmio_subpage_register(struct cell *cell, const struct jailhouse_memory *mem)
 {
-	mmio_region_register(cell, mem->virt_start, mem->size,
-			     mmio_handle_subpage, (void *)mem);
+	unsigned long page_phys;
+	struct subpage_device *subpage;
+	u32 dev;
+	mmio_region_register(cell, mem->virt_start, mem->size, mmio_handle_subpage,
+	                     (void *)mem);
+	for_each_subpage(subpage, dev)
+	{
+		if(!subpage->used_flag) {
+			subpage->id         = dev;
+			subpage->used_flag  = true;
+			subpage->phys_start = mem->phys_start;
+			page_phys = ((unsigned long)mem->phys_start) & PAGE_MASK;
+			break;
+		}	
+	}
+	if(dev == JAILHOUSE_MAX_SUBPAGE_DEVICES) {
+		panic_printk("FATAL: Subpage_devices is full\n");
+		return MMIO_ERROR;
+	}
+	subpage->mapping_base = paging_map_device(page_phys, PAGE_SIZE);
+	if(!subpage->mapping_base) {
+		goto invalid_pagemap;
+	}
+	
 	return 0;
+
+invalid_pagemap:
+	panic_printk("FATAL: Subpage_devices paging_map_device error\n");
+
+	return MMIO_ERROR;
 }
 
 void mmio_subpage_unregister(struct cell *cell,
-			     const struct jailhouse_memory *mem)
+                             const struct jailhouse_memory *mem)
 {
+	struct subpage_device *subpage;
+	u32 dev;
 	mmio_region_unregister(cell, mem->virt_start);
+	for_each_subpage(subpage, dev)
+	{
+		if(subpage->phys_start == mem->phys_start) {
+			subpage->id        = 0;
+			subpage->used_flag = false;
+			paging_unmap_device(subpage->phys_start, subpage->mapping_base,
+			                    PAGE_SIZE);
+			subpage->phys_start   = 0;
+			subpage->mapping_base = 0;
+			break;
+		}
+	}
 }
